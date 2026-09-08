@@ -9,53 +9,52 @@ using HarmonyLib;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages a two-page accessible interface for mechanitor control groups.
-    /// Page 1 (Settings): Work mode, recharge range, select all mechs.
-    /// Page 2 (Members): Individual mechs with energy levels, reassignment.
-    /// Tab/Shift+Tab switches between pages.
+    /// Data and lifecycle facade for the windowless mechanitor control-group detail view, over two
+    /// areas: Settings (work mode, recharge thresholds, select all) and Members. The cursor and row
+    /// presentation belong to <see cref="RimWorldAccess.Shell.MechControlGroupScope"/>; what stays
+    /// here is the lifecycle, the group and member data, the range editor's working value, the
+    /// mutation vehicles (vanilla's work-mode options, control-group assign, selector calls) and the
+    /// action-outcome announcements that are whole sentences rather than row grammar.
     /// </summary>
     public static class MechControlGroupState
     {
-        private enum Page { Settings, Members }
-
-        private enum SettingsItemType { WorkMode, RechargeRange, SelectAll }
-
-        private class SettingsItem
-        {
-            public SettingsItemType Type;
-            public string Label;
-            public string Description;
-        }
-
         private static bool isActive = false;
         private static MechanitorControlGroup controlGroup;
-        private static Page currentPage = Page.Settings;
 
-        // Settings page
-        private static List<SettingsItem> settingsItems = new List<SettingsItem>();
-        private static int settingsSelectedIndex = 0;
-        private static TypeaheadSearchHelper settingsTypeahead = new TypeaheadSearchHelper();
+        // The gizmo the drill-in came from, kept for the focus ring only (never invoked).
+        private static Gizmo sourceGizmo;
 
-        // Members page
-        private static List<Pawn> memberMechs = new List<Pawn>();
-        private static int membersSelectedIndex = 0;
-        private static TypeaheadSearchHelper membersTypeahead = new TypeaheadSearchHelper();
+        // Rebuilt from the group on every model refresh.
+        private static readonly List<Pawn> memberMechs = new List<Pawn>();
 
-        // Inline range editor sub-state
         private static bool isEditingRange = false;
-        private static int rangeSelectedOption = 0; // 0 = min, 1 = max
+        private static bool editingMinimum = true;
         private static FloatRange editingRange;
-        private static FloatRange originalRange;
 
-        // Cached reflection
         private static FieldInfo controlGroupField;
         private static FieldInfo mergedGroupsField;
 
         public static bool IsActive => isActive;
 
+        /// <summary>Whether the inline recharge-range editor owns the keyboard.</summary>
+        internal static bool IsEditingRange => isEditingRange;
+
+        /// <summary>Which bound the range editor is on: true = minimum, false = maximum.</summary>
+        internal static bool EditingMinimum => editingMinimum;
+
+        /// <summary>The range editor's working value; nothing reaches the group until Enter confirms.</summary>
+        internal static FloatRange EditingRange => editingRange;
+
+        /// <summary>The open control group, or null while inactive.</summary>
+        internal static MechanitorControlGroup Group => controlGroup;
+
         /// <summary>
-        /// Gets the MechanitorControlGroup from a MechanitorControlGroupGizmo via reflection.
+        /// The gizmo this view was opened from, for the command-bar focus ring. A stale snapshot from
+        /// an older GetGizmos enumeration is enough, since GizmoRectRegistry falls back to vanilla's
+        /// GroupsWith, which matches on the control group.
         /// </summary>
+        internal static Gizmo SourceGizmo => sourceGizmo;
+
         public static MechanitorControlGroup GetControlGroupFromGizmo(Gizmo gizmo)
         {
             if (controlGroupField == null)
@@ -66,9 +65,6 @@ namespace RimWorldAccess
             return controlGroupField?.GetValue(gizmo) as MechanitorControlGroup;
         }
 
-        /// <summary>
-        /// Gets merged control groups from a MechanitorControlGroupGizmo via reflection.
-        /// </summary>
         private static List<MechanitorControlGroup> GetMergedGroupsFromGizmo(Gizmo gizmo)
         {
             if (mergedGroupsField == null)
@@ -80,9 +76,10 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Opens the control group detail view starting on the Settings page.
+        /// Opens the detail view on the Settings area. The scope's first-focus hook speaks the header
+        /// and landing row once the windowless mirror has pushed it.
         /// </summary>
-        public static void Open(MechanitorControlGroup group)
+        public static void Open(MechanitorControlGroup group, Gizmo gizmo = null)
         {
             if (group == null)
             {
@@ -91,360 +88,132 @@ namespace RimWorldAccess
             }
 
             controlGroup = group;
+            sourceGizmo = gizmo;
             isActive = true;
-            currentPage = Page.Settings;
-            settingsSelectedIndex = 0;
-            membersSelectedIndex = 0;
             isEditingRange = false;
-            settingsTypeahead.ClearSearch();
-            membersTypeahead.ClearSearch();
-
-            BuildSettingsItems();
-            BuildMembersList();
-
-            string groupLabel = "ControlGroup".Translate() + " " + controlGroup.Index;
-            TolkHelper.Speak("RimWorldAccess.Biotech.Mech.GroupSettingsHeader".Loc(groupLabel));
-            AnnounceCurrentItem();
+            RefreshMembers();
         }
 
-        /// <summary>
-        /// Closes the state and reopens gizmo navigation.
-        /// </summary>
+        /// <summary>Closes the state and returns the cursor to the gizmo bar.</summary>
         public static void Close()
         {
-            isActive = false;
-            isEditingRange = false;
-            controlGroup = null;
-            settingsItems.Clear();
-            memberMechs.Clear();
-            settingsTypeahead.ClearSearch();
-            membersTypeahead.ClearSearch();
-
-            // Reopen gizmo navigation so the user returns to the gizmo bar
+            ClearWithoutGizmoReturn();
             GizmoNavigationState.Open();
         }
 
-        /// <summary>
-        /// Handles all keyboard input for the control group state.
-        /// </summary>
-        /// <returns>True if input was handled.</returns>
-        public static bool HandleInput()
+        /// <summary>Escape from browse mode: close and say so.</summary>
+        internal static void CloseAndAnnounce()
         {
-            if (!isActive || controlGroup == null)
-                return false;
-
-            // Let float menus take priority (work mode selection, reassignment)
-            if (WindowlessFloatMenuState.IsActive)
-                return false;
-
-            if (Event.current.type != EventType.KeyDown)
-                return false;
-
-            KeyCode key = Event.current.keyCode;
-            bool shift = Event.current.shift;
-            bool ctrl = Event.current.control;
-            bool alt = KeyboardHelper.IsAltHeld;
-
-            // Range editor sub-state takes priority
-            if (isEditingRange)
-                return HandleRangeEditorInput(key, shift);
-
-            // Tab / Shift+Tab: switch pages
-            if (key == KeyCode.Tab && !ctrl && !alt)
-            {
-                SwitchPage(!shift);
-                Event.current.Use();
-                return true;
-            }
-
-            // Home - jump to first
-            if (key == KeyCode.Home && !ctrl && !alt)
-            {
-                JumpToFirst();
-                Event.current.Use();
-                return true;
-            }
-
-            // End - jump to last
-            if (key == KeyCode.End && !ctrl && !alt)
-            {
-                JumpToLast();
-                Event.current.Use();
-                return true;
-            }
-
-            // Escape
-            if (key == KeyCode.Escape)
-            {
-                var typeahead = GetCurrentTypeahead();
-                if (typeahead.HasActiveSearch)
-                {
-                    typeahead.ClearSearchAndAnnounce();
-                    AnnounceCurrentItem();
-                    Event.current.Use();
-                    return true;
-                }
-                Close();
-                TolkHelper.Speak("RimWorldAccess.Biotech.Mech.GroupClosed".Loc());
-                Event.current.Use();
-                return true;
-            }
-
-            // Up arrow
-            if (key == KeyCode.UpArrow)
-            {
-                NavigateUp();
-                Event.current.Use();
-                return true;
-            }
-
-            // Down arrow
-            if (key == KeyCode.DownArrow)
-            {
-                NavigateDown();
-                Event.current.Use();
-                return true;
-            }
-
-            // Enter - execute current item
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                ExecuteSelected();
-                Event.current.Use();
-                return true;
-            }
-
-            // ] key - reassign mech (members page only)
-            if (key == KeyCode.RightBracket && currentPage == Page.Members)
-            {
-                OpenReassignMenu();
-                Event.current.Use();
-                return true;
-            }
-
-            // Backspace for search
-            if (key == KeyCode.Backspace)
-            {
-                var typeahead = GetCurrentTypeahead();
-                if (typeahead.HasActiveSearch)
-                {
-                    var labels = GetCurrentLabels();
-                    if (typeahead.ProcessBackspace(labels, out int newIndex))
-                    {
-                        if (newIndex >= 0)
-                            SetCurrentIndex(newIndex);
-                        AnnounceWithSearch();
-                    }
-                    Event.current.Use();
-                    return true;
-                }
-                return false;
-            }
-
-            // Typeahead characters
-            bool isLetter = key >= KeyCode.A && key <= KeyCode.Z;
-            bool isNumber = key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9;
-
-            if ((isLetter || isNumber) && !alt)
-            {
-                Event.current.Use();
-                return true;
-            }
-
-            return false;
+            Close();
+            TolkHelper.Speak("RimWorldAccess.Biotech.Mech.GroupClosed".Loc());
         }
 
         /// <summary>
-        /// Public entry point for the unified typeahead dispatcher.
+        /// Silent hard reset for a session boundary. Unlike <see cref="Close"/> it does NOT reopen
+        /// gizmo navigation, which would be wrong during a game-start or main-menu reset where there
+        /// is no gizmo bar to return to.
         /// </summary>
-        public static void HandleTypeahead(char c)
+        internal static void ResetHard()
         {
-            if (!IsActive) return;
-            var typeahead = GetCurrentTypeahead();
-            var labels = GetCurrentLabels();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    SetCurrentIndex(newIndex);
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
+            ClearWithoutGizmoReturn();
         }
 
-        // ========== Page Switching ==========
-
-        private static void SwitchPage(bool forward)
+        /// <summary>
+        /// Drops every field without returning to the gizmo bar, which the jump-to-mech and select-all
+        /// paths need: both hand the selection to the map, so returning to the OLD selection's gizmo
+        /// bar would be wrong.
+        /// </summary>
+        private static void ClearWithoutGizmoReturn()
         {
-            var typeahead = GetCurrentTypeahead();
-            typeahead.ClearSearch();
-
-            currentPage = (currentPage == Page.Settings) ? Page.Members : Page.Settings;
-
-            if (currentPage == Page.Members)
-            {
-                BuildMembersList();
-                if (memberMechs.Count == 0)
-                {
-                    TolkHelper.SpeakData("RimWorldAccess.Biotech.Mech.Members".Translate() + ". " + "NoMechs".Translate());
-                    return;
-                }
-                TolkHelper.Speak("RimWorldAccess.Biotech.Mech.Members".Loc());
-            }
-            else
-            {
-                BuildSettingsItems();
-                TolkHelper.Speak("RimWorldAccess.Biotech.Mech.Settings".Loc());
-            }
-
-            AnnounceCurrentItem();
-        }
-
-        // ========== Navigation ==========
-
-        private static void NavigateUp()
-        {
-            var typeahead = GetCurrentTypeahead();
-            int count = GetCurrentCount();
-            if (count == 0) return;
-
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                int prevIndex = typeahead.GetPreviousMatch(GetCurrentIndex());
-                if (prevIndex >= 0)
-                {
-                    SetCurrentIndex(prevIndex);
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                int newIndex = MenuHelper.SelectPrevious(GetCurrentIndex(), count);
-                SetCurrentIndex(newIndex);
-                AnnounceCurrentItem();
-            }
-        }
-
-        private static void NavigateDown()
-        {
-            var typeahead = GetCurrentTypeahead();
-            int count = GetCurrentCount();
-            if (count == 0) return;
-
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                int nextIndex = typeahead.GetNextMatch(GetCurrentIndex());
-                if (nextIndex >= 0)
-                {
-                    SetCurrentIndex(nextIndex);
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                int newIndex = MenuHelper.SelectNext(GetCurrentIndex(), count);
-                SetCurrentIndex(newIndex);
-                AnnounceCurrentItem();
-            }
-        }
-
-        private static void JumpToFirst()
-        {
-            int count = GetCurrentCount();
-            if (count == 0) return;
-
-            var typeahead = GetCurrentTypeahead();
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                int firstMatch = typeahead.GetFirstMatch();
-                if (firstMatch >= 0) SetCurrentIndex(firstMatch);
-                AnnounceWithSearch();
-                return;
-            }
-
-            typeahead.ClearSearch();
-            SetCurrentIndex(MenuHelper.JumpToFirst());
-            AnnounceCurrentItem();
-        }
-
-        private static void JumpToLast()
-        {
-            int count = GetCurrentCount();
-            if (count == 0) return;
-
-            var typeahead = GetCurrentTypeahead();
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                int lastMatch = typeahead.GetLastMatch();
-                if (lastMatch >= 0) SetCurrentIndex(lastMatch);
-                AnnounceWithSearch();
-                return;
-            }
-
-            typeahead.ClearSearch();
-            SetCurrentIndex(MenuHelper.JumpToLast(count));
-            AnnounceCurrentItem();
-        }
-
-        // ========== Execution ==========
-
-        private static void ExecuteSelected()
-        {
-            if (currentPage == Page.Settings)
-                ExecuteSettingsItem();
-            else
-                ExecuteMembersItem();
-        }
-
-        private static void ExecuteSettingsItem()
-        {
-            if (settingsSelectedIndex < 0 || settingsSelectedIndex >= settingsItems.Count)
-                return;
-
-            var item = settingsItems[settingsSelectedIndex];
-
-            switch (item.Type)
-            {
-                case SettingsItemType.WorkMode:
-                    OpenWorkModeMenu();
-                    break;
-
-                case SettingsItemType.RechargeRange:
-                    OpenRangeEditor();
-                    break;
-
-                case SettingsItemType.SelectAll:
-                    SelectAllMechs();
-                    break;
-            }
-        }
-
-        private static void ExecuteMembersItem()
-        {
-            if (membersSelectedIndex < 0 || membersSelectedIndex >= memberMechs.Count)
-                return;
-
-            Pawn mech = memberMechs[membersSelectedIndex];
             isActive = false;
             isEditingRange = false;
             controlGroup = null;
-            settingsItems.Clear();
+            sourceGizmo = null;
             memberMechs.Clear();
-            settingsTypeahead.ClearSearch();
-            membersTypeahead.ClearSearch();
+        }
+
+        /// <summary>The header fragment, matching the group's own vanilla label.</summary>
+        internal static string GroupLabel()
+        {
+            if (controlGroup == null)
+                return "";
+            return "ControlGroup".Translate() + " " + controlGroup.Index;
+        }
+
+        /// <summary>Vanilla's own "Select all mechs" command label, with the group's mech count when it has any.</summary>
+        internal static string SelectAllLabel()
+        {
+            string label = "CommandSelectAllMechs".Translate();
+            int mechCount = controlGroup != null ? controlGroup.MechsForReading.Count : 0;
+            if (mechCount > 0)
+                label += $" ({mechCount})";
+            return label;
+        }
+
+        internal static int MemberCount => memberMechs.Count;
+
+        internal static Pawn MemberAt(int index)
+        {
+            return (index >= 0 && index < memberMechs.Count) ? memberMechs[index] : null;
+        }
+
+        /// <summary>Re-reads the group's mech list (called from the scope's own content refresh).</summary>
+        internal static void RefreshMembers()
+        {
+            memberMechs.Clear();
+            if (controlGroup != null)
+            {
+                memberMechs.AddRange(controlGroup.MechsForReading);
+            }
+        }
+
+        /// <summary>
+        /// One mech row's supplementary status: its energy readout plus an uncontrolled marker when
+        /// the mechanitor cannot currently control it. The row's label is the mech's name.
+        /// </summary>
+        internal static string MemberStatus(Pawn mech)
+        {
+            if (mech == null)
+                return "";
+            var parts = new List<string>();
+            if (mech.needs?.energy != null)
+            {
+                parts.Add("RimWorldAccess.Biotech.Mech.MechEnergy".Translate(
+                    FormatPercent(mech.needs.energy.CurLevelPercentage),
+                    "EnergyLower".Translate()).ToString());
+            }
+            if (controlGroup != null && !controlGroup.Tracker.ControlledPawns.Contains(mech))
+            {
+                parts.Add("RimWorldAccess.Biotech.Mech.Uncontrolled".Translate().ToString());
+            }
+            return string.Join(". ", parts.ToArray());
+        }
+
+        /// <summary>
+        /// Leaves the detail view and hands the mech to the map. No gizmo-bar return: the selection
+        /// is now the mech itself.
+        /// </summary>
+        internal static void JumpToMember(int index)
+        {
+            Pawn mech = MemberAt(index);
+            if (mech == null)
+                return;
+
+            ClearWithoutGizmoReturn();
 
             CameraJumper.TryJumpAndSelect(mech);
             MapNavigationState.SpeakJumpedTo(mech.LabelCap);
         }
 
-        // ========== Work Mode Menu ==========
-
-        private static void OpenWorkModeMenu()
+        /// <summary>
+        /// Vanilla's own work-mode options, the same ones its right-click menu shows, each wrapped
+        /// only to re-announce afterwards: the option's own action does the work.
+        /// </summary>
+        internal static void OpenWorkModeMenu()
         {
+            if (controlGroup == null)
+                return;
+
             var options = MechanitorControlGroupGizmo.GetWorkModeOptions(controlGroup).ToList();
             if (options.Count == 0)
             {
@@ -452,7 +221,6 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Wrap each option's action to rebuild our settings after selection
             var wrappedOptions = new List<FloatMenuOption>();
             foreach (var opt in options)
             {
@@ -461,10 +229,8 @@ namespace RimWorldAccess
                 wrappedOptions.Add(new FloatMenuOption(label, delegate
                 {
                     originalAction?.Invoke();
-                    // Rebuild settings to reflect the change
                     if (isActive)
                     {
-                        BuildSettingsItems();
                         TolkHelper.Speak("RimWorldAccess.Biotech.Mech.WorkModeSet".Loc(controlGroup.WorkMode.LabelCap));
                     }
                 }, opt.iconThing, opt.iconColor)
@@ -476,117 +242,28 @@ namespace RimWorldAccess
             WindowlessFloatMenuState.Open(wrappedOptions, false);
         }
 
-        // ========== Recharge Range Editor ==========
-
-        private static void OpenRangeEditor()
+        /// <summary>
+        /// Opens the inline range editor on the minimum bound. The scope announces the focused bound;
+        /// nothing reaches the group until <see cref="RangeConfirm"/>.
+        /// </summary>
+        internal static void OpenRangeEditor()
         {
+            if (controlGroup == null)
+                return;
             isEditingRange = true;
-            rangeSelectedOption = 0;
-            originalRange = controlGroup.mechRechargeThresholds;
+            editingMinimum = true;
             editingRange = controlGroup.mechRechargeThresholds;
-
-            AnnounceRangeSelection();
         }
 
-        private static void CloseRangeEditor(bool save)
+        /// <summary>
+        /// Vanilla's own select-all behaviour, one Selector.Select per mech. Leaves the detail view
+        /// first, since the selection it builds replaces the one the view was opened from.
+        /// </summary>
+        internal static void SelectAllMechs()
         {
-            if (save)
-            {
-                controlGroup.mechRechargeThresholds = editingRange;
-                BuildSettingsItems();
-                TolkHelper.Speak("RimWorldAccess.Biotech.Mech.RangeSaved".Loc(
-                    FormatPercent(editingRange.min), FormatPercent(editingRange.max)));
-            }
-            else
-            {
-                TolkHelper.Speak("RimWorldAccess.Biotech.Mech.RangeCancelled".Loc());
-            }
+            if (controlGroup == null)
+                return;
 
-            isEditingRange = false;
-        }
-
-        private static bool HandleRangeEditorInput(KeyCode key, bool shift)
-        {
-            // Up/Down: toggle min/max
-            if (key == KeyCode.UpArrow || key == KeyCode.DownArrow)
-            {
-                rangeSelectedOption = (rangeSelectedOption == 0) ? 1 : 0;
-                AnnounceRangeSelection();
-                Event.current.Use();
-                return true;
-            }
-
-            // Right: increase value
-            if (key == KeyCode.RightArrow)
-            {
-                float step = shift ? 0.01f : 0.05f;
-                AdjustRangeValue(1, step);
-                Event.current.Use();
-                return true;
-            }
-
-            // Left: decrease value
-            if (key == KeyCode.LeftArrow)
-            {
-                float step = shift ? 0.01f : 0.05f;
-                AdjustRangeValue(-1, step);
-                Event.current.Use();
-                return true;
-            }
-
-            // Enter: confirm
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                CloseRangeEditor(save: true);
-                Event.current.Use();
-                return true;
-            }
-
-            // Escape: cancel
-            if (key == KeyCode.Escape)
-            {
-                CloseRangeEditor(save: false);
-                Event.current.Use();
-                return true;
-            }
-
-            // Consume other keys to prevent bleed-through
-            Event.current.Use();
-            return true;
-        }
-
-        private static void AdjustRangeValue(int direction, float step)
-        {
-            float adjustment = step * direction;
-
-            if (rangeSelectedOption == 0) // Min
-            {
-                float newMin = Mathf.Clamp(editingRange.min + adjustment, 0f, editingRange.max);
-                editingRange.min = Mathf.Round(newMin * 100f) / 100f;
-            }
-            else // Max
-            {
-                float newMax = Mathf.Clamp(editingRange.max + adjustment, editingRange.min, 1f);
-                editingRange.max = Mathf.Round(newMax * 100f) / 100f;
-            }
-
-            AnnounceRangeSelection();
-        }
-
-        private static void AnnounceRangeSelection()
-        {
-            string optionName = rangeSelectedOption == 0
-                ? "RimWorldAccess.Biotech.Mech.RangeMinimum".Translate().ToString()
-                : "RimWorldAccess.Biotech.Mech.RangeMaximum".Translate().ToString();
-            float value = rangeSelectedOption == 0 ? editingRange.min : editingRange.max;
-            TolkHelper.Speak("RimWorldAccess.Biotech.Mech.RangeSelection".Loc(
-                optionName, FormatPercent(value), FormatPercent(editingRange.min), FormatPercent(editingRange.max)));
-        }
-
-        // ========== Select All Mechs ==========
-
-        private static void SelectAllMechs()
-        {
             var mechs = controlGroup.MechsForReading;
             if (mechs.Count == 0)
             {
@@ -594,34 +271,31 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Close state before changing selection
-            isActive = false;
-            isEditingRange = false;
-            controlGroup = null;
-            settingsItems.Clear();
-            memberMechs.Clear();
-            settingsTypeahead.ClearSearch();
-            membersTypeahead.ClearSearch();
+            // Snapshot before the state is cleared: MechsForReading belongs to the group.
+            var selection = new List<Pawn>(mechs);
+            ClearWithoutGizmoReturn();
 
             Find.Selector.ClearSelection();
-            foreach (var mech in mechs)
+            foreach (var mech in selection)
             {
-                Find.Selector.Select(mech, playSound: false, forceDesignatorDeselect: false);
+                Find.Selector.Select(mech, forceDesignatorDeselect: false);
             }
 
-            TolkHelper.Speak(mechs.Count == 1
-                ? "RimWorldAccess.Biotech.Mech.SelectedMechOne".Loc(mechs.Count)
-                : "RimWorldAccess.Biotech.Mech.SelectedMechMany".Loc(mechs.Count));
+            TolkHelper.Speak(selection.Count == 1
+                ? "RimWorldAccess.Biotech.Mech.SelectedMechOne".Loc(selection.Count)
+                : "RimWorldAccess.Biotech.Mech.SelectedMechMany".Loc(selection.Count));
         }
 
-        // ========== Reassignment ==========
-
-        private static void OpenReassignMenu()
+        /// <summary>
+        /// The reassignment picker for one member row: one option per other control group, each
+        /// riding that group's own <c>Assign</c>.
+        /// </summary>
+        internal static void OpenReassignMenu(int index)
         {
-            if (membersSelectedIndex < 0 || membersSelectedIndex >= memberMechs.Count)
+            Pawn selectedMech = MemberAt(index);
+            if (selectedMech == null || controlGroup == null)
                 return;
 
-            Pawn selectedMech = memberMechs[membersSelectedIndex];
             var tracker = controlGroup.Tracker;
             var allGroups = tracker.controlGroups;
 
@@ -648,10 +322,7 @@ namespace RimWorldAccess
 
                     if (isActive)
                     {
-                        BuildMembersList();
-                        // Clamp index after the list shrank
-                        if (membersSelectedIndex >= memberMechs.Count)
-                            membersSelectedIndex = Mathf.Max(0, memberMechs.Count - 1);
+                        RefreshMembers();
 
                         string announcement = "RimWorldAccess.Biotech.Mech.AssignedToGroup".Translate(
                             selectedMech.LabelCap, "ControlGroup".Translate(), groupIndex);
@@ -662,7 +333,7 @@ namespace RimWorldAccess
                         TolkHelper.SpeakData(announcement);
 
                         if (memberMechs.Count > 0)
-                            AnnounceCurrentItem();
+                            Shell.MechControlGroupScope.Live?.AnnounceCurrentRow();
                     }
                 }));
             }
@@ -670,148 +341,68 @@ namespace RimWorldAccess
             WindowlessFloatMenuState.Open(options, false);
         }
 
-        // ========== Data Building ==========
-
-        private static void BuildSettingsItems()
+        /// <summary>Toggles between the min and max bound. Silent — the scope announces the new bound.</summary>
+        internal static void RangeToggleBound()
         {
-            settingsItems.Clear();
-
-            // Work mode
-            settingsItems.Add(new SettingsItem
-            {
-                Type = SettingsItemType.WorkMode,
-                Label = "CurrentMechWorkMode".Translate() + ": " + controlGroup.WorkMode.LabelCap,
-                Description = controlGroup.WorkMode.description
-            });
-
-            // Recharge range
-            var range = controlGroup.mechRechargeThresholds;
-            settingsItems.Add(new SettingsItem
-            {
-                Type = SettingsItemType.RechargeRange,
-                Label = "MechRechargeSettingsTitle".Translate()
-                    + ": " + "RimWorldAccess.Mechs.PercentRange".Translate(FormatPercent(range.min), FormatPercent(range.max)),
-                Description = "MechRechargeSettingsExplanation".Translate()
-            });
-
-            // Select all mechs
-            int mechCount = controlGroup.MechsForReading.Count;
-            string selectLabel = "CommandSelectAllMechs".Translate();
-            if (mechCount > 0)
-                selectLabel += $" ({mechCount})";
-            settingsItems.Add(new SettingsItem
-            {
-                Type = SettingsItemType.SelectAll,
-                Label = selectLabel,
-                Description = "CommandSelectAllMechsDesc".Translate()
-            });
+            editingMinimum = !editingMinimum;
         }
-
-        private static void BuildMembersList()
-        {
-            memberMechs.Clear();
-            if (controlGroup != null)
-            {
-                memberMechs.AddRange(controlGroup.MechsForReading);
-            }
-        }
-
-        // ========== Announcement ==========
-
-        private static void AnnounceCurrentItem()
-        {
-            int count = GetCurrentCount();
-            if (count == 0) return;
-
-            int index = GetCurrentIndex();
-            if (index < 0 || index >= count) return;
-
-            string label = GetItemLabel(index);
-            string description = GetItemDescription(index);
-            string position = MenuHelper.FormatPosition(index, count);
-
-            string announcement = label;
-            if (!string.IsNullOrEmpty(description))
-                announcement += ". " + description;
-            if (!string.IsNullOrEmpty(position))
-                announcement += ". " + position;
-
-            TolkHelper.SpeakData(announcement);
-        }
-
-        private static void AnnounceWithSearch()
-        {
-            int count = GetCurrentCount();
-            if (count == 0) return;
-
-            int index = GetCurrentIndex();
-            if (index < 0 || index >= count) return;
-
-            var typeahead = GetCurrentTypeahead();
-            string label = GetItemLabel(index);
-
-            if (typeahead.HasActiveSearch)
-            {
-                TolkHelper.SpeakData(typeahead.BuildItemAnnouncement(label));
-            }
-            else
-            {
-                AnnounceCurrentItem();
-            }
-        }
-
-        private static string GetItemLabel(int index)
-        {
-            if (currentPage == Page.Settings)
-            {
-                if (index >= 0 && index < settingsItems.Count)
-                    return settingsItems[index].Label;
-                return "";
-            }
-            else
-            {
-                if (index >= 0 && index < memberMechs.Count)
-                    return GetMechLabel(memberMechs[index]);
-                return "";
-            }
-        }
-
-        private static string GetItemDescription(int index)
-        {
-            if (currentPage == Page.Settings)
-            {
-                if (index >= 0 && index < settingsItems.Count)
-                    return settingsItems[index].Description ?? "";
-                return "";
-            }
-            // Members page doesn't have item-level descriptions
-            return "";
-        }
-
-        private static string GetMechLabel(Pawn mech)
-        {
-            string label = mech.LabelCap;
-
-            if (mech.needs?.energy != null)
-            {
-                label += ", " + FormatPercent(mech.needs.energy.CurLevelPercentage) + " " + "EnergyLower".Translate();
-            }
-
-            // Check if uncontrolled (not in controlled pawns list)
-            if (controlGroup != null
-                && !controlGroup.Tracker.ControlledPawns.Contains(mech))
-            {
-                label += ", " + "RimWorldAccess.Biotech.Mech.Uncontrolled".Translate();
-            }
-
-            return label;
-        }
-
-        // ========== Gizmo Label Helpers (used by GizmoNavigationState) ==========
 
         /// <summary>
-        /// Gets the accessible label for a MechanitorControlGroupGizmo.
+        /// Steps the focused bound by 0.01 with Shift and 0.05 otherwise, clamped against the other
+        /// bound. Silent — the scope announces the new value.
         /// </summary>
+        internal static void RangeAdjust(int direction, bool shiftHeld)
+        {
+            float adjustment = (shiftHeld ? 0.01f : 0.05f) * direction;
+
+            if (editingMinimum)
+            {
+                float newMin = Mathf.Clamp(editingRange.min + adjustment, 0f, editingRange.max);
+                editingRange.min = Mathf.Round(newMin * 100f) / 100f;
+            }
+            else
+            {
+                float newMax = Mathf.Clamp(editingRange.max + adjustment, editingRange.min, 1f);
+                editingRange.max = Mathf.Round(newMax * 100f) / 100f;
+            }
+        }
+
+        /// <summary>
+        /// Resets both bounds to vanilla's default, mirroring Dialog_RechargeSettings' Reset button:
+        /// it rewrites only the working value, so Enter or Escape still confirm or discard it.
+        /// </summary>
+        internal static void RangeReset()
+        {
+            editingRange = MechanitorControlGroup.DefaultMechRechargeThresholds;
+            TolkHelper.Speak("RimWorldAccess.Biotech.Mech.RangeReset".Loc(
+                FormatPercent(editingRange.min), FormatPercent(editingRange.max)));
+        }
+
+        internal static void RangeConfirm() => CloseRangeEditor(save: true);
+
+        internal static void RangeCancel() => CloseRangeEditor(save: false);
+
+        private static void CloseRangeEditor(bool save)
+        {
+            if (save && controlGroup != null)
+            {
+                // MUTATION-C: mirrors Dialog_RechargeSettings' own OK button, which assigns
+                // the working range straight onto controlGroup.mechRechargeThresholds
+                // (decompiled Verse/Dialog_RechargeSettings.cs, the OK ButtonText branch);
+                // no gated setter exists for that field.
+                controlGroup.mechRechargeThresholds = editingRange;
+                TolkHelper.Speak("RimWorldAccess.Biotech.Mech.RangeSaved".Loc(
+                    FormatPercent(editingRange.min), FormatPercent(editingRange.max)));
+            }
+            else
+            {
+                TolkHelper.Speak("RimWorldAccess.Biotech.Mech.RangeCancelled".Loc());
+            }
+
+            isEditingRange = false;
+        }
+
+        /// <summary>The accessible label for a MechanitorControlGroupGizmo, merged groups included.</summary>
         public static string GetGizmoLabel(Gizmo gizmo)
         {
             var group = GetControlGroupFromGizmo(gizmo);
@@ -823,7 +414,6 @@ namespace RimWorldAccess
 
             if (mergedGroups != null && mergedGroups.Count > 0)
             {
-                // Merged empty groups: "Control groups 1, 2, no mechs"
                 string indices = group.Index.ToString();
                 var sorted = mergedGroups.OrderBy(g => g.Index).ToList();
                 foreach (var mg in sorted)
@@ -843,7 +433,6 @@ namespace RimWorldAccess
             }
             else
             {
-                // Single group: "Control group 1, Work, 3 mechs"
                 string label = "ControlGroup".Translate() + " " + group.Index;
                 label += ", " + group.WorkMode.LabelCap;
 
@@ -858,10 +447,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the status value for a MechanitorControlGroupGizmo.
-        /// Groups mechs by type with count and average energy.
-        /// </summary>
+        /// <summary>The gizmo's status value: mechs grouped by type, with count and average energy.</summary>
         public static string GetGizmoStatus(Gizmo gizmo)
         {
             var group = GetControlGroupFromGizmo(gizmo);
@@ -872,7 +458,6 @@ namespace RimWorldAccess
             if (mechs.Count == 0)
                 return "";
 
-            // Group mechs by kindDef
             var grouped = new Dictionary<PawnKindDef, List<Pawn>>();
             foreach (var mech in mechs)
             {
@@ -887,7 +472,6 @@ namespace RimWorldAccess
                 string typeName = kvp.Key.LabelCap;
                 int count = kvp.Value.Count;
 
-                // Calculate average energy
                 float totalEnergy = 0f;
                 int energyCount = 0;
                 foreach (var mech in kvp.Value)
@@ -912,45 +496,14 @@ namespace RimWorldAccess
             return string.Join(". ", entries);
         }
 
-        // ========== Helper Methods ==========
-
-        private static TypeaheadSearchHelper GetCurrentTypeahead()
+        /// <summary>The recharge row's spoken value, also used for the range editor's working range.</summary>
+        internal static string FormatRange(FloatRange range)
         {
-            return currentPage == Page.Settings ? settingsTypeahead : membersTypeahead;
+            return "RimWorldAccess.Mechs.PercentRange".Translate(
+                FormatPercent(range.min), FormatPercent(range.max)).ToString();
         }
 
-        private static int GetCurrentCount()
-        {
-            return currentPage == Page.Settings ? settingsItems.Count : memberMechs.Count;
-        }
-
-        private static int GetCurrentIndex()
-        {
-            return currentPage == Page.Settings ? settingsSelectedIndex : membersSelectedIndex;
-        }
-
-        private static void SetCurrentIndex(int index)
-        {
-            if (currentPage == Page.Settings)
-                settingsSelectedIndex = index;
-            else
-                membersSelectedIndex = index;
-        }
-
-        private static List<string> GetCurrentLabels()
-        {
-            var labels = new List<string>();
-            int count = GetCurrentCount();
-
-            for (int i = 0; i < count; i++)
-            {
-                labels.Add(GetItemLabel(i));
-            }
-
-            return labels;
-        }
-
-        private static string FormatPercent(float value)
+        internal static string FormatPercent(float value)
         {
             return Mathf.RoundToInt(value * 100f) + "%";
         }

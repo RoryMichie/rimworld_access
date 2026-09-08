@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.TransportPods.Loading.CaravanMass>{0}: {1} de {2} kg</RimWorldAccess.TransportPods.Loading.CaravanMass>
+  <RimWorldAccess.TransportPods.Loading.CaravanMassOverloaded>{0}: {1} de {2} kg - SOBRECARGADA</RimWorldAccess.TransportPods.Loading.CaravanMassOverloaded>
+  <RimWorldAccess.Work.Table.CopyPasteUnavailable>{0} no puede tener prioridades de trabajo copiadas ni pegadas.</RimWorldAccess.Work.Table.CopyPasteUnavailable>
+</LanguageData>

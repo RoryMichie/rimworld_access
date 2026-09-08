@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Autopilot.Engage.Label>Атаковать цель</RimWorldAccess.Autopilot.Engage.Label>
+  <RimWorldAccess.Autopilot.Engage.Desc>Приказывает {0} атаковать выбранную цель. Персонаж идёт к цели и атакует её согласно назначенному правилу боя, отбиваясь от врагов, нападающих по пути.</RimWorldAccess.Autopilot.Engage.Desc>
+  <RimWorldAccess.Autopilot.Engage.CurrentOrders>Текущие приказы: {0}.</RimWorldAccess.Autopilot.Engage.CurrentOrders>
+  <RimWorldAccess.Autopilot.Patrol.Label>Патруль: {0}</RimWorldAccess.Autopilot.Patrol.Label>
+  <RimWorldAccess.Autopilot.Patrol.Desc>Приказывает {0} обходить выбранную зону, останавливаясь для боя с любым врагом в радиусе поражения.</RimWorldAccess.Autopilot.Patrol.Desc>
+  <RimWorldAccess.Autopilot.Patrol.NoneOption>Без патруля</RimWorldAccess.Autopilot.Patrol.NoneOption>
+  <RimWorldAccess.Autopilot.PatrolAssigned>{0}: патруль — {1}.</RimWorldAccess.Autopilot.PatrolAssigned>
+  <RimWorldAccess.Autopilot.PatrolCleared>{0}: патруль отменён.</RimWorldAccess.Autopilot.PatrolCleared>
+  <RimWorldAccess.Autopilot.SeekDestroy.Label>Найти и уничтожить</RimWorldAccess.Autopilot.SeekDestroy.Label>
+  <RimWorldAccess.Autopilot.SeekDestroy.Desc>{0} преследует врагов вместо удержания позиции. Отмеченные и приказанные цели в приоритете.</RimWorldAccess.Autopilot.SeekDestroy.Desc>
+  <RimWorldAccess.Autopilot.PickerLabel>Правило боя: {0}</RimWorldAccess.Autopilot.PickerLabel>
+  <RimWorldAccess.Autopilot.PickerDesc>Правило боя, по которому сражается {0}.</RimWorldAccess.Autopilot.PickerDesc>
+  <RimWorldAccess.Autopilot.HuntAnimals.Label>Охотиться на животных</RimWorldAccess.Autopilot.HuntAnimals.Label>
+  <RimWorldAccess.Autopilot.HuntAnimals.Desc>{0} охотится на диких животных, пока мобилизован. Враги всегда в приоритете. Правило охоты {0} определяет, на каких животных можно охотиться.</RimWorldAccess.Autopilot.HuntAnimals.Desc>
+  <RimWorldAccess.Autopilot.AutocastAll.Label>Автоприменение всех способностей</RimWorldAccess.Autopilot.AutocastAll.Label>
+  <RimWorldAccess.Autopilot.AutocastAll.Desc>Отмечает все способности {0} для автоматического применения, пока он мобилизован. Каждую способность можно также отметить или снять отметку в её собственном меню.</RimWorldAccess.Autopilot.AutocastAll.Desc>
+  <RimWorldAccess.Autopilot.Pause.Label>Приостановить боевой автопилот</RimWorldAccess.Autopilot.Pause.Label>
+  <RimWorldAccess.Autopilot.Pause.Desc>Останавливает всё автоматическое боевое поведение {0} и возвращает полный контроль. Правила и приказы сохраняются, но ничего не выполняется, пока флажок не снят. Новый приказ атаковать или патрулировать тоже возобновляет автоматику.</RimWorldAccess.Autopilot.Pause.Desc>
+
+  <RimWorldAccess.Autopilot.TakeCover.Label>Укрываться</RimWorldAccess.Autopilot.TakeCover.Label>
+  <RimWorldAccess.Autopilot.TakeCover.Desc>Стрелки занимают огневые позиции с укрытием. Бойцы ближнего боя это игнорируют.</RimWorldAccess.Autopilot.TakeCover.Desc>
+  <RimWorldAccess.Autopilot.MeleeCharge.Label>Рывок в ближний бой</RimWorldAccess.Autopilot.MeleeCharge.Label>
+  <RimWorldAccess.Autopilot.MeleeCharge.Desc>Бойцы ближнего боя бросаются на далёкие цели. Если выключено, они атакуют только подошедших врагов.</RimWorldAccess.Autopilot.MeleeCharge.Desc>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Label>Преследовать где угодно</RimWorldAccess.Autopilot.PursueAnywhere.Label>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Desc>«Найти и уничтожить» выбирает цели по всей карте и преследует их, как бы далеко они ни убегали. Если выключено, выбираются только видимые враги поблизости. Ничего не делает, пока «Найти и уничтожить» выключено.</RimWorldAccess.Autopilot.PursueAnywhere.Desc>
+  <RimWorldAccess.Autopilot.FightAsSquad.Label>Сражаться отрядом</RimWorldAccess.Autopilot.FightAsSquad.Label>
+  <RimWorldAccess.Autopilot.FightAsSquad.Desc>Согласует действия с ближайшими призванными персонажами, чья политика тоже сражается отрядом: распределяет огонь по группе врагов вместо того, чтобы всем бить по одной цели, и держит клетку дистанции, чтобы шальная пуля или взрыв задели одного, а не толпу.</RimWorldAccess.Autopilot.FightAsSquad.Desc>
+  <RimWorldAccess.Autopilot.BashDoors.Label>Выламывать двери</RimWorldAccess.Autopilot.BashDoors.Label>
+  <RimWorldAccess.Autopilot.BashDoors.Desc>Выламывает запертые или вражеские двери, преграждающие путь к цели.</RimWorldAccess.Autopilot.BashDoors.Desc>
+  <RimWorldAccess.Autopilot.KeepDistance.Label>Держать дистанцию</RimWorldAccess.Autopilot.KeepDistance.Label>
+  <RimWorldAccess.Autopilot.KeepDistance.Desc>Стрелки отходят от бойцов ближнего боя, подошедших слишком близко.</RimWorldAccess.Autopilot.KeepDistance.Desc>
+  <RimWorldAccess.Autopilot.FallBackInjured.Label>Отступать при ранении</RimWorldAccess.Autopilot.FallBackInjured.Label>
+  <RimWorldAccess.Autopilot.FallBackInjured.Desc>При тяжёлом ранении отступает от наседающих врагов, а затем продолжает осторожно сражаться из укрытия на дистанции вместо того, чтобы бросаться в атаку.</RimWorldAccess.Autopilot.FallBackInjured.Desc>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Label>Избегать взрывов</RimWorldAccess.Autopilot.AvoidBlasts.Label>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Desc>Убегает от подожжённой взрывчатки и надвигающихся взрывов.</RimWorldAccess.Autopilot.AvoidBlasts.Desc>
+  <RimWorldAccess.Autopilot.AutocastMarked.Label>Автоприменение отмеченных способностей</RimWorldAccess.Autopilot.AutocastMarked.Label>
+  <RimWorldAccess.Autopilot.AutocastMarked.Desc>Применяет способности, отмеченные персонажем для автоприменения. Отметки определяют какие, этот флажок — применять ли вообще. Если выключено, отметки сохраняются, но игнорируются.</RimWorldAccess.Autopilot.AutocastMarked.Desc>
+
+  <RimWorldAccess.Autopilot.AutocastOption>Автоприменение</RimWorldAccess.Autopilot.AutocastOption>
+  <RimWorldAccess.Autopilot.AutocastOn>автоприменение включено</RimWorldAccess.Autopilot.AutocastOn>
+
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>Включить боевой автопилот</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>Позволяет мобилизованным персонажам сражаться самостоятельно. Добавляет правила боя и охоты и новые кнопки мобилизованным персонажам. При выключении кнопки убираются, а автоматизация останавливается.</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>Роспуск выключает «Найти и уничтожить» и «Охотиться на животных»</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>Снимает флажки «Найти и уничтожить» и «Охотиться на животных» при каждом роспуске персонажа.</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>
+
+  <RimWorldAccess.Autopilot.PolicyTitle>Правила боя</RimWorldAccess.Autopilot.PolicyTitle>
+  <RimWorldAccess.Autopilot.PolicyTip>Создавайте шаблоны, определяющие, как мобилизованные персонажи сражаются самостоятельно, и управляйте ими. Назначайте правила во вкладках «Назначения», «Животные» или «Механоиды»; у транспорта остаётся кнопка правила боя.</RimWorldAccess.Autopilot.PolicyTip>
+  <RimWorldAccess.Autopilot.PolicyName>Правило боя</RimWorldAccess.Autopilot.PolicyName>
+  <RimWorldAccess.Autopilot.ManagePolicies>Управлять правилами боя</RimWorldAccess.Autopilot.ManagePolicies>
+  <RimWorldAccess.Autopilot.Policy.None>Нет</RimWorldAccess.Autopilot.Policy.None>
+  <RimWorldAccess.Autopilot.Policy.None.Tip>Без правила боя. Боевая автоматика для этого персонажа полностью выключена: ни «Найти и уничтожить», ни приказов атаковать, ни автоприменения способностей. Охота на животных и патрулирование — отдельные функции и продолжают работать.</RimWorldAccess.Autopilot.Policy.None.Tip>
+  <RimWorldAccess.Autopilot.PolicyInUse>Правило боя используется: {0}.</RimWorldAccess.Autopilot.PolicyInUse>
+  <RimWorldAccess.Autopilot.Policy.FullControl>Полный контроль</RimWorldAccess.Autopilot.Policy.FullControl>
+  <RimWorldAccess.Autopilot.Policy.FightNearby>Бой поблизости</RimWorldAccess.Autopilot.Policy.FightNearby>
+  <RimWorldAccess.Autopilot.Policy.StaySafe>Беречь себя</RimWorldAccess.Autopilot.Policy.StaySafe>
+
+  <RimWorldAccess.Autopilot.HuntPolicyTitle>Правила охоты</RimWorldAccess.Autopilot.HuntPolicyTitle>
+  <RimWorldAccess.Autopilot.HuntPolicyTip>Создавайте шаблоны, определяющие, на каких животных могут охотиться мобилизованные персонажи: список разрешённых видов, диапазон шанса мести и защита почитаемых животных. Сама охота включается для каждого персонажа кнопкой «Охотиться на животных». Пока персонаж мобилизован, эти правила важнее отметок для охоты.</RimWorldAccess.Autopilot.HuntPolicyTip>
+  <RimWorldAccess.Autopilot.HuntPolicyName>Правило охоты</RimWorldAccess.Autopilot.HuntPolicyName>
+  <RimWorldAccess.Autopilot.ManageHuntPolicies>Управлять правилами охоты</RimWorldAccess.Autopilot.ManageHuntPolicies>
+  <RimWorldAccess.Autopilot.HuntPolicyInUse>Правило охоты используется: {0}.</RimWorldAccess.Autopilot.HuntPolicyInUse>
+  <RimWorldAccess.Autopilot.HuntPolicyIsDefault>Правило охоты по умолчанию нельзя удалить.</RimWorldAccess.Autopilot.HuntPolicyIsDefault>
+  <RimWorldAccess.Autopilot.HuntPolicy.SafeGame>Безопасная дичь</RimWorldAccess.Autopilot.HuntPolicy.SafeGame>
+  <RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>Любое животное</RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>
+  <RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>Разрешённые животные</RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.Desc>Охотиться можно только на животных, чей шанс мести при ранении попадает в этот диапазон.</RimWorldAccess.Autopilot.HuntRevengeRange.Desc>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>Шанс мести при ранении: {0}</RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Label>Щадить почитаемых животных</RimWorldAccess.Autopilot.HuntSpareVenerated.Label>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>Никогда не охотиться на животных, почитаемых идеолигией персонажа.</RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>
+
+  <RimWorldAccess.Autopilot.SummaryPrefix>Включает: {0}.</RimWorldAccess.Autopilot.SummaryPrefix>
+  <RimWorldAccess.Autopilot.SummarySeparator>, </RimWorldAccess.Autopilot.SummarySeparator>
+  <RimWorldAccess.Autopilot.SummaryNothing>Ничего не включает. Персонаж держит позицию и стреляет по готовности.</RimWorldAccess.Autopilot.SummaryNothing>
+
+  <RimWorldAccess.Autopilot.Report.MovingToCover>идёт в укрытие на {0}, {1}.</RimWorldAccess.Autopilot.Report.MovingToCover>
+  <RimWorldAccess.Autopilot.Report.MovingToCoverBehind>идёт в укрытие на {1}, {2}: {0}.</RimWorldAccess.Autopilot.Report.MovingToCoverBehind>
+  <RimWorldAccess.Autopilot.Report.MovingToEngage>идёт на сближение: {0}.</RimWorldAccess.Autopilot.Report.MovingToEngage>
+  <RimWorldAccess.Autopilot.Report.FallingBack>из-за тяжёлых ран отступает к {0}, {1}.</RimWorldAccess.Autopilot.Report.FallingBack>
+  <RimWorldAccess.Autopilot.Report.FleeingBlast>уходит из зоны взрыва: {0}.</RimWorldAccess.Autopilot.Report.FleeingBlast>
+  <RimWorldAccess.Autopilot.Report.BackingAway>отходит от {0}.</RimWorldAccess.Autopilot.Report.BackingAway>
+  <RimWorldAccess.Autopilot.Report.Casting>применяет {0}.</RimWorldAccess.Autopilot.Report.Casting>
+  <RimWorldAccess.Autopilot.Report.CastingOn>применяет {0} на {1}.</RimWorldAccess.Autopilot.Report.CastingOn>
+  <RimWorldAccess.Autopilot.Report.VehicleAdvance>едет на сближение с ближайшим врагом.</RimWorldAccess.Autopilot.Report.VehicleAdvance>
+  <RimWorldAccess.Autopilot.Report.VehicleFiringPosition>едет на огневую позицию.</RimWorldAccess.Autopilot.Report.VehicleFiringPosition>
+  <RimWorldAccess.Autopilot.Report.VehicleHolding>удерживает огневую позицию.</RimWorldAccess.Autopilot.Report.VehicleHolding>
+  <RimWorldAccess.Autopilot.Report.EngagingOrdered>атакует по приказу: {0}.</RimWorldAccess.Autopilot.Report.EngagingOrdered>
+  <RimWorldAccess.Autopilot.Report.EngagingMarked>атакует отмеченную цель: {0}.</RimWorldAccess.Autopilot.Report.EngagingMarked>
+  <RimWorldAccess.Autopilot.Report.ReturningToPost>возвращается на пост в {0}, {1}.</RimWorldAccess.Autopilot.Report.ReturningToPost>
+  <RimWorldAccess.Autopilot.Report.Patrolling>патрулирует: {0}.</RimWorldAccess.Autopilot.Report.Patrolling>
+  <RimWorldAccess.Autopilot.Report.FightingOff>отбивается от {0}.</RimWorldAccess.Autopilot.Report.FightingOff>
+  <RimWorldAccess.Autopilot.Report.HoldingFiring>держит позицию и ведёт огонь.</RimWorldAccess.Autopilot.Report.HoldingFiring>
+  <RimWorldAccess.Autopilot.Report.SpreadingFire>переносит огонь на {0}.</RimWorldAccess.Autopilot.Report.SpreadingFire>
+  <RimWorldAccess.Autopilot.Report.WoundedHolding>ранен, держит позицию.</RimWorldAccess.Autopilot.Report.WoundedHolding>
+
+  <RimWorldAccess.Autopilot.EngageOption>Атаковать: {0}</RimWorldAccess.Autopilot.EngageOption>
+  <RimWorldAccess.Autopilot.EngageOption.Tip>Атакует эту цель, пока она не падёт. От врагов, нападающих по пути, персонаж сначала отбивается.</RimWorldAccess.Autopilot.EngageOption.Tip>
+  <RimWorldAccess.Autopilot.EngagePawnCount>{0} персонажей</RimWorldAccess.Autopilot.EngagePawnCount>
+  <RimWorldAccess.Autopilot.EngageOrdered>{0}: цель — {1}.</RimWorldAccess.Autopilot.EngageOrdered>
+  <RimWorldAccess.Autopilot.EngageQueued>{0}: {1} в очереди.</RimWorldAccess.Autopilot.EngageQueued>
+  <RimWorldAccess.Autopilot.ClearOrders>Отменить приказы атаки</RimWorldAccess.Autopilot.ClearOrders>
+  <RimWorldAccess.Autopilot.OrdersCleared>Приказы атаки отменены.</RimWorldAccess.Autopilot.OrdersCleared>
+
+  <RimWorldAccess.Autopilot.AttackDesignator.Label>отметить для атаки</RimWorldAccess.Autopilot.AttackDesignator.Label>
+  <RimWorldAccess.Autopilot.AttackDesignator.Desc>Отмечает цели, которые персонажи в режиме «Найти и уничтожить» атакуют первыми. Выделение области отмечает только врагов; Shift добавляет существ без фракции, Ctrl и Shift добавляют всех.</RimWorldAccess.Autopilot.AttackDesignator.Desc>
+  <RimWorldAccess.Autopilot.AttackDesignator.MustTarget>Нужно отметить персонажа, которого можно атаковать.</RimWorldAccess.Autopilot.AttackDesignator.MustTarget>
+</LanguageData>

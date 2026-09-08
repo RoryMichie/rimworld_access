@@ -121,10 +121,7 @@
        ========================================================= -->
 
   <!-- Open guards. -->
-  <RimWorldAccess.TransportPods.Loading.NoDialog>No loading dialog available</RimWorldAccess.TransportPods.Loading.NoDialog>
   <RimWorldAccess.TransportPods.Loading.ReflectionFailed>Transport pod loading accessibility unavailable due to game update. Please check for mod updates.</RimWorldAccess.TransportPods.Loading.ReflectionFailed>
-  <RimWorldAccess.TransportPods.Loading.NoPortalDialog>No portal dialog available</RimWorldAccess.TransportPods.Loading.NoPortalDialog>
-  <RimWorldAccess.TransportPods.Loading.PortalReflectionFailed>Portal loading accessibility unavailable due to game update. Please check for mod updates.</RimWorldAccess.TransportPods.Loading.PortalReflectionFailed>
 
   <!-- Entry announcement. One/Many split so translators control pod/pods
        agreement; the pod-noun key is inlined into the sentence so word order
@@ -134,12 +131,8 @@
   <RimWorldAccess.TransportPods.Loading.OpenAnnouncementMany>Load transport pods. {0} pods, {1} kg capacity. Left/Right for tabs, Enter to adjust.</RimWorldAccess.TransportPods.Loading.OpenAnnouncementMany>
 
   <!-- Tab navigation. -->
-  <RimWorldAccess.TransportPods.Loading.TabPawns>Pawns</RimWorldAccess.TransportPods.Loading.TabPawns>
-  <RimWorldAccess.TransportPods.Loading.TabItems>Items</RimWorldAccess.TransportPods.Loading.TabItems>
-  <RimWorldAccess.TransportPods.Loading.ReturnedToTab>Returned to {0} tab</RimWorldAccess.TransportPods.Loading.ReturnedToTab>
 
   <!-- Shared empty-tab feedback (spoken in multiple navigation paths). -->
-  <RimWorldAccess.TransportPods.Loading.NoItemsInTab>No items in this tab</RimWorldAccess.TransportPods.Loading.NoItemsInTab>
 
   <!-- Activation and quantity actions. {0} = item label. -->
   <RimWorldAccess.TransportPods.Loading.ItemChecked>{0} checked</RimWorldAccess.TransportPods.Loading.ItemChecked>
@@ -148,7 +141,6 @@
 
   <!-- Inspect results. -->
   <RimWorldAccess.TransportPods.Loading.NoItemToInspect>No item to inspect</RimWorldAccess.TransportPods.Loading.NoItemToInspect>
-  <RimWorldAccess.TransportPods.Loading.CannotInspectItem>Cannot inspect this item</RimWorldAccess.TransportPods.Loading.CannotInspectItem>
 
   <!-- Delete/remove guard. -->
   <RimWorldAccess.TransportPods.Loading.AlreadyAtZero>Already at zero</RimWorldAccess.TransportPods.Loading.AlreadyAtZero>
@@ -159,20 +151,12 @@
   <!-- Mass summary (Tab key / AnnounceMassSummary).
        Composed from MassLine + one of OverloadedStatus/RemainingStatus.
        {0} = current usage, {1} = capacity, {2} = status clause. -->
-  <RimWorldAccess.TransportPods.Loading.MassSummary>Mass: {0} of {1} kg. {2}</RimWorldAccess.TransportPods.Loading.MassSummary>
-  <RimWorldAccess.TransportPods.Loading.MassOverloaded>OVERLOADED by {0} kg</RimWorldAccess.TransportPods.Loading.MassOverloaded>
-  <RimWorldAccess.TransportPods.Loading.MassRemaining>{0} kg remaining</RimWorldAccess.TransportPods.Loading.MassRemaining>
 
   <!-- Summary view (Tab toggle). Empty/error states come next. -->
-  <RimWorldAccess.TransportPods.Loading.NoSummaryForDialog>No summary available for this dialog</RimWorldAccess.TransportPods.Loading.NoSummaryForDialog>
-  <RimWorldAccess.TransportPods.Loading.SummaryEntry>Summary view. Up/Down navigates stats. Tab to return.</RimWorldAccess.TransportPods.Loading.SummaryEntry>
-  <RimWorldAccess.TransportPods.Loading.SummaryNoData>No data available</RimWorldAccess.TransportPods.Loading.SummaryNoData>
   <RimWorldAccess.TransportPods.Loading.SummaryNoTransporters>No transporters</RimWorldAccess.TransportPods.Loading.SummaryNoTransporters>
   <RimWorldAccess.TransportPods.Loading.SummaryStatsUnavailable>Stats unavailable</RimWorldAccess.TransportPods.Loading.SummaryStatsUnavailable>
-  <RimWorldAccess.TransportPods.Loading.SummaryNoSummary>No summary data</RimWorldAccess.TransportPods.Loading.SummaryNoSummary>
 
   <!-- Summary item format ({item}. {position}). {0} = stat line, {1} = position. -->
-  <RimWorldAccess.TransportPods.Loading.SummaryItemAnnouncement>{0}. {1}</RimWorldAccess.TransportPods.Loading.SummaryItemAnnouncement>
 
   <!-- Stat-breakdown view (Alt+I in summary mode). NoBreakdown is spoken when
        the selected stat has no cached explanation (e.g. Food).
@@ -216,5 +200,8 @@
   <RimWorldAccess.TransportPods.Portal.FallbackEnter>Load portal</RimWorldAccess.TransportPods.Portal.FallbackEnter>
   <RimWorldAccess.TransportPods.Portal.FallbackLoading>Loading</RimWorldAccess.TransportPods.Portal.FallbackLoading>
   <!-- Localization guardrail (D.8) sweep — previously hardcoded English. -->
-  <RimWorldAccess.TransportPods.Loading.TabSummary>{0} tab, {1} items</RimWorldAccess.TransportPods.Loading.TabSummary>
+
+  <!-- Region name for the stats section (screen-model refactor: the old
+       Tab-key Summary view is now a region cycled with Tab/Shift+Tab). -->
+  <RimWorldAccess.TransportPods.Loading.SummaryTab>Summary</RimWorldAccess.TransportPods.Loading.SummaryTab>
 </LanguageData>

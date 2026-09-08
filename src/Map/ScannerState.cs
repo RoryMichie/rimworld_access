@@ -2,35 +2,35 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
 {
-    public static class ScannerState
+    public static partial class ScannerState
     {
-        private static List<ScannerCategory> categories = new List<ScannerCategory>();
-        private static int currentCategoryIndex = 0;
-        private static int currentSubcategoryIndex = 0;
-        private static int currentItemIndex = 0;
-        private static int currentBulkIndex = 0; // Index within a bulk group
+        // ExtraIndex on the shared cursor is the bulk-group index.
+        private static readonly ScannerCursor<ScannerCategory, ScannerSubcategory, ScannerItem> scannerCursor =
+            new ScannerCursor<ScannerCategory, ScannerSubcategory, ScannerItem>();
 
-        // The cursor position used to sort the current subcategory's items.
-        // When the cursor moves, EnsureSortedForCurrentCursor detects the mismatch,
-        // re-sorts by live distance, and jumps the selection to index 0 (closest item).
+        // Within a sequence of Page Up/Down presses the sort order is frozen, so sequential
+        // navigation is stable and needs no per-press re-sort. A session ends when the cursor moves
+        // externally, the subcategory changes, the map state changes, or search state changes.
+        private static readonly ScannerNavSession<IntVec3> navSession = new ScannerNavSession<IntVec3>();
+
+        // The cursor position the current subcategory's items were sorted from; a mismatch drives
+        // EnsureSortedForCurrentCursor's re-sort by live distance.
         private static IntVec3 lastSortedCursorPosition = IntVec3.Invalid;
-        private static bool autoJumpMode = false; // Auto-jump to items when navigating
 
-        // Saved focus state for temporary category operations
-        private static int savedCategoryIndex = -1;
-        private static int savedSubcategoryIndex = -1;
-        private static int savedItemIndex = -1;
-        private static int savedBulkIndex = -1;
+        private static bool autoJumpMode
+        {
+            get
+            {
+                RimWorldAccessSettings settings = RimWorldAccessMod_Settings.Settings;
+                return settings != null && settings.ScannerAutoJump;
+            }
+        }
 
-        // Temporary category tracking
-        private static ScannerCategory temporaryCategory = null;
-
-        // Cache for CollectMapItems to avoid expensive re-collection on every keystroke
+        // Cache for CollectMapItems, which is too expensive to re-run on every keystroke.
         private static List<ScannerCategory> cachedCategories = null;
         private static int lastThingStateHash = 0;
         private static int lastDesignationCount = 0;
@@ -38,112 +38,61 @@ namespace RimWorldAccess
         private static int lastZoneCellHash = 0;
         private static int lastPlanHash = 0;
 
-        // Navigation session: within a sequence of Page Up/Down presses the sort order is
-        // frozen so sequential navigation is stable and fast (no per-press re-sort). A session
-        // ends when the cursor moves externally, the subcategory changes, the map state
-        // changes (pawn dies, designation added, zone edited), or search state changes.
-        private static bool navSessionActive = false;
-        private static IntVec3 lastScannerCursor = IntVec3.Invalid;
-        private static bool scannerDrivenJumpInProgress = false;
-
-        // Distance metric on the square map grid, used by the shared clump-jump logic to pick the
-        // nearest member tile of a patch to the cursor.
+        // Distance metric on the square map grid, used by the shared clump-jump logic.
         private static readonly Func<IntVec3, IntVec3, float> CellMetric =
             (a, b) => (a - b).LengthHorizontal;
 
-        /// <summary>
-        /// Toggles auto-jump mode on/off (Alt+Home).
-        /// When enabled, cursor automatically jumps to items as you navigate.
-        /// </summary>
+        /// <summary>Toggles auto-jump mode, where the cursor follows items as you navigate. Persisted immediately.</summary>
         public static void ToggleAutoJumpMode()
         {
-            autoJumpMode = !autoJumpMode;
-            TolkHelper.Speak((autoJumpMode
+            RimWorldAccessSettings settings = RimWorldAccessMod_Settings.Settings;
+            if (settings == null)
+                return;
+            settings.ScannerAutoJump = !settings.ScannerAutoJump;
+            LoadedModManager.GetMod<RimWorldAccessMod_Settings>()?.WriteSettings();
+            TolkHelper.Speak((settings.ScannerAutoJump
                 ? "RimWorldAccess.Map.Scanner.AutoJumpEnabled"
                 : "RimWorldAccess.Map.Scanner.AutoJumpDisabled").Loc(), SpeechPriority.High);
         }
 
-        /// <summary>
-        /// Invalidates the current navigation session. Next Page Up/Down will re-sort from
-        /// the current cursor position and start a fresh session.
-        /// </summary>
+        /// <summary>Ends the navigation session, so the next Page Up/Down re-sorts from the current cursor.</summary>
         public static void InvalidateNavigationSession()
         {
-            navSessionActive = false;
-            lastScannerCursor = IntVec3.Invalid;
+            navSession.Invalidate();
         }
 
         /// <summary>
-        /// Called by MapNavigationState.CurrentCursorPosition setter whenever the cursor is
-        /// written. Invalidates the nav session unless the write is coming from our own
-        /// JumpToCurrent (which sets scannerDrivenJumpInProgress for the duration of the write).
+        /// Called from the cursor-position setter on every write. Invalidates the session unless the
+        /// write came from this scanner's own JumpToCurrent.
         /// </summary>
         public static void NotifyCursorWritten()
         {
-            if (!scannerDrivenJumpInProgress)
-                InvalidateNavigationSession();
+            navSession.NotifyPositionWritten();
         }
 
-        /// <summary>
-        /// Starts a fresh navigation session: sorts the current subcategory from the current
-        /// cursor, marks the session active, and records the cursor as the anchor. Called on
-        /// the first Page Up/Down in a session and on Home/End.
-        /// </summary>
+        /// <summary>Sorts the current subcategory from the cursor and anchors a fresh session there.</summary>
         private static void BeginNavigationSession()
         {
             EnsureSortedForCurrentCursor();
-            navSessionActive = true;
-            lastScannerCursor = MapNavigationState.CurrentCursorPosition;
+            navSession.Begin(MapNavigationState.CurrentCursorPosition);
         }
 
-        /// <summary>
-        /// Saves the current scanner focus state for later restoration.
-        /// Used when temporarily switching to a different category (e.g., viewing obstacles).
-        /// </summary>
+        /// <summary>Saves the scanner focus before a temporary switch to another category.</summary>
         public static void SaveFocus()
         {
-            savedCategoryIndex = currentCategoryIndex;
-            savedSubcategoryIndex = currentSubcategoryIndex;
-            savedItemIndex = currentItemIndex;
-            savedBulkIndex = currentBulkIndex;
+            scannerCursor.SaveFocus();
         }
 
-        /// <summary>
-        /// Restores the previously saved scanner focus state.
-        /// Call this after removing a temporary category to return to the previous position.
-        /// </summary>
+        /// <summary>Restores the saved focus; call after removing a temporary category.</summary>
         public static void RestoreFocus()
         {
-            if (savedCategoryIndex >= 0)
-            {
-                currentCategoryIndex = savedCategoryIndex;
-                currentSubcategoryIndex = savedSubcategoryIndex;
-                currentItemIndex = savedItemIndex;
-                currentBulkIndex = savedBulkIndex;
-
-                // Reset saved state
-                savedCategoryIndex = -1;
-                savedSubcategoryIndex = -1;
-                savedItemIndex = -1;
-                savedBulkIndex = -1;
-
-                // Validate indices in case the category list changed
-                ValidateIndices();
-            }
+            scannerCursor.RestoreFocus();
         }
 
         /// <summary>
-        /// Creates a temporary category with the given name and items, and selects it.
-        /// Only one temporary category can exist at a time.
-        /// The temporary category is a proper scanner category that:
-        /// - Appears in the category cycle (Ctrl+PageUp/Down)
-        /// - Is preserved across RefreshItems() calls
-        /// - Is cleared when Invalidate() is called (e.g., map switch)
+        /// Creates the single temporary category and selects it. It is a real category — it joins the
+        /// category cycle and survives RefreshItems — and <see cref="Invalidate"/> clears it.
         /// </summary>
-        /// <param name="name">The name for the temporary category</param>
-        /// <param name="items">The items to include in the category</param>
-        // Any temporary-category change (search activate, search clear) ends the session so
-        // the next Page Down re-sorts in the new category context.
         public static void CreateTemporaryCategory(string name, List<ScannerItem> items)
         {
             var subcategory = new ScannerSubcategory($"{name}-All");
@@ -152,59 +101,84 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Creates a temporary category from pre-built subcategories (navigated with
-        /// Shift+Page Up/Down) and selects it. By scanner convention, subcategories[0] must
-        /// represent the whole category — TotalItemCount and the "All" slot are positional.
-        /// Subcategory names are announced verbatim (ScannerNameLocalizer passes non-schema
-        /// names through), so pass localized display strings.
+        /// Creates a temporary category from pre-built subcategories and selects it. subcategories[0]
+        /// must represent the whole category — the "All" slot is positional — and
+        /// subcategory names are announced verbatim, so pass localized display strings.
         /// </summary>
         public static void CreateTemporaryCategory(string name, List<ScannerSubcategory> subcategories)
         {
-            // Remove any existing temporary category first
             RemoveTemporaryCategory();
+            // A replaced slot cannot keep the previous owner's refresh hook.
+            TemporaryCategoryRefreshHook = null;
 
-            temporaryCategory = new ScannerCategory(name);
-            temporaryCategory.Subcategories.AddRange(subcategories);
+            var category = new ScannerCategory(name);
+            category.Subcategories.AddRange(subcategories);
 
-            // Add to the categories list
-            categories.Add(temporaryCategory);
+            scannerCursor.SelectTemporaryCategory(category);
 
-            // Select the temporary category
-            currentCategoryIndex = categories.Count - 1;
-            currentSubcategoryIndex = 0;
-            currentItemIndex = 0;
-            currentBulkIndex = 0;
-
-            // Search results are a different subcategory context — end any in-progress session.
+            // A new subcategory context; the next Page Down must re-sort within it.
             InvalidateNavigationSession();
         }
 
         /// <summary>
-        /// Removes the temporary category if one exists.
-        /// Call RestoreFocus() after this to return to the previous scanner position.
+        /// Creates or replaces the temporary category WITHOUT stealing focus: the offer parks at the
+        /// front of the category cycle until the player visits it, and a player already inside keeps
+        /// their place on its fresh first item.
         /// </summary>
+        public static void OfferTemporaryCategory(string name, List<ScannerItem> items)
+        {
+            bool wasInside = IsInTemporaryCategory();
+            RemoveTemporaryCategory();
+            TemporaryCategoryRefreshHook = null;
+
+            var subcategory = new ScannerSubcategory($"{name}-All");
+            subcategory.Items.AddRange(items);
+            var category = new ScannerCategory(name);
+            category.Subcategories.Add(subcategory);
+
+            if (wasInside)
+            {
+                scannerCursor.SelectTemporaryCategory(category);
+            }
+            else
+            {
+                bool hadCategories = scannerCursor.Categories.Count > 0;
+                scannerCursor.AttachTemporaryCategory(category);
+                // The front insert shifted every real category up one slot; follow the one the
+                // cursor was resting on. An empty ring has nothing to follow.
+                if (hadCategories)
+                    scannerCursor.CategoryIndex++;
+            }
+
+            InvalidateNavigationSession();
+        }
+
+        /// <summary>
+        /// Invoked when category cycling lands on the temporary category, so its owner can rebuild
+        /// stale content before the landing is announced. Returns false when the rebuild removed the
+        /// category and the cycle should keep walking. Owned by whoever last published the temporary
+        /// category, which clears it on takeover.
+        /// </summary>
+        public static Func<bool> TemporaryCategoryRefreshHook;
+
+        /// <summary>Removes the temporary category; call RestoreFocus afterwards to return to the previous position.</summary>
         public static void RemoveTemporaryCategory()
         {
-            if (temporaryCategory != null)
+            if (scannerCursor.RemoveTemporaryCategory())
             {
-                categories.Remove(temporaryCategory);
-                temporaryCategory = null;
                 InvalidateNavigationSession();
             }
         }
 
         /// <summary>
-        /// Computes the live distance from a cursor to a scanner item.
-        /// For area-backed items (terrain regions, zones, rooms) this returns the distance
-        /// to the NEAREST cell in the area — so the cursor being inside the area naturally
-        /// returns 0 and the cursor being adjacent returns 1, instead of returning the
-        /// (often misleading) distance to the area's geometric center.
+        /// Live distance from the cursor to an item. For area-backed items (terrain regions, zones,
+        /// rooms) this is the distance to the NEAREST cell, so a cursor inside the area reads 0
+        /// rather than the misleading distance to its geometric center.
         /// </summary>
         private static float ComputeLiveDistance(ScannerItem item, IntVec3 cursor)
         {
             if (item == null) return float.MaxValue;
 
-            // Area-backed: terrain regions / mineable deposits with adjacency grouping.
             if (item.HasTerrainRegions && item.TerrainRegions.Count > 0)
             {
                 float minDist = float.MaxValue;
@@ -221,7 +195,6 @@ namespace RimWorldAccess
                 return minDist == float.MaxValue ? (item.Position - cursor).LengthHorizontal : minDist;
             }
 
-            // Zone: nearest cell in the zone's cell list.
             if (item.IsZone && item.Zone != null && item.Zone.cells != null && item.Zone.cells.Count > 0)
             {
                 float minDist = float.MaxValue;
@@ -234,7 +207,6 @@ namespace RimWorldAccess
                 return minDist;
             }
 
-            // Room: nearest cell in the room's cells.
             if (item.IsRoom && item.Room != null)
             {
                 float minDist = float.MaxValue;
@@ -247,7 +219,7 @@ namespace RimWorldAccess
                 return minDist == float.MaxValue ? (item.Position - cursor).LengthHorizontal : minDist;
             }
 
-            // Legacy bulk-terrain (list of positions, no region structure).
+            // Bulk terrain: a flat list of positions with no region structure.
             if (item.IsTerrain && item.BulkTerrainPositions != null && item.BulkTerrainPositions.Count > 0)
             {
                 float minDist = float.MaxValue;
@@ -260,7 +232,6 @@ namespace RimWorldAccess
                 return minDist;
             }
 
-            // Point-based items fall through to single-position distance.
             IntVec3 pos;
             if (item.Thing != null && item.Thing.Spawned && !item.Thing.Destroyed)
                 pos = item.Thing.Position;
@@ -272,11 +243,7 @@ namespace RimWorldAccess
             return (pos - cursor).LengthHorizontal;
         }
 
-        /// <summary>
-        /// For a multi-region item, returns the index of the region whose nearest cell is
-        /// closest to the cursor. Short-circuits to the containing region if the cursor is
-        /// on one of its cells. Returns 0 if the item has no regions.
-        /// </summary>
+        /// <summary>The index of the region whose nearest cell is closest to the cursor, or 0 when the item has no regions.</summary>
         private static int FindNearestRegionIndex(ScannerItem item, IntVec3 cursor)
         {
             if (!item.HasTerrainRegions || item.TerrainRegions.Count == 0)
@@ -302,10 +269,7 @@ namespace RimWorldAccess
             return bestIdx;
         }
 
-        /// <summary>
-        /// Distance from the cursor to the nearest tile of a region (0 if the cursor is on it,
-        /// MaxValue for an empty region). Same metric used everywhere else for clump proximity.
-        /// </summary>
+        /// <summary>Distance to a region's nearest tile: 0 on it, MaxValue for an empty region.</summary>
         private static float RegionNearestDistance(TerrainRegion region, IntVec3 cursor)
         {
             if (region?.AllPositions == null) return float.MaxValue;
@@ -320,14 +284,10 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Live proximity rank (1-based) of a region among the item's sibling regions: how near
-        /// THIS region's closest tile is to the cursor, compared to every other region. The
-        /// nearest region is always rank 1, the second-nearest rank 2, and so on.
-        ///
-        /// Computed on the fly so the underlying region list keeps its stable build-time order
-        /// (bulk navigation and auto-jump rely on that order not shifting under the user), while
-        /// the announced "area N of M" still reflects the player's current position. Equal
-        /// distances are broken by list index so the ranks form a stable, gap-free sequence.
+        /// A region's 1-based proximity rank among its siblings. Computed on the fly so the region
+        /// list keeps its stable build-time order — bulk navigation and auto-jump rely on that order
+        /// not shifting — while the announced "area N of M" still tracks the player's position. Ties
+        /// break by list index, giving a stable gap-free sequence.
         /// </summary>
         private static int ComputeRegionRank(ScannerItem item, int regionIndex, IntVec3 cursor)
         {
@@ -347,10 +307,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Builds the announcement string for a specific terrain region of an item.
-        /// Used by both the primary announcement (with the nearest region) and the bulk
-        /// navigation announcement (with the user-selected region) so the format stays
-        /// consistent: "label: size, distance direction[, area N of M]".
+        /// The announcement for one terrain region, shared by the primary and bulk-navigation
+        /// announcements so both read "label: size, distance direction[, area N of M]".
         /// </summary>
         private static string BuildRegionAnnouncement(ScannerItem item, int regionIndex)
         {
@@ -360,7 +318,6 @@ namespace RimWorldAccess
             var region = item.TerrainRegions[regionIndex];
             var cursorPos = MapNavigationState.CurrentCursorPosition;
 
-            // Find the nearest cell within THIS region (or 0 if cursor is on it).
             float distance = float.MaxValue;
             IntVec3 nearestCell = IntVec3.Invalid;
             if (region.AllPositions != null)
@@ -380,7 +337,7 @@ namespace RimWorldAccess
 
             var direction = GetDirectionFromCursor(nearestCell);
 
-            // Build size description — include quantity for deep ore deposits.
+            // Deep ore deposits carry a quantity alongside the size.
             string sizeAndQuantity;
             if (region.TotalQuantity.HasValue && item.DeepOreDef != null)
             {
@@ -403,14 +360,12 @@ namespace RimWorldAccess
 
             if (item.RegionCount > 1)
             {
-                // Live proximity rank, not the static list slot — the nearest patch reads as
-                // "area 1 of N" no matter where it sits in the stable build-time list.
+                // Live proximity rank, not the list slot, so the nearest patch always reads "area 1".
                 int regionPosition = ComputeRegionRank(item, regionIndex, cursorPos);
                 announcement += "RimWorldAccess.Map.Scanner.Region.AreaSuffix".Translate(regionPosition, item.RegionCount);
             }
 
-            // When the cursor is standing on this patch and the patch has a distinct center,
-            // teach the second Home press that jumps there.
+            // Standing on a patch with a distinct center offers the second Home press that jumps there.
             if (ClumpNav.OffersCenter(region.AllPositions, region.CenterPosition, cursorPos))
                 announcement += ". " + "RimWorldAccess.Map.Scanner.PressHomeForCenter".Translate();
 
@@ -418,10 +373,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// For an area-backed item, finds the cell in the item that is nearest to the cursor.
-        /// Used for announcement direction/distance so the scanner says "rich soil, 2 tiles east"
-        /// pointing at the nearest edge of the patch, not "12 tiles east" pointing at the center.
-        /// Returns IntVec3.Invalid if the item is not area-backed or has no cells.
+        /// The cell of an area-backed item nearest the cursor, so announcements point at the patch's
+        /// near edge rather than its center. Invalid when the item is not area-backed or has no cells.
         /// </summary>
         private static IntVec3 FindNearestCell(ScannerItem item, IntVec3 cursor)
         {
@@ -488,14 +441,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Re-sorts the current subcategory by live distance from the cursor IF the cursor has
-        /// moved since the last sort. Does NOT modify currentItemIndex.
-        ///
-        /// Called by BeginNavigationSession at the start of a fresh Page Up/Down sequence and
-        /// by category/subcategory switches that explicitly reset the index to 0 or Count-1.
-        /// Within an active navigation session, no re-sort happens on each press — the frozen
-        /// order is what makes sequential navigation stable and eliminates the ping-pong that
-        /// occurred when distance was recomputed after every scanner-driven cursor jump.
+        /// Re-sorts the current subcategory by live distance if the cursor moved since the last sort;
+        /// never touches the item index. Only session starts and category/subcategory switches call
+        /// it — re-sorting on every press would ping-pong the order after each scanner-driven jump.
         /// </summary>
         private static bool EnsureSortedForCurrentCursor()
         {
@@ -517,11 +465,9 @@ namespace RimWorldAccess
             {
                 item.Distance = ComputeLiveDistance(item, cursor);
 
-                // Re-sort the item's own regions nearest-first too, anchored to the same cursor.
-                // This makes within-item navigation (area 1, area 2, area 3...) and the announced
-                // "area N of M" follow live proximity exactly like the item list itself — and, by
-                // living inside this session-boundary re-sort, it inherits the same anchoring: it
-                // re-sorts on a manual cursor move, never on a scanner-driven jump.
+                // Sort the item's own regions nearest-first from the same cursor, so within-item
+                // navigation follows live proximity. Living inside this session-boundary re-sort is
+                // what keeps it anchored to manual cursor moves and never to a scanner-driven jump.
                 if (item.HasTerrainRegions && item.TerrainRegions.Count > 1)
                 {
                     foreach (var region in item.TerrainRegions)
@@ -530,16 +476,13 @@ namespace RimWorldAccess
                 }
             }
 
-            // Stable sort (OrderBy) — so tied distances preserve input order.
+            // OrderBy is stable, so tied distances preserve input order.
             subcat.Items = subcat.Items.OrderBy(i => i.Distance).ToList();
             lastSortedCursorPosition = cursor;
             return true;
         }
 
-        /// <summary>
-        /// Updates only the Distance of the currently selected item (and bulk-group entries)
-        /// without re-sorting. Used by bulk navigation where list order must not change.
-        /// </summary>
+        /// <summary>Refreshes the selected item's Distance without re-sorting, for bulk navigation where order must hold.</summary>
         private static void UpdateCurrentItemDistance()
         {
             var cursor = MapNavigationState.CurrentCursorPosition;
@@ -550,21 +493,19 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Invalidates the scanner cache, forcing a refresh on next access.
-        /// Call this when switching maps or when map contents have significantly changed.
-        /// Also clears any temporary category since it's no longer valid.
+        /// Drops the whole scanner cache, the temporary category, the saved focus and any active
+        /// search. Call on a map switch or a large change in map contents.
         /// </summary>
         public static void Invalidate()
         {
-            categories.Clear();
-            temporaryCategory = null;
-            currentCategoryIndex = 0;
-            currentSubcategoryIndex = 0;
-            currentItemIndex = 0;
-            currentBulkIndex = 0;
+            scannerCursor.Categories.Clear();
+            scannerCursor.ClearTemporaryCategoryReference();
+            scannerCursor.CategoryIndex = 0;
+            scannerCursor.SubcategoryIndex = 0;
+            scannerCursor.ItemIndex = 0;
+            scannerCursor.ExtraIndex = 0;
             lastSortedCursorPosition = IntVec3.Invalid;
 
-            // Clear the collection cache
             cachedCategories = null;
             lastThingStateHash = 0;
             lastDesignationCount = 0;
@@ -572,24 +513,14 @@ namespace RimWorldAccess
             lastZoneCellHash = 0;
             lastPlanHash = 0;
             ScannerHelper.InvalidateCache();
-
-            // End any in-progress navigation session.
             InvalidateNavigationSession();
-
-            // Also clear saved focus since it's no longer valid
-            savedCategoryIndex = -1;
-            savedSubcategoryIndex = -1;
-            savedItemIndex = -1;
-            savedBulkIndex = -1;
-
-            // Clear any active search
+            scannerCursor.ClearSavedFocus();
             ScannerSearchState.ClearSearchSilent();
         }
 
         /// <summary>
-        /// Refreshes the scanner item list based on current cursor position.
-        /// Called automatically by navigation methods.
-        /// If there's an active search filter, updates the filter with fresh items.
+        /// Rebuilds the item list from the current cursor position, refreshing an active search
+        /// filter with the fresh items. Called automatically by the navigation methods.
         /// </summary>
         private static void RefreshItems()
         {
@@ -608,22 +539,18 @@ namespace RimWorldAccess
 
             var cursorPos = MapNavigationState.CurrentCursorPosition;
 
-            // Capture whether the user is currently navigating the temporary category (planting
-            // sites, search results) BEFORE any list below is rebuilt. A rebuild re-adds the temp
-            // category at the END of the list but does not move the selection with it; without
-            // this the user silently drops into the rebuilt real categories on the next
-            // navigation. Rebuilds are frequent — pawn movement changes the thing-state hash every
-            // step. (The active-search path below does its own equivalent re-pointing.)
+            // Capture whether the temporary category is being navigated BEFORE any rebuild: a rebuild
+            // re-adds it at the END of the list without moving the selection with it, which would
+            // silently drop the player into the real categories. Rebuilds are frequent, since pawn
+            // movement changes the thing-state hash every step.
             bool wasInTemporaryCategory = IsInTemporaryCategory();
-            int temporarySubcategoryIndexBeforeRefresh = currentSubcategoryIndex;
-            int temporaryItemIndexBeforeRefresh = currentItemIndex;
+            int temporarySubcategoryIndexBeforeRefresh = scannerCursor.SubcategoryIndex;
+            int temporaryItemIndexBeforeRefresh = scannerCursor.ItemIndex;
 
-            // Check if cached collection is still valid to avoid expensive re-collection
             int currentThingHash = map.listerThings.StateHashOfGroup(ThingRequestGroup.Everything);
             int currentDesignationCount = map.designationManager.AllDesignations.Count;
             int currentZoneCount = map.zoneManager.AllZones.Count;
-            // Zone-count alone misses cell-level edits (dragging a stockpile to grow/shrink).
-            // Mix a sum of per-zone cell counts into the hash so those edits invalidate the cache.
+            // Zone count alone misses cell-level edits like dragging a stockpile larger or smaller.
             int currentZoneCellHash = 0;
             foreach (var zone in map.zoneManager.AllZones)
             {
@@ -631,9 +558,8 @@ namespace RimWorldAccess
                 currentZoneCellHash = unchecked(currentZoneCellHash * 31 + cellCount);
             }
 
-            // Plans aren't Things/zones, so fold their count, per-plan color, and cell count into a
-            // hash; this invalidates the cache when a plan is added, removed, recolored (which moves
-            // it between color subcategories), or resized.
+            // Plans are neither Things nor zones, so hash count, colour and cell count: a recolour
+            // moves a plan between colour subcategories and must invalidate the cache too.
             int currentPlanHash = 0;
             foreach (var plan in map.planManager.AllPlans)
             {
@@ -651,82 +577,62 @@ namespace RimWorldAccess
 
             if (cacheValid)
             {
-                categories = cachedCategories;
+                scannerCursor.Categories = cachedCategories;
 
-                // Re-add temporary category if it existed
-                if (temporaryCategory != null)
-                {
-                    if (!categories.Contains(temporaryCategory))
-                        categories.Add(temporaryCategory);
+                scannerCursor.ReattachTemporaryCategoryIfMissing();
+                if (scannerCursor.TemporaryCategory != null && wasInTemporaryCategory)
+                    FocusTemporaryCategory(temporarySubcategoryIndexBeforeRefresh, temporaryItemIndexBeforeRefresh);
 
-                    if (wasInTemporaryCategory)
-                        FocusTemporaryCategory(temporarySubcategoryIndexBeforeRefresh, temporaryItemIndexBeforeRefresh);
-                }
-
-                // On cache hit, the items may have been sorted at a previous cursor position.
-                // Force EnsureSortedForCurrentCursor to re-sort on the next navigation.
+                // Cached items may have been sorted at an older cursor; force the next re-sort.
                 lastSortedCursorPosition = IntVec3.Invalid;
 
                 ValidateIndices();
                 return;
             }
 
-            // Check if there's an active search filter that needs refreshing
             if (ScannerSearchState.HasActiveFilter)
             {
-                // Remember if user was in the filter category before refresh
                 bool wasInFilterCategory = IsInTemporaryCategory();
-                int previousItemIndex = currentItemIndex;
+                int previousItemIndex = scannerCursor.ItemIndex;
 
-                // Collect items once, then filter from the collected categories
-                categories = ScannerHelper.CollectMapItems(map, cursorPos);
-                cachedCategories = categories;
+                scannerCursor.Categories = ScannerHelper.CollectMapItems(map, cursorPos);
+                cachedCategories = scannerCursor.Categories;
                 lastThingStateHash = currentThingHash;
                 lastDesignationCount = currentDesignationCount;
                 lastZoneCount = currentZoneCount;
                 lastZoneCellHash = currentZoneCellHash;
                 lastPlanHash = currentPlanHash;
                 lastSortedCursorPosition = cursorPos;
-                // Map state changed (cache miss) — the previous navigation snapshot is no
-                // longer valid. Pawn death / designation / zone edit all land here.
+                // A cache miss means the map changed, so the navigation snapshot is stale.
                 InvalidateNavigationSession();
 
-                // Get filtered items from already-collected categories
-                var filteredItems = ScannerSearchState.RefreshMapFilter(categories);
+                var filteredItems = ScannerSearchState.RefreshMapFilter(scannerCursor.Categories);
                 if (filteredItems != null)
                 {
-                    // Update the temporary category with fresh filtered items
                     if (filteredItems.Count > 0)
                     {
-                        temporaryCategory = new ScannerCategory(ScannerSearchState.GetFilterCategoryName());
+                        var filterCategory = new ScannerCategory(ScannerSearchState.GetFilterCategoryName());
                         var subcategory = new ScannerSubcategory($"{ScannerSearchState.GetFilterCategoryName()}-All");
                         subcategory.Items.AddRange(filteredItems);
-                        temporaryCategory.Subcategories.Add(subcategory);
-                        categories.Add(temporaryCategory);
+                        filterCategory.Subcategories.Add(subcategory);
+                        scannerCursor.AttachTemporaryCategory(filterCategory);
 
-                        // If user was in filter category, keep them there
                         if (wasInFilterCategory)
                         {
-                            currentCategoryIndex = categories.Count - 1; // Temp category is at end
-                            currentSubcategoryIndex = 0;
-                            // Try to preserve item index, clamping to valid range
-                            currentItemIndex = Math.Min(previousItemIndex, filteredItems.Count - 1);
-                            currentBulkIndex = 0;
+                            scannerCursor.FocusTemporaryCategory(0, previousItemIndex);
                         }
                     }
                     else
                     {
-                        // No matches - remove temporary category
-                        temporaryCategory = null;
+                        scannerCursor.ClearTemporaryCategoryReference();
 
-                        // If user was in filter category, restore their previous focus
                         if (wasInFilterCategory)
                         {
                             RestoreFocus();
                         }
                     }
 
-                    if (categories.Count == 0)
+                    if (scannerCursor.Categories.Count == 0)
                     {
                         TolkHelper.Speak("RimWorldAccess.Map.Scanner.NoItems".Loc(), SpeechPriority.High);
                         return;
@@ -737,55 +643,114 @@ namespace RimWorldAccess
                 }
             }
 
-            // No active filter - standard refresh
-            // Save temporary category before refresh (for non-filter temporary categories)
-            var savedTemporaryCategory = temporaryCategory;
+            var savedTemporaryCategory = scannerCursor.TemporaryCategory;
 
-            // Collect items
-            categories = ScannerHelper.CollectMapItems(map, cursorPos);
-            cachedCategories = categories;
+            scannerCursor.Categories = ScannerHelper.CollectMapItems(map, cursorPos);
+            cachedCategories = scannerCursor.Categories;
             lastThingStateHash = currentThingHash;
             lastDesignationCount = currentDesignationCount;
             lastZoneCount = currentZoneCount;
             lastZoneCellHash = currentZoneCellHash;
             lastPlanHash = currentPlanHash;
-            // CollectMapItems sorted items by distance from cursorPos, so the current cursor
-            // matches the sort order. Skip the next EnsureSortedForCurrentCursor re-sort.
+            // CollectMapItems already sorted by distance from cursorPos, so skip the next re-sort.
             lastSortedCursorPosition = cursorPos;
-            // Map state changed (cache miss) — old navigation snapshot is invalid.
             InvalidateNavigationSession();
 
-            // Re-add temporary category if it existed
             if (savedTemporaryCategory != null)
             {
-                temporaryCategory = savedTemporaryCategory;
-                categories.Add(temporaryCategory);
+                scannerCursor.AttachTemporaryCategory(savedTemporaryCategory);
 
-                // Keep the selection on the temporary category (now at the end) if the user was
-                // navigating it before this rebuild.
+                // Follow the temporary category, now at the end of the list.
                 if (wasInTemporaryCategory)
                     FocusTemporaryCategory(temporarySubcategoryIndexBeforeRefresh, temporaryItemIndexBeforeRefresh);
             }
 
-            if (categories.Count == 0)
+            if (scannerCursor.Categories.Count == 0)
             {
                 TolkHelper.Speak("RimWorldAccess.Map.Scanner.NoItems".Loc(), SpeechPriority.High);
                 return;
             }
 
-            // Validate and adjust indices if needed
             ValidateIndices();
+        }
+
+        /// <summary>
+        /// Rebuilds the category the cursor just landed on, in place, from the live map. Returns false
+        /// when that category came back empty and was dropped from the ring, so the caller keeps
+        /// cycling. Whole-map aggregates cannot be built in isolation and take the full RefreshItems
+        /// path; the temporary category is not map-derived, so its owner refreshes it through
+        /// <see cref="TemporaryCategoryRefreshHook"/>, or it is left as it is.
+        /// </summary>
+        private static bool RebuildLandedCategory()
+        {
+            ScannerCategory category = GetCurrentCategory();
+            if (category == null)
+                return false;
+
+            if (IsInTemporaryCategory())
+                return TemporaryCategoryRefreshHook == null || TemporaryCategoryRefreshHook();
+
+            if (category.Name == "All" || category.Name == "Uncategorized")
+            {
+                string name = category.Name;
+                RefreshItems();
+                return RepointToCategoryNamed(name);
+            }
+
+            var map = Find.CurrentMap;
+            if (map == null)
+                return true;
+
+            int index = scannerCursor.CategoryIndex;
+            List<ScannerCategory> rebuilt = ScannerHelper.CollectMapItems(
+                map, MapNavigationState.CurrentCursorPosition, category.Name);
+
+            if (rebuilt.Count == 0)
+            {
+                scannerCursor.Categories.RemoveAt(index);
+                return false;
+            }
+
+            scannerCursor.Categories[index] = rebuilt[0];
+            // The ring the cache hands back next hit must carry the fresh category too.
+            if (cachedCategories != null && !ReferenceEquals(cachedCategories, scannerCursor.Categories))
+            {
+                int cachedIndex = cachedCategories.FindIndex(c => c.Name == rebuilt[0].Name);
+                if (cachedIndex >= 0)
+                    cachedCategories[cachedIndex] = rebuilt[0];
+            }
+            // The rebuild sorted from the current cursor, but leave the shared re-sort armed so a
+            // later cursor move is still detected.
+            lastSortedCursorPosition = IntVec3.Invalid;
+            return true;
+        }
+
+        /// <summary>Puts the cursor back on the named category after a refresh reshaped the ring; false when it is gone.</summary>
+        private static bool RepointToCategoryNamed(string name)
+        {
+            for (int i = 0; i < scannerCursor.Categories.Count; i++)
+            {
+                if (scannerCursor.Categories[i].Name == name)
+                {
+                    scannerCursor.CategoryIndex = i;
+                    scannerCursor.SubcategoryIndex = 0;
+                    scannerCursor.ItemIndex = 0;
+                    scannerCursor.ExtraIndex = 0;
+                    return true;
+                }
+            }
+            return false;
         }
 
         public static void NextItem()
         {
             if (WorldNavigationState.IsActive) return;
 
-            // Always refresh: catches pawn death, designations added, zone edits, etc.
-            // RefreshItems is cheap on a cache hit and invalidates the nav session on a miss.
-            bool wasEmpty = categories.Count == 0;
+            // Always refresh: it is cheap on a cache hit, and a miss catches pawn death, new
+            // designations and zone edits while invalidating the session.
+            bool wasEmpty = scannerCursor.Categories.Count == 0;
             RefreshItems();
-            if (categories.Count == 0) return;
+            if (scannerCursor.Categories.Count == 0) return;
             if (wasEmpty) AnnounceCurrentCategory();
 
             var currentSubcat = GetCurrentSubcategory();
@@ -798,9 +763,9 @@ namespace RimWorldAccess
         {
             if (WorldNavigationState.IsActive) return;
 
-            bool wasEmpty = categories.Count == 0;
+            bool wasEmpty = scannerCursor.Categories.Count == 0;
             RefreshItems();
-            if (categories.Count == 0) return;
+            if (scannerCursor.Categories.Count == 0) return;
             if (wasEmpty) AnnounceCurrentCategory();
 
             var currentSubcat = GetCurrentSubcategory();
@@ -810,49 +775,49 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Shared navigation step for NextItem / PreviousItem. If no session is active,
-        /// starts a fresh one (sorting by distance from the current cursor). If the cursor
-        /// has drifted from the last scanner-driven position (e.g., some code path bypassed
-        /// the property-setter hook), invalidates the session first as a safety net.
-        /// Within an active session, advances the index through the frozen sort order.
+        /// Shared navigation step for NextItem/PreviousItem: starts a session when none is active,
+        /// then advances the index through the frozen sort order.
         /// </summary>
         private static void AdvanceInSession(bool forward, ScannerSubcategory currentSubcat)
         {
-            // Drift safety net: if the cursor is not where we last left it, invalidate.
-            if (navSessionActive
-                && lastScannerCursor.IsValid
-                && MapNavigationState.CurrentCursorPosition != lastScannerCursor)
+            // Safety net for a code path that moved the cursor without the setter hook.
+            if (navSession.HasDrifted(MapNavigationState.CurrentCursorPosition))
             {
                 InvalidateNavigationSession();
             }
 
-            if (!navSessionActive)
+            if (!navSession.Active)
             {
                 BeginNavigationSession();
             }
 
             if (forward)
             {
-                currentItemIndex++;
-                if (currentItemIndex >= currentSubcat.Items.Count)
-                    currentItemIndex = 0; // Wrap to first item
+                scannerCursor.ItemIndex++;
+                if (scannerCursor.ItemIndex >= currentSubcat.Items.Count)
+                {
+                    scannerCursor.ItemIndex = 0;
+                    if (currentSubcat.Items.Count > 1) MenuHelper.PlayWrapTone();
+                }
             }
             else
             {
-                currentItemIndex--;
-                if (currentItemIndex < 0)
-                    currentItemIndex = currentSubcat.Items.Count - 1; // Wrap to last item
+                scannerCursor.ItemIndex--;
+                if (scannerCursor.ItemIndex < 0)
+                {
+                    scannerCursor.ItemIndex = currentSubcat.Items.Count - 1;
+                    if (currentSubcat.Items.Count > 1) MenuHelper.PlayWrapTone();
+                }
             }
-            currentBulkIndex = 0; // Reset bulk index when changing items
+            scannerCursor.ExtraIndex = 0;
 
             if (autoJumpMode)
             {
-                // Auto-jump skips AnnounceCurrentItem (which picks the nearest region via
-                // FindNearestRegionIndex), so select it here too — otherwise the jump would target
-                // region 0 rather than the patch nearest to the cursor.
+                // Auto-jump skips AnnounceCurrentItem, which is what normally picks the nearest
+                // region, so select it here or the jump targets region 0 instead.
                 var itemForJump = GetCurrentItem();
                 if (itemForJump != null && itemForJump.HasTerrainRegions)
-                    currentBulkIndex = FindNearestRegionIndex(itemForJump, MapNavigationState.CurrentCursorPosition);
+                    scannerCursor.ExtraIndex = FindNearestRegionIndex(itemForJump, MapNavigationState.CurrentCursorPosition);
                 JumpToCurrent();
             }
             else
@@ -861,34 +826,33 @@ namespace RimWorldAccess
             }
 
             // Record where the cursor ended up so the next press can detect drift.
-            lastScannerCursor = MapNavigationState.CurrentCursorPosition;
+            navSession.RecordPosition(MapNavigationState.CurrentCursorPosition);
         }
 
         public static void NextBulkItem()
         {
             if (WorldNavigationState.IsActive) return;
 
-            // Initialize scanner if not already done
-            if (categories.Count == 0)
+            if (scannerCursor.Categories.Count == 0)
             {
                 RefreshItems();
-                if (categories.Count == 0) return;
+                if (scannerCursor.Categories.Count == 0) return;
                 AnnounceCurrentCategory();
             }
 
             var currentItem = GetCurrentItem();
             if (currentItem == null || !currentItem.IsBulkGroup) return;
 
-            currentBulkIndex++;
-            if (currentBulkIndex >= currentItem.BulkCount)
+            scannerCursor.ExtraIndex++;
+            if (scannerCursor.ExtraIndex >= currentItem.BulkCount)
             {
-                currentBulkIndex = 0; // Wrap to first bulk item
+                scannerCursor.ExtraIndex = 0;
+                MenuHelper.PlayWrapTone();
             }
 
-            // Update distance for the current bulk entry (no re-sort — bulk order is stable).
+            // Distance only; bulk order must stay stable, so never re-sort here.
             UpdateCurrentItemDistance();
 
-            // Auto-jump if enabled
             if (autoJumpMode)
             {
                 JumpToCurrent();
@@ -903,27 +867,26 @@ namespace RimWorldAccess
         {
             if (WorldNavigationState.IsActive) return;
 
-            // Initialize scanner if not already done
-            if (categories.Count == 0)
+            if (scannerCursor.Categories.Count == 0)
             {
                 RefreshItems();
-                if (categories.Count == 0) return;
+                if (scannerCursor.Categories.Count == 0) return;
                 AnnounceCurrentCategory();
             }
 
             var currentItem = GetCurrentItem();
             if (currentItem == null || !currentItem.IsBulkGroup) return;
 
-            currentBulkIndex--;
-            if (currentBulkIndex < 0)
+            scannerCursor.ExtraIndex--;
+            if (scannerCursor.ExtraIndex < 0)
             {
-                currentBulkIndex = currentItem.BulkCount - 1; // Wrap to last bulk item
+                scannerCursor.ExtraIndex = currentItem.BulkCount - 1;
+                MenuHelper.PlayWrapTone();
             }
 
-            // Update distance for the current bulk entry (no re-sort — bulk order is stable).
+            // Distance only; bulk order must stay stable, so never re-sort here.
             UpdateCurrentItemDistance();
 
-            // Auto-jump if enabled
             if (autoJumpMode)
             {
                 JumpToCurrent();
@@ -934,899 +897,5 @@ namespace RimWorldAccess
             }
         }
 
-        public static void NextCategory()
-        {
-            if (WorldNavigationState.IsActive) return;
-
-            RefreshItems();
-            if (categories.Count == 0) return;
-
-            // Changing category ends the current navigation session.
-            InvalidateNavigationSession();
-
-            currentCategoryIndex++;
-            if (currentCategoryIndex >= categories.Count)
-            {
-                currentCategoryIndex = 0; // Wrap to first category
-            }
-
-            // Reset subcategory, item, and bulk indices — always land on first subcategory / first item.
-            currentSubcategoryIndex = 0;
-            currentItemIndex = 0;
-            currentBulkIndex = 0;
-
-            // Skip empty subcategories
-            SkipEmptySubcategories(forward: true);
-
-            // Ensure the newly-entered subcategory is sorted for the current cursor position.
-            EnsureSortedForCurrentCursor();
-
-            AnnounceCurrentCategory();
-            AnnounceCurrentItem();
-        }
-
-        public static void PreviousCategory()
-        {
-            if (WorldNavigationState.IsActive) return;
-
-            RefreshItems();
-            if (categories.Count == 0) return;
-
-            // Changing category ends the current navigation session.
-            InvalidateNavigationSession();
-
-            currentCategoryIndex--;
-            if (currentCategoryIndex < 0)
-            {
-                currentCategoryIndex = categories.Count - 1; // Wrap to last category
-            }
-
-            // Reset subcategory, item, and bulk indices — always land on first subcategory / first item.
-            currentSubcategoryIndex = 0;
-            currentItemIndex = 0;
-            currentBulkIndex = 0;
-
-            // Skip empty subcategories
-            SkipEmptySubcategories(forward: true);
-
-            // Ensure the newly-entered subcategory is sorted for the current cursor position.
-            EnsureSortedForCurrentCursor();
-
-            AnnounceCurrentCategory();
-            AnnounceCurrentItem();
-        }
-
-        public static void NextSubcategory()
-        {
-            if (WorldNavigationState.IsActive) return;
-
-            RefreshItems();
-            if (categories.Count == 0) return;
-
-            var currentCategory = GetCurrentCategory();
-            if (currentCategory == null) return;
-
-            // Changing subcategory ends the current navigation session.
-            InvalidateNavigationSession();
-
-            int startIndex = currentSubcategoryIndex;
-            do
-            {
-                currentSubcategoryIndex++;
-                if (currentSubcategoryIndex >= currentCategory.Subcategories.Count)
-                {
-                    currentSubcategoryIndex = 0; // Wrap to first subcategory
-                }
-
-                // Break if we've cycled through all subcategories
-                if (currentSubcategoryIndex == startIndex)
-                    break;
-
-            } while (GetCurrentSubcategory()?.IsEmpty ?? true);
-
-            // Reset item and bulk indices
-            currentItemIndex = 0;
-            currentBulkIndex = 0;
-
-            // Ensure the newly-entered subcategory is sorted for the current cursor.
-            EnsureSortedForCurrentCursor();
-
-            AnnounceCurrentSubcategory();
-            AnnounceCurrentItem();
-        }
-
-        public static void PreviousSubcategory()
-        {
-            if (WorldNavigationState.IsActive) return;
-
-            RefreshItems();
-            if (categories.Count == 0) return;
-
-            var currentCategory = GetCurrentCategory();
-            if (currentCategory == null) return;
-
-            // Changing subcategory ends the current navigation session.
-            InvalidateNavigationSession();
-
-            int startIndex = currentSubcategoryIndex;
-            do
-            {
-                currentSubcategoryIndex--;
-                if (currentSubcategoryIndex < 0)
-                {
-                    currentSubcategoryIndex = currentCategory.Subcategories.Count - 1; // Wrap to last subcategory
-                }
-
-                // Break if we've cycled through all subcategories
-                if (currentSubcategoryIndex == startIndex)
-                    break;
-
-            } while (GetCurrentSubcategory()?.IsEmpty ?? true);
-
-            // Reset item and bulk indices
-            currentItemIndex = 0;
-            currentBulkIndex = 0;
-
-            // Ensure the newly-entered subcategory is sorted for the current cursor.
-            EnsureSortedForCurrentCursor();
-
-            AnnounceCurrentSubcategory();
-            AnnounceCurrentItem();
-        }
-
-        public static void JumpToCurrent(bool manual = false)
-        {
-            if (WorldNavigationState.IsActive) return;
-
-            // Initialize scanner if not already done
-            if (categories.Count == 0)
-            {
-                RefreshItems();
-                if (categories.Count == 0) return;
-                AnnounceCurrentCategory();
-            }
-
-            ScannerItem currentItem;
-            bool removedStale = false;
-            while (true)
-            {
-                currentItem = GetCurrentItem();
-                if (currentItem == null)
-                {
-                    TolkHelper.Speak((removedStale
-                        ? "RimWorldAccess.Map.Scanner.ItemGone"
-                        : "RimWorldAccess.Map.Scanner.NoItemSelected").Loc(), SpeechPriority.High);
-                    return;
-                }
-
-                currentItem.RefreshLabel();
-                if (!currentItem.IsStale) break;
-
-                RemoveCurrentStaleItem();
-                removedStale = true;
-            }
-
-            if (removedStale)
-            {
-                TolkHelper.Speak("RimWorldAccess.Map.Scanner.ItemGone".Loc(), SpeechPriority.High);
-            }
-
-            IntVec3 cursorBeforeJump = MapNavigationState.CurrentCursorPosition;
-            bool jumpedToCenter = false;
-            TerrainRegion jumpRegion = null;
-            IntVec3 targetPosition;
-
-            if (currentItem.IsTerrain || currentItem.HasTerrainRegions)
-            {
-                // Closest-tile / press-Home-for-center. From off the patch, land on the nearest
-                // edge tile; a manual Home from on the patch jumps to the region center. Auto-jump
-                // navigation always lands on the nearest tile (manual == false).
-                if (currentItem.HasTerrainRegions && currentBulkIndex < currentItem.TerrainRegions.Count)
-                {
-                    var region = currentItem.TerrainRegions[currentBulkIndex];
-                    jumpRegion = region;
-                    var plan = ClumpNav.PlanHome(region.AllPositions, region.CenterPosition,
-                        cursorBeforeJump, CellMetric, manual);
-                    targetPosition = plan.Tile;
-                    jumpedToCenter = plan.IsCenter;
-                }
-                // Legacy: bulk terrain positions
-                else if (currentItem.BulkTerrainPositions != null && currentBulkIndex < currentItem.BulkTerrainPositions.Count)
-                {
-                    targetPosition = currentItem.BulkTerrainPositions[currentBulkIndex];
-                }
-                else
-                {
-                    targetPosition = currentItem.Position;
-                }
-            }
-            else if (currentItem.IsDesignation)
-            {
-                // For designations, check if we're navigating bulk designations
-                if (currentItem.BulkDesignations != null && currentBulkIndex < currentItem.BulkDesignations.Count)
-                {
-                    targetPosition = currentItem.BulkDesignations[currentBulkIndex].target.Cell;
-                }
-                else
-                {
-                    targetPosition = currentItem.Position;
-                }
-            }
-            else if (currentItem.IsZone)
-            {
-                // For zones, use the calculated center position
-                targetPosition = currentItem.Position;
-            }
-            else if (currentItem.IsRoom)
-            {
-                // For rooms, use the calculated center position
-                targetPosition = currentItem.Position;
-            }
-            else if (currentItem.IsCapturedEntity)
-            {
-                // Held pawn is not Spawned and its Position is stale; jump to the
-                // platform's position. Liveness is already validated by RefreshLabel above.
-                targetPosition = currentItem.Position;
-            }
-            else
-            {
-                // Get the actual thing to jump to (considering bulk index)
-                Thing targetThing = currentItem.Thing;
-                if (currentItem.IsBulkGroup && currentItem.BulkThings != null && currentBulkIndex < currentItem.BulkThings.Count)
-                {
-                    targetThing = currentItem.BulkThings[currentBulkIndex];
-                }
-                if (targetThing == null || targetThing.Destroyed || !targetThing.Spawned)
-                {
-                    TolkHelper.Speak("RimWorldAccess.Map.Scanner.ItemGone".Loc(), SpeechPriority.High);
-                    return;
-                }
-                targetPosition = targetThing.Position;
-            }
-
-            // A scanner jump moves the cursor onto a tile exactly like an arrow-key step, so it
-            // becomes the active gizmo context: clear "pawn just selected" so G targets this tile,
-            // not a pawn picked earlier on the colonist bar. Done before the no-move guard so a
-            // Home press onto the tile we already occupy still re-asserts tile context.
-            GizmoNavigationState.PawnJustSelected = false;
-
-            // No-move guard: a Home press that targets the tile we are already standing on
-            // shouldn't replay the terrain sound or re-announce the whole tile. Just confirm
-            // where we are. Distinguish the patch center from any other tile of the patch.
-            if (targetPosition == cursorBeforeJump)
-            {
-                bool atCenter = jumpRegion != null
-                    && jumpRegion.TileCount > 1
-                    && cursorBeforeJump == jumpRegion.CenterPosition;
-                string where = atCenter
-                    ? (string)"RimWorldAccess.Map.Scanner.AlreadyAtCenter".Translate(currentItem.Label)
-                    : (string)"RimWorldAccess.Map.Scanner.AlreadyAt".Translate(currentItem.Label);
-                TolkHelper.SpeakData(where, SpeechPriority.Normal);
-                return;
-            }
-
-            // Update map cursor position. Guard the write so NotifyCursorWritten does not
-            // invalidate the in-progress navigation session — this is a scanner-driven move.
-            scannerDrivenJumpInProgress = true;
-            try
-            {
-                MapNavigationState.CurrentCursorPosition = targetPosition;
-            }
-            finally
-            {
-                scannerDrivenJumpInProgress = false;
-            }
-
-            // Fire cursor-landing contextual lessons (inspecting things / context menu) for a
-            // scanner Home jump, just as arrow movement does — otherwise jumping straight to a
-            // pawn or item via the scanner never triggered them.
-            DocsTeacher.NotifyCursorLanded(targetPosition, Find.CurrentMap);
-
-            // Jump camera to position
-            Find.CameraDriver.JumpToCurrentMapLoc(targetPosition);
-
-            // Every jump — auto-jump navigation and manual Home alike — lands on the tile and
-            // announces it exactly like an arrow-key step: terrain/wall sound + tile contents. This
-            // is also what avoids the "right here" bug, where the scanner used to recompute the
-            // distance from the cursor AFTER the cursor had already moved onto the target. A jump to
-            // a patch's center additionally leads with the move delta.
-            MapNavigationState.CurrentCameraMode = CameraFollowMode.Cursor;
-            TerrainAudioHelper.PlayCellAudio(targetPosition, Find.CurrentMap, 0.5f);
-
-            string prefix = null;
-            if (jumpedToCenter)
-            {
-                string dir = ScannerDirectionHelper.GetCompassDirection(cursorBeforeJump, targetPosition);
-                float dist = (targetPosition - cursorBeforeJump).LengthHorizontal;
-                prefix = dir != null
-                    ? "RimWorldAccess.Map.Scanner.JumpedTilesToCenter".Translate(dist.ToString("F0"), dir).ToString()
-                    : "RimWorldAccess.Map.Scanner.JumpedToCenter".Translate().ToString();
-            }
-            MapArrowKeyHandler.AnnouncePosition(targetPosition, Find.CurrentMap, prefix);
-        }
-
-        /// <summary>
-        /// Gets the position of the currently selected item in the scanner.
-        /// Used by visual preview patches to highlight the current item.
-        /// Returns IntVec3.Invalid if no item is selected.
-        /// </summary>
-        public static IntVec3 GetCurrentItemPosition()
-        {
-            var currentItem = GetCurrentItem();
-            if (currentItem == null)
-                return IntVec3.Invalid;
-
-            return currentItem.Position;
-        }
-
-        /// <summary>
-        /// Checks if the scanner is currently focused on a temporary category.
-        /// </summary>
-        public static bool IsInTemporaryCategory()
-        {
-            return temporaryCategory != null && GetCurrentCategory() == temporaryCategory;
-        }
-
-        /// <summary>
-        /// Re-points the navigation indices onto the temporary category, which always lives at the
-        /// end of the categories list after a rebuild. Clamps the subcategory index (the temp
-        /// category may have several, e.g. planting sites split by building proximity) and then
-        /// the item index within it, so the selection stays valid.
-        /// </summary>
-        private static void FocusTemporaryCategory(int desiredSubcategoryIndex, int desiredItemIndex)
-        {
-            if (temporaryCategory == null || categories.Count == 0)
-                return;
-
-            currentCategoryIndex = categories.Count - 1;
-            int subCount = temporaryCategory.Subcategories?.Count ?? 0;
-            currentSubcategoryIndex = subCount > 0
-                ? Math.Min(Math.Max(desiredSubcategoryIndex, 0), subCount - 1)
-                : 0;
-            int count = subCount > 0
-                ? temporaryCategory.Subcategories[currentSubcategoryIndex].Items?.Count ?? 0
-                : 0;
-            currentItemIndex = count > 0
-                ? Math.Min(Math.Max(desiredItemIndex, 0), count - 1)
-                : 0;
-            currentBulkIndex = 0;
-        }
-
-        public static void ReadDistanceAndDirection()
-        {
-            if (WorldNavigationState.IsActive) return;
-
-            // Initialize scanner if not already done
-            if (categories.Count == 0)
-            {
-                RefreshItems();
-                if (categories.Count == 0) return;
-                AnnounceCurrentCategory();
-            }
-
-            ScannerItem currentItem;
-            bool removedStale = false;
-            while (true)
-            {
-                currentItem = GetCurrentItem();
-                if (currentItem == null)
-                {
-                    TolkHelper.Speak((removedStale
-                        ? "RimWorldAccess.Map.Scanner.ItemGone"
-                        : "RimWorldAccess.Map.Scanner.NoItemSelected").Loc(), SpeechPriority.High);
-                    return;
-                }
-
-                currentItem.RefreshLabel();
-                if (!currentItem.IsStale) break;
-
-                RemoveCurrentStaleItem();
-                removedStale = true;
-            }
-
-            if (removedStale)
-            {
-                TolkHelper.Speak("RimWorldAccess.Map.Scanner.ItemGone".Loc(), SpeechPriority.High);
-            }
-
-            // No re-sort here: ReadDistanceAndDirection only announces the current item's
-            // live distance and direction. Sort order is maintained by the navigation session.
-            var cursorPos = MapNavigationState.CurrentCursorPosition;
-            IntVec3 targetPos;
-
-            // Area-backed items: use the nearest cell in the area, not the center.
-            // Makes "here" register when the cursor is inside the region/zone/room.
-            if (currentItem.HasTerrainRegions || currentItem.IsZone || currentItem.IsRoom ||
-                (currentItem.IsTerrain && currentItem.BulkTerrainPositions != null))
-            {
-                var nearestCell = FindNearestCell(currentItem, cursorPos);
-                targetPos = nearestCell.IsValid ? nearestCell : currentItem.Position;
-            }
-            else
-            {
-                // Get the actual thing's LIVE position (considering bulk index)
-                if (currentItem.IsBulkGroup && currentBulkIndex < currentItem.BulkCount)
-                {
-                    if (currentItem.BulkThings != null && currentBulkIndex < currentItem.BulkThings.Count)
-                    {
-                        Thing targetThing = currentItem.BulkThings[currentBulkIndex];
-                        targetPos = targetThing.Position;
-                    }
-                    else
-                    {
-                        targetPos = currentItem.Thing?.Position ?? currentItem.Position;
-                    }
-                }
-                else
-                {
-                    // Use live position from Thing if available (for moving targets like pawns)
-                    targetPos = currentItem.Thing?.Position ?? currentItem.Position;
-                }
-            }
-
-            var distance = (targetPos - cursorPos).LengthHorizontal;
-            // Use our calculated targetPos for direction, not item.Position which may be stale
-            var direction = GetDirectionFromCursor(targetPos);
-
-            if (direction != null)
-            {
-                TolkHelper.Speak("RimWorldAccess.Map.Scanner.DistanceDirection".Loc(distance.ToString("F1"), direction), SpeechPriority.Normal);
-            }
-            else
-            {
-                TolkHelper.Speak("RimWorldAccess.Map.Scanner.Here".Loc(), SpeechPriority.Normal);
-            }
-        }
-
-        private static ScannerCategory GetCurrentCategory()
-        {
-            if (currentCategoryIndex < 0 || currentCategoryIndex >= categories.Count)
-                return null;
-
-            return categories[currentCategoryIndex];
-        }
-
-        private static ScannerSubcategory GetCurrentSubcategory()
-        {
-            var category = GetCurrentCategory();
-            if (category == null) return null;
-
-            if (currentSubcategoryIndex < 0 || currentSubcategoryIndex >= category.Subcategories.Count)
-                return null;
-
-            return category.Subcategories[currentSubcategoryIndex];
-        }
-
-        private static ScannerItem GetCurrentItem()
-        {
-            var subcat = GetCurrentSubcategory();
-            if (subcat == null) return null;
-
-            if (currentItemIndex < 0 || currentItemIndex >= subcat.Items.Count)
-                return null;
-
-            return subcat.Items[currentItemIndex];
-        }
-
-        // Removes the current item from its subcategory (used when RefreshLabel marks it stale).
-        // Clamps currentItemIndex to the remaining range and resets bulk navigation state.
-        private static void RemoveCurrentStaleItem()
-        {
-            var subcat = GetCurrentSubcategory();
-            if (subcat == null) return;
-            if (currentItemIndex < 0 || currentItemIndex >= subcat.Items.Count) return;
-
-            subcat.Items.RemoveAt(currentItemIndex);
-
-            if (currentItemIndex >= subcat.Items.Count)
-            {
-                currentItemIndex = Math.Max(0, subcat.Items.Count - 1);
-            }
-
-            currentBulkIndex = 0;
-        }
-
-        private static void ValidateIndices()
-        {
-            // Ensure category index is valid
-            if (currentCategoryIndex < 0 || currentCategoryIndex >= categories.Count)
-            {
-                currentCategoryIndex = 0;
-            }
-
-            // Ensure subcategory index is valid and not empty
-            var category = GetCurrentCategory();
-            if (category != null)
-            {
-                if (currentSubcategoryIndex < 0 || currentSubcategoryIndex >= category.Subcategories.Count)
-                {
-                    currentSubcategoryIndex = 0;
-                }
-
-                // Skip to first non-empty subcategory
-                SkipEmptySubcategories(forward: true);
-            }
-
-            // Ensure item index is valid
-            var subcat = GetCurrentSubcategory();
-            if (subcat != null)
-            {
-                if (currentItemIndex < 0 || currentItemIndex >= subcat.Items.Count)
-                {
-                    currentItemIndex = 0;
-                }
-            }
-        }
-
-        private static void SkipEmptySubcategories(bool forward)
-        {
-            var category = GetCurrentCategory();
-            if (category == null) return;
-
-            int startIndex = currentSubcategoryIndex;
-            int attempts = 0;
-            int maxAttempts = category.Subcategories.Count;
-
-            while ((GetCurrentSubcategory()?.IsEmpty ?? true) && attempts < maxAttempts)
-            {
-                if (forward)
-                {
-                    currentSubcategoryIndex++;
-                    if (currentSubcategoryIndex >= category.Subcategories.Count)
-                    {
-                        currentSubcategoryIndex = 0;
-                    }
-                }
-                else
-                {
-                    currentSubcategoryIndex--;
-                    if (currentSubcategoryIndex < 0)
-                    {
-                        currentSubcategoryIndex = category.Subcategories.Count - 1;
-                    }
-                }
-
-                attempts++;
-            }
-
-            // If all subcategories are empty, reset to start
-            if (GetCurrentSubcategory()?.IsEmpty ?? true)
-            {
-                currentSubcategoryIndex = startIndex;
-            }
-        }
-
-        /// <summary>
-        /// Calculates the compass direction from the current cursor to a target position.
-        /// Returns null if the cursor is at or very close to the target.
-        /// Delegates to ScannerDirectionHelper.
-        /// </summary>
-        private static string GetDirectionFromCursor(IntVec3 targetPosition)
-        {
-            return ScannerDirectionHelper.GetCompassDirection(
-                MapNavigationState.CurrentCursorPosition, targetPosition);
-        }
-
-        private static void AnnounceCurrentCategory()
-        {
-            var category = GetCurrentCategory();
-            if (category == null) return;
-
-            TolkHelper.Speak((category.TotalItemCount == 1
-                ? "RimWorldAccess.Map.Scanner.CategoryAnnouncementOne"
-                : "RimWorldAccess.Map.Scanner.CategoryAnnouncementMany").Loc(
-                    ScannerNameLocalizer.LocalizeCategoryName(category.Name),
-                    category.TotalItemCount), SpeechPriority.Normal);
-        }
-
-        private static void AnnounceCurrentSubcategory()
-        {
-            var subcat = GetCurrentSubcategory();
-            if (subcat == null) return;
-
-            TolkHelper.Speak((subcat.Items.Count == 1
-                ? "RimWorldAccess.Map.Scanner.CategoryAnnouncementOne"
-                : "RimWorldAccess.Map.Scanner.CategoryAnnouncementMany").Loc(
-                    ScannerNameLocalizer.LocalizeSubcategoryName(subcat.Name),
-                    subcat.Items.Count), SpeechPriority.Normal);
-        }
-
-        private static void AnnounceCurrentItem()
-        {
-            ScannerItem item;
-            bool removedStale = false;
-            while (true)
-            {
-                item = GetCurrentItem();
-                if (item == null)
-                {
-                    if (removedStale)
-                        TolkHelper.Speak("RimWorldAccess.Map.Scanner.ItemGone".Loc(), SpeechPriority.High);
-                    else
-                        TolkHelper.Speak("RimWorldAccess.Map.Scanner.EmptyCategory".Loc(), SpeechPriority.Normal);
-                    return;
-                }
-
-                item.RefreshLabel();
-                if (!item.IsStale) break;
-
-                RemoveCurrentStaleItem();
-                removedStale = true;
-            }
-
-            if (removedStale)
-            {
-                TolkHelper.Speak("RimWorldAccess.Map.Scanner.ItemGone".Loc(), SpeechPriority.High);
-            }
-
-            // Special handling for terrain with regions.
-            // The primary announcement describes the SPECIFIC region the cursor is on or
-            // nearest to, not an aggregated view across all regions. This matches the bulk
-            // announcement format ("area N of M") and avoids the misleading "290 tiles, here"
-            // when only 100 of those tiles are the region the cursor is actually on.
-            if (item.HasTerrainRegions)
-            {
-                // Pick the region the cursor is inside, or the one with the nearest cell.
-                // Update currentBulkIndex so subsequent Alt+PgDn navigates from that region.
-                currentBulkIndex = FindNearestRegionIndex(item, MapNavigationState.CurrentCursorPosition);
-                TolkHelper.SpeakData(BuildRegionAnnouncement(item, currentBulkIndex), SpeechPriority.Normal);
-                return;
-            }
-
-            // Get target position — for area-backed items (zones, rooms), use the nearest cell
-            // in the area so "inside the zone" registers as "here" and "2 tiles from the edge"
-            // registers as "2 tiles direction", not the distance to the geometric center.
-            var currentCursorPos = MapNavigationState.CurrentCursorPosition;
-            IntVec3 targetPos;
-            if (item.IsZone || item.IsRoom)
-            {
-                var nearestCell = FindNearestCell(item, currentCursorPos);
-                targetPos = nearestCell.IsValid ? nearestCell : item.Position;
-            }
-            else if (item.IsCapturedEntity)
-            {
-                // Held pawn is not Spawned and Thing.Position is stale; use the
-                // platform position stored on the item.
-                targetPos = item.Position;
-            }
-            else
-            {
-                targetPos = item.Thing != null && item.Thing.Spawned && !item.Thing.Destroyed
-                    ? item.Thing.Position
-                    : item.Position;
-            }
-            var freshDistance = (targetPos - currentCursorPos).LengthHorizontal;  // Calculate fresh distance
-            var itemDirection = GetDirectionFromCursor(targetPos);
-
-            // Build announcement with direction (use comma instead of hyphen to avoid "minus" reading)
-            string basicAnnouncement;
-            if (itemDirection != null)
-            {
-                basicAnnouncement = "RimWorldAccess.Map.Scanner.Item.WithDirection".Translate(item.Label, freshDistance.ToString("F1"), itemDirection);
-            }
-            else
-            {
-                basicAnnouncement = "RimWorldAccess.Map.Scanner.Item.Here".Translate(item.Label);
-            }
-
-            // Add location context, cover info, and activity for pawns (colonists, NPCs, animals)
-            if (item.Thing is Pawn pawn)
-            {
-                string locationContext = TileInfoHelper.GetLocationContext(targetPos, Find.CurrentMap);
-                if (!string.IsNullOrEmpty(locationContext))
-                {
-                    basicAnnouncement += "RimWorldAccess.Map.Scanner.Item.LocationSuffix".Translate(locationContext);
-                }
-
-                // Add cover info for drafted/hostile pawns if enabled
-                if (RimWorldAccessMod_Settings.Settings?.ShowCoverInfo ?? true)
-                {
-                    string coverInfo = CoverHelper.GetCoverInfo(pawn);
-                    if (!string.IsNullOrEmpty(coverInfo))
-                    {
-                        basicAnnouncement += "RimWorldAccess.Map.Scanner.Item.CommaSuffix".Translate(coverInfo);
-                    }
-                }
-
-                // Add pawn activity if enabled in settings
-                if (RimWorldAccessMod_Settings.Settings?.ShowPawnActivityOnMap ?? true)
-                {
-                    string activity = PawnHelper.GetPawnActivity(pawn);
-                    if (!string.IsNullOrEmpty(activity))
-                    {
-                        basicAnnouncement += "RimWorldAccess.Map.Scanner.Item.CommaSuffix".Translate(activity);
-                    }
-                }
-            }
-
-            // Add bulk count if this is a grouped item
-            if (item.IsBulkGroup)
-            {
-                int position = currentBulkIndex + 1;
-                basicAnnouncement += "RimWorldAccess.Map.Scanner.Item.BulkSuffix".Translate(position, item.BulkCount);
-            }
-
-            TolkHelper.SpeakData(basicAnnouncement, SpeechPriority.Normal);
-        }
-
-        private static void AnnounceCurrentBulkItem()
-        {
-            ScannerItem item;
-            bool removedStale = false;
-            while (true)
-            {
-                item = GetCurrentItem();
-                if (item == null || !item.IsBulkGroup)
-                {
-                    if (removedStale)
-                        TolkHelper.Speak("RimWorldAccess.Map.Scanner.ItemGone".Loc(), SpeechPriority.High);
-                    return;
-                }
-
-                item.RefreshLabel();
-                if (!item.IsStale) break;
-
-                RemoveCurrentStaleItem();
-                removedStale = true;
-            }
-
-            if (removedStale)
-            {
-                TolkHelper.Speak("RimWorldAccess.Map.Scanner.ItemGone".Loc(), SpeechPriority.High);
-            }
-
-            if (currentBulkIndex < 0 || currentBulkIndex >= item.BulkCount)
-                return;
-
-            // For terrain regions (adjacency-grouped). Delegate to the shared region builder
-            // so primary and bulk announcements stay formatted consistently.
-            if (item.HasTerrainRegions)
-            {
-                if (currentBulkIndex >= item.TerrainRegions.Count)
-                    return;
-                TolkHelper.SpeakData(BuildRegionAnnouncement(item, currentBulkIndex), SpeechPriority.Normal);
-                return;
-            }
-
-            // For legacy terrain bulk groups (non-adjacent grouping)
-            if (item.IsTerrain && item.BulkTerrainPositions != null)
-            {
-                var terrainPosition = currentBulkIndex + 1;
-                TolkHelper.Speak("RimWorldAccess.Map.Scanner.Item.TerrainBulk".Loc(item.Label, terrainPosition, item.BulkCount), SpeechPriority.Normal);
-                return;
-            }
-
-            // For designation bulk groups
-            if (item.IsDesignation)
-            {
-                if (item.BulkDesignations == null || currentBulkIndex >= item.BulkDesignations.Count)
-                    return;
-
-                var targetDesignation = item.BulkDesignations[currentBulkIndex];
-                var desTargetPos = targetDesignation.target.Cell;
-                var desDistance = (desTargetPos - MapNavigationState.CurrentCursorPosition).LengthHorizontal;
-                var desDirection = GetDirectionFromCursor(desTargetPos);
-                var desPosition = currentBulkIndex + 1;
-
-                // Build label from the specific designation target
-                string designationLabel;
-                if (targetDesignation.target.HasThing && targetDesignation.target.Thing != null)
-                {
-                    designationLabel = targetDesignation.target.Thing.LabelShort;
-                }
-                else
-                {
-                    // For cell-based designations, use the main item label
-                    designationLabel = item.Label;
-                }
-
-                if (desDirection != null)
-                {
-                    TolkHelper.Speak("RimWorldAccess.Map.Scanner.Item.WithDirectionBulk".Loc(designationLabel, desDistance.ToString("F1"), desDirection, desPosition, item.BulkCount), SpeechPriority.Normal);
-                }
-                else
-                {
-                    TolkHelper.Speak("RimWorldAccess.Map.Scanner.Item.HereBulk".Loc(designationLabel, desPosition, item.BulkCount), SpeechPriority.Normal);
-                }
-                return;
-            }
-
-            // For thing bulk groups, get label from the actual thing at this index
-            if (item.BulkThings == null || currentBulkIndex >= item.BulkThings.Count)
-                return;
-
-            var targetThing = item.BulkThings[currentBulkIndex];
-            if (targetThing == null)
-                return;
-
-            var thingTargetPos = targetThing.Position;
-            var distance = (thingTargetPos - MapNavigationState.CurrentCursorPosition).LengthHorizontal;
-            var thingDirection = GetDirectionFromCursor(thingTargetPos);
-            var position = currentBulkIndex + 1;
-
-            // Build label from this specific thing, not the group label
-            string thingLabel = targetThing.LabelShort ?? targetThing.def?.label ?? item.Label;
-
-            if (thingDirection != null)
-            {
-                TolkHelper.Speak("RimWorldAccess.Map.Scanner.Item.WithDirectionBulk".Loc(thingLabel, distance.ToString("F1"), thingDirection, position, item.BulkCount), SpeechPriority.Normal);
-            }
-            else
-            {
-                TolkHelper.Speak("RimWorldAccess.Map.Scanner.Item.HereBulk".Loc(thingLabel, position, item.BulkCount), SpeechPriority.Normal);
-            }
-        }
-
-        /// <summary>
-        /// Jumps to the first item in the current subcategory.
-        /// </summary>
-        public static void JumpToFirstItem()
-        {
-            if (WorldNavigationState.IsActive) return;
-
-            // Initialize scanner if not already done
-            if (categories.Count == 0)
-            {
-                RefreshItems();
-                if (categories.Count == 0) return;
-                AnnounceCurrentCategory();
-            }
-
-            var currentSubcat = GetCurrentSubcategory();
-            if (currentSubcat == null || currentSubcat.Items.Count == 0) return;
-
-            // Home: start a fresh session re-anchored to the current cursor, then land on the
-            // closest item. Subsequent Page Down walks forward from there in a stable order.
-            InvalidateNavigationSession();
-            BeginNavigationSession();
-            currentItemIndex = 0;
-            currentBulkIndex = 0;
-
-            if (autoJumpMode)
-            {
-                JumpToCurrent();
-            }
-            else
-            {
-                AnnounceCurrentItem();
-            }
-            lastScannerCursor = MapNavigationState.CurrentCursorPosition;
-        }
-
-        /// <summary>
-        /// Jumps to the last item in the current subcategory.
-        /// </summary>
-        public static void JumpToLastItem()
-        {
-            if (WorldNavigationState.IsActive) return;
-
-            // Initialize scanner if not already done
-            if (categories.Count == 0)
-            {
-                RefreshItems();
-                if (categories.Count == 0) return;
-                AnnounceCurrentCategory();
-            }
-
-            var currentSubcat = GetCurrentSubcategory();
-            if (currentSubcat == null || currentSubcat.Items.Count == 0) return;
-
-            // End: start a fresh session re-anchored to the current cursor, then land on the
-            // farthest item. Subsequent Page Up walks backward from there in a stable order.
-            InvalidateNavigationSession();
-            BeginNavigationSession();
-            currentItemIndex = currentSubcat.Items.Count - 1;
-            currentBulkIndex = 0;
-
-            if (autoJumpMode)
-            {
-                JumpToCurrent();
-            }
-            else
-            {
-                AnnounceCurrentItem();
-            }
-            lastScannerCursor = MapNavigationState.CurrentCursorPosition;
-        }
     }
 }

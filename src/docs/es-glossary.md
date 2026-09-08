@@ -473,3 +473,21 @@ Useful sub-paths: `Keyed/Designators.xml` (order verbs), `Keyed/GameplayCommands
 The English comments in the corpus (`<!-- EN: … -->`) let you confirm a key's meaning before trusting
 its Spanish value. Always cite the file you took a term from when you add a row. **Never add a
 `_numCase` tag (§3.2), keep the informal tú register (§3.5), and prefer gender-safe recasts (§3.4).**
+
+## Mod-coined terms — watermill placement + read-only browsing (2026-08-13)
+
+Thirteen new keys (`RimWorldAccess.Building.Place.Spot*`, `.Watermill*`, `RimWorldAccess.TextInput.BrowsingField/ReadOnlyField`)
+had no reference translation to check: this local install only carries the English Core language pack,
+so RimWorld's own Latin American Spanish wording for the `WatermillGenerator` ThingDef could not be
+verified against the game's corpus. Decided from context per house rule (no native-review parking,
+§3.5 informal tú, no `_numCase` per §3.2); record here so later waves stay consistent.
+
+| English | Español (Latinoamérica) | Basis |
+|---|---|---|
+| watermill (whole building) | molino de agua | Standard Spanish term for a water mill |
+| waterwheel (the wheel part) | rueda hidráulica | Standard Spanish technical term for a water wheel |
+| moving/running water | agua corriente | Standard idiom for flowing water |
+| water flow area | área de flujo de agua | Coined; parallels `Área necesaria` (`OutlineOkAt`) |
+| unshared / shared with another watermill | no compartida / compartida con otro molino de agua | Coined |
+| placement spot (scanner category/item) | Sitios para colocar {0} / Lugar | Mirrors `Abilities.Plant.ScannerCategory`/`ScannerItemLabel` ("Sitios para plantar {0}" / "Lugar plantable") |
+| facing {0} (trailing fragment) | orientado al {0} | Mirrors `Building.Architect.NowFacing` ("Ahora orientado al {0}") |

@@ -6,26 +6,18 @@ using RimWorld;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Helper class for extracting prisoner and slave management information.
-    /// Provides methods to get prisoner stats, interaction modes, and colony capabilities.
-    /// Uses vanilla translation keys so screen reader output follows the user's language.
+    /// Prisoner and slave management readouts: stats, interaction modes, and colony capabilities,
+    /// built from vanilla translation keys so output follows the player's language.
     /// </summary>
     public static class PrisonerTabHelper
     {
-        /// <summary>
-        /// Comprehensive prisoner readout: stats, resistance, prison-break risk,
-        /// release goodwill, guilt timer, last-recruitment breakdown.
-        /// Uses vanilla translation keys so screen reader output follows the user's language.
-        /// </summary>
+        /// <summary>The full prisoner readout: stats, resistance, prison-break risk, release goodwill, guilt timer, last recruitment.</summary>
         public static string GetPrisonerInfo(Pawn pawn)
         {
             return BuildPrisonerInfo(pawn).Build();
         }
 
-        /// <summary>
-        /// Same content as <see cref="GetPrisonerInfo"/>, but as a list of discrete rows
-        /// (one stat per entry) for arrow-key navigation in the prisoner tab.
-        /// </summary>
+        /// <summary><see cref="GetPrisonerInfo"/>'s content as one row per stat, for arrow-key navigation.</summary>
         public static List<string> GetPrisonerInfoRows(Pawn pawn)
         {
             return BuildPrisonerInfo(pawn).BuildLines();
@@ -47,7 +39,6 @@ namespace RimWorldAccess
 
             bool wildMan = pawn.IsWildMan();
 
-            // Prison Break MTB (vanilla "PrisonBreakMTBDays", tooltip "PrisonBreakMTBDaysDescription")
             string prisonBreakLabel = "PrisonBreakMTBDays".Translate();
             string prisonBreakTooltip = "PrisonBreakMTBDaysDescription".Translate();
             if (PrisonBreakUtility.IsPrisonBreaking(pawn))
@@ -85,7 +76,7 @@ namespace RimWorldAccess
                         ab.Add($"{"RecruitmentResistanceFromPawnKind".Translate(pawn.kindDef.LabelCap)}: {resistanceRange.Value.min}~{resistanceRange.Value.max}");
                     }
 
-                    // Royalty title recruitment offset (vanilla ITab_Pawn_Visitor line 227-234)
+                    // Royalty title recruitment offset.
                     if (pawn.royalty != null)
                     {
                         RoyalTitle mostSeniorTitle = pawn.royalty.MostSeniorTitle;
@@ -115,11 +106,9 @@ namespace RimWorldAccess
                 }
             }
 
-            // Slave Price (vanilla DoSlavePriceListing, tooltip "SlavePriceDescription")
             float marketValue = pawn.GetStatValue(StatDefOf.MarketValue);
             ab.Add(WithTooltip($"{"SlavePrice".Translate()}: {marketValue.ToStringMoney()}", "SlavePriceDescription".Translate()));
 
-            // Study info (Anomaly DLC) — vanilla calls ITab_Entity.DoStudyPeriodListing / DoKnowledgeGainListing
             if (IsStudiable(pawn))
             {
                 var compStudiable = pawn.TryGetComp<CompStudiable>();
@@ -129,10 +118,8 @@ namespace RimWorldAccess
                 }
             }
 
-            // Release Potential Relations (vanilla "PrisonerReleasePotentialRelationGains", tooltip "PrisonerReleaseRelationGainsDesc")
             ab.Add(WithTooltip($"{"PrisonerReleasePotentialRelationGains".Translate()}: {GetReleaseRelationGainsText(pawn)}", "PrisonerReleaseRelationGainsDesc".Translate()));
 
-            // Guilty Status (vanilla "ConsideredGuilty" / "ConsideredGuiltyNoTimer")
             if (pawn.guilt.IsGuilty)
             {
                 if (!pawn.InAggroMentalState)
@@ -146,13 +133,11 @@ namespace RimWorldAccess
                 }
             }
 
-            // Ideology Conversion Target (vanilla "IdeoConversionTarget", tooltip "IdeoConversionTargetDesc")
             if (ModsConfig.IdeologyActive && pawn.guest.IsInteractionEnabled(PrisonerInteractionModeDefOf.Convert) && pawn.guest.ideoForConversion != null)
             {
                 ab.Add(WithTooltip($"{"IdeoConversionTarget".Translate()}: {pawn.guest.ideoForConversion.name}", "IdeoConversionTargetDesc".Translate()));
             }
 
-            // Last Recruitment Stats (vanilla "LastRecruitment", "Mood", "RecruiterNegotiationAbility", "OpinionOfRecruiter")
             if (pawn.guest.finalResistanceInteractionData != null)
             {
                 var data = pawn.guest.finalResistanceInteractionData;
@@ -167,20 +152,15 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Comprehensive slave readout: suppression, terror, rebellion-MTB.
-        /// Each row mirrors a row in vanilla ITab_Pawn_Visitor.DoSlaveTab and appends that row's
-        /// hover tooltip (flattened to one line) so screen reader users hear the same explanation a
-        /// sighted player would see on mouseover. Uses vanilla translation keys throughout.
+        /// The full slave readout: suppression, terror, rebellion MTB. Each row mirrors one of
+        /// vanilla's own and appends that row's hover tooltip, flattened to one line.
         /// </summary>
         public static string GetSlaveInfo(Pawn pawn)
         {
             return BuildSlaveInfo(pawn).Build();
         }
 
-        /// <summary>
-        /// Same content as <see cref="GetSlaveInfo"/>, but as a list of discrete rows
-        /// (one stat per entry) for arrow-key navigation in the slave tab.
-        /// </summary>
+        /// <summary><see cref="GetSlaveInfo"/>'s content as one row per stat, for arrow-key navigation.</summary>
         public static List<string> GetSlaveInfoRows(Pawn pawn)
         {
             return BuildSlaveInfo(pawn).BuildLines();
@@ -200,7 +180,6 @@ namespace RimWorldAccess
             var ab = new AnnouncementBuilder()
                 .Add("RimWorldAccess.Prisoner.Info.HeaderSlave".Translate(pawn.LabelShort));
 
-            // Suppression (vanilla "Suppression", tooltip "SuppressionDesc")
             if (pawn.needs.TryGetNeed(out Need_Suppression suppressionNeed))
             {
                 string suppressionTooltip = FlattenTooltip("SuppressionDesc".Translate());
@@ -210,7 +189,6 @@ namespace RimWorldAccess
                 ab.Add(row);
             }
 
-            // Suppression Fall Rate (vanilla "SuppressionFallRate", tooltip "SuppressionFallRateDesc" + stat explanation)
             float fallRate = pawn.GetStatValue(StatDefOf.SlaveSuppressionFallRate);
             string fallRateTip = "SuppressionFallRateDesc".Translate(
                 0.2f.ToStringPercent(), 0.3f.ToStringPercent(), 0.1f.ToStringPercent(),
@@ -223,7 +201,6 @@ namespace RimWorldAccess
                 fallRateRow += $". {fallRateTooltip}";
             ab.Add(fallRateRow);
 
-            // Terror (vanilla "Terror", tooltip "TerrorDescription" + fall-rate curve + current terror thoughts)
             float terror = pawn.GetStatValue(StatDefOf.Terror);
             string terrorTip = "TerrorDescription".Translate() + ": " + TerrorUtility.SuppressionFallRateOverTerror.Points
                 .Select(p => string.Format("- {0} {1}: {2}", "Terror".Translate(), (p.x / 100f).ToStringPercent(), (p.y / 100f).ToStringPercent()))
@@ -240,7 +217,6 @@ namespace RimWorldAccess
                 terrorRow += $". {terrorTooltip}";
             ab.Add(terrorRow);
 
-            // Slave Rebellion MTB (vanilla "SlaveRebellionMTBDays", tooltip "SlaveRebellionMTBDaysDescription")
             string rebellionLabel = "SlaveRebellionMTBDays".Translate();
             string rebellionValue;
             if (!pawn.Awake())
@@ -260,7 +236,6 @@ namespace RimWorldAccess
                 rebellionRow += $". {rebellionTooltip}";
             ab.Add(rebellionRow);
 
-            // Slave Price (vanilla "SlavePrice", tooltip "SlavePriceDescription")
             float marketValue = pawn.GetStatValue(StatDefOf.MarketValue);
             string slavePriceTooltip = FlattenTooltip("SlavePriceDescription".Translate());
             string slavePriceRow = $"{"SlavePrice".Translate()}: {marketValue.ToStringMoney()}";
@@ -268,7 +243,6 @@ namespace RimWorldAccess
                 slavePriceRow += $". {slavePriceTooltip}";
             ab.Add(slavePriceRow);
 
-            // Release Potential Relations (vanilla "SlaveReleasePotentialRelationGains", tooltip "SlaveReleaseRelationGainsDesc")
             string releaseTooltip = FlattenTooltip("SlaveReleaseRelationGainsDesc".Translate());
             string releaseRow = $"{"SlaveReleasePotentialRelationGains".Translate()}: {GetSlaveReleaseRelationGainsText(pawn)}";
             if (!string.IsNullOrEmpty(releaseTooltip))
@@ -279,9 +253,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Flattens a multi-line game tooltip into a single line so it can be appended to one
-        /// navigable info row. Strips formatting tags and turns line breaks into sentence breaks;
-        /// SpeechSanitizer collapses any resulting redundant punctuation.
+        /// Flattens a multi-line game tooltip onto one navigable info row: tags stripped, line
+        /// breaks turned into sentence breaks, with SpeechSanitizer collapsing redundant punctuation.
         /// </summary>
         private static string FlattenTooltip(string tooltip)
         {
@@ -291,19 +264,14 @@ namespace RimWorldAccess
             return tooltip.StripTags().Replace("\r", " ").Replace("\n", ". ").Trim();
         }
 
-        /// <summary>
-        /// Appends a flattened hover tooltip to a stat row so screen reader users hear the same
-        /// explanation a sighted player sees on mouseover. No-op when the tooltip is empty.
-        /// </summary>
+        /// <summary>Appends a flattened hover tooltip to a stat row; a no-op when the tooltip is empty.</summary>
         private static string WithTooltip(string row, string tooltip)
         {
             string flat = FlattenTooltip(tooltip);
             return string.IsNullOrEmpty(flat) ? row : $"{row}. {flat}";
         }
 
-        /// <summary>
-        /// Gets list of available exclusive interaction modes for the prisoner.
-        /// </summary>
+        /// <summary>The prisoner's available exclusive interaction modes.</summary>
         public static List<PrisonerInteractionModeDef> GetAvailableExclusiveInteractionModes(Pawn pawn)
         {
             bool wildMan = pawn.IsWildMan();
@@ -313,9 +281,7 @@ namespace RimWorldAccess
                 .ToList();
         }
 
-        /// <summary>
-        /// Gets list of available non-exclusive interaction modes for the prisoner.
-        /// </summary>
+        /// <summary>The prisoner's available non-exclusive interaction modes.</summary>
         public static List<PrisonerInteractionModeDef> GetAvailableNonExclusiveInteractionModes(Pawn pawn)
         {
             bool wildMan = pawn.IsWildMan();
@@ -325,9 +291,7 @@ namespace RimWorldAccess
                 .ToList();
         }
 
-        /// <summary>
-        /// Gets list of available slave interaction modes.
-        /// </summary>
+        /// <summary>The available slave interaction modes.</summary>
         public static List<SlaveInteractionModeDef> GetAvailableSlaveInteractionModes()
         {
             return DefDatabase<SlaveInteractionModeDef>.AllDefs
@@ -335,19 +299,13 @@ namespace RimWorldAccess
                 .ToList();
         }
 
-        /// <summary>
-        /// Gets the label for a medical care level via the vanilla MedicalCareUtility accessor,
-        /// which uses per-level translation keys ("MedicalCareCategory_NoCare", etc.).
-        /// </summary>
+        /// <summary>A medical care level's label, via the vanilla accessor's per-level translation keys.</summary>
         public static string GetMedicalCareLabel(MedicalCareCategory category)
         {
             return category.GetLabel();
         }
 
-        /// <summary>
-        /// Gets a description of the interaction mode with warnings if needed.
-        /// Warnings reuse vanilla message keys so they localize correctly.
-        /// </summary>
+        /// <summary>An interaction mode's description, with any warnings, from vanilla's own message keys.</summary>
         public static string GetInteractionModeDescription(Pawn pawn, PrisonerInteractionModeDef mode)
         {
             var ab = new AnnouncementBuilder()
@@ -371,10 +329,7 @@ namespace RimWorldAccess
             return ab.Build();
         }
 
-        /// <summary>
-        /// Gets a description of the slave interaction mode.
-        /// Emancipate tooltips reuse vanilla's EmancipateXxxTooltip keys.
-        /// </summary>
+        /// <summary>A slave interaction mode's description; Emancipate reuses vanilla's own tooltip keys.</summary>
         public static string GetSlaveInteractionModeDescription(Pawn pawn, SlaveInteractionModeDef mode)
         {
             var ab = new AnnouncementBuilder()
@@ -399,9 +354,7 @@ namespace RimWorldAccess
             return ab.Build();
         }
 
-        /// <summary>
-        /// Gets list of all player ideologies for conversion selection.
-        /// </summary>
+        /// <summary>Every player ideology, for conversion selection.</summary>
         public static List<Ideo> GetPlayerIdeologies()
         {
             if (!ModsConfig.IdeologyActive || Faction.OfPlayer.ideos == null)
@@ -412,24 +365,18 @@ namespace RimWorldAccess
 
         #region Private Helper Methods
 
-        /// <summary>
-        /// Appends Anomaly DLC study period and knowledge gain info using the same translation
-        /// keys vanilla ITab_Entity.DoStudyPeriodListing / DoKnowledgeGainListing use.
-        /// </summary>
+        /// <summary>Appends Anomaly study period and knowledge gain info, on vanilla's own translation keys.</summary>
         private static void AppendStudyInfo(AnnouncementBuilder ab, CompStudiable studiable)
         {
-            // Study interval (vanilla "StudyInterval")
             if (studiable.Props.frequencyTicks > 0)
             {
                 ab.Add($"{"StudyInterval".Translate()}: {studiable.Props.frequencyTicks.ToStringTicksToPeriod()}");
             }
 
-            // Knowledge gain per study (vanilla "StudyKnowledgeGain" with category label)
             float knowledgePerStudy = studiable.AdjustedAnomalyKnowledgePerStudy * 5f;
             string knowledgeCategoryLabel = studiable.KnowledgeCategory?.label ?? "";
             ab.Add($"{"StudyKnowledgeGain".Translate()}: {knowledgePerStudy.ToStringDecimalIfSmall()} ({knowledgeCategoryLabel})");
 
-            // Multiplier breakdown (containment, electroharvester, activity)
             var compHoldingPlatformTarget = studiable.Pawn.TryGetComp<CompHoldingPlatformTarget>();
             if (compHoldingPlatformTarget != null && compHoldingPlatformTarget.CurrentlyHeldOnPlatform)
             {
@@ -511,10 +458,7 @@ namespace RimWorldAccess
             return FormatReleaseRelationGains(pawn, pawn.SlaveFaction ?? pawn.Faction);
         }
 
-        /// <summary>
-        /// Formats release relation gain text using vanilla "None" and "UntendedInjury" keys,
-        /// matching the logic in ITab_Pawn_Visitor.DoPrisonerTab / DoSlaveTab.
-        /// </summary>
+        /// <summary>Formats release relation gain text on vanilla's own keys, matching its own tab logic.</summary>
         private static string FormatReleaseRelationGains(Pawn pawn, Faction faction)
         {
             string none = "None".Translate();

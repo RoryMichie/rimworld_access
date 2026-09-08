@@ -1,7 +1,5 @@
 using System.Text;
-using HarmonyLib;
 using RimWorld;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
@@ -44,13 +42,29 @@ namespace RimWorldAccess
         public static void Open(ITargetingSource source)
         {
             if (source == null) return;
+            Open(source, ExtractLabel(source), ExtractAoeRadius(source));
+        }
+
+        /// <summary>
+        /// Opens with an explicit label and AoE radius, bypassing this class's own
+        /// <see cref="ExtractLabel"/>/<see cref="ExtractAoeRadius"/> heuristics.
+        /// For compat sources whose generic Caster-derived label would read as
+        /// the caster's own name rather than the thing being targeted (e.g. a
+        /// JecsTools ability verb, whose <c>verbProps.label</c> is normally
+        /// blank and has no EquipmentSource), and/or whose
+        /// HighlightFieldRadiusAroundTarget override always reports a non-zero
+        /// fallback radius even when the source isn't genuinely an AoE effect.
+        /// </summary>
+        public static void Open(ITargetingSource source, string labelOverride, float aoeRadiusOverride)
+        {
+            if (source == null) return;
             currentSource = source;
             casterPosition = source.Caster?.Position ?? IntVec3.Invalid;
             casterMap = source.Caster?.Map;
             effectiveRange = ExtractRange(source);
             minRange = ExtractMinRange(source);
-            aoeRadius = ExtractAoeRadius(source);
-            sourceLabel = ExtractLabel(source);
+            aoeRadius = aoeRadiusOverride;
+            sourceLabel = labelOverride;
             isActive = true;
 
             TolkHelper.SpeakData(BuildStartAnnouncement(), SpeechPriority.Normal);
@@ -66,17 +80,6 @@ namespace RimWorldAccess
             minRange = 0f;
             aoeRadius = 0f;
             sourceLabel = null;
-        }
-
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!isActive) return false;
-            if (key == KeyCode.R && !shift && !ctrl && !alt)
-            {
-                AnnounceRangeInfo();
-                return true;
-            }
-            return false;
         }
 
         public static void AnnounceRangeInfo()

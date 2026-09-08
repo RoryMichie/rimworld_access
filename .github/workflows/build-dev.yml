@@ -33,9 +33,11 @@ jobs:
           # ethindp/prism#49). Bump only after verifying the target release,
           # and keep the PrismConfig struct in PrismNative.cs in sync with the
           # target's PRISM_CONFIG_VERSION — the struct is returned by value,
-          # so a layout mismatch corrupts the stack. Must match PrismVersion
-          # in rimworld_access.csproj.
-          PRISM_VERSION: v0.17.0
+          # so a layout mismatch corrupts the stack. Never drop below v0.18.0:
+          # the Macaw plugin load in TolkHelper needs
+          # prism_registry_builder_add_library. Must match PrismVersion in
+          # rimworld_access.csproj.
+          PRISM_VERSION: v0.18.2
         run: |
           mkdir -p native
           base="https://github.com/ethindp/prism/releases/download/${PRISM_VERSION}"
@@ -85,7 +87,7 @@ jobs:
             "release/RimWorldAccess/prism.dll",
             "release/RimWorldAccess/libprism.dylib",
             "release/RimWorldAccess/libprism.so",
-            "release/changelog.txt"
+            "release/CHANGELOG.md"
           )
           foreach ($file in $expected) {
             if (-not (Test-Path $file)) {
@@ -96,7 +98,7 @@ jobs:
           Write-Host "All expected files present"
 
       - name: Create ZIP
-        run: Compress-Archive -Path release/changelog.txt, release/RimWorldAccess -DestinationPath RimWorldAccess-dev.zip
+        run: Compress-Archive -Path release/CHANGELOG.md, release/RimWorldAccess -DestinationPath RimWorldAccess-dev.zip
 
       - name: Delete previous dev release
         shell: bash

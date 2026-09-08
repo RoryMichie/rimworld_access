@@ -83,7 +83,7 @@ namespace RimWorldAccess
                 designationsBeforeOperation.Add(des);
             }
 
-            Log.Message($"[OrderUndoTracker] CaptureBeforeState: {designationsBeforeOperation.Count} existing designations");
+            ModLogger.Dev($"[OrderUndoTracker] CaptureBeforeState: {designationsBeforeOperation.Count} existing designations");
         }
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace RimWorldAccess
                 }
             }
 
-            Log.Message($"[OrderUndoTracker] CaptureAfterState: {currentRecord.CreatedDesignations.Count} new designations captured");
+            ModLogger.Dev($"[OrderUndoTracker] CaptureAfterState: {currentRecord.CreatedDesignations.Count} new designations captured");
         }
 
         /// <summary>
@@ -118,12 +118,12 @@ namespace RimWorldAccess
         {
             if (currentRecord == null)
             {
-                Log.Message("[OrderUndoTracker] AddSegment called but no pending record");
+                ModLogger.Dev("[OrderUndoTracker] AddSegment called but no pending record");
                 return;
             }
 
             segments.Add(currentRecord);
-            Log.Message($"[OrderUndoTracker] AddSegment: now have {segments.Count} segments");
+            ModLogger.Dev($"[OrderUndoTracker] AddSegment: now have {segments.Count} segments");
             currentRecord = null;
             designationsBeforeOperation.Clear();
         }
@@ -140,7 +140,7 @@ namespace RimWorldAccess
 
             if (segments.Count == 0)
             {
-                Log.Message("[OrderUndoTracker] UndoLastSegment: no segments to undo");
+                ModLogger.Dev("[OrderUndoTracker] UndoLastSegment: no segments to undo");
                 return 0;
             }
 
@@ -154,7 +154,7 @@ namespace RimWorldAccess
             segments.RemoveAt(segments.Count - 1);
 
             lastRemovedCount = RemoveDesignationsFromRecord(record, map);
-            Log.Message($"[OrderUndoTracker] UndoLastSegment: removed {lastRemovedCount} designations, {segments.Count} segments remaining");
+            ModLogger.Dev($"[OrderUndoTracker] UndoLastSegment: removed {lastRemovedCount} designations, {segments.Count} segments remaining");
 
             return lastRemovedCount;
         }
@@ -182,7 +182,7 @@ namespace RimWorldAccess
 
             segments.Clear();
             lastRemovedCount = totalRemoved;
-            Log.Message($"[OrderUndoTracker] UndoAll: removed {totalRemoved} designations total");
+            ModLogger.Dev($"[OrderUndoTracker] UndoAll: removed {totalRemoved} designations total");
 
             return totalRemoved;
         }
@@ -223,7 +223,7 @@ namespace RimWorldAccess
             segments.Clear();
             designationsBeforeOperation.Clear();
             lastRemovedCount = 0;
-            Log.Message("[OrderUndoTracker] Cleared all undo data");
+            ModLogger.Dev("[OrderUndoTracker] Cleared all undo data");
         }
     }
 }

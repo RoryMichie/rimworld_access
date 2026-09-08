@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    World module strings (src/World/). Covers the world map, settlements,
+    caravan formation/split, route planning (waypoint editor for caravan
+    travel), gear-equip menu (pawn-side equip/swap from Caravan Inspect),
+    world scanner (mirrors Map.Scanner's
+    category structure), caravan multi-select, layer switching, and the
+    stat-breakdown overlay.
+
+    Files contributing strings:
+      - WorldNavigationState.cs        (main world map + caravan focus)
+      - CaravanFormationState.cs       (Dialog_FormCaravan)
+      - SplitCaravanState.cs           (Dialog_SplitCaravan)
+      - CaravanInspectState.cs         (windowless caravan inspect tree)
+      - CaravanInputHelper.cs          (Alt+H/M/N/G/K caravan tab dispatch)
+      - CaravanUIHelper.cs             (transferable check/uncheck)
+      - CaravanQuantityHelper.cs       (per-stack quantity adjust feedback)
+      - CaravanFormationPatch.cs / SplitCaravanPatch.cs / CaravanAnnouncementHelper.cs
+      - GearEquipMenuState.cs          (equip-this-item picker)
+      - StatBreakdownState.cs          (Alt+I breakdown overlay)
+      - RoutePlannerState.cs           (caravan waypoint planner)
+      - WorldNavigationPatch.cs / WorldObjectSelectionState.cs
+      - WorldScannerState.cs           (PgUp/PgDn world map scanner)
+
+    Shared phrases delegated elsewhere:
+      - Position / Edge / Search / Stepper / Map.JumpedTo -> Common.xml
+      - "Cancelled"                                       -> UI.Cancelled
+      - World/scanner direction nouns                     -> Map.Direction.*
+      - Pawn quick-info hotkeys ("No pawn selected")      -> Common.Guard
+      - vanilla labels: caravan/settlement names, faction relations,
+        biome names, pawn labels, item labels, days/hours, layer
+        labels (LabelCap from LayerDef) - all from game.
+
+    Data such as caravan names, settlement labels, pawn names, item
+    labels, faction names, biome descriptions, ETA strings ("X days"),
+    speed-source nouns from the game, and stat values come from the
+    game's translation system and are NOT duplicated here.
+  -->
+
+  <!-- =================================================================
+       World map shell + caravan navigation (WorldNavigationState).
+       Covers tile read-out, caravan multi-select, layer switching,
+       pole compass mode, jump-to-home / jump-to-caravan.
+       {0} = caravan label, {1} = count, {2} = pole name, {3} = layer name.
+       ================================================================= -->
+  <RimWorldAccess.World.NotAvailable>Dünya haritası kullanılamıyor</RimWorldAccess.World.NotAvailable>
+  <RimWorldAccess.World.OpenWithRoute>Dünya haritası. Rota planlayıcı etkin, {0} yol işareti var. {1}</RimWorldAccess.World.OpenWithRoute>
+  <RimWorldAccess.World.OpenRoutePlannerActive>Dünya haritası. Rota planlayıcı etkin. {0}</RimWorldAccess.World.OpenRoutePlannerActive>
+  <RimWorldAccess.World.OpenInstructions>Dünya haritası. {0}</RimWorldAccess.World.OpenInstructions>
+  <RimWorldAccess.World.NearPole>{0} kutbuna yakın, göreceli yönler kullanılıyor</RimWorldAccess.World.NearPole>
+  <RimWorldAccess.World.LeavingPole>Kutup bölgesinden çıkılıyor, pusula yönleri kullanılıyor</RimWorldAccess.World.LeavingPole>
+  <RimWorldAccess.World.LayerSwitchFailed>{0} katmanına geçilemedi: {1}</RimWorldAccess.World.LayerSwitchFailed>
+  <RimWorldAccess.World.NoOtherLayers>Başka katman yok</RimWorldAccess.World.NoOtherLayers>
+  <RimWorldAccess.World.SwitchedToLayer>{0} katmanına geçildi.</RimWorldAccess.World.SwitchedToLayer>
+  <RimWorldAccess.World.SwitchedToLayerSpace>{0} katmanına geçildi. Uzay katmanı.</RimWorldAccess.World.SwitchedToLayerSpace>
+  <RimWorldAccess.World.NoHomeSettlement>Ana yerleşim bulunamadı</RimWorldAccess.World.NoHomeSettlement>
+  <RimWorldAccess.World.NoPlayerCaravans>Oyuncu kervanı bulunamadı</RimWorldAccess.World.NoPlayerCaravans>
+  <RimWorldAccess.World.NoCaravansAtAll>Kervan bulunamadı</RimWorldAccess.World.NoCaravansAtAll>
+  <RimWorldAccess.World.NoTileSelected>Seçili altıgen yok</RimWorldAccess.World.NoTileSelected>
+  <RimWorldAccess.World.NoSettlementAtTile>Bu altıgende yerleşim yok</RimWorldAccess.World.NoSettlementAtTile>
+  <RimWorldAccess.World.OnlyPlayerSettlements>Kervan yalnızca oyuncu yerleşimlerinden kurulabilir</RimWorldAccess.World.OnlyPlayerSettlements>
+  <RimWorldAccess.World.SettlementHasNoMap>Yerleşimin haritası yok</RimWorldAccess.World.SettlementHasNoMap>
+  <RimWorldAccess.World.NoCaravanSelected>Seçili kervan yok</RimWorldAccess.World.NoCaravanSelected>
+  <RimWorldAccess.World.CaravanTraveling>{0} hedefe doğru seyahat ediyor</RimWorldAccess.World.CaravanTraveling>
+  <RimWorldAccess.World.NoOrdersAlreadyHere>Emir yok, zaten bu konumdasın</RimWorldAccess.World.NoOrdersAlreadyHere>
+  <RimWorldAccess.World.CaravanOrders>{0} için emirler: {1} seçenek mevcut</RimWorldAccess.World.CaravanOrders>
+  <RimWorldAccess.World.NoCaravanFocused>Odakta kervan yok. Önce kervanlar arasında geçiş yapmak için virgül veya nokta kullan.</RimWorldAccess.World.NoCaravanFocused>
+  <RimWorldAccess.World.CaravanDeselected>{0} seçimi kaldırıldı. {1} kervan seçili.</RimWorldAccess.World.CaravanDeselected>
+  <RimWorldAccess.World.CaravanSelected>{0} seçildi. {1} kervan seçili.</RimWorldAccess.World.CaravanSelected>
+  <RimWorldAccess.World.MultiSelectDifferentTiles>Aynı anda iki yerde olamazsın! Seçili kervanlar farklı altıgenlerde.</RimWorldAccess.World.MultiSelectDifferentTiles>
+  <RimWorldAccess.World.JumpedToMultipleCaravans>Seçili {0} kervana gidildi. {1}</RimWorldAccess.World.JumpedToMultipleCaravans>
+  <RimWorldAccess.World.JumpedToCaravan>Gidildi. {0}. {1}</RimWorldAccess.World.JumpedToCaravan>
+  <!-- Lead-in spoken when the world "Jump to..." menu moves the cursor. {0} = direction, {1} = tile count. -->
+  <RimWorldAccess.World.JumpedTilesDirection>{0} yönünde {1} altıgen gidildi</RimWorldAccess.World.JumpedTilesDirection>
+  <RimWorldAccess.World.JumpedTiles>{0} altıgen gidildi</RimWorldAccess.World.JumpedTiles>
+  <RimWorldAccess.World.NoCaravanSelectedHint>Seçili kervan yok. Önce kervanlar arasında geçiş yapmak için virgül veya nokta kullan.</RimWorldAccess.World.NoCaravanSelectedHint>
+  <RimWorldAccess.World.CycleCaravanSelected>{0}, {1}, seçili, {2} / {3}</RimWorldAccess.World.CycleCaravanSelected>
+  <RimWorldAccess.World.CycleCaravanNotSelected>{0}, {1}, {2} / {3}</RimWorldAccess.World.CycleCaravanNotSelected>
+  <RimWorldAccess.World.TravelToTile>Bu altıgene seyahat et</RimWorldAccess.World.TravelToTile>
+
+  <!-- =================================================================
+       Caravan formation dialog (CaravanFormationState).
+       Uses Dialog_FormCaravan with tabs (Pawns / Items / Animals /
+       Travel Supplies). Tab-summary view is split off; many block
+       reasons are user-facing.
+       {0} = tab name, {1} = item count, {2} = error message,
+       {3} = stat / item / position label.
+       ================================================================= -->
+  <RimWorldAccess.Caravan.Form.CannotReformFromHome>Ana yerleşimden kervan yenilenemez. Yeni kervanlar kurmak için dünya haritasını kullan.</RimWorldAccess.Caravan.Form.CannotReformFromHome>
+  <RimWorldAccess.Caravan.Form.MapHasNoParent>Haritanın bağlı olduğu dünya nesnesi yok</RimWorldAccess.Caravan.Form.MapHasNoParent>
+  <RimWorldAccess.Caravan.Form.MapDoesNotSupport>Bu harita kervan yenilemeyi desteklemiyor</RimWorldAccess.Caravan.Form.MapDoesNotSupport>
+  <RimWorldAccess.Caravan.Form.CannotReformEnemiesPresent>Bölgede düşman varken kervan yenilenemez</RimWorldAccess.Caravan.Form.CannotReformEnemiesPresent>
+  <RimWorldAccess.Caravan.Form.CannotReformAtThisTime>Şu anda kervan yenilenemez</RimWorldAccess.Caravan.Form.CannotReformAtThisTime>
+  <RimWorldAccess.Caravan.Form.OpeningReformation>Kervan yenileme penceresi açılıyor</RimWorldAccess.Caravan.Form.OpeningReformation>
+  <RimWorldAccess.Caravan.Form.OpenInstructions>Kervan kurma penceresi açıldı. Özet için Tab, incelemek için Alt+I, göndermek için Alt+S.</RimWorldAccess.Caravan.Form.OpenInstructions>
+  <RimWorldAccess.Caravan.Form.RouteStillNeeded>Henüz hedef seçilmedi. Göndermeden önce birini seçmek için {0} düğmesine bas.</RimWorldAccess.Caravan.Form.RouteStillNeeded>
+  <RimWorldAccess.Caravan.Form.SummaryRegionName>Özet</RimWorldAccess.Caravan.Form.SummaryRegionName>
+  <RimWorldAccess.Caravan.Form.SummaryDestination>Hedef: {0}</RimWorldAccess.Caravan.Form.SummaryDestination>
+  <RimWorldAccess.Caravan.Form.SummaryDestinationWithEta>Hedef: {0}, tahmini süre: {1} gün</RimWorldAccess.Caravan.Form.SummaryDestinationWithEta>
+  <RimWorldAccess.Caravan.Form.SummaryDestinationNotSet>Hedef: Belirlenmedi</RimWorldAccess.Caravan.Form.SummaryDestinationNotSet>
+  <RimWorldAccess.Caravan.Form.SummaryStatsUnavailable>İstatistikler mevcut değil</RimWorldAccess.Caravan.Form.SummaryStatsUnavailable>
+
+  <!-- =================================================================
+       Caravan drug policy assignment (CaravanDrugPoliciesScope.Game.cs,
+       Dialog_AssignCaravanDrugPolicies). Everything else this screen
+       speaks reuses vanilla's own keys (AssignDrugPolicies,
+       ManageDrugPolicies, CloseButton).
+       ================================================================= -->
+  <RimWorldAccess.Caravan.DrugPolicies.PawnsRegion>Kişiler</RimWorldAccess.Caravan.DrugPolicies.PawnsRegion>
+
+  <!-- =================================================================
+       Caravan stat formatter (CaravanStatFormatter).
+       Shared formatter used by formation/split summary views and the
+       transport pod loader. Tooltip descriptions come from game keys
+       (CaravanMovementSpeedTip, DaysWorthOfFoodTooltip, etc.).
+       {0} = primary value, {1} = secondary value, {2} = description.
+       ================================================================= -->
+  <RimWorldAccess.Stat.Mass>Ağırlık: {0} / {1} kg</RimWorldAccess.Stat.Mass>
+  <RimWorldAccess.Stat.MassOverloaded>Ağırlık: {0} / {1} kg - AŞIRI YÜKLÜ</RimWorldAccess.Stat.MassOverloaded>
+  <RimWorldAccess.Stat.SpeedImmobile>Hız: {0}</RimWorldAccess.Stat.SpeedImmobile>
+  <RimWorldAccess.Stat.SpeedImmobileWithDesc>Hız: {0}. {1}</RimWorldAccess.Stat.SpeedImmobileWithDesc>
+  <RimWorldAccess.Stat.SpeedTilesPerDay>Hız: {0} altıgen/gün</RimWorldAccess.Stat.SpeedTilesPerDay>
+  <RimWorldAccess.Stat.SpeedTilesPerDayWithDesc>Hız: {0} altıgen/gün. {1}</RimWorldAccess.Stat.SpeedTilesPerDayWithDesc>
+  <RimWorldAccess.Stat.SpeedCannotMove>Hız: Hareket edemiyor</RimWorldAccess.Stat.SpeedCannotMove>
+  <RimWorldAccess.Stat.SpeedCannotMoveWithDesc>Hız: Hareket edemiyor. {0}</RimWorldAccess.Stat.SpeedCannotMoveWithDesc>
+  <RimWorldAccess.Stat.FoodInfinite>Yiyecek: {0}</RimWorldAccess.Stat.FoodInfinite>
+  <RimWorldAccess.Stat.FoodInfiniteWithDesc>Yiyecek: {0}. {1}</RimWorldAccess.Stat.FoodInfiniteWithDesc>
+  <RimWorldAccess.Stat.FoodNone>Yiyecek: Yok</RimWorldAccess.Stat.FoodNone>
+  <RimWorldAccess.Stat.FoodNoneWithDesc>Yiyecek: Yok. {0}</RimWorldAccess.Stat.FoodNoneWithDesc>
+  <RimWorldAccess.Stat.FoodDays>Yiyecek: {0} gün</RimWorldAccess.Stat.FoodDays>
+  <RimWorldAccess.Stat.FoodDaysWithDesc>Yiyecek: {0} gün. {1}</RimWorldAccess.Stat.FoodDaysWithDesc>
+  <RimWorldAccess.Stat.FoodDaysWithSpoil>Yiyecek: {0} gün, {1} gün içinde bozuluyor</RimWorldAccess.Stat.FoodDaysWithSpoil>
+  <RimWorldAccess.Stat.FoodDaysWithSpoilWithDesc>Yiyecek: {0} gün, {1} gün içinde bozuluyor. {2}</RimWorldAccess.Stat.FoodDaysWithSpoilWithDesc>
+  <RimWorldAccess.Stat.ForagingPerDay>Toplayıcılık: {0}/gün</RimWorldAccess.Stat.ForagingPerDay>
+  <RimWorldAccess.Stat.ForagingPerDayWithDesc>Toplayıcılık: {0}/gün. {1}</RimWorldAccess.Stat.ForagingPerDayWithDesc>
+  <RimWorldAccess.Stat.ForagingPerDayWithType>Toplayıcılık: {0} ({1})/gün</RimWorldAccess.Stat.ForagingPerDayWithType>
+  <RimWorldAccess.Stat.ForagingPerDayWithTypeWithDesc>Toplayıcılık: {0} ({1})/gün. {2}</RimWorldAccess.Stat.ForagingPerDayWithTypeWithDesc>
+  <RimWorldAccess.Stat.Visibility>Görünürlük: {0}</RimWorldAccess.Stat.Visibility>
+  <RimWorldAccess.Stat.VisibilityWithDesc>Görünürlük: {0}. {1}</RimWorldAccess.Stat.VisibilityWithDesc>
+  <RimWorldAccess.Caravan.Form.NoDialog>Pencere mevcut değil</RimWorldAccess.Caravan.Form.NoDialog>
+  <RimWorldAccess.Caravan.Form.FailedSendCaravan>Kervan gönderilemedi: {0}</RimWorldAccess.Caravan.Form.FailedSendCaravan>
+  <RimWorldAccess.Caravan.Form.SelectionsReset>Seçimler sıfırlandı</RimWorldAccess.Caravan.Form.SelectionsReset>
+  <RimWorldAccess.Caravan.Form.FailedReset>Sıfırlanamadı: {0}</RimWorldAccess.Caravan.Form.FailedReset>
+  <RimWorldAccess.Caravan.Form.AutoProvisionOff>Otomatik tedarik kapalı. Manuel seçim geri yüklendi.</RimWorldAccess.Caravan.Form.AutoProvisionOff>
+  <RimWorldAccess.Caravan.Form.AutoProvisionOn>Otomatik tedarik açık. Erzak sekmesi kilitli. Devre dışı bırakmak için Alt+A'ya tekrar bas.</RimWorldAccess.Caravan.Form.AutoProvisionOn>
+  <RimWorldAccess.Caravan.Form.FailedToggleAutoProvision>Otomatik tedarik değiştirilemedi: {0}</RimWorldAccess.Caravan.Form.FailedToggleAutoProvision>
+  <RimWorldAccess.Caravan.Form.ReformationCancelled>Kervan yenileme iptal edildi</RimWorldAccess.Caravan.Form.ReformationCancelled>
+  <RimWorldAccess.Caravan.Form.SuppliesTabLocked>Erzak sekmesi kilitli. Otomatik tedariki devre dışı bırakmak için Alt+A'ya bas.</RimWorldAccess.Caravan.Form.SuppliesTabLocked>
+  <RimWorldAccess.Caravan.Form.NoBreakdownForItem>Bu öğe için döküm mevcut değil</RimWorldAccess.Caravan.Form.NoBreakdownForItem>
+  <RimWorldAccess.Caravan.Form.FormationCancelled>Kervan kurma iptal edildi</RimWorldAccess.Caravan.Form.FormationCancelled>
+  <!-- On-screen visual aids drawn over the dialog for sighted observers
+       (not spoken). The instructions string uses \n line breaks. -->
+  <RimWorldAccess.Caravan.Form.KeyboardModeActive>Klavye Modu Etkin</RimWorldAccess.Caravan.Form.KeyboardModeActive>
+  <RimWorldAccess.Caravan.Form.KeyboardInstructions>Sekmeler: Kişiler, Eşyalar, Erzak | Boşluk/Enter: Aç-kapat/Miktar\nShift+Enter: Maksimum | Del: Kaldır | Tab: Özet | Alt+I: İncele/Döküm\nAlt+A: Otomatik tedarik | Alt+D: Hedef | Alt+S: Gönder | Alt+R: Sıfırla</RimWorldAccess.Caravan.Form.KeyboardInstructions>
+
+  <!-- =================================================================
+       Split caravan dialog (SplitCaravanState).
+       Same shape as form-caravan but the two-caravan summary view
+       has a Left/Right swap to switch between source and split-target.
+       {0} = tab name, {1} = item count, {2} = stat value,
+       {3} = caravan name, {4} = position fragment.
+       ================================================================= -->
+  <RimWorldAccess.Caravan.Split.OpenInstructions>Kervan ayırma penceresi açıldı. Özet için Tab, incelemek için Alt+I, ayırmak için Alt+S.</RimWorldAccess.Caravan.Split.OpenInstructions>
+  <RimWorldAccess.Caravan.Split.SummaryRegionName>Özet</RimWorldAccess.Caravan.Split.SummaryRegionName>
+  <RimWorldAccess.Caravan.Split.NewCaravanLabel>Yeni kervan</RimWorldAccess.Caravan.Split.NewCaravanLabel>
+  <RimWorldAccess.Caravan.Split.OriginalCaravanLabel>Asıl kervan</RimWorldAccess.Caravan.Split.OriginalCaravanLabel>
+  <RimWorldAccess.Caravan.Split.UnknownStatValue>Bilinmiyor</RimWorldAccess.Caravan.Split.UnknownStatValue>
+  <RimWorldAccess.Caravan.Split.NoDialogAvailable>Pencere mevcut değil</RimWorldAccess.Caravan.Split.NoDialogAvailable>
+  <RimWorldAccess.Caravan.Split.SplitSuccessfully>Kervan başarıyla ayrıldı</RimWorldAccess.Caravan.Split.SplitSuccessfully>
+  <RimWorldAccess.Caravan.Split.FailedToSplit>Kervan ayrılamadı: {0}</RimWorldAccess.Caravan.Split.FailedToSplit>
+  <RimWorldAccess.Caravan.Split.SelectionsReset>Seçimler sıfırlandı</RimWorldAccess.Caravan.Split.SelectionsReset>
+  <RimWorldAccess.Caravan.Split.FailedReset>Sıfırlanamadı: {0}</RimWorldAccess.Caravan.Split.FailedReset>
+  <RimWorldAccess.Caravan.Split.NoBreakdownForStat>Bu istatistik için döküm mevcut değil</RimWorldAccess.Caravan.Split.NoBreakdownForStat>
+  <RimWorldAccess.Caravan.Split.SplitCancelled>Kervan ayırma iptal edildi</RimWorldAccess.Caravan.Split.SplitCancelled>
+
+  <!-- =================================================================
+       Caravan inspect (CaravanInspectState).
+       Windowless inspection of a single caravan. Per-tab readouts
+       reuse PawnInfoHelper output.
+       ================================================================= -->
+  <RimWorldAccess.Caravan.Inspect.NoCaravanSpecified>Belirtilen kervan yok</RimWorldAccess.Caravan.Inspect.NoCaravanSpecified>
+  <RimWorldAccess.Caravan.Inspect.Closed>Kervan incelemesi kapatıldı</RimWorldAccess.Caravan.Inspect.Closed>
+  <RimWorldAccess.Caravan.Inspect.CannotAbandon>Bu öğe terk edilemez</RimWorldAccess.Caravan.Inspect.CannotAbandon>
+  <RimWorldAccess.Caravan.Inspect.NoMoodForItem>Bu öğe için ruh hâli bilgisi yok</RimWorldAccess.Caravan.Inspect.NoMoodForItem>
+  <RimWorldAccess.Caravan.Inspect.NoNeedsForItem>Bu öğe için ihtiyaç bilgisi yok</RimWorldAccess.Caravan.Inspect.NoNeedsForItem>
+  <RimWorldAccess.Caravan.Inspect.NoHealthForItem>Bu öğe için sağlık bilgisi yok</RimWorldAccess.Caravan.Inspect.NoHealthForItem>
+  <RimWorldAccess.Caravan.Inspect.NoGearForItem>Bu öğe için ekipman bilgisi yok</RimWorldAccess.Caravan.Inspect.NoGearForItem>
+  <RimWorldAccess.Caravan.Inspect.NoSkillsForItem>Bu öğe için beceri bilgisi yok</RimWorldAccess.Caravan.Inspect.NoSkillsForItem>
+  <RimWorldAccess.Caravan.Inspect.NoActionAvailable>Kullanılabilir eylem yok</RimWorldAccess.Caravan.Inspect.NoActionAvailable>
+  <RimWorldAccess.Caravan.Inspect.NoBreakdown>Döküm mevcut değil</RimWorldAccess.Caravan.Inspect.NoBreakdown>
+  <!-- Name of the caravan inspect tree's single navigable area, spoken on Tab. -->
+  <RimWorldAccess.Caravan.Inspect.RegionName>Kervan</RimWorldAccess.Caravan.Inspect.RegionName>
+
+  <!-- Caravan inspect treeview (CaravanInspectState): category labels, stat
+       labels, stat values, and Alt+I stat-breakdown tooltips. Spoken while
+       navigating the tree. Units reuse vanilla keys where available
+       (PeriodDays, PeriodHours, Infinite, None, TilesPerDay).
+       In the tooltip strings, a leading "- " marks a sub-item and a trailing
+       ":" marks a section header for the breakdown parser; preserve them. -->
+  <RimWorldAccess.Caravan.Inspect.StatLabelValue>{0}: {1}</RimWorldAccess.Caravan.Inspect.StatLabelValue>
+  <RimWorldAccess.Caravan.Inspect.Unknown>Bilinmiyor</RimWorldAccess.Caravan.Inspect.Unknown>
+  <RimWorldAccess.Caravan.Inspect.NotAvailable>Yok</RimWorldAccess.Caravan.Inspect.NotAvailable>
+  <RimWorldAccess.Caravan.Inspect.CategoryCaravanStatus>Kervan Durumu</RimWorldAccess.Caravan.Inspect.CategoryCaravanStatus>
+  <RimWorldAccess.Caravan.Inspect.CategoryPawns>Kişiler ({0})</RimWorldAccess.Caravan.Inspect.CategoryPawns>
+  <!-- Whole-phrase section header for both the caravan pawns sub-categories
+       (Colonists, Slaves, Prisoners, Capture, Animals, Mechs, Entities - vanilla's
+       own CaravanUIUtility.AddPawnsSections labels) and the per-pawn gear
+       sub-category header; {0} is the section/pawn label, {1} the count. -->
+  <RimWorldAccess.Caravan.Inspect.SectionWithCount>{0} ({1})</RimWorldAccess.Caravan.Inspect.SectionWithCount>
+  <RimWorldAccess.Caravan.Inspect.CategoryGear>Ekipman ({0} öğe)</RimWorldAccess.Caravan.Inspect.CategoryGear>
+  <RimWorldAccess.Caravan.Inspect.CategoryItems>Nesneler ({0})</RimWorldAccess.Caravan.Inspect.CategoryItems>
+  <RimWorldAccess.Caravan.Inspect.CategoryItemsEmpty>Nesneler (boş)</RimWorldAccess.Caravan.Inspect.CategoryItemsEmpty>
+  <RimWorldAccess.Caravan.Inspect.Negotiator>müzakereci</RimWorldAccess.Caravan.Inspect.Negotiator>
+  <RimWorldAccess.Caravan.Inspect.PawnPossession>{1} ({0})</RimWorldAccess.Caravan.Inspect.PawnPossession>
+  <RimWorldAccess.Caravan.Inspect.StatLocation>Konum</RimWorldAccess.Caravan.Inspect.StatLocation>
+  <RimWorldAccess.Caravan.Inspect.StatMass>Ağırlık</RimWorldAccess.Caravan.Inspect.StatMass>
+  <RimWorldAccess.Caravan.Inspect.StatStatus>Durum</RimWorldAccess.Caravan.Inspect.StatStatus>
+  <RimWorldAccess.Caravan.Inspect.StatSpeed>Hız</RimWorldAccess.Caravan.Inspect.StatSpeed>
+  <RimWorldAccess.Caravan.Inspect.StatFood>Yiyecek</RimWorldAccess.Caravan.Inspect.StatFood>
+  <RimWorldAccess.Caravan.Inspect.StatForaging>Toplayıcılık</RimWorldAccess.Caravan.Inspect.StatForaging>
+  <RimWorldAccess.Caravan.Inspect.StatDestination>Hedef</RimWorldAccess.Caravan.Inspect.StatDestination>
+  <RimWorldAccess.Caravan.Inspect.StatETA>Tahmini süre</RimWorldAccess.Caravan.Inspect.StatETA>
+  <RimWorldAccess.Caravan.Inspect.StatVisibility>Görünürlük</RimWorldAccess.Caravan.Inspect.StatVisibility>
+  <RimWorldAccess.Caravan.Inspect.StatBeds>Yataklar</RimWorldAccess.Caravan.Inspect.StatBeds>
+  <RimWorldAccess.Caravan.Inspect.Immobile>Hareketsiz</RimWorldAccess.Caravan.Inspect.Immobile>
+  <RimWorldAccess.Caravan.Inspect.DaysUntilRot>(bozulmaya {0} gün)</RimWorldAccess.Caravan.Inspect.DaysUntilRot>
+  <RimWorldAccess.Caravan.Inspect.OutOfFood>YİYECEK YOK</RimWorldAccess.Caravan.Inspect.OutOfFood>
+  <RimWorldAccess.Caravan.Inspect.FoodFallback>yiyecek</RimWorldAccess.Caravan.Inspect.FoodFallback>
+  <RimWorldAccess.Caravan.Inspect.ForagingPerDay>{0} ({1})/gün</RimWorldAccess.Caravan.Inspect.ForagingPerDay>
+  <RimWorldAccess.Caravan.Inspect.BedrollsInUse>{0} uyku tulumu kullanımda</RimWorldAccess.Caravan.Inspect.BedrollsInUse>
+  <RimWorldAccess.Caravan.Inspect.NoBedrolls>Uyku tulumu yok</RimWorldAccess.Caravan.Inspect.NoBedrolls>
+  <RimWorldAccess.Caravan.Inspect.LocationCoords>Altıgen {0}, {1}K {2}D</RimWorldAccess.Caravan.Inspect.LocationCoords>
+  <RimWorldAccess.Caravan.Inspect.MassUsageCapacity>{0} / {1} kg</RimWorldAccess.Caravan.Inspect.MassUsageCapacity>
+  <RimWorldAccess.Caravan.Inspect.TileNumber>Altıgen {0}</RimWorldAccess.Caravan.Inspect.TileNumber>
+  <RimWorldAccess.Caravan.Inspect.TooltipMassCarried>Taşınan ağırlık: {0} kg</RimWorldAccess.Caravan.Inspect.TooltipMassCarried>
+  <RimWorldAccess.Caravan.Inspect.TooltipMassCapacity>Ağırlık kapasitesi: {0} kg</RimWorldAccess.Caravan.Inspect.TooltipMassCapacity>
+  <RimWorldAccess.Caravan.Inspect.TooltipOverloaded>AŞIRI YÜKLÜ - Ağırlık azaltılana kadar kervan hareket edemez.</RimWorldAccess.Caravan.Inspect.TooltipOverloaded>
+  <RimWorldAccess.Caravan.Inspect.TooltipRemainingCapacity>Kalan kapasite: {0} kg</RimWorldAccess.Caravan.Inspect.TooltipRemainingCapacity>
+  <RimWorldAccess.Caravan.Inspect.TooltipCapacityBreakdown>Kapasite dökümü:</RimWorldAccess.Caravan.Inspect.TooltipCapacityBreakdown>
+  <RimWorldAccess.Caravan.Inspect.StatusCannotMoveBecause>Kervan hareket edemiyor çünkü:</RimWorldAccess.Caravan.Inspect.StatusCannotMoveBecause>
+  <RimWorldAccess.Caravan.Inspect.StatusAllDowned>Tüm kervan üyeleri etkisiz hâlde</RimWorldAccess.Caravan.Inspect.StatusAllDowned>
+  <RimWorldAccess.Caravan.Inspect.StatusAllMentalBreak>Tüm kervan üyeleri ruhsal çöküş yaşıyor</RimWorldAccess.Caravan.Inspect.StatusAllMentalBreak>
+  <RimWorldAccess.Caravan.Inspect.StatusOverloaded>Kervan kapasitenin üzerinde aşırı yüklü</RimWorldAccess.Caravan.Inspect.StatusOverloaded>
+  <RimWorldAccess.Caravan.Inspect.StatusNightResting>Kervan gece saatlerinde dinleniyor.</RimWorldAccess.Caravan.Inspect.StatusNightResting>
+  <RimWorldAccess.Caravan.Inspect.StatusUsingBedrolls>Daha iyi dinlenmek için {0} uyku tulumu kullanılıyor.</RimWorldAccess.Caravan.Inspect.StatusUsingBedrolls>
+  <RimWorldAccess.Caravan.Inspect.StatusNoBedrollsGround>Uyku tulumu yok, kişiler yerde uyuyor.</RimWorldAccess.Caravan.Inspect.StatusNoBedrollsGround>
+  <RimWorldAccess.Caravan.Inspect.StatusPaused>Kervanın hareketi duraklatıldı.</RimWorldAccess.Caravan.Inspect.StatusPaused>
+  <RimWorldAccess.Caravan.Inspect.StatusTraveling>Kervan hedefe doğru seyahat ediyor.</RimWorldAccess.Caravan.Inspect.StatusTraveling>
+  <RimWorldAccess.Caravan.Inspect.StatusStopped>Kervan durdu ve emir bekliyor.</RimWorldAccess.Caravan.Inspect.StatusStopped>
+
+  <!-- =================================================================
+       Caravan input helper (CaravanInputHelper).
+       Alt+H/M/N/G/K dispatch from inside the caravan dialog tabs.
+       ================================================================= -->
+  <RimWorldAccess.Caravan.Input.NoPawnSelected>Seçili kişi yok. Önce Kişiler sekmesine git.</RimWorldAccess.Caravan.Input.NoPawnSelected>
+  <RimWorldAccess.Caravan.Input.RemovedSingle>Kaldırıldı: {0}</RimWorldAccess.Caravan.Input.RemovedSingle>
+  <RimWorldAccess.Caravan.Input.RemovedAllOf>Tümü kaldırıldı: {0} {1}</RimWorldAccess.Caravan.Input.RemovedAllOf>
+
+  <!-- =================================================================
+       Caravan UI helper (CaravanUIHelper).
+       Toggling individual transferable rows. Spoken on space-bar
+       check / uncheck. {0} = item label.
+       ================================================================= -->
+  <RimWorldAccess.Caravan.UI.TransferableUnchecked>{0} işareti kaldırıldı</RimWorldAccess.Caravan.UI.TransferableUnchecked>
+  <RimWorldAccess.Caravan.UI.TransferableChecked>{0} işaretlendi</RimWorldAccess.Caravan.UI.TransferableChecked>
+
+  <!-- =================================================================
+       Caravan quantity helper (CaravanQuantityHelper).
+       Boundary feedback when adjusting per-item quantities.
+       ================================================================= -->
+  <RimWorldAccess.Caravan.Quantity.NotEnoughCapacity>Daha fazlası için yeterli kapasite yok</RimWorldAccess.Caravan.Quantity.NotEnoughCapacity>
+  <!-- Shift+Enter "add maximum" feedback. {N} are counts; the trailing
+       insert is the localized MassSuffix (", X kg") or empty. -->
+  <RimWorldAccess.Caravan.Quantity.MassSuffix>, {0} kg</RimWorldAccess.Caravan.Quantity.MassSuffix>
+  <RimWorldAccess.Caravan.Quantity.TakingOne>1 tane alınıyor{0}</RimWorldAccess.Caravan.Quantity.TakingOne>
+  <RimWorldAccess.Caravan.Quantity.TakingAll>Tümü alınıyor: {0}{1}</RimWorldAccess.Caravan.Quantity.TakingAll>
+  <RimWorldAccess.Caravan.Quantity.TakingXofY>{1} adetten {0} alınıyor{2}</RimWorldAccess.Caravan.Quantity.TakingXofY>
+  <RimWorldAccess.Caravan.Quantity.TakingXofYLimit>{1} adetten {0} alınıyor{2}, kapasite sınırı</RimWorldAccess.Caravan.Quantity.TakingXofYLimit>
+  <RimWorldAccess.Caravan.Quantity.AddedOne>1 tane eklendi{0}</RimWorldAccess.Caravan.Quantity.AddedOne>
+  <RimWorldAccess.Caravan.Quantity.AddedOneNowAll>1 tane eklendi, artık tümü alınıyor: {0}{1}</RimWorldAccess.Caravan.Quantity.AddedOneNowAll>
+  <RimWorldAccess.Caravan.Quantity.AddedNowAll>{0} eklendi, artık tümü alınıyor: {1}{2}</RimWorldAccess.Caravan.Quantity.AddedNowAll>
+  <RimWorldAccess.Caravan.Quantity.AddedNowXofY>{0} eklendi, artık {2} adetten {1} alınıyor{3}</RimWorldAccess.Caravan.Quantity.AddedNowXofY>
+  <RimWorldAccess.Caravan.Quantity.AddedNowXofYLimit>{0} eklendi, artık {2} adetten {1} alınıyor{3}, kapasite sınırı</RimWorldAccess.Caravan.Quantity.AddedNowXofYLimit>
+
+  <!-- =================================================================
+       Caravan announcement helper (CaravanAnnouncementHelper).
+       Shared per-tab "no items" announcement.
+       ================================================================= -->
+  <RimWorldAccess.Caravan.Announce.NoItemsInTab>Bu sekmede öğe yok</RimWorldAccess.Caravan.Announce.NoItemsInTab>
+  <!-- Per-item announcement fragments for the formation/split tab lists.
+       Appended after the item label with a leading separator in code. -->
+  <RimWorldAccess.Caravan.Announce.NoItemSelected>Seçili öğe yok</RimWorldAccess.Caravan.Announce.NoItemSelected>
+  <RimWorldAccess.Caravan.Announce.TakingXofY>{1} adetten {0} alınıyor</RimWorldAccess.Caravan.Announce.TakingXofY>
+  <RimWorldAccess.Caravan.Announce.XAvailable>{0} mevcut</RimWorldAccess.Caravan.Announce.XAvailable>
+  <RimWorldAccess.Caravan.Announce.Wielding>({0} kuşanılıyor)</RimWorldAccess.Caravan.Announce.Wielding>
+  <RimWorldAccess.Caravan.Announce.Checked>işaretli</RimWorldAccess.Caravan.Announce.Checked>
+
+  <!-- =================================================================
+       Gear-equip menu (GearEquipMenuState).
+       Pawn picker shown by Alt+E while inspecting an item; user
+       chooses who to equip the item on. Handles swap/replace/equip
+       paths and apparel locking.
+       {0} = action verb (Equip / Wear / Drop), {1} = item label,
+       {2} = target pawn, {3} = previously-equipped item or owner.
+       ================================================================= -->
+  <RimWorldAccess.Gear.CannotOpenEquipMenu>Kuşanma menüsü açılamıyor</RimWorldAccess.Gear.CannotOpenEquipMenu>
+  <RimWorldAccess.Gear.NoPawnsAvailable>Bu öğeyi kuşanabilecek kimse yok</RimWorldAccess.Gear.NoPawnsAvailable>
+  <RimWorldAccess.Gear.OpenInstructions>{0} {1} kime? Gezinmek için ok tuşlarını, seçmek için Enter'ı, iptal etmek için Escape'i kullan.</RimWorldAccess.Gear.OpenInstructions>
+  <RimWorldAccess.Gear.CannotEquipReason>Kuşanılamıyor: {0}</RimWorldAccess.Gear.CannotEquipReason>
+  <RimWorldAccess.Gear.UnequippedToInventory>{0} çıkarıldı, envantere alındı.</RimWorldAccess.Gear.UnequippedToInventory>
+  <RimWorldAccess.Gear.SwappedTwoOwners>Değiştirildi. {1} sahibi: {0}, {3} sahibi: {2}.</RimWorldAccess.Gear.SwappedTwoOwners>
+  <RimWorldAccess.Gear.SwappedToInventory>Değiştirildi. {1} sahibi: {0}. {2} envantere taşındı.</RimWorldAccess.Gear.SwappedToInventory>
+  <RimWorldAccess.Gear.EquippedTo>Kuşanıldı: {0}. Kuşanan: {1}.</RimWorldAccess.Gear.EquippedTo>
+  <RimWorldAccess.Gear.FailedToEquip>Öğe kuşanılamadı</RimWorldAccess.Gear.FailedToEquip>
+  <RimWorldAccess.Gear.CannotRemoveLockedApparel>Kilitli kıyafet çıkarılamaz</RimWorldAccess.Gear.CannotRemoveLockedApparel>
+  <RimWorldAccess.Gear.CannotRemoveLockedFromPawn>Kilitli kıyafet çıkarılamaz: {0}. Sahibi: {1}</RimWorldAccess.Gear.CannotRemoveLockedFromPawn>
+  <RimWorldAccess.Gear.UnequipToInventory>Çıkar, envantere al</RimWorldAccess.Gear.UnequipToInventory>
+  <RimWorldAccess.Gear.PawnCantEquip>{0} (kuşanamaz: {1})</RimWorldAccess.Gear.PawnCantEquip>
+  <RimWorldAccess.Gear.PawnWithCurrent>{0} ({1})</RimWorldAccess.Gear.PawnWithCurrent>
+  <RimWorldAccess.Gear.ActionGive>Ver</RimWorldAccess.Gear.ActionGive>
+  <RimWorldAccess.Gear.ActionEquip>Kuşan</RimWorldAccess.Gear.ActionEquip>
+
+  <!-- =================================================================
+       Stat-breakdown overlay (StatBreakdownState).
+       Tree of stat factors opened by Alt+I from a summary stat row.
+       {0} = stat name, {1} = factor count. Header vs. HeaderTreeview is
+       chosen in C# by whether any factor is expandable.
+       ================================================================= -->
+  <RimWorldAccess.StatBreakdown.NoBreakdownFor>{0} için döküm mevcut değil</RimWorldAccess.StatBreakdown.NoBreakdownFor>
+  <RimWorldAccess.StatBreakdown.NoFactorsFor>{0} için döküm etkeni yok</RimWorldAccess.StatBreakdown.NoFactorsFor>
+  <RimWorldAccess.StatBreakdown.Header>{0} dökümü ({1} etken).</RimWorldAccess.StatBreakdown.Header>
+  <RimWorldAccess.StatBreakdown.HeaderTreeview>{0} dökümü ({1} etken) ağaç görünümü.</RimWorldAccess.StatBreakdown.HeaderTreeview>
+  <RimWorldAccess.StatBreakdown.Closed>Döküm kapatıldı</RimWorldAccess.StatBreakdown.Closed>
+
+  <!-- =================================================================
+       Route planner (RoutePlannerState).
+       Caravan waypoint planner. Estimated travel time always pairs
+       with the speed-source noun ("walking", "driving", etc.) which
+       comes from game data, lowercased before display.
+       {0} = waypoint count, {1} = travel time string,
+       {2} = speed source noun, {3} = error/limit message,
+       {4} = destination name.
+       ================================================================= -->
+  <RimWorldAccess.Route.WorldNavMustBeActive>Dünya gezinmesi etkin olmalı</RimWorldAccess.Route.WorldNavMustBeActive>
+  <RimWorldAccess.Route.PlannerNotAvailable>Rota planlayıcı kullanılamıyor</RimWorldAccess.Route.PlannerNotAvailable>
+  <RimWorldAccess.Route.NoCaravanDialog>Kervan penceresi yok</RimWorldAccess.Route.NoCaravanDialog>
+  <RimWorldAccess.Route.PlannerNotActive>Rota planlayıcı etkin değil</RimWorldAccess.Route.PlannerNotActive>
+  <RimWorldAccess.Route.WorldNavNotActive>Dünya gezinmesi etkin değil</RimWorldAccess.Route.WorldNavNotActive>
+  <RimWorldAccess.Route.ChoosingPrompt>Rota seçiliyor. {0} Yol işareti eklemek için Boşluk, seyahat süresi için E, onaylamak için Enter, iptal etmek için Escape.</RimWorldAccess.Route.ChoosingPrompt>
+  <RimWorldAccess.Route.StandaloneInstructions>Rota planlayıcı etkin. Yol işareti eklemek için Boşluk, imleçteki yol işaretini kaldırmak için Shift+Boşluk, seyahat süresi için E, çıkmak için Escape.</RimWorldAccess.Route.StandaloneInstructions>
+  <RimWorldAccess.Route.Closed>Rota planlayıcı kapatıldı</RimWorldAccess.Route.Closed>
+  <RimWorldAccess.Route.WaypointAddedWithEta>{0}. yol işareti eklendi. Tahmini seyahat süresi: {1} {2}</RimWorldAccess.Route.WaypointAddedWithEta>
+  <RimWorldAccess.Route.WaypointAddedStarting>{0}. yol işareti eklendi (başlangıç noktası)</RimWorldAccess.Route.WaypointAddedStarting>
+  <RimWorldAccess.Route.NoWaypointToRemove>Burada kaldırılacak yol işareti yok</RimWorldAccess.Route.NoWaypointToRemove>
+  <RimWorldAccess.Route.WaypointRemoved>{0}. yol işareti kaldırıldı. {1} yol işareti kaldı.</RimWorldAccess.Route.WaypointRemoved>
+  <RimWorldAccess.Route.WaypointRemovedWithEta>{0}. yol işareti kaldırıldı. {1} yol işareti kaldı. Tahmini seyahat süresi: {2} {3}</RimWorldAccess.Route.WaypointRemovedWithEta>
+  <!-- Travel-speed source line (RoutePlannerState). UsingCaravanSpeed {0}=caravan label. -->
+  <RimWorldAccess.Route.UsingCaravanSpeed>{0} hızı kullanılıyor</RimWorldAccess.Route.UsingCaravanSpeed>
+  <RimWorldAccess.Route.UsingAverageSpeed>Ortalama kervan hızı kullanılıyor</RimWorldAccess.Route.UsingAverageSpeed>
+  <RimWorldAccess.Route.EtaWithSource>Tahmini seyahat süresi: {0} {1}</RimWorldAccess.Route.EtaWithSource>
+  <RimWorldAccess.Route.NoWaypointsSet>Yol işareti yok</RimWorldAccess.Route.NoWaypointsSet>
+  <RimWorldAccess.Route.StartingPoint>Başlangıç noktası: {0}. Boşluk ile daha fazla yol işareti ekle.</RimWorldAccess.Route.StartingPoint>
+  <RimWorldAccess.Route.WaypointSummary>{0} yol işareti. {1} {2}</RimWorldAccess.Route.WaypointSummary>
+  <RimWorldAccess.Route.RouteConfirmed>Rota onaylandı. Hedef: {0}</RimWorldAccess.Route.RouteConfirmed>
+  <RimWorldAccess.Route.AlreadySent>Kervan zaten gönderildi. Rota planlayıcı kapatıldı.</RimWorldAccess.Route.AlreadySent>
+  <!-- Route path tracing (GetRouteAnnouncement). HeadSegment: {0} = localized compass direction, {1} = waypoint number. HeadDirections wraps the comma-joined list of HeadSegment phrases. -->
+  <RimWorldAccess.Route.AtDestination>Hedef.</RimWorldAccess.Route.AtDestination>
+  <RimWorldAccess.Route.HeadSegment>{0} yönünde, {1}. yol işaretine</RimWorldAccess.Route.HeadSegment>
+  <RimWorldAccess.Route.HeadDirections>Git: {0}.</RimWorldAccess.Route.HeadDirections>
+
+  <!-- =================================================================
+       World scanner (WorldScannerState).
+       Mirrors Map scanner pattern - same category structure,
+       PgUp/PgDn for items inside categories, etc. {0} = layer,
+       {1} = direction noun, {2} = distance, {3} = category name,
+       {4} = position. Category/SubcategoryAnnouncement are headings only:
+       the first item of the new category speaks right after each one.
+       ================================================================= -->
+  <RimWorldAccess.WorldScanner.AutoJumpEnabled>Otomatik atlama modu etkinleştirildi</RimWorldAccess.WorldScanner.AutoJumpEnabled>
+  <RimWorldAccess.WorldScanner.AutoJumpDisabled>Otomatik atlama modu devre dışı bırakıldı</RimWorldAccess.WorldScanner.AutoJumpDisabled>
+  <RimWorldAccess.WorldScanner.NavNotActive>Dünya gezinmesi etkin değil</RimWorldAccess.WorldScanner.NavNotActive>
+  <RimWorldAccess.WorldScanner.NoWorldObjects>Dünya nesnesi bulunamadı</RimWorldAccess.WorldScanner.NoWorldObjects>
+  <RimWorldAccess.WorldScanner.NoSubcategories>Alt kategori yok</RimWorldAccess.WorldScanner.NoSubcategories>
+  <RimWorldAccess.WorldScanner.NoItemsInCategory>Bu kategoride öğe yok</RimWorldAccess.WorldScanner.NoItemsInCategory>
+  <RimWorldAccess.WorldScanner.NoInstancesToNavigate>Gezinilecek örnek yok</RimWorldAccess.WorldScanner.NoInstancesToNavigate>
+  <RimWorldAccess.WorldScanner.SwitchedToLayer>{0} katmanına geçildi.</RimWorldAccess.WorldScanner.SwitchedToLayer>
+  <RimWorldAccess.WorldScanner.DirectionDistance>{0}, {1} altıgen</RimWorldAccess.WorldScanner.DirectionDistance>
+  <RimWorldAccess.WorldScanner.CategoryAnnouncement>{0}, {1} öğe.</RimWorldAccess.WorldScanner.CategoryAnnouncement>
+  <RimWorldAccess.WorldScanner.SubcategoryAnnouncement>{0}, {1} öğe.</RimWorldAccess.WorldScanner.SubcategoryAnnouncement>
+
+  <!-- =================================================================
+       World object inspect (WorldObjectSelectionState + WorldNavigationPatch).
+       The "Selection" overlay opened by Alt+I on the world map,
+       listing world objects on the focused tile.
+       {0} = settlement / map-parent label.
+       ================================================================= -->
+  <RimWorldAccess.WorldObject.NoObjectsHere>Burada nesne yok</RimWorldAccess.WorldObject.NoObjectsHere>
+  <RimWorldAccess.WorldObject.NoObjectsToInspect>Burada incelenecek nesne yok</RimWorldAccess.WorldObject.NoObjectsToInspect>
+  <RimWorldAccess.WorldObject.Entering>Giriyor: {0}</RimWorldAccess.WorldObject.Entering>
+  <RimWorldAccess.WorldObject.NoActionAvailable>Kullanılabilir eylem yok</RimWorldAccess.WorldObject.NoActionAvailable>
+  <RimWorldAccess.WorldObject.SelectionClosed>Seçim kapatıldı</RimWorldAccess.WorldObject.SelectionClosed>
+  <RimWorldAccess.WorldObject.ObjectsAtTile>Bu altıgende {0} nesne var</RimWorldAccess.WorldObject.ObjectsAtTile>
+
+  <!-- =================================================================
+       World tile info helper (WorldInfoHelper.cs).
+       Tile read-out helpers used across the world map: brief summary
+       (arrow-key navigation), detailed tile info (I-key), per-category
+       readouts (number keys 1-5), settlement info, caravan status /
+       short-status / path announcements, and road / river direction
+       descriptions.
+
+       Compass direction nouns reuse RimWorldAccess.Map.Direction.Lower.*
+       (the eight lowercase forms north / northeast / east / ... ); the
+       internal compass tokens stay English inside WorldInfoHelper for
+       dictionary lookups and only get translated at emission time via
+       a private LocalizeCompass helper.
+
+       GetDestinationSuffix / GetCaravanDestinationName resolve the caravan's
+       destination from the game's own destination-tile object (or, for
+       GetDestinationSuffix's arrival-action case, present the game's own
+       already-localized ReportString unmodified) rather than pattern-matching
+       English inspect text, so all phrase frames below stay localizable.
+
+       {0}/{1}/... = data-driven values per phrase (counts, names,
+       distances, biome / hilliness / faction labels from game data).
+       ================================================================= -->
+
+  <!-- Guard / "tile is invalid or unknown" returns. -->
+  <RimWorldAccess.World.Tile.Invalid>Geçersiz altıgen</RimWorldAccess.World.Tile.Invalid>
+  <RimWorldAccess.World.Tile.Unknown>Bilinmeyen altıgen</RimWorldAccess.World.Tile.Unknown>
+
+  <!-- Settlement field labels and parentheticals. The Inline / *Field
+       split lets GetTileSummary emit "FactionName, Hostile +0" inside
+       parentheses while GetSettlementInfo emits "Faction: X" /
+       "Relationship: X" on their own lines. -->
+  <RimWorldAccess.World.Settlement.None>Yerleşim yok</RimWorldAccess.World.Settlement.None>
+  <RimWorldAccess.World.Settlement.FactionInline>{0}</RimWorldAccess.World.Settlement.FactionInline>
+  <RimWorldAccess.World.Settlement.FactionWithRelationInline>{0}, {1} {2}</RimWorldAccess.World.Settlement.FactionWithRelationInline>
+  <!-- Settlement label with parenthesized faction info: "Outpost (Empire, Ally +30)". -->
+  <RimWorldAccess.World.Settlement.LabelWithFaction>{0} ({1})</RimWorldAccess.World.Settlement.LabelWithFaction>
+  <RimWorldAccess.World.Settlement.GoodwillPositive>+{0}</RimWorldAccess.World.Settlement.GoodwillPositive>
+  <RimWorldAccess.World.Settlement.RequiresTitleToTrade>Ticaret için gereken unvan: {0}</RimWorldAccess.World.Settlement.RequiresTitleToTrade>
+  <RimWorldAccess.World.Settlement.LabelField>Yerleşim: {0}</RimWorldAccess.World.Settlement.LabelField>
+  <RimWorldAccess.World.Settlement.FactionField>Fraksiyon: {0}</RimWorldAccess.World.Settlement.FactionField>
+  <RimWorldAccess.World.Settlement.RelationshipField>İlişki: {0}</RimWorldAccess.World.Settlement.RelationshipField>
+  <RimWorldAccess.World.Settlement.GoodwillField>İyi niyet: {0}</RimWorldAccess.World.Settlement.GoodwillField>
+  <RimWorldAccess.World.Settlement.PlayerColonyRelationship>Oyuncu kolonisi</RimWorldAccess.World.Settlement.PlayerColonyRelationship>
+  <RimWorldAccess.World.Settlement.HostileRelationship>Düşman</RimWorldAccess.World.Settlement.HostileRelationship>
+  <RimWorldAccess.World.Settlement.StatusVisitable>Durum: Ziyaret edilebilir</RimWorldAccess.World.Settlement.StatusVisitable>
+  <RimWorldAccess.World.Settlement.StatusAttackable>Durum: Saldırılabilir</RimWorldAccess.World.Settlement.StatusAttackable>
+
+  <!-- Tile summary (GetTileSummary). Composes biome, landmark, fuel
+       cost, hilliness, temperature, world objects, road, river, quest,
+       and route info. Most items are appended via ", "; full sentences
+       via ". " - composition stays in code so each segment translates
+       independently. -->
+  <RimWorldAccess.World.Tile.Summary.WaypointPrefix>{0}. yol işareti. </RimWorldAccess.World.Tile.Summary.WaypointPrefix>
+  <RimWorldAccess.World.Tile.Summary.RoadInline>{0} {1}</RimWorldAccess.World.Tile.Summary.RoadInline>
+  <RimWorldAccess.World.Tile.Summary.RiverInline>Nehir {0}</RimWorldAccess.World.Tile.Summary.RiverInline>
+  <RimWorldAccess.World.Tile.Caravan.IsHere>{0} burada</RimWorldAccess.World.Tile.Caravan.IsHere>
+  <RimWorldAccess.World.Tile.Caravan.AreHere>{0} burada</RimWorldAccess.World.Tile.Caravan.AreHere>
+  <RimWorldAccess.World.Tile.Caravan.WithDetailParenthetical>{0} ({1})</RimWorldAccess.World.Tile.Caravan.WithDetailParenthetical>
+
+  <!-- Caravan status (GetCaravanStatus + GetCaravanShortStatus). -->
+  <RimWorldAccess.World.Caravan.DefaultLabel>Kervan</RimWorldAccess.World.Caravan.DefaultLabel>
+  <RimWorldAccess.World.Caravan.Status.Unknown>bilinmiyor</RimWorldAccess.World.Caravan.Status.Unknown>
+  <RimWorldAccess.World.Caravan.Status.AllDowned>herkes etkisiz hâlde</RimWorldAccess.World.Caravan.Status.AllDowned>
+  <RimWorldAccess.World.Caravan.Status.MentalBreak>ruhsal çöküş</RimWorldAccess.World.Caravan.Status.MentalBreak>
+  <RimWorldAccess.World.Caravan.Status.Overloaded>aşırı yüklü</RimWorldAccess.World.Caravan.Status.Overloaded>
+  <RimWorldAccess.World.Caravan.Status.Visiting>{0} yerleşimini ziyaret ediyor</RimWorldAccess.World.Caravan.Status.Visiting>
+  <RimWorldAccess.World.Caravan.Status.Paused>duraklatıldı</RimWorldAccess.World.Caravan.Status.Paused>
+  <RimWorldAccess.World.Caravan.Status.Resting>dinleniyor</RimWorldAccess.World.Caravan.Status.Resting>
+  <RimWorldAccess.World.Caravan.Status.Waiting>bekliyor</RimWorldAccess.World.Caravan.Status.Waiting>
+  <RimWorldAccess.World.Caravan.Status.Stopped>durdu</RimWorldAccess.World.Caravan.Status.Stopped>
+  <RimWorldAccess.World.Caravan.Status.Traveling>seyahat ediyor</RimWorldAccess.World.Caravan.Status.Traveling>
+  <RimWorldAccess.World.Caravan.Status.TravelingTo>seyahat ediyor, hedef: {0}</RimWorldAccess.World.Caravan.Status.TravelingTo>
+  <RimWorldAccess.World.Caravan.Status.HeadingDirection>{0} yönüne gidiyor</RimWorldAccess.World.Caravan.Status.HeadingDirection>
+  <RimWorldAccess.World.Caravan.Status.HeadingDirectionToward>{0} yönünde gidiyor, hedef: {1}</RimWorldAccess.World.Caravan.Status.HeadingDirectionToward>
+
+  <!-- Bedroll parenthetical appended to "resting" when the caravan
+       has bedrolls in use. One/Many split for subject-verb agreement
+       (1 bedroll vs N bedrolls). The leading space matches the
+       concatenation pattern used by GetCaravanStatus. -->
+  <RimWorldAccess.World.Caravan.RestingBedsOneSuffix> (1 uyku tulumu)</RimWorldAccess.World.Caravan.RestingBedsOneSuffix>
+  <RimWorldAccess.World.Caravan.RestingBedsManySuffix> ({0} uyku tulumu)</RimWorldAccess.World.Caravan.RestingBedsManySuffix>
+
+  <!-- Destination suffix (GetDestinationSuffix). ActiveTo / PausedSeparate take
+       the bare destination name resolved from the destination tile's own world
+       object. SuffixReport instead wraps the game's own (already localized)
+       CaravanArrivalAction.ReportString - e.g. "Trading with X.", "Attacking X." -
+       unmodified, used for both active and paused since it is a standalone clause. -->
+  <RimWorldAccess.World.Caravan.SuffixActiveTo>, hedef {0}</RimWorldAccess.World.Caravan.SuffixActiveTo>
+  <RimWorldAccess.World.Caravan.SuffixPausedSeparate>. Hedef {0}</RimWorldAccess.World.Caravan.SuffixPausedSeparate>
+  <RimWorldAccess.World.Caravan.SuffixReport>. {0}</RimWorldAccess.World.Caravan.SuffixReport>
+
+  <!-- Caravan path announcement (GetCaravanPathAnnouncement). Used
+       when a caravan's planned path passes through (or terminates at)
+       the focused tile. -->
+  <RimWorldAccess.World.Caravan.PathHeadingTowardOnTile>{0}, {1} yönünde gidiyor, hedef: {2}.</RimWorldAccess.World.Caravan.PathHeadingTowardOnTile>
+  <RimWorldAccess.World.Caravan.PathHeadingOnTile>{0}, {1} yönüne gidiyor.</RimWorldAccess.World.Caravan.PathHeadingOnTile>
+  <RimWorldAccess.World.Caravan.PathWillHead>{0}, {1} yönüne gidecek.</RimWorldAccess.World.Caravan.PathWillHead>
+  <RimWorldAccess.World.Caravan.PathWillStopHere>{0} burada duracak.</RimWorldAccess.World.Caravan.PathWillStopHere>
+
+  <!-- Quest entries (GetQuestInfoForTile + GetDetailedQuestInfoForTile).
+       Difficulty stars are split One/Many. Description-suffix variants
+       compose with " - " inside the same key so the punctuation belongs
+       to the phrase. -->
+  <RimWorldAccess.World.Quest.DifficultyOneStar>1 yıldız</RimWorldAccess.World.Quest.DifficultyOneStar>
+  <RimWorldAccess.World.Quest.DifficultyManyStars>{0} yıldız</RimWorldAccess.World.Quest.DifficultyManyStars>
+  <RimWorldAccess.World.Quest.Label>Görev: {0}</RimWorldAccess.World.Quest.Label>
+  <RimWorldAccess.World.Quest.LabelWithDifficulty>Görev: {0} ({1})</RimWorldAccess.World.Quest.LabelWithDifficulty>
+  <RimWorldAccess.World.Quest.LabelWithDescription>Görev: {0} - {1}</RimWorldAccess.World.Quest.LabelWithDescription>
+  <RimWorldAccess.World.Quest.LabelWithDifficultyAndDescription>Görev: {0} ({1}) - {2}</RimWorldAccess.World.Quest.LabelWithDifficultyAndDescription>
+  <RimWorldAccess.World.Quest.DetailDifficultyField>Zorluk: {0}</RimWorldAccess.World.Quest.DetailDifficultyField>
+  <RimWorldAccess.World.Quest.DetailDescriptionField>Açıklama: {0}</RimWorldAccess.World.Quest.DetailDescriptionField>
+
+  <!-- Detailed tile info (GetDetailedTileInfo) - I-key view. -->
+  <RimWorldAccess.World.Tile.Detail.Coordinates>Koordinatlar: {0}° K, {1}° D</RimWorldAccess.World.Tile.Detail.Coordinates>
+  <RimWorldAccess.World.Tile.Detail.Biome>Biyom: {0}</RimWorldAccess.World.Tile.Detail.Biome>
+  <RimWorldAccess.World.Tile.Detail.Hilliness>Engebelilik: {0}</RimWorldAccess.World.Tile.Detail.Hilliness>
+  <RimWorldAccess.World.Tile.Detail.Elevation>Rakım: {0}m</RimWorldAccess.World.Tile.Detail.Elevation>
+  <RimWorldAccess.World.Tile.Detail.TemperatureAverage>Sıcaklık: Ortalama {0}</RimWorldAccess.World.Tile.Detail.TemperatureAverage>
+  <RimWorldAccess.World.Tile.Detail.Pollution>Kirlilik: %{0}</RimWorldAccess.World.Tile.Detail.Pollution>
+  <RimWorldAccess.World.Tile.Detail.WorldObjectsHeader>Dünya nesneleri</RimWorldAccess.World.Tile.Detail.WorldObjectsHeader>
+  <RimWorldAccess.World.Tile.Detail.QuestTargetsHeader>Görev hedefleri</RimWorldAccess.World.Tile.Detail.QuestTargetsHeader>
+  <!-- Whole-phrase keys for the four world-object shapes. Spoken as
+       comma- and period-separated fragments by AnnouncementBuilder. -->
+  <RimWorldAccess.World.Tile.Detail.PlayerSettlement>{0} ({1})</RimWorldAccess.World.Tile.Detail.PlayerSettlement>
+  <RimWorldAccess.World.Tile.Detail.Faction>Fraksiyon: {0}</RimWorldAccess.World.Tile.Detail.Faction>
+  <RimWorldAccess.World.Tile.Detail.RelationshipWithGoodwill>İlişki: {0} ({1})</RimWorldAccess.World.Tile.Detail.RelationshipWithGoodwill>
+  <RimWorldAccess.World.Tile.Detail.RequiresTitleToTrade>Ticaret için gereken unvan: {0}</RimWorldAccess.World.Tile.Detail.RequiresTitleToTrade>
+  <RimWorldAccess.World.Tile.Detail.CaravanWithFaction>Kervan: {0} ({1})</RimWorldAccess.World.Tile.Detail.CaravanWithFaction>
+  <RimWorldAccess.World.Tile.Detail.Site>Bölge: {0}</RimWorldAccess.World.Tile.Detail.Site>
+
+  <!-- Number key 1: growing / food / resources. AnnouncementBuilder
+       owns the period separator, so each fragment is a clean phrase. -->
+  <RimWorldAccess.World.Tile.Growing.NoSpaceInfo>Uzay altıgenleri için büyüme bilgisi yok</RimWorldAccess.World.Tile.Growing.NoSpaceInfo>
+  <RimWorldAccess.World.Tile.Growing.Period>Büyüme periyodu: {0}</RimWorldAccess.World.Tile.Growing.Period>
+  <RimWorldAccess.World.Tile.Growing.Rainfall>Yağış miktarı: {0} mm</RimWorldAccess.World.Tile.Growing.Rainfall>
+  <RimWorldAccess.World.Tile.Growing.Forageability>Toplayıcılığa uygunluk: {0} ({1})</RimWorldAccess.World.Tile.Growing.Forageability>
+  <RimWorldAccess.World.Tile.Growing.NoForageability>Toplayıcılığa uygunluk: %0</RimWorldAccess.World.Tile.Growing.NoForageability>
+  <RimWorldAccess.World.Tile.Growing.GrazeYes>Hayvanlar otlayabilir: evet</RimWorldAccess.World.Tile.Growing.GrazeYes>
+  <RimWorldAccess.World.Tile.Growing.GrazeNo>Hayvanlar otlayabilir: hayır</RimWorldAccess.World.Tile.Growing.GrazeNo>
+  <RimWorldAccess.World.Tile.Growing.StoneTypes>Kaya türleri: {0}</RimWorldAccess.World.Tile.Growing.StoneTypes>
+
+  <!-- Number key 2: movement / terrain. -->
+  <RimWorldAccess.World.Tile.Movement.NoSpaceInfo>Uzay altıgenleri için hareket bilgisi yok</RimWorldAccess.World.Tile.Movement.NoSpaceInfo>
+  <RimWorldAccess.World.Tile.Movement.RouteArrival>Varış: {0}</RimWorldAccess.World.Tile.Movement.RouteArrival>
+  <RimWorldAccess.World.Tile.Movement.Impassable>Hareket: Geçilemez</RimWorldAccess.World.Tile.Movement.Impassable>
+  <RimWorldAccess.World.Tile.Movement.Difficulty>Hareket zorluğu: {0}</RimWorldAccess.World.Tile.Movement.Difficulty>
+  <RimWorldAccess.World.Tile.Movement.WinterPenaltyCurrent>Mevcut kış cezası: +{0}</RimWorldAccess.World.Tile.Movement.WinterPenaltyCurrent>
+  <RimWorldAccess.World.Tile.Movement.WinterPenaltyDefault>Kış cezası: kışın +2.0</RimWorldAccess.World.Tile.Movement.WinterPenaltyDefault>
+  <RimWorldAccess.World.Tile.Movement.Terrain>Arazi: {0}</RimWorldAccess.World.Tile.Movement.Terrain>
+  <RimWorldAccess.World.Tile.Movement.Elevation>Rakım: {0} m</RimWorldAccess.World.Tile.Movement.Elevation>
+  <RimWorldAccess.World.Tile.Movement.Road>Yol: {0}</RimWorldAccess.World.Tile.Movement.Road>
+  <RimWorldAccess.World.Tile.Movement.River>Nehir: {0}</RimWorldAccess.World.Tile.Movement.River>
+  <RimWorldAccess.World.Tile.Movement.Coastal>Sahil</RimWorldAccess.World.Tile.Movement.Coastal>
+
+  <!-- Number key 3: health / environment. -->
+  <RimWorldAccess.World.Tile.Health.NoSpaceInfo>Uzay altıgenleri için sağlık bilgisi yok</RimWorldAccess.World.Tile.Health.NoSpaceInfo>
+  <RimWorldAccess.World.Tile.Health.DiseaseFrequency>Hastalık sıklığı: yıl başına {0}</RimWorldAccess.World.Tile.Health.DiseaseFrequency>
+  <RimWorldAccess.World.Tile.Health.DiseaseNone>Hastalık sıklığı: Yok</RimWorldAccess.World.Tile.Health.DiseaseNone>
+  <RimWorldAccess.World.Tile.Health.TilePollution>Altıgen kirliliği: {0}</RimWorldAccess.World.Tile.Health.TilePollution>
+  <RimWorldAccess.World.Tile.Health.NearbyPollution>Yakındaki kirlilik: {0}</RimWorldAccess.World.Tile.Health.NearbyPollution>
+  <RimWorldAccess.World.Tile.Health.NoxiousHazeInterval>Zehirli duman aralığı: {0} gün</RimWorldAccess.World.Tile.Health.NoxiousHazeInterval>
+  <RimWorldAccess.World.Tile.Health.NoxiousHazeNever>Zehirli duman: Hiçbir zaman</RimWorldAccess.World.Tile.Health.NoxiousHazeNever>
+
+  <!-- Number key 4: location / coordinates / time zone. -->
+  <RimWorldAccess.World.Tile.Location.Coordinates>Koordinatlar: {0} derece {1}, {2} derece {3}</RimWorldAccess.World.Tile.Location.Coordinates>
+  <RimWorldAccess.World.Tile.Location.LatNorth>K</RimWorldAccess.World.Tile.Location.LatNorth>
+  <RimWorldAccess.World.Tile.Location.LatSouth>G</RimWorldAccess.World.Tile.Location.LatSouth>
+  <RimWorldAccess.World.Tile.Location.LonEast>D</RimWorldAccess.World.Tile.Location.LonEast>
+  <RimWorldAccess.World.Tile.Location.LonWest>B</RimWorldAccess.World.Tile.Location.LonWest>
+  <RimWorldAccess.World.Tile.Location.TimeZonePositive>+{0}</RimWorldAccess.World.Tile.Location.TimeZonePositive>
+  <RimWorldAccess.World.Tile.Location.TimeZone>Saat dilimi: UTC{0}</RimWorldAccess.World.Tile.Location.TimeZone>
+
+  <!-- Number key 5: features / DLC content. -->
+  <RimWorldAccess.World.Tile.Features.Mutators>Altıgen özellikleri: {0}</RimWorldAccess.World.Tile.Features.Mutators>
+  <RimWorldAccess.World.Tile.Features.MutatorWithDescription>{0}: {1}</RimWorldAccess.World.Tile.Features.MutatorWithDescription>
+  <RimWorldAccess.World.Tile.Features.Landmark>Belirgin yapı: {0}, {1}</RimWorldAccess.World.Tile.Features.Landmark>
+  <RimWorldAccess.World.Tile.Features.Region>Bölge: {0}</RimWorldAccess.World.Tile.Features.Region>
+  <RimWorldAccess.World.Tile.Features.MayHaveCaves>Mağara olabilir</RimWorldAccess.World.Tile.Features.MayHaveCaves>
+  <RimWorldAccess.World.Tile.Features.None>Özel özellik yok</RimWorldAccess.World.Tile.Features.None>
+
+  <!-- Road and river direction descriptions. The capitalized form
+       (Cap) is used standalone at sentence start; the inline lowercase
+       form (Inline) is composed with the road / river name like
+       "Highway1 runs north to south" inside GetTileSummary - the
+       trailing period is omitted from the inline keys so the caller
+       can choose the segment terminator. -->
+  <RimWorldAccess.World.Road.EndsHere>Burada bitiyor.</RimWorldAccess.World.Road.EndsHere>
+  <RimWorldAccess.World.Road.EndsContinues>Burada bitiyor, {0} yönünde sürüyor.</RimWorldAccess.World.Road.EndsContinues>
+  <RimWorldAccess.World.Road.Runs>{0} ile {1} arasında uzanıyor.</RimWorldAccess.World.Road.Runs>
+  <RimWorldAccess.World.Road.Curves>{0} yönünden {1} yönüne kıvrılıyor.</RimWorldAccess.World.Road.Curves>
+  <RimWorldAccess.World.Road.Junction>Kavşak: {0}.</RimWorldAccess.World.Road.Junction>
+  <RimWorldAccess.World.Road.EndsHere.Inline>burada bitiyor</RimWorldAccess.World.Road.EndsHere.Inline>
+  <RimWorldAccess.World.Road.EndsContinues.Inline>burada bitiyor, {0} yönünde sürüyor</RimWorldAccess.World.Road.EndsContinues.Inline>
+  <RimWorldAccess.World.Road.Runs.Inline>{0} ile {1} arasında uzanıyor</RimWorldAccess.World.Road.Runs.Inline>
+  <RimWorldAccess.World.Road.Curves.Inline>{0} yönünden {1} yönüne kıvrılıyor</RimWorldAccess.World.Road.Curves.Inline>
+  <RimWorldAccess.World.Road.Junction.Inline>kavşak: {0}</RimWorldAccess.World.Road.Junction.Inline>
+  <RimWorldAccess.World.River.Flows>{0} yönünde akıyor.</RimWorldAccess.World.River.Flows>
+  <RimWorldAccess.World.River.FlowsBetween>{0} ile {1} arasında akıyor.</RimWorldAccess.World.River.FlowsBetween>
+  <RimWorldAccess.World.River.Bends>{0} yönünden {1} yönüne bükülüyor.</RimWorldAccess.World.River.Bends>
+  <RimWorldAccess.World.River.Confluence>Birleşim noktası: {0}.</RimWorldAccess.World.River.Confluence>
+  <RimWorldAccess.World.River.Flows.Inline>{0} yönünde akıyor</RimWorldAccess.World.River.Flows.Inline>
+  <RimWorldAccess.World.River.FlowsBetween.Inline>{0} ile {1} arasında akıyor</RimWorldAccess.World.River.FlowsBetween.Inline>
+  <RimWorldAccess.World.River.Bends.Inline>{0} yönünden {1} yönüne bükülüyor</RimWorldAccess.World.River.Bends.Inline>
+  <RimWorldAccess.World.River.Confluence.Inline>birleşim noktası: {0}</RimWorldAccess.World.River.Confluence.Inline>
+
+  <!-- World scanner readout, categories, directions, sizes (src/World/WorldScannerState.cs). -->
+  <RimWorldAccess.WorldScanner.SizeApprox>yaklaşık {0} altıgen</RimWorldAccess.WorldScanner.SizeApprox>
+  <RimWorldAccess.WorldScanner.SizeTiles>{0} altıgen</RimWorldAccess.WorldScanner.SizeTiles>
+  <RimWorldAccess.WorldScanner.SizeTilesLong>{0} altıgen, {1} uzunluğunda</RimWorldAccess.WorldScanner.SizeTilesLong>
+  <RimWorldAccess.WorldScanner.RelDir.Ahead>İleri</RimWorldAccess.WorldScanner.RelDir.Ahead>
+  <RimWorldAccess.WorldScanner.RelDir.AheadRight>İleri sağ</RimWorldAccess.WorldScanner.RelDir.AheadRight>
+  <RimWorldAccess.WorldScanner.RelDir.Right>Sağ</RimWorldAccess.WorldScanner.RelDir.Right>
+  <RimWorldAccess.WorldScanner.RelDir.BehindRight>Arka sağ</RimWorldAccess.WorldScanner.RelDir.BehindRight>
+  <RimWorldAccess.WorldScanner.RelDir.Behind>Arka</RimWorldAccess.WorldScanner.RelDir.Behind>
+  <RimWorldAccess.WorldScanner.RelDir.BehindLeft>Arka sol</RimWorldAccess.WorldScanner.RelDir.BehindLeft>
+  <RimWorldAccess.WorldScanner.RelDir.Left>Sol</RimWorldAccess.WorldScanner.RelDir.Left>
+  <RimWorldAccess.WorldScanner.RelDir.AheadLeft>İleri sol</RimWorldAccess.WorldScanner.RelDir.AheadLeft>
+  <RimWorldAccess.WorldScanner.Cat.RouteWaypoints>Rota yol işaretleri</RimWorldAccess.WorldScanner.Cat.RouteWaypoints>
+  <RimWorldAccess.WorldScanner.Cat.Settlements>Yerleşimler</RimWorldAccess.WorldScanner.Cat.Settlements>
+  <RimWorldAccess.WorldScanner.Cat.QuestSites>Görev Bölgeleri</RimWorldAccess.WorldScanner.Cat.QuestSites>
+  <RimWorldAccess.WorldScanner.Cat.Caravans>Kervanlar</RimWorldAccess.WorldScanner.Cat.Caravans>
+  <RimWorldAccess.WorldScanner.Cat.OtherSites>Diğer Bölgeler</RimWorldAccess.WorldScanner.Cat.OtherSites>
+  <RimWorldAccess.WorldScanner.Cat.Biomes>Biyomlar</RimWorldAccess.WorldScanner.Cat.Biomes>
+  <RimWorldAccess.WorldScanner.Cat.Roads>Yollar</RimWorldAccess.WorldScanner.Cat.Roads>
+  <RimWorldAccess.WorldScanner.Cat.Landmarks>Belirgin Yapılar</RimWorldAccess.WorldScanner.Cat.Landmarks>
+  <RimWorldAccess.WorldScanner.Sub.Waypoints>Yol işaretleri</RimWorldAccess.WorldScanner.Sub.Waypoints>
+  <RimWorldAccess.WorldScanner.Sub.All>Tümü</RimWorldAccess.WorldScanner.Sub.All>
+  <RimWorldAccess.WorldScanner.Cat.RoadsAndRivers>Yollar ve nehirler</RimWorldAccess.WorldScanner.Cat.RoadsAndRivers>
+  <RimWorldAccess.WorldScanner.Sub.Roads>Yollar</RimWorldAccess.WorldScanner.Sub.Roads>
+  <RimWorldAccess.WorldScanner.Sub.Rivers>Nehirler</RimWorldAccess.WorldScanner.Sub.Rivers>
+  <!-- RegionPosition: live proximity rank of the current patch. {0} = rank, {1} = total. -->
+  <RimWorldAccess.WorldScanner.RegionPosition>Alan {0} / {1}</RimWorldAccess.WorldScanner.RegionPosition>
+  <!-- Direction-and-distance suffixes: {0} = compass direction, {1} = tile count. -->
+  <RimWorldAccess.WorldScanner.DirectionDistanceTiles>{0}, {1} altıgen</RimWorldAccess.WorldScanner.DirectionDistanceTiles>
+  <RimWorldAccess.WorldScanner.DirectionOverTiles>{0}, {1} altıgenden fazla</RimWorldAccess.WorldScanner.DirectionOverTiles>
+  <!-- Center-jump cue: {0} = tile count, {1} = compass direction. -->
+  <RimWorldAccess.WorldScanner.JumpedTilesToCenter>Merkeze {1} yönünde {0} altıgen gidildi</RimWorldAccess.WorldScanner.JumpedTilesToCenter>
+  <RimWorldAccess.WorldScanner.JumpedToCenter>Merkeze gidildi</RimWorldAccess.WorldScanner.JumpedToCenter>
+  <RimWorldAccess.WorldScanner.Sub.Player>Oyuncu</RimWorldAccess.WorldScanner.Sub.Player>
+  <RimWorldAccess.WorldScanner.Sub.Allied>Müttefik</RimWorldAccess.WorldScanner.Sub.Allied>
+  <RimWorldAccess.WorldScanner.Sub.Neutral>Nötr</RimWorldAccess.WorldScanner.Sub.Neutral>
+  <RimWorldAccess.WorldScanner.Sub.Hostile>Düşman</RimWorldAccess.WorldScanner.Sub.Hostile>
+  <RimWorldAccess.WorldScanner.Sub.ActiveQuests>Etkin Görevler</RimWorldAccess.WorldScanner.Sub.ActiveQuests>
+  <RimWorldAccess.WorldScanner.Sub.PlayerCaravans>Oyuncu Kervanları</RimWorldAccess.WorldScanner.Sub.PlayerCaravans>
+  <RimWorldAccess.WorldScanner.Sub.Sites>Bölgeler</RimWorldAccess.WorldScanner.Sub.Sites>
+  <RimWorldAccess.WorldScanner.Sub.AllBiomes>Tüm Biyomlar</RimWorldAccess.WorldScanner.Sub.AllBiomes>
+  <RimWorldAccess.WorldScanner.Unreachable>Erişilemez</RimWorldAccess.WorldScanner.Unreachable>
+  <RimWorldAccess.WorldScanner.QuestPrefix>Görev: {0}</RimWorldAccess.WorldScanner.QuestPrefix>
+  <RimWorldAccess.WorldScanner.FactionWithType>{0}, {1}</RimWorldAccess.WorldScanner.FactionWithType>
+  <RimWorldAccess.WorldScanner.RelationshipGoodwill>{0} {1}</RimWorldAccess.WorldScanner.RelationshipGoodwill>
+  <RimWorldAccess.WorldScanner.RegionOf>Alan {0} / {1}</RimWorldAccess.WorldScanner.RegionOf>
+  <RimWorldAccess.WorldScanner.CurrentLocation>Mevcut konum</RimWorldAccess.WorldScanner.CurrentLocation>
+  <RimWorldAccess.WorldScanner.OnLayer>{0} katmanında</RimWorldAccess.WorldScanner.OnLayer>
+  <RimWorldAccess.WorldScanner.PositionOf>{0} / {1}</RimWorldAccess.WorldScanner.PositionOf>
+  <RimWorldAccess.WorldScanner.Waypoint>Yol işareti {0}</RimWorldAccess.WorldScanner.Waypoint>
+  <RimWorldAccess.WorldScanner.EstimatedTravelTime>Tahmini seyahat süresi: {0}</RimWorldAccess.WorldScanner.EstimatedTravelTime>
+  <RimWorldAccess.WorldScanner.WaypointStart>(Başlangıç)</RimWorldAccess.WorldScanner.WaypointStart>
+
+  <!-- =================================================================
+       Caravan formation: colony-originated route-choice opening prompt.
+       {0} = translated "RoutePlannerAddOneOrMoreWaypoints" game string.
+       ================================================================= -->
+  <RimWorldAccess.Caravan.Form.ChooseDestinationPrompt>Kervan için dünya haritasında bir hedef seç. {0} Yol işareti eklemek için Boşluk, seyahat süresi için E, onaylamak için Enter, iptal etmek için Escape.</RimWorldAccess.Caravan.Form.ChooseDestinationPrompt>
+
+  <!-- =================================================================
+       World scanner: no-move guard feedback when a Home jump targets
+       the tile the player already occupies.
+       {0} = scanner item label (from game data).
+       ================================================================= -->
+  <RimWorldAccess.WorldScanner.AlreadyAt>Zaten burada: {0}</RimWorldAccess.WorldScanner.AlreadyAt>
+  <RimWorldAccess.WorldScanner.AlreadyAtCenter>Zaten {0} merkezinde</RimWorldAccess.WorldScanner.AlreadyAtCenter>
+
+  <!-- World object selection tree + announcements (src/World/WorldObjectSelectionState.cs). -->
+  <RimWorldAccess.WorldObject.EnterSettlement>Yerleşime gir</RimWorldAccess.WorldObject.EnterSettlement>
+  <RimWorldAccess.WorldObject.Enter>Gir</RimWorldAccess.WorldObject.Enter>
+  <RimWorldAccess.WorldObject.FactionLabel>Fraksiyon: {0}</RimWorldAccess.WorldObject.FactionLabel>
+  <RimWorldAccess.WorldObject.RelationLabel>İlişki: {0}</RimWorldAccess.WorldObject.RelationLabel>
+  <RimWorldAccess.WorldObject.CanTradeHere>Burada ticaret yapılabilir</RimWorldAccess.WorldObject.CanTradeHere>
+  <RimWorldAccess.WorldObject.LabelCaravan>{0} (kervan)</RimWorldAccess.WorldObject.LabelCaravan>
+  <RimWorldAccess.WorldObject.LabelYourSettlement>{0} (yerleşimin)</RimWorldAccess.WorldObject.LabelYourSettlement>
+  <RimWorldAccess.WorldObject.LabelWithFaction>{0} ({1})</RimWorldAccess.WorldObject.LabelWithFaction>
+  <RimWorldAccess.WorldObject.LabelSite>{0} (bölge)</RimWorldAccess.WorldObject.LabelSite>
+  <RimWorldAccess.WorldObject.UnknownFactionLower>bilinmeyen fraksiyon</RimWorldAccess.WorldObject.UnknownFactionLower>
+  <RimWorldAccess.WorldObject.UnknownFaction>Bilinmeyen fraksiyon</RimWorldAccess.WorldObject.UnknownFaction>
+  <RimWorldAccess.WorldObject.SettlementAnnounce>{0}. {1}.</RimWorldAccess.WorldObject.SettlementAnnounce>
+  <!-- Hidden display-English sweep (returned/assigned strings localized). -->
+  <RimWorldAccess.Gear.CantReason.Unknown>bilinmiyor</RimWorldAccess.Gear.CantReason.Unknown>
+  <RimWorldAccess.Gear.CantReason.Prisoner>mahkûm</RimWorldAccess.Gear.CantReason.Prisoner>
+  <RimWorldAccess.Gear.CantReason.Pacifist>şiddet uygulayamaz</RimWorldAccess.Gear.CantReason.Pacifist>
+  <RimWorldAccess.Gear.CantReason.CantShoot>menzilli silahları kullanamaz</RimWorldAccess.Gear.CantReason.CantShoot>
+  <RimWorldAccess.Gear.CantReason.CantManipulate>manipülasyon yapamaz</RimWorldAccess.Gear.CantReason.CantManipulate>
+  <RimWorldAccess.Gear.CantReason.MissingBodyParts>vücut parçaları eksik</RimWorldAccess.Gear.CantReason.MissingBodyParts>
+  <RimWorldAccess.Gear.CantReason.WouldReplaceLockedApparel>kilitli kıyafetlerin yerini alır</RimWorldAccess.Gear.CantReason.WouldReplaceLockedApparel>
+  <RimWorldAccess.Gear.SlotUnarmed>silahsız</RimWorldAccess.Gear.SlotUnarmed>
+  <RimWorldAccess.Gear.SlotConflictingPlusMore>{0} ve {1} tane daha</RimWorldAccess.Gear.SlotConflictingPlusMore>
+  <RimWorldAccess.Gear.SlotNone>yok</RimWorldAccess.Gear.SlotNone>
+  <RimWorldAccess.Gear.SwappedItemFallback>öğe</RimWorldAccess.Gear.SwappedItemFallback>
+  <!-- Localization guardrail (D.8) sweep — previously hardcoded English. -->
+  <RimWorldAccess.Stat.MassUnknown>Ağırlık: Bilinmiyor</RimWorldAccess.Stat.MassUnknown>
+  <RimWorldAccess.Stat.SpeedUnknown>Hız: Bilinmiyor</RimWorldAccess.Stat.SpeedUnknown>
+  <RimWorldAccess.Stat.FoodUnknown>Yiyecek: Bilinmiyor</RimWorldAccess.Stat.FoodUnknown>
+  <RimWorldAccess.Stat.ForagingUnknown>Toplayıcılık: Bilinmiyor</RimWorldAccess.Stat.ForagingUnknown>
+  <RimWorldAccess.Stat.VisibilityUnknown>Görünürlük: Bilinmiyor</RimWorldAccess.Stat.VisibilityUnknown>
+
+  <!-- Mouse drag readout on the planet view (src/World/WorldDragSelectSpeech.cs).
+       The world drag box is drawn in screen pixels, not tiles, so its extent is
+       given as a share of the screen. {0} = width percent, {1} = height percent. -->
+  <RimWorldAccess.World.Drag.SelectExtent>ekranın yüzde {0} genişliğinde, yüzde {1} yüksekliğinde</RimWorldAccess.World.Drag.SelectExtent>
+
+  <!-- What a mouse click or drag-box release selected on the planet view
+       (src/World/WorldSelectionAnnouncer.cs). {0} = number of objects selected. -->
+  <RimWorldAccess.World.Selection.Multiple>{0} seçildi</RimWorldAccess.World.Selection.Multiple>
+  <RimWorldAccess.World.Selection.Cleared>Seçim temizlendi</RimWorldAccess.World.Selection.Cleared>
+</LanguageData>

@@ -1,62 +1,28 @@
-using System;
 using Verse;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Modal text-edit session for renaming a Zone. Routes through
+    /// Modal text-edit session for renaming a Zone. Thin facade over
+    /// <see cref="SimpleRenameSession{T}"/>; routes through
     /// <see cref="TextInputController"/> via the unified pipeline.
+    ///
+    /// Reads/writes <see cref="Zone.label"/> directly rather than the
+    /// <see cref="Zone.RenamableLabel"/> property: the property getter falls back
+    /// to <c>baseLabel</c> when <c>label</c> is null, which the original
+    /// implementation deliberately did not do when seeding the edit field.
     /// </summary>
     public static class ZoneRenameState
     {
-        private static readonly TextInputController Controller = new TextInputController();
-        private static Zone currentZone;
-        private static string originalName;
+        private static readonly SimpleRenameSession<Zone> Session = new SimpleRenameSession<Zone>(
+            targetNoun: "zone",
+            labelKey: "RimWorldAccess.TextInput.LabelZone",
+            errorKey: "RimWorldAccess.Building.Rename.ZoneError",
+            getLabel: zone => zone.label,
+            setLabel: (zone, newName) => zone.label = newName);
 
-        public static bool IsActive => TextInputManager.Active == Controller;
+        public static bool IsActive => Session.IsActive;
 
-        public static void Open(Zone zone)
-        {
-            if (zone == null)
-            {
-                Log.Error("Cannot open rename dialog: zone is null");
-                return;
-            }
-            currentZone = zone;
-            originalName = zone.label;
-            var spec = TextFieldSpec.ForIRenameable(zone, "RimWorldAccess.TextInput.LabelZone");
-            Controller.Begin(originalName, spec, OnConfirm, OnCancel, replaceOnType: true);
-        }
-
-        private static void OnConfirm(string newName)
-        {
-            try
-            {
-                currentZone.label = newName;
-                TolkHelper.Speak("RimWorldAccess.UI.Name.Renamed".Loc(newName), SpeechPriority.High);
-                Log.Message($"Renamed zone from '{originalName}' to '{newName}'");
-            }
-            catch (Exception ex)
-            {
-                TolkHelper.Speak("RimWorldAccess.Building.Rename.ZoneError".Loc(ex.Message), SpeechPriority.High);
-                Log.Error($"Error renaming zone: {ex}");
-            }
-            finally
-            {
-                ClearTarget();
-            }
-        }
-
-        private static void OnCancel()
-        {
-            TolkHelper.Speak("RimWorldAccess.Building.Rename.Cancelled".Loc());
-            ClearTarget();
-        }
-
-        private static void ClearTarget()
-        {
-            currentZone = null;
-            originalName = null;
-        }
+        public static void Open(Zone zone) => Session.Open(zone);
     }
 }

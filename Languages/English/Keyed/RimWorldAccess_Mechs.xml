@@ -70,6 +70,11 @@
          {2} = position suffix. -->
   <RimWorldAccess.Mechs.Submenu.NoOverseer>No overseer</RimWorldAccess.Mechs.Submenu.NoOverseer>
   <RimWorldAccess.Mechs.Submenu.NoControlGroup>No control group</RimWorldAccess.Mechs.Submenu.NoControlGroup>
+  <!-- Spoken instead of applying an allowed area when the mech fails
+       vanilla's own compound gate (most commonly: no live overseer) —
+       mirrors PawnColumnWorker_AllowedArea's DoCell, which draws no selector
+       at all for such a mech. -->
+  <RimWorldAccess.Mechs.Submenu.AreaNotAllowed>{0} cannot be assigned an allowed area</RimWorldAccess.Mechs.Submenu.AreaNotAllowed>
   <RimWorldAccess.Mechs.Submenu.CurrentMarker>{0} (current)</RimWorldAccess.Mechs.Submenu.CurrentMarker>
   <RimWorldAccess.Mechs.Submenu.Option>{0}. {1}</RimWorldAccess.Mechs.Submenu.Option>
   <RimWorldAccess.Mechs.Submenu.OptionAnnounce>{0} ({1})</RimWorldAccess.Mechs.Submenu.OptionAnnounce>
@@ -87,9 +92,6 @@
        Sort feedback (Alt+S). Mirrors the Animals sort vocabulary.
        CannotSort/SortedBy: {0} = column name, {1} = direction word.
        NowAt: {0} = the rebuilt cell announcement after a resort. -->
-  <RimWorldAccess.Mechs.Sort.CannotSort>{0} cannot be sorted</RimWorldAccess.Mechs.Sort.CannotSort>
-  <RimWorldAccess.Mechs.Sort.Cleared>Sort cleared, default order</RimWorldAccess.Mechs.Sort.Cleared>
-  <RimWorldAccess.Mechs.Sort.SortedBy>Sorted by {0} ({1})</RimWorldAccess.Mechs.Sort.SortedBy>
   <RimWorldAccess.Mechs.Sort.NowAt>Now at {0}</RimWorldAccess.Mechs.Sort.NowAt>
 
   <!-- =================================================================
@@ -97,6 +99,11 @@
        Allowed Area: {0} = mech name, {1} = area label, {2} = position. -->
   <RimWorldAccess.Mechs.Paint.Single.AreaAlreadySet>{0}: already set to {1}. {2}</RimWorldAccess.Mechs.Paint.Single.AreaAlreadySet>
   <RimWorldAccess.Mechs.Paint.Single.AreaApplied>{0}: {1} applied. {2}</RimWorldAccess.Mechs.Paint.Single.AreaApplied>
+  <!-- Spoken instead of AreaApplied when the target fails vanilla's own
+       compound gate (see PawnColumnWorker_AllowedArea.DoCell — most commonly:
+       no live overseer) — the write was correctly skipped, so this must not
+       claim success. -->
+  <RimWorldAccess.Mechs.Paint.Single.AreaNotAllowed>{0}: cannot be assigned an allowed area. {1}</RimWorldAccess.Mechs.Paint.Single.AreaNotAllowed>
 
   <!-- Single-step paint for Draft / Auto Repair checkbox columns.
        {0} = mech name, {1} = column name, {2} = value label, {3} = position.

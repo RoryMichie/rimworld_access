@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Narrative Feed (speech mods campaign, src/Narrative/NarrativeFeed.Game.cs).
+    Grammar keys compose one spoken line of ambient dialogue/narration; the
+    caller picks the variant based on which of speaker/recipient resolved.
+    {0}/{1}/{2} are already-resolved passthrough strings (pawn LabelShort,
+    line text) via .Translate(args), not authored prose fragments.
+  -->
+  <RimWorldAccess.Narrative.LineTo>{0} para {1}: {2}</RimWorldAccess.Narrative.LineTo>
+  <RimWorldAccess.Narrative.Line>{0}: {1}</RimWorldAccess.Narrative.Line>
+  <RimWorldAccess.Narrative.System>{0}</RimWorldAccess.Narrative.System>
+
+  <!--
+    The stable-read rule's shared marker (speech mods campaign S15, src/Narrative/AsyncTextStability.Game.cs).
+    Spoken INSTEAD OF any in-flight streamed/generated text while an extension mod's async
+    rewrite is still running, never a fragment of the real text. See Literature's book/art
+    inspection-tree children (S15) and S16 Quests for riders.
+  -->
+  <RimWorldAccess.Narrative.StillBeingWritten>Ainda sendo escrito.</RimWorldAccess.Narrative.StillBeingWritten>
+
+  <!-- Settings (Main Menu > Options > RimWorld Access), src/Shell/Screens/OptionsRwaCategory.Game.cs. -->
+  <RimWorldAccess.Narrative.Settings.AnnouncePawnDialogue.Label>Anunciar os diálogos gerados dos colonos</RimWorldAccess.Narrative.Settings.AnnouncePawnDialogue.Label>
+  <RimWorldAccess.Narrative.Settings.AnnouncePawnDialogue.Desc>Lê as falas escritas por mods narrativos como o RimTalk.</RimWorldAccess.Narrative.Settings.AnnouncePawnDialogue.Desc>
+  <RimWorldAccess.Narrative.Settings.AnnounceVanillaInteractionBubbles.Label>Anunciar balões de interação padrão</RimWorldAccess.Narrative.Settings.AnnounceVanillaInteractionBubbles.Label>
+  <RimWorldAccess.Narrative.Settings.AnnounceVanillaInteractionBubbles.Desc>Lê as conversas sociais do próprio jogo. Requer o mod Interaction Bubbles do Jaxe.</RimWorldAccess.Narrative.Settings.AnnounceVanillaInteractionBubbles.Desc>
+  <RimWorldAccess.Narrative.Settings.TtsAnnounceAnyway.Label>Anunciar diálogo mesmo quando o TTS do RimTalk já estiver falando</RimWorldAccess.Narrative.Settings.TtsAnnounceAnyway.Label>
+  <RimWorldAccess.Narrative.Settings.TtsAnnounceAnyway.Desc>Quando desativado, o leitor de tela fica em silêncio durante uma linha enquanto o complemento de TTS do RimTalk a diz em voz alta; o Registro de Diálogo continua registrando-a.</RimWorldAccess.Narrative.Settings.TtsAnnounceAnyway.Desc>
+
+  <!--
+    Dialogue Log screen (speech mods campaign S4, src/Narrative/DialogueLogScope.Game.cs).
+    Opened from the F12 extras menu whenever Bubbles or RimTalk is active. {0}/{1} below are
+    already-resolved passthrough strings (elapsed-time text, the composed LineTo/Line/System
+    grammar), not authored prose fragments.
+  -->
+  <RimWorldAccess.Narrative.DialogueLog.Title>Registro de diálogo</RimWorldAccess.Narrative.DialogueLog.Title>
+  <RimWorldAccess.Narrative.DialogueLog.Opened>Registro de diálogo aberto. {0} linhas.</RimWorldAccess.Narrative.DialogueLog.Opened>
+  <RimWorldAccess.Narrative.DialogueLog.OpenedOne>Registro de diálogo aberto. 1 linha.</RimWorldAccess.Narrative.DialogueLog.OpenedOne>
+  <RimWorldAccess.Narrative.DialogueLog.LinesRegion>Linhas</RimWorldAccess.Narrative.DialogueLog.LinesRegion>
+  <RimWorldAccess.Narrative.DialogueLog.Empty>Nenhum diálogo registrado ainda.</RimWorldAccess.Narrative.DialogueLog.Empty>
+  <RimWorldAccess.Narrative.DialogueLog.LineWithTimeAgo>{0} atrás. {1}</RimWorldAccess.Narrative.DialogueLog.LineWithTimeAgo>
+  <RimWorldAccess.Narrative.DialogueLog.NewConversation>Nova conversa.</RimWorldAccess.Narrative.DialogueLog.NewConversation>
+  <RimWorldAccess.Narrative.DialogueLog.JumpToSpeaker>Ir para o interlocutor</RimWorldAccess.Narrative.DialogueLog.JumpToSpeaker>
+  <RimWorldAccess.Narrative.DialogueLog.JumpDisabledReason>Não é possível localizar o interlocutor.</RimWorldAccess.Narrative.DialogueLog.JumpDisabledReason>
+  <RimWorldAccess.Narrative.DialogueLog.ToggleOverlayOn>Ativar sobreposição de diálogo</RimWorldAccess.Narrative.DialogueLog.ToggleOverlayOn>
+  <RimWorldAccess.Narrative.DialogueLog.ToggleOverlayOff>Desativar sobreposição de diálogo</RimWorldAccess.Narrative.DialogueLog.ToggleOverlayOff>
+  <RimWorldAccess.Narrative.DialogueLog.OverlayTurnedOn>Sobreposição de diálogo ativada.</RimWorldAccess.Narrative.DialogueLog.OverlayTurnedOn>
+  <RimWorldAccess.Narrative.DialogueLog.OverlayTurnedOff>Sobreposição de diálogo desativada.</RimWorldAccess.Narrative.DialogueLog.OverlayTurnedOff>
+  <RimWorldAccess.Narrative.DialogueLog.OpenSettings>Abrir configurações do RimTalk</RimWorldAccess.Narrative.DialogueLog.OpenSettings>
+  <RimWorldAccess.Narrative.DialogueLog.OpenDebugWindow>Abrir janela de depuração do RimTalk</RimWorldAccess.Narrative.DialogueLog.OpenDebugWindow>
+  <RimWorldAccess.Narrative.DialogueLog.OpenBubblesSettings>Abrir configurações do Bubbles</RimWorldAccess.Narrative.DialogueLog.OpenBubblesSettings>
+  <RimWorldAccess.Narrative.DialogueLog.ActionFailed>Isso não pôde ser feito agora.</RimWorldAccess.Narrative.DialogueLog.ActionFailed>
+
+  <!-- RimTalk TTS addon overlay-adjacent controls (speech mods campaign S11), src/Compat/RimTalkTtsOverlayCompat.Game.cs. -->
+  <RimWorldAccess.Narrative.DialogueLog.TtsToggleOn>Ativar texto em fala</RimWorldAccess.Narrative.DialogueLog.TtsToggleOn>
+  <RimWorldAccess.Narrative.DialogueLog.TtsToggleOff>Desativar texto em fala</RimWorldAccess.Narrative.DialogueLog.TtsToggleOff>
+  <RimWorldAccess.Narrative.DialogueLog.TtsTurnedOn>Texto em fala ativado.</RimWorldAccess.Narrative.DialogueLog.TtsTurnedOn>
+  <RimWorldAccess.Narrative.DialogueLog.TtsTurnedOff>Texto em fala desativado.</RimWorldAccess.Narrative.DialogueLog.TtsTurnedOff>
+  <RimWorldAccess.Narrative.DialogueLog.TtsResetAudio>Limpar áudio do TTS</RimWorldAccess.Narrative.DialogueLog.TtsResetAudio>
+  <RimWorldAccess.Narrative.DialogueLog.TtsResetComplete>Todo o áudio pendente de reprodução ou geração foi limpo.</RimWorldAccess.Narrative.DialogueLog.TtsResetComplete>
+  <RimWorldAccess.Narrative.DialogueLog.TtsGenerateDialogue>Gerar diálogo</RimWorldAccess.Narrative.DialogueLog.TtsGenerateDialogue>
+  <RimWorldAccess.Narrative.DialogueLog.TtsGenerateStarted>Geração de diálogo iniciada.</RimWorldAccess.Narrative.DialogueLog.TtsGenerateStarted>
+  <RimWorldAccess.Narrative.DialogueLog.TtsIgnoreAll>Ignorar diálogos existentes</RimWorldAccess.Narrative.DialogueLog.TtsIgnoreAll>
+  <RimWorldAccess.Narrative.DialogueLog.TtsIgnoreComplete>Todos os diálogos existentes foram ignorados.</RimWorldAccess.Narrative.DialogueLog.TtsIgnoreComplete>
+  <RimWorldAccess.Narrative.DialogueLog.TtsDisplayNext>Exibir próximo diálogo</RimWorldAccess.Narrative.DialogueLog.TtsDisplayNext>
+  <RimWorldAccess.Narrative.DialogueLog.TtsDisplayStarted>Exibindo o próximo diálogo.</RimWorldAccess.Narrative.DialogueLog.TtsDisplayStarted>
+</LanguageData>

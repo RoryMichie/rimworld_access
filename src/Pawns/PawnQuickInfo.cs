@@ -45,7 +45,14 @@ namespace RimWorldAccess
             {
                 MultiSelectState.ValidateAndCleanupSelection();
                 var options = new List<FloatMenuOption>();
-                foreach (var pawn in MultiSelectState.SelectedPawns)
+                // Colonist-bar order, never selection order; off-bar pawns trail.
+                var pawns = MultiSelectState.SelectedPawns
+                    .OrderBy(p =>
+                    {
+                        int i = ColonistBarState.GetGlobalBarIndex(p);
+                        return i < 0 ? int.MaxValue : i;
+                    });
+                foreach (var pawn in pawns)
                 {
                     string info = extractor(pawn);
                     string label = "RimWorldAccess.Pawns.QuickInfo.PickerRow".Translate(pawn.LabelShort, info);
@@ -69,7 +76,8 @@ namespace RimWorldAccess
             IntVec3 cursor = MapNavigationState.CurrentCursorPosition;
             if (!cursor.IsValid || !cursor.InBounds(map)) return null;
 
-            return map.thingGrid.ThingsListAt(cursor).OfType<Pawn>().FirstOrDefault();
+            return map.thingGrid.ThingsListAt(cursor)
+                .OfType<Pawn>().FirstOrDefault(p => !HiddenPawns.IsHidden(p));
         }
     }
 }

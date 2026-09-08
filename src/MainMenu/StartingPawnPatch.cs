@@ -14,7 +14,7 @@ namespace RimWorldAccess
         {
             try
             {
-                // Close world navigation state left over from site selection
+                // Site selection can leave world navigation open.
                 if (WorldNavigationState.IsActive)
                 {
                     WorldNavigationState.Close();
@@ -25,7 +25,7 @@ namespace RimWorldAccess
                 PawnFilterData.Initialize();
                 StartingPawnState.Open();
 
-                // Restore IMGUI focus to this page after dialog closures
+                // IMGUI focus dies for the host after a child window closes.
                 Find.WindowStack.Notify_ManuallySetFocus(__instance);
             }
             catch (System.Exception ex)
@@ -45,6 +45,7 @@ namespace RimWorldAccess
             if (!(__instance is Page_ConfigureStartingPawns)) return;
             try
             {
+                StartingPawnPatch.CloseOverlayStates();
                 StartingPawnState.Close();
                 StartingPawnPatch.SetInstance(null);
             }
@@ -55,24 +56,43 @@ namespace RimWorldAccess
         }
     }
 
+    /// <summary>
+    /// Skips the page's ENTIRE DoWindowContents body — Page.DoBottomButtons' deferred
+    /// <c>Cancel.KeyDownEvent → DoBack()</c> poll included — while a windowless float menu is
+    /// open.
+    /// Skipping the draw, never consuming the event: a focused window's GUI pass can run BEFORE
+    /// the dispatcher's main pass and shares Event.current with it (QA R6), so using the event
+    /// here would also starve the float menu's own Escape claim and one Escape would neither
+    /// close the menu nor back out the page. The postfix below still runs; Harmony postfixes are
+    /// unaffected by a skipping prefix.
+    /// Page_ConfigureStartingPawns only. The wanderer dialog is a plain Window with no such
+    /// deferred poll; its Escape and Enter are owned by StartingPawnScope instead.
+    /// </summary>
     [HarmonyPatch(typeof(Page_ConfigureStartingPawns))]
     [HarmonyPatch("DoWindowContents")]
     public static class StartingPawnDoWindowContentsPatch
     {
+        [HarmonyPrefix]
+        public static bool Prefix()
+        {
+            return !WindowlessFloatMenuState.IsActive;
+        }
+
         [HarmonyPostfix]
         public static void Postfix(Page_ConfigureStartingPawns __instance)
         {
             try
             {
-                // Process reroll batch each frame
                 RerollState.ProcessBatch();
 
                 if (!StartingPawnState.IsActive) return;
 
-                // Check if rename dialog just closed and tree needs rebuilding
                 StartingPawnState.CheckPendingRenameRebuild();
 
-                // Sync curPawnIndex with our tree selection
+                // Keeps a live name-edit session's buffer mirrored.
+                Shell.StartingPawnScreenScope.Active?.OnHostDrawPass();
+
+                // Vanilla's own cursor follows the tree selection.
                 int pawnIdx = StartingPawnState.GetSelectedPawnIndex();
                 AccessTools.Field(typeof(Page_ConfigureStartingPawns), "curPawnIndex")
                     .SetValue(__instance, pawnIdx);
@@ -85,93 +105,62 @@ namespace RimWorldAccess
     }
 
     /// <summary>
-    /// Block DoNext when our states are active to prevent accidental advancement.
-    /// The game calls DoNext from DoBottomButtons when the Start button is clicked.
-    /// We want Enter to go through our confirmation dialog instead.
+    /// Captures the visible height DrawPawnList's own scroll view uses into
+    /// StartingPawnScreenScope, for its scroll-follow write. Not closed-form from the page
+    /// layout, so it has to be read live; the patch only copies two floats.
     /// </summary>
-    [HarmonyPatch(typeof(Page))]
-    [HarmonyPatch("DoNext")]
-    public static class StartingPawnDoNextBlockPatch
+    [HarmonyPatch(typeof(Page_ConfigureStartingPawns), "DrawPawnList")]
+    public static class StartingPawnListViewportCapturePatch
     {
         [HarmonyPrefix]
-        public static bool Prefix(Page __instance)
+        public static void Prefix(Rect rect)
         {
-            if (__instance is Page_ConfigureStartingPawns)
+            if (Event.current.type == EventType.Layout)
             {
-                // Block DoNext when our overlay menus are active
-                if (WindowlessFloatMenuState.IsActive || InfoCardState.IsActive || PawnFilterState.IsActive)
-                    return false;
+                return;
             }
-            return true;
+            if (!(Shell.FocusStack.Top is Shell.StartingPawnScreenScope))
+            {
+                return;
+            }
+            Shell.StartingPawnScreenScope.CaptureVisibleHeight(rect.height - 22f);
         }
     }
 
     /// <summary>
-    /// Block DoBack when our overlay menus are active to prevent Escape from
-    /// closing the chargen page. Page.DoBottomButtons checks KeyBindingDefOf.Cancel
-    /// directly and calls DoBack(), bypassing closeOnCancel entirely.
+    /// State-based CanDoBack guard: while one of the page's windowless pawn-filter overlays owns
+    /// Escape, the page's deferred <c>Cancel.KeyDownEvent → DoBack()</c> poll is refused. Under
+    /// window-pass-first ordering (QA R6) that poll reads the raw Escape before the dispatcher's
+    /// claim consumes it, so without this an Escape inside the filter editor also backs the page
+    /// out. The float-menu case is covered by the DoWindowContents skip above; these are not.
     /// </summary>
-    [HarmonyPatch(typeof(Page))]
-    [HarmonyPatch("DoBack")]
-    public static class StartingPawnDoBackBlockPatch
+    [HarmonyPatch(typeof(Page), "CanDoBack")]
+    public static class StartingPawnCanDoBackGuardPatch
     {
         [HarmonyPrefix]
-        public static bool Prefix(Page __instance)
+        public static bool Prefix(Page __instance, ref bool __result)
         {
-            if (__instance is Page_ConfigureStartingPawns)
+            if (!(__instance is Page_ConfigureStartingPawns))
             {
-                // Our own explicit DoBack (from the confirm dialog's Continue button)
-                // must always go through — bypass the overlay-blocked check, which
-                // would otherwise reject it because the confirm dialog is still open
-                // (WindowlessDialogState.IsActive) at the moment the button fires.
-                if (explicitDoBack)
-                {
-                    StartingPawnPatch.backHandledOnFrame = Time.frameCount;
-                    return true;
-                }
-
-                bool blocked = WindowlessFloatMenuState.IsActive || WindowlessDialogState.IsActive || InfoCardState.IsActive || PawnFilterState.IsActive || RerollState.IsActive;
-                if (blocked)
-                    return false;
-
-                // Intercept DoBack on char gen to show a confirmation dialog first.
-                // Page.DoBottomButtons invokes DoBack during InnerWindowOnGUI from the
-                // Escape key before our UnifiedKeyboardPatch can consume the event, so
-                // we block it here and hand off to StartingPawnState.RequestBackConfirm().
-                if (StartingPawnState.IsActive
-                    && StartingPawnState.Context != PawnEditorContext.Wanderer)
-                {
-                    // If the user has an active typeahead search, the first Escape
-                    // should cancel that search rather than open the discard dialog.
-                    if (StartingPawnState.HasActiveSearch)
-                    {
-                        StartingPawnState.ClearActiveSearch();
-                        return false;
-                    }
-
-                    StartingPawnState.RequestBackConfirm();
-                    return false;
-                }
-
-                // Mark the frame so cascading DoBack on the previous page is blocked
-                StartingPawnPatch.backHandledOnFrame = Time.frameCount;
+                return true;
             }
-            if (__instance is Page_SelectStartingSite)
+            if (KeyBindingDefOf.Cancel.KeyDownEvent
+                && (PawnFilterState.IsActive
+                    || PawnFilterPresetSaveState.IsActive
+                    || PawnFilterPresetLoadState.IsActive
+                    || PawnFilterPresetDeleteConfirmState.IsActive
+                    || RerollState.IsActive))
             {
-                if (StartingPawnPatch.backHandledOnFrame == Time.frameCount)
-                    return false;
+                __result = false;
+                return false;
             }
             return true;
         }
-
-        // Set to true around our own confirmed DoBack call so the prefix lets it through.
-        internal static bool explicitDoBack = false;
     }
 
     public static class StartingPawnPatch
     {
         private static Page_ConfigureStartingPawns instance;
-        public static int backHandledOnFrame = -1;
 
         public static void SetInstance(Page_ConfigureStartingPawns page)
         {
@@ -181,6 +170,27 @@ namespace RimWorldAccess
         public static Page_ConfigureStartingPawns GetInstance()
         {
             return instance;
+        }
+
+        /// <summary>
+        /// Close-side teardown of every windowless overlay the pawn editor can leave open,
+        /// shared by both hosts' PostClose patches: nothing stops the page closing under one, and
+        /// a surviving flag would leak its mirror scope onto the next screen. Reroll is cancelled
+        /// FIRST — its completion callback touches the pawn state, which must still be open.
+        /// </summary>
+        internal static void CloseOverlayStates()
+        {
+            if (RerollState.IsActive)
+                RerollState.Cancel();
+            PawnFilterPresetDeleteConfirmState.ForceClose();
+            if (PawnFilterPresetSaveState.IsActive)
+                PawnFilterPresetSaveState.Close();
+            if (PawnFilterPresetLoadState.IsActive)
+                PawnFilterPresetLoadState.Close();
+            if (PawnFilterState.IsActive)
+                PawnFilterState.Close(save: true);
+            if (WindowlessFloatMenuState.IsActive)
+                WindowlessFloatMenuState.Close();
         }
 
         public static bool CanDoNext()
@@ -216,16 +226,7 @@ namespace RimWorldAccess
             if (instance == null) return;
             try
             {
-                backHandledOnFrame = Time.frameCount;
-                StartingPawnDoBackBlockPatch.explicitDoBack = true;
-                try
-                {
-                    AccessTools.Method(typeof(Page), "DoBack").Invoke(instance, null);
-                }
-                finally
-                {
-                    StartingPawnDoBackBlockPatch.explicitDoBack = false;
-                }
+                AccessTools.Method(typeof(Page), "DoBack").Invoke(instance, null);
             }
             catch (System.Exception ex)
             {

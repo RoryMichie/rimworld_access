@@ -6,23 +6,16 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Surfaces RimWorld Access documentation chapters (and enriched vanilla concepts) at the
-    /// moment they become relevant — the contextual "teach at the right time" layer on top of
-    /// the browsable Learning Helper.
-    ///
-    /// Teaching routes through the game's own <see cref="LessonAutoActivator.TeachOpportunity"/>,
-    /// which: respects the player's AdaptiveTraining setting, never re-teaches an already-learned
-    /// concept, and de-duplicates against currently active lessons. Crucially, the explicit-teach
-    /// path (TeachOpportunity -> TryInitiateLesson -> LearningReadout.TryActivateConcept) has NO
-    /// <c>gameMode</c>/ProgramState gate — that gate lives only in the background desire engine —
-    /// so a chapter can be taught during world/site selection (Entry) as well as in-game (Playing).
-    /// Activation is announced by <see cref="LearningHelperPatch"/>.
-    ///
-    /// Trigger points call <see cref="Teach"/> from natural "first use" moments (a page opening,
-    /// the first inspection, the first colonist selected). A once-per-session guard means a
-    /// per-open hook can call it every time without re-announcing an unlearned lesson on each open;
-    /// the guard resets on game start/load (see <see cref="ResetSession"/>) so each game gets a
-    /// fresh teaching pass, while the knowledge database still suppresses already-learned lessons.
+    /// Surfaces RimWorld Access documentation chapters (and enriched vanilla concepts) at the moment
+    /// they become relevant — the contextual layer over the browsable Learning Helper.
+    /// Teaching routes through <see cref="LessonAutoActivator.TeachOpportunity"/>, which respects the
+    /// player's AdaptiveTraining setting, never re-teaches a learned concept, and de-duplicates
+    /// against active lessons. The explicit-teach path has NO <c>gameMode</c>/ProgramState gate —
+    /// that lives only in the background desire engine — so a chapter can be taught during world/site
+    /// selection as well as in-game. Activation is announced by <see cref="LearningHelperPatch"/>.
+    /// A once-per-session guard lets a per-open hook call <see cref="Teach"/> every time without
+    /// re-announcing; the guard resets on game start/load, so each game gets a fresh teaching pass
+    /// while the knowledge database still suppresses learned lessons.
     /// </summary>
     public static class DocsTeacher
     {
@@ -32,27 +25,23 @@ namespace RimWorldAccess
         private const int JumpModesMoveThreshold = 12;
         private static int cursorMoveCount;
 
-        // When a new game starts, the starting colonists are still descending in drop pods, so the
-        // map has no spawned colonists yet (FreeColonistsCount is non-zero but they are not on the
-        // map). Teaching "how to select a colonist" then is premature. Instead we arm this flag and
-        // teach the moment a colonist is actually present (see PollDeferred), polled each frame.
+        // At game start the colonists are still descending in drop pods, so FreeColonistsCount is
+        // non-zero while none are on the map yet. Arm this flag and teach once one is actually
+        // present (see PollDeferred).
         private static bool selectingColonistsPending;
 
-        // The scanner and forbid/allow lessons both wait until ALL starting colonists have landed.
-        // The scanner surveys the whole map, so it is most useful once everything is on the ground;
-        // and the drop pods carry cargo that arrives forbidden, so teaching "press Alt+F to free
-        // everything" before the last pod lands would have the player free the map, then watch fresh
-        // forbidden items rain down. We wait for every pod down, then teach both in the same poll
-        // frame (so the announcement coalesces). Forbidding stays gated on there being enough
-        // forbidden items, so a clean late-game save load does not trigger it.
+        // The scanner and forbid/allow lessons both wait until ALL starting colonists have landed:
+        // the scanner surveys the whole map, and pod cargo arrives forbidden, so teaching "free
+        // everything" early would have the player free the map and then watch fresh forbidden items
+        // rain down. Both teach in the same poll frame so the announcement coalesces; forbidding
+        // stays gated on enough forbidden items, so a clean late-game load does not trigger it.
         private static bool scannerPending;
         private static bool forbiddingPending;
 
         /// <summary>
-        /// Offer a lesson for the concept with the given defName. No-op when adaptive training is
-        /// off, the scripted tutorial is running, the tutor is unavailable, the concept does not
-        /// exist (e.g. a DLC concept whose DLC is absent), or it has already been offered this
-        /// session. Otherwise safe to call repeatedly from an event hook.
+        /// Offers a lesson for the concept with the given defName. No-op when adaptive training is off,
+        /// the scripted tutorial is running, the tutor is unavailable, the concept does not exist (a
+        /// DLC concept whose DLC is absent), or it was already offered this session.
         /// </summary>
         public static void Teach(string conceptDefName, OpportunityType opportunity = OpportunityType.Important)
         {
@@ -73,14 +62,11 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// A vanilla (or DLC) concept the player completed long ago keeps its "learned" flag, which
-        /// makes <see cref="LessonAutoActivator.TeachOpportunity"/> skip it — so our re-authored,
-        /// accessible version of that concept (e.g. the world-map chapter overriding
-        /// WorldCameraMovement) would never surface for a veteran player. The first time we
-        /// contextually teach a concept whose help text we override, if the player has already
-        /// completed it, clear that one concept's knowledge so our version is taught. Recorded in
-        /// settings so it happens exactly once per player per concept — no nagging across games, and
-        /// concepts without an override (our own RWA_* chapters) are never touched.
+        /// A concept the player completed long ago keeps its "learned" flag, which makes
+        /// <see cref="LessonAutoActivator.TeachOpportunity"/> skip it — so our re-authored version of
+        /// an overridden concept would never surface for a veteran player. The first time such a
+        /// concept is taught contextually, clear that one concept's knowledge. Recorded in settings so
+        /// it happens exactly once per player per concept; concepts without an override are untouched.
         /// </summary>
         private static void ReteachOverriddenConceptIfAlreadyLearned(ConceptDef conc)
         {
@@ -99,26 +85,21 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Fires the cursor-landing contextual lessons for wherever the map cursor just arrived,
-        /// regardless of HOW it got there — arrowing tile-by-tile, a scanner Home jump, etc. (The
-        /// teach checks used to live only in arrow movement, so jumping straight to a thing via the
-        /// scanner never triggered them.) Safe to call repeatedly; the once-per-session guard and the
-        /// knowledge database keep it from re-announcing.
+        /// Fires the cursor-landing contextual lessons for wherever the map cursor arrived, regardless
+        /// of HOW it got there (arrowing, a scanner jump). Safe to call repeatedly.
         /// </summary>
         public static void NotifyCursorLanded(IntVec3 position, Map map)
         {
             if (map == null)
                 return;
 
-            // Cursor landing on a pawn is the moment to learn it can be inspected — before the
-            // player would otherwise know to press Enter.
+            // Cursor landing on a pawn is the moment to learn it can be inspected.
             if (position.GetFirstPawn(map) != null)
             {
                 Teach("RWA_InspectingThings");
             }
-            // The context menu (]) gives a selected colonist orders about what's under the cursor:
-            // equip a weapon, wear apparel, build a blueprint, work on a building. Teach it the
-            // moment a selected colonist's cursor reaches one of those. (Frame is a Building too.)
+            // The context menu gives a selected colonist orders about what is under the cursor, so
+            // teach it the moment such a cursor reaches one. (Frame is a Building too.)
             else if (Find.Selector?.SingleSelectedThing is Pawn selectedColonist && selectedColonist.IsColonist
                      && position.GetThingList(map).Any(t =>
                             t.def.IsWeapon || t.def.IsApparel || t is Blueprint || t is Building))
@@ -127,10 +108,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Counts tile-by-tile cursor movement; once the player has nudged the cursor enough times
-        /// to feel the slowness, suggests the jump-modes chapter. Called from cursor navigation.
-        /// </summary>
+        /// <summary>Counts tile-by-tile cursor movement and suggests the jump-modes chapter once the player has nudged enough times to feel the slowness.</summary>
         public static void NotifyCursorMoved()
         {
             if (offeredThisSession.Contains("RWA_JumpModes"))
@@ -140,9 +118,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Arms the "selecting colonists" lesson to be taught once a colonist is actually spawned on
-        /// the map, rather than at game start when the starting pawns are still in transit. Called
-        /// from GameStartPatch; resolved by <see cref="PollDeferred"/>.
+        /// Arms the "selecting colonists" lesson for once a colonist is actually spawned, rather than
+        /// at game start while the starting pawns are in transit. Resolved by
+        /// <see cref="PollDeferred"/>.
         /// </summary>
         public static void RequestSelectingColonistsWhenPresent()
         {
@@ -150,9 +128,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Arms the map-basics lessons (scanner, then forbid/allow) to be taught once every starting
-        /// colonist has spawned — i.e. all drop pods are down and the map is complete. Both fire in
-        /// the same poll frame so their announcements coalesce.
+        /// Arms the map-basics lessons (scanner, then forbid/allow) for once every starting colonist
+        /// has spawned, i.e. all pods are down. Both fire in the same poll frame so they coalesce.
         /// </summary>
         public static void RequestMapBasicsWhenAllColonistsPresent()
         {
@@ -161,9 +138,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Per-frame check for deferred teaches that wait on world state. Cheap (a bool test) until
-        /// something is pending. Called every OnGUI pass from UnifiedKeyboardPatch, so it runs even
-        /// while the game is paused (the starting drop pods land on the first unpaused ticks).
+        /// Per-frame check for deferred teaches waiting on world state; a bool test until something is
+        /// pending. Called every OnGUI pass, so it runs while the game is paused (the starting pods
+        /// land on the first unpaused ticks).
         /// </summary>
         public static void PollDeferred()
         {
@@ -177,17 +154,16 @@ namespace RimWorldAccess
             MapPawns mp = map.mapPawns;
             int spawned = mp.FreeColonistsSpawnedCount;
 
-            // Teach selecting as soon as there is at least one colonist on the map to select.
+            // Teach selecting as soon as there is a colonist on the map to select.
             if (selectingColonistsPending && spawned > 0)
             {
                 selectingColonistsPending = false;
                 Teach("RWA_SelectingColonists", OpportunityType.Critical);
             }
 
-            // Teach the map-basics batch (scanner, then forbid/allow) only once every colonist has
-            // landed (spawned has caught up to the total free-colonist count, which includes those
-            // still in transit), so all pod cargo is on the map. Both fire in this one frame so their
-            // announcements coalesce. Forbidding stays gated on a meaningful number of forbidden items.
+            // The map-basics batch waits until spawned has caught up to the total free-colonist count
+            // (which includes pawns still in transit), so all pod cargo is on the map. Forbidding
+            // stays gated on a meaningful number of forbidden items.
             if ((scannerPending || forbiddingPending) && spawned > 0 && spawned >= mp.FreeColonistsCount)
             {
                 if (scannerPending)
@@ -204,10 +180,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Counts forbidden items on the map, stopping once it passes 21 (we only need the
-        /// threshold, so there is no point scanning a whole late-game map).
-        /// </summary>
+        /// <summary>Counts forbidden items, stopping past 21: only the threshold matters, so there is no point scanning a whole late-game map.</summary>
         private static int CountForbiddenItems(Map map)
         {
             int count = 0;
@@ -224,8 +197,7 @@ namespace RimWorldAccess
             return count;
         }
 
-        /// <summary>Clears per-session teaching state. Called on game start/load so each game
-        /// re-offers contextual lessons the player has not yet learned.</summary>
+        /// <summary>Clears per-session teaching state, so each game re-offers contextual lessons the player has not learned.</summary>
         public static void ResetSession()
         {
             offeredThisSession.Clear();

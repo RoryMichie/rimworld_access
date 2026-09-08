@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
+using RimWorld.Planet;
+using RimWorldAccess.Shell;
 using Verse;
 
 namespace RimWorldAccess
@@ -118,6 +120,32 @@ namespace RimWorldAccess
         {
             return null;
         }
+
+        public string GetStatName(int summaryIndex)
+        {
+            return "";
+        }
+
+        // Table-model T3 (the table-model doctrine): the column set is read
+        // off the dialog's own live TransferableOneWayWidget instances, so it is
+        // the game's decision by construction. The ColumnProfile presets are only
+        // the fallback for a null/unreflectable widget.
+        private static readonly FieldInfo pawnsTransferField = AccessTools.Field(typeof(Dialog_EnterPortal), "pawnsTransfer");
+        private static readonly FieldInfo itemsTransferField = AccessTools.Field(typeof(Dialog_EnterPortal), "itemsTransfer");
+
+        private PlanetTile? FallbackTile => Portal?.Map != null ? (PlanetTile?)Portal.Map.Tile : null;
+
+        public TransferableTableColumns.WidgetView PawnsView => TransferableTableColumns.ViewFor(
+            pawnsTransferField?.GetValue(dialog) as TransferableOneWayWidget,
+            TransferableTableColumns.ColumnProfile.PortalPawns, FallbackTile);
+
+        public TransferableTableColumns.WidgetView ItemsView => TransferableTableColumns.ViewFor(
+            itemsTransferField?.GetValue(dialog) as TransferableOneWayWidget,
+            TransferableTableColumns.ColumnProfile.PortalItems, FallbackTile);
+
+        public string CountColumnTooltip => "TransferMapPortalColonyThingCountTip".Translate();
+
+        public bool HasPawnsTab => true;
 
         private MapPortal Portal
         {

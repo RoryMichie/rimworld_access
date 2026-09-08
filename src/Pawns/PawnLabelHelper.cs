@@ -27,15 +27,14 @@ namespace RimWorldAccess
                 kindLabel = Find.ActiveLanguageWorker.Pluralize(kindLabel, count);
             }
 
-            // Build the label with gender prefix
-            string genderPrefix = "";
+            kindLabel = kindLabel.CapitalizeFirst();
             if (pawn.gender == Gender.Male)
             {
-                genderPrefix = "RimWorldAccess.Pawns.Group.MalePrefix".Translate();
+                kindLabel = "RimWorldAccess.Pawns.Group.MaleGroup".Translate(kindLabel);
             }
             else if (pawn.gender == Gender.Female)
             {
-                genderPrefix = "RimWorldAccess.Pawns.Group.FemalePrefix".Translate();
+                kindLabel = "RimWorldAccess.Pawns.Group.FemaleGroup".Translate(kindLabel);
             }
 
             // Collect suffixes (life stage, pregnancy)
@@ -70,7 +69,7 @@ namespace RimWorldAccess
             string suffix = suffixes.Count > 0
                 ? "RimWorldAccess.Pawns.Group.SuffixWrap".Translate(string.Join(", ", suffixes)).ToString()
                 : "";
-            return "RimWorldAccess.Pawns.Group.Label".Translate(genderPrefix, kindLabel.CapitalizeFirst(), suffix);
+            return "RimWorldAccess.Pawns.Group.Label".Translate(kindLabel, suffix);
         }
     }
 }

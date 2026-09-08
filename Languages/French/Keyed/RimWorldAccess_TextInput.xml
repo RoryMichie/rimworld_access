@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.TextInput.LabelDefault>champ</RimWorldAccess.TextInput.LabelDefault>
+  <RimWorldAccess.TextInput.LabelFaction>nom de faction</RimWorldAccess.TextInput.LabelFaction>
+  <RimWorldAccess.TextInput.LabelSettlement>nom de colonie</RimWorldAccess.TextInput.LabelSettlement>
+  <RimWorldAccess.TextInput.LabelZone>nom de zone</RimWorldAccess.TextInput.LabelZone>
+  <RimWorldAccess.TextInput.LabelPlan>nom de plan</RimWorldAccess.TextInput.LabelPlan>
+  <RimWorldAccess.TextInput.LabelStorage>nom de zone de stockage</RimWorldAccess.TextInput.LabelStorage>
+  <RimWorldAccess.TextInput.LabelPen>nom d'enclos</RimWorldAccess.TextInput.LabelPen>
+  <RimWorldAccess.TextInput.LabelScenarioTitle>titre du scénario</RimWorldAccess.TextInput.LabelScenarioTitle>
+  <RimWorldAccess.TextInput.LabelScenarioSummary>résumé du scénario</RimWorldAccess.TextInput.LabelScenarioSummary>
+  <RimWorldAccess.TextInput.LabelScenarioDescription>description du scénario</RimWorldAccess.TextInput.LabelScenarioDescription>
+  <RimWorldAccess.TextInput.LabelFilename>nom de fichier</RimWorldAccess.TextInput.LabelFilename>
+  <RimWorldAccess.TextInput.LabelXenotype>nom de xénotype</RimWorldAccess.TextInput.LabelXenotype>
+  <RimWorldAccess.TextInput.LabelXenogerm>nom de xénogerme</RimWorldAccess.TextInput.LabelXenogerm>
+  <RimWorldAccess.TextInput.LabelWorldSeed>graine du monde</RimWorldAccess.TextInput.LabelWorldSeed>
+
+  <RimWorldAccess.TextInput.EditingField>Modification de {0}: {1}. Tapez la nouvelle valeur, Entrée pour confirmer, Échap pour annuler.</RimWorldAccess.TextInput.EditingField>
+  <RimWorldAccess.TextInput.EditingMultiLineField>Modification du champ multiligne {0}: {1}. Tapez, Maj+Entrée pour une nouvelle ligne, Haut/Bas pour naviguer entre les lignes, Entrée pour confirmer, Échap pour annuler.</RimWorldAccess.TextInput.EditingMultiLineField>
+  <RimWorldAccess.TextInput.BrowsingField>Consultation de {0}, lecture seule: {1}.</RimWorldAccess.TextInput.BrowsingField>
+  <RimWorldAccess.TextInput.ReadOnlyField>Ce texte est en lecture seule</RimWorldAccess.TextInput.ReadOnlyField>
+  <RimWorldAccess.TextInput.Empty>vide</RimWorldAccess.TextInput.Empty>
+  <RimWorldAccess.TextInput.Deleted>Suppression : {0}</RimWorldAccess.TextInput.Deleted>
+  <RimWorldAccess.TextInput.FieldSet>Valeur de {0} définie : {1}</RimWorldAccess.TextInput.FieldSet>
+  <RimWorldAccess.TextInput.FieldUnchanged>Valeur de {0} inchangée</RimWorldAccess.TextInput.FieldUnchanged>
+  <RimWorldAccess.TextInput.NewLine>Nouvelle ligne</RimWorldAccess.TextInput.NewLine>
+  <RimWorldAccess.TextInput.BlankLine>ligne vide</RimWorldAccess.TextInput.BlankLine>
+
+  <RimWorldAccess.TextInput.Copied>Copié</RimWorldAccess.TextInput.Copied>
+  <RimWorldAccess.TextInput.Cut>Coupé</RimWorldAccess.TextInput.Cut>
+  <RimWorldAccess.TextInput.SelectedAll>Tout sélectionné : {0}</RimWorldAccess.TextInput.SelectedAll>
+  <RimWorldAccess.TextInput.SelectedAllLong>Tout sélectionné, {0} caractères</RimWorldAccess.TextInput.SelectedAllLong>
+  <RimWorldAccess.TextInput.ClipboardEmpty>Le presse-papiers est vide</RimWorldAccess.TextInput.ClipboardEmpty>
+  <RimWorldAccess.TextInput.PastedShort>Collé : {0}</RimWorldAccess.TextInput.PastedShort>
+  <RimWorldAccess.TextInput.PastedWords>Collé : {0} mots</RimWorldAccess.TextInput.PastedWords>
+  <RimWorldAccess.TextInput.PastedLines>Collé : {0} lignes, {1} mots</RimWorldAccess.TextInput.PastedLines>
+
+  <RimWorldAccess.TextInput.RejectedEmpty>Impossible d'accepter une valeur vide</RimWorldAccess.TextInput.RejectedEmpty>
+  <RimWorldAccess.TextInput.RejectedTooLong>Impossible de coller, dépasse le maximum de {0} caractères</RimWorldAccess.TextInput.RejectedTooLong>
+  <RimWorldAccess.TextInput.RejectedTooShort>Impossible de coller, minimum de {0} caractères requis</RimWorldAccess.TextInput.RejectedTooShort>
+  <RimWorldAccess.TextInput.RejectedDisallowed>Impossible de coller, contient des caractères interdits : {0}</RimWorldAccess.TextInput.RejectedDisallowed>
+  <RimWorldAccess.TextInput.RejectedSpecial>Impossible de coller, contient des caractères de grammaire interdits</RimWorldAccess.TextInput.RejectedSpecial>
+  <RimWorldAccess.TextInput.RejectedFilename>Impossible de coller, contient des caractères non autorisés dans les noms de fichiers</RimWorldAccess.TextInput.RejectedFilename>
+  <RimWorldAccess.TextInput.RejectedCustom>Impossible d'accepter la valeur : {0}</RimWorldAccess.TextInput.RejectedCustom>
+</LanguageData>

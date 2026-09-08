@@ -9,14 +9,11 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Helper class for health tab data extraction and interactions.
-    /// Provides methods for medical settings, capacities, operations, and hediff information.
+    /// Health-tab reads and mutations: medical settings, capacities, operations, hediffs.
     /// </summary>
     public static class HealthTabHelper
     {
-        /// <summary>
-        /// Represents a capacity with its level and breakdown.
-        /// </summary>
+        /// <summary>One capacity with its level and impactor breakdown.</summary>
         public class CapacityInfo
         {
             public PawnCapacityDef Def { get; set; }
@@ -29,9 +26,7 @@ namespace RimWorldAccess
 
         #region Medical Settings
 
-        /// <summary>
-        /// Gets the current food restriction for a pawn.
-        /// </summary>
+        /// <summary>The pawn's current food policy label, or "none".</summary>
         public static string GetCurrentFoodRestriction(Pawn pawn)
         {
             if (pawn?.foodRestriction?.CurrentFoodPolicy == null)
@@ -40,9 +35,7 @@ namespace RimWorldAccess
             return pawn.foodRestriction.CurrentFoodPolicy.label;
         }
 
-        /// <summary>
-        /// Gets all available food restrictions.
-        /// </summary>
+        /// <summary>Every food policy in the game's database.</summary>
         public static List<FoodPolicy> GetAvailableFoodRestrictions()
         {
             if (Current.Game?.foodRestrictionDatabase == null)
@@ -51,21 +44,35 @@ namespace RimWorldAccess
             return Current.Game.foodRestrictionDatabase.AllFoodRestrictions.ToList();
         }
 
-        /// <summary>
-        /// Sets the food restriction for a pawn.
-        /// </summary>
+        /// <summary>Assigns a food policy; false when the pawn has no tracker.</summary>
         public static bool SetFoodRestriction(Pawn pawn, FoodPolicy restriction)
         {
             if (pawn?.foodRestriction == null)
                 return false;
 
+            // MUTATION-C: mirrors HealthCardUtility.cs:478's "Allow food" float-menu
+            // action; CurrentFoodPolicy is a bare property with no gated setter
+            // (Pawn_FoodRestrictionTracker.cs:28).
             pawn.foodRestriction.CurrentFoodPolicy = restriction;
             return true;
         }
 
         /// <summary>
-        /// Gets the current medical care quality for a pawn.
+        /// Vanilla's own condition for drawing the "Allow food" row. Whether the control is
+        /// drawn is the validation, so Health Settings must omit this row exactly where a
+        /// sighted player never sees it: babies, non-Configurable pawns, and mutants whose
+        /// MutantDef disables policies.
         /// </summary>
+        public static bool CanConfigureFoodRestriction(Pawn pawn)
+        {
+            return pawn?.foodRestriction != null
+                && pawn.foodRestriction.Configurable
+                && !pawn.DevelopmentalStage.Baby()
+                && pawn.needs?.food != null
+                && (!pawn.IsMutant || !pawn.mutant.Def.disablePolicies);
+        }
+
+        /// <summary>The pawn's current medical care label, or "none".</summary>
         public static string GetCurrentMedicalCare(Pawn pawn)
         {
             if (pawn?.playerSettings == null)
@@ -74,9 +81,7 @@ namespace RimWorldAccess
             return pawn.playerSettings.medCare.GetLabel();
         }
 
-        /// <summary>
-        /// Gets all available medical care levels.
-        /// </summary>
+        /// <summary>Every medical care category.</summary>
         public static List<MedicalCareCategory> GetAvailableMedicalCare()
         {
             return Enum.GetValues(typeof(MedicalCareCategory))
@@ -84,9 +89,7 @@ namespace RimWorldAccess
                 .ToList();
         }
 
-        /// <summary>
-        /// Sets the medical care quality for a pawn.
-        /// </summary>
+        /// <summary>Assigns medical care; false when the pawn has no player settings.</summary>
         public static bool SetMedicalCare(Pawn pawn, MedicalCareCategory care)
         {
             if (pawn?.playerSettings == null)
@@ -96,9 +99,7 @@ namespace RimWorldAccess
             return true;
         }
 
-        /// <summary>
-        /// Gets whether self-tend is enabled for a pawn.
-        /// </summary>
+        /// <summary>Whether self-tend is on.</summary>
         public static bool GetSelfTendEnabled(Pawn pawn)
         {
             if (pawn?.playerSettings == null)
@@ -107,9 +108,7 @@ namespace RimWorldAccess
             return pawn.playerSettings.selfTend;
         }
 
-        /// <summary>
-        /// Toggles self-tend for a pawn.
-        /// </summary>
+        /// <summary>Flips self-tend; false when the pawn has no player settings.</summary>
         public static bool ToggleSelfTend(Pawn pawn)
         {
             if (pawn?.playerSettings == null)
@@ -124,9 +123,8 @@ namespace RimWorldAccess
         #region Capacities
 
         /// <summary>
-        /// Gets all capacity information for a pawn, using vanilla's filtering, sorting, and labels.
-        /// Filters by pawn type (humanlike/animal/mechanoid/etc.), sorts by vanilla's listOrder,
-        /// and uses pawn-type-specific labels (e.g. "Data processing" for mechs).
+        /// Every capacity vanilla would show for this pawn, in its listOrder, with the
+        /// pawn-type-specific label ("Data processing" for mechs).
         /// </summary>
         public static List<CapacityInfo> GetCapacities(Pawn pawn)
         {
@@ -135,7 +133,6 @@ namespace RimWorldAccess
             if (pawn?.health?.capacities == null || pawn.Dead)
                 return capacities;
 
-            // Use vanilla's filtering: only show capacities appropriate for this pawn type
             var visibleCapacities = DefDatabase<PawnCapacityDef>.AllDefs
                 .Where(cap => cap.CanShowOnPawn(pawn)
                     && PawnCapacityUtility.BodyCanEverDoCapacity(pawn.RaceProps.body, cap))
@@ -144,7 +141,6 @@ namespace RimWorldAccess
             foreach (var capacityDef in visibleCapacities)
             {
                 float level = pawn.health.capacities.GetLevel(capacityDef);
-                // Use pawn-type-specific label (e.g. "Data processing" for mechs)
                 string label = capacityDef.GetLabelFor(pawn).CapitalizeFirst();
                 string levelLabel = GetCapacityLevelLabel(level);
 
@@ -162,9 +158,7 @@ namespace RimWorldAccess
             return capacities;
         }
 
-        /// <summary>
-        /// Gets a translatable label for a capacity level using vanilla's EfficiencyEstimate system.
-        /// </summary>
+        /// <summary>Capacity level as vanilla's efficiency estimate plus the percentage.</summary>
         private static string GetCapacityLevelLabel(float level)
         {
             var estimate = HealthCardUtility.EfficiencyValueToEstimate(level);
@@ -173,8 +167,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets a detailed breakdown of what affects a capacity,
-        /// matching vanilla's GetPawnCapacityTip() format with impactors grouped by type.
+        /// What affects a capacity, in vanilla's GetPawnCapacityTip format with impactors
+        /// grouped by type.
         /// </summary>
         private static string GetCapacityBreakdown(Pawn pawn, PawnCapacityDef capacity)
         {
@@ -185,7 +179,6 @@ namespace RimWorldAccess
                 impactors
             );
 
-            // Filter out capacities that can't show on this pawn (matches vanilla)
             impactors.RemoveAll(x =>
                 x is PawnCapacityUtility.CapacityImpactorCapacity capImpactor
                 && !capImpactor.capacity.CanShowOnPawn(pawn));
@@ -196,7 +189,7 @@ namespace RimWorldAccess
             var sb = new StringBuilder();
             sb.AppendLine("AffectedBy".Translate().ToString());
 
-            // Group by type like vanilla does: hediffs first, then body parts, then genes, then capacities
+            // Vanilla's grouping order: hediffs, body parts, genes, capacities, pain.
             var seenHediffs = new HashSet<Hediff>();
             var seenBodyParts = new HashSet<BodyPartRecord>();
             var seenGenes = new HashSet<object>();
@@ -247,9 +240,7 @@ namespace RimWorldAccess
 
         #region Operations
 
-        /// <summary>
-        /// Gets all queued operations for a pawn.
-        /// </summary>
+        /// <summary>The pawn's queued medical bills.</summary>
         public static List<Bill> GetQueuedOperations(Pawn pawn)
         {
             if (pawn?.BillStack == null)
@@ -259,8 +250,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets available recipe types (operations) for a pawn, matching vanilla's
-        /// dynamic ingredient-aware filtering from HealthCardUtility.DrawMedOperationsTab.
+        /// The operations vanilla would offer for a pawn, with its own ingredient-aware
+        /// filtering from HealthCardUtility.DrawMedOperationsTab.
         /// </summary>
         public static List<RecipeDef> GetAvailableRecipes(Pawn pawn)
         {
@@ -278,7 +269,6 @@ namespace RimWorldAccess
                 if (!report.Accepted && report.Reason.NullOrEmpty())
                     continue;
 
-                // Match vanilla: hide recipes where required tech hediffs or drugs are missing
                 if (pawn.MapHeld != null)
                 {
                     var missing = recipe.PotentiallyMissingIngredients(null, pawn.MapHeld);
@@ -288,8 +278,6 @@ namespace RimWorldAccess
                         continue;
                 }
 
-                // Match vanilla: for non-body-part recipes that add a hediff,
-                // hide if pawn already has that hediff
                 if (!recipe.targetsBodyPart && recipe.addsHediff != null
                     && pawn.health.hediffSet.HasHediff(recipe.addsHediff))
                     continue;
@@ -301,8 +289,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets all body parts that a recipe can be applied to for a pawn.
-        /// Returns an empty list if the recipe doesn't target specific body parts.
+        /// The body parts a recipe applies to, empty when it targets none.
         /// </summary>
         public static List<BodyPartRecord> GetPartsForRecipe(Pawn pawn, RecipeDef recipe)
         {
@@ -311,7 +298,6 @@ namespace RimWorldAccess
             if (pawn?.health == null || recipe == null)
                 return parts;
 
-            // Use the recipe's Worker to get valid parts (this handles all the complex logic)
             if (recipe.Worker != null)
             {
                 var validParts = recipe.Worker.GetPartsToApplyOn(pawn, recipe);
@@ -324,9 +310,7 @@ namespace RimWorldAccess
             return parts;
         }
 
-        /// <summary>
-        /// Adds an operation to a pawn's bill stack.
-        /// </summary>
+        /// <summary>Queues a medical bill for a recipe and body part.</summary>
         public static bool AddOperation(Pawn pawn, RecipeDef recipe, BodyPartRecord part)
         {
             if (pawn?.BillStack == null)
@@ -338,9 +322,7 @@ namespace RimWorldAccess
             return true;
         }
 
-        /// <summary>
-        /// Removes an operation from a pawn's bill stack.
-        /// </summary>
+        /// <summary>Removes a queued medical bill.</summary>
         public static bool RemoveOperation(Pawn pawn, Bill bill)
         {
             if (pawn?.BillStack == null || bill == null)
@@ -355,8 +337,8 @@ namespace RimWorldAccess
         #region Hediff Information
 
         /// <summary>
-        /// Gets comprehensive effect information for a hediff, focusing on functional impacts.
-        /// Uses vanilla's TipStringExtra for consistency with what sighted players see.
+        /// A hediff's functional effects, from vanilla's own TipStringExtra so it matches
+        /// the tooltip a sighted player reads.
         /// </summary>
         public static string GetComprehensiveHediffEffects(Hediff hediff, Pawn pawn)
         {
@@ -365,13 +347,11 @@ namespace RimWorldAccess
 
             var sb = new StringBuilder();
 
-            // Life-threatening status (show first as most critical)
             if (hediff.IsCurrentlyLifeThreatening)
             {
                 sb.AppendLine("PawnsWithLifeThreateningDisease".Translate().ToString().ToUpper());
             }
 
-            // Use vanilla's TipStringExtra - this is what sighted players see in tooltips
             string tipExtra = hediff.TipStringExtra;
             if (!string.IsNullOrEmpty(tipExtra))
             {
@@ -386,8 +366,35 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets the vanilla pain label (qualitative + percentage) using translation keys.
-        /// Returns null if no pain (for flesh pawns) or not applicable.
+        /// The hediff's DebugString content — hidden flag, exact severity, tend priority,
+        /// subclass detail — as one localized sentence, under vanilla's own health-card debug
+        /// gate; null when the gate is closed or there is nothing to show. It does not overlap
+        /// TipStringExtra, so callers append it rather than deduplicating.
+        /// </summary>
+        public static string GetHediffDeveloperInfo(Hediff hediff)
+        {
+            if (hediff == null || !Prefs.DevMode || Current.ProgramState != ProgramState.Playing)
+                return null;
+
+            string debug = hediff.DebugString();
+            if (string.IsNullOrWhiteSpace(debug))
+                return null;
+
+            // DebugString is newline-separated and indented.
+            string flattened = string.Join(". ", debug
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.Trim())
+                .Where(line => line.Length > 0));
+            if (string.IsNullOrEmpty(flattened))
+                return null;
+
+            return "RimWorldAccess.Dev.Info.Hediff".Translate(flattened);
+        }
+
+        /// <summary>
+        /// Vanilla's pain label, qualitative plus percentage; null for non-flesh pawns.
+        /// Vanilla draws this row for every flesh pawn, "None" included, so zero pain is a
+        /// value rather than an absence.
         /// </summary>
         public static string GetPainLabel(Pawn pawn)
         {
@@ -395,11 +402,11 @@ namespace RimWorldAccess
                 return null;
 
             float painTotal = pawn.health.hediffSet.PainTotal;
-            if (Mathf.Approximately(painTotal, 0f))
-                return null;
 
             string qualitative;
-            if (painTotal < 0.15f)
+            if (Mathf.Approximately(painTotal, 0f))
+                qualitative = "NoPain".Translate();
+            else if (painTotal < 0.15f)
                 qualitative = "LittlePain".Translate();
             else if (painTotal < 0.4f)
                 qualitative = "MediumPain".Translate();
@@ -412,8 +419,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets the bleeding rate label with time-to-death information, using vanilla translation keys.
-        /// Returns null if not bleeding.
+        /// Bleeding rate with time to death, or null when the pawn is not bleeding.
         /// </summary>
         public static string GetBleedingLabel(Pawn pawn)
         {
@@ -426,7 +432,6 @@ namespace RimWorldAccess
 
             string label = $"{"BleedingRate".Translate()}: {bleedRate.ToStringPercent()}/{"LetterDay".Translate()}";
 
-            // Add time-to-death or safety status
             if (ModsConfig.BiotechActive && pawn.genes != null
                 && pawn.genes.HasActiveGene(GeneDefOf.Deathless))
             {
@@ -445,24 +450,20 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets visible hediffs using vanilla's own filtering logic.
-        /// Uses GetMissingPartsCommonAncestors() for missing parts (handles bionics correctly)
-        /// and all other visible non-MissingPart hediffs.
+        /// Visible hediffs: missing parts through vanilla's common-ancestor logic, which
+        /// already drops bionic-replaced parts, plus every other visible non-MissingPart one.
         /// </summary>
         public static IEnumerable<Hediff> GetVisibleHediffs(Pawn pawn, bool showBloodLoss = true)
         {
             if (pawn?.health?.hediffSet == null)
                 yield break;
 
-            // Missing parts via vanilla's smart common-ancestor logic
-            // (already filters out bionic-replaced parts)
             var missingParts = pawn.health.hediffSet.GetMissingPartsCommonAncestors();
             for (int i = 0; i < missingParts.Count; i++)
             {
                 yield return missingParts[i];
             }
 
-            // All other visible hediffs (excluding MissingPart to avoid doubles)
             foreach (var hediff in pawn.health.hediffSet.hediffs)
             {
                 if (hediff is Hediff_MissingPart)
@@ -477,8 +478,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets the sort priority for a body part, matching vanilla's GetListPriority().
-        /// Higher priority = shown first. Whole body (null) has highest priority.
+        /// Vanilla's GetListPriority sort key for a body part; higher sorts first, and the
+        /// whole body (null) sorts highest.
         /// </summary>
         public static float GetHediffListPriority(BodyPartRecord rec)
         {

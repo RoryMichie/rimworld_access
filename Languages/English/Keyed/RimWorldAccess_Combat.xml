@@ -17,6 +17,7 @@
   <!-- Combat log (Alt+B). -->
   <RimWorldAccess.Combat.Log.NoBattleLog>No battle log available</RimWorldAccess.Combat.Log.NoBattleLog>
   <RimWorldAccess.Combat.Log.Header>{0}'s Combat Log</RimWorldAccess.Combat.Log.Header>
+  <RimWorldAccess.Combat.Log.BattleHeader>Battle: {0}.</RimWorldAccess.Combat.Log.BattleHeader>
   <RimWorldAccess.Combat.Log.NoEntries>No combat entries found.</RimWorldAccess.Combat.Log.NoEntries>
   <RimWorldAccess.Combat.Log.ShowingLastN>Showing last 10 of {0} entries.</RimWorldAccess.Combat.Log.ShowingLastN>
   <RimWorldAccess.Combat.Log.Total>Total: {0} entries.</RimWorldAccess.Combat.Log.Total>

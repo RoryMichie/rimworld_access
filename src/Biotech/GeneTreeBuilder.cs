@@ -7,19 +7,10 @@ using Verse;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Builds InspectionTreeItem trees from pregnancy GeneSet data.
-    /// Used to create accessible navigation for the "Inspect Baby Genes" screen.
-    /// </summary>
+    /// <summary>Builds InspectionTreeItem trees from GeneSet and Pawn_GeneTracker data.</summary>
     public static class GeneTreeBuilder
     {
-        /// <summary>
-        /// Builds the complete tree for a pregnancy gene set.
-        /// </summary>
-        /// <param name="geneSet">The baby's gene set from HediffWithParents</param>
-        /// <param name="motherName">Optional mother's name for context</param>
-        /// <param name="fatherName">Optional father's name for context</param>
-        /// <returns>Root tree item with genes as children</returns>
+        /// <summary>The complete tree for a pregnancy gene set, genes as children of the root.</summary>
         public static InspectionTreeItem BuildTree(GeneSet geneSet, string motherName = null, string fatherName = null)
         {
             if (geneSet == null)
@@ -33,7 +24,6 @@ namespace RimWorldAccess
                 return CreateEmptyTree();
             }
 
-            // Build root label with xenotype if available
             string rootLabel = BuildRootLabel(geneSet, motherName, fatherName);
 
             var root = new InspectionTreeItem
@@ -45,29 +35,26 @@ namespace RimWorldAccess
                 IndentLevel = -1
             };
 
-            // Sort genes by display category priority, then by display order, then alphabetically
+            // Mirrors GeneUtility.SortGeneDefs: displayPriorityInXenotype descending, then
+            // displayOrderInCategory, then label.
             var sortedGenes = genes
-                .OrderByDescending(g => g.displayCategory?.displayPriorityInGenepack ?? 0)
+                .OrderByDescending(g => g.displayCategory?.displayPriorityInXenotype ?? 0)
                 .ThenBy(g => g.displayOrderInCategory)
                 .ThenBy(g => g.label)
                 .ToList();
 
-            // Add gene nodes
             foreach (var gene in sortedGenes)
             {
                 var geneNode = CreateGeneNode(gene, root.IndentLevel + 1);
                 AddChild(root, geneNode);
             }
 
-            // Add biostats summary at the end
             AddBiostatsSummary(root, geneSet);
 
             return root;
         }
 
-        /// <summary>
-        /// Builds the root label with gene count and xenotype info.
-        /// </summary>
+        /// <summary>The root label: gene count plus xenotype.</summary>
         private static string BuildRootLabel(GeneSet geneSet, string motherName, string fatherName)
         {
             var sb = new StringBuilder();
@@ -86,9 +73,7 @@ namespace RimWorldAccess
             return sb.ToString();
         }
 
-        /// <summary>
-        /// Returns the localized parenthetical gene count suffix, e.g. "(1 gene)" or "(5 genes)".
-        /// </summary>
+        /// <summary>The localized parenthetical gene-count suffix, e.g. "(5 genes)".</summary>
         public static string GeneCountSuffix(int count)
         {
             if (count == 1)
@@ -97,26 +82,16 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Creates a tree node for a single gene with expandable details.
-        /// Front-loads biostats and description excerpt in the collapsed label.
-        /// When expanded, the label is shortened to just the gene name.
+        /// A tree node for one gene: the name and any conflict status are the label, biostats and
+        /// description ride the detail channel, and expanding turns that detail into children.
         /// </summary>
-        /// <param name="gene">The gene definition</param>
-        /// <param name="indent">Indent level in the tree</param>
-        /// <param name="includeCategory">Whether to include the category name in the label (default true)</param>
-        public static InspectionTreeItem CreateGeneNode(GeneDef gene, int indent, bool includeCategory = true)
+        public static InspectionTreeItem CreateGeneNode(GeneDef gene, int indent, bool includeCategory = true, string status = null)
         {
-            // Build short label (gene name + color info + optional category)
-            string shortLabel = BuildGeneShortLabel(gene, includeCategory);
-
-            // Build rich collapsed label with biostats and description
-            string richLabel = BuildGeneRichLabel(shortLabel, gene);
-
             var geneNode = new InspectionTreeItem
             {
                 Type = InspectionTreeItem.ItemType.Item,
-                Label = richLabel,
-                Description = richLabel, // Store rich label so it can be restored after collapse
+                Label = AppendStatus(BuildGeneShortLabel(gene, includeCategory), status),
+                Detail = BuildGeneDetailText(gene),
                 Data = gene,
                 LinkedDef = gene,
                 IsExpandable = true,
@@ -124,29 +99,21 @@ namespace RimWorldAccess
                 IndentLevel = indent
             };
 
-            // Lazy-load children when expanded
             geneNode.OnActivate = () => BuildGeneDetails(geneNode, gene);
 
             return geneNode;
         }
 
-        /// <summary>
-        /// Builds the short label for a gene (name, color info, and optional category).
-        /// Used as the expanded label and as the base for the rich collapsed label.
-        /// </summary>
+        // Status sits right after the gene name, ahead of biostats and description.
+        private static string AppendStatus(string label, string status)
+        {
+            return string.IsNullOrEmpty(status) ? label : $"{label}, {status}";
+        }
+
+        /// <summary>The short label — name, color, optional category — used when expanded and as the base for the collapsed one.</summary>
         private static string BuildGeneShortLabel(GeneDef gene, bool includeCategory)
         {
-            string label = gene.LabelCap;
-
-            // For cosmetic genes, try to add color info if available
-            if (IsCosmeticGene(gene))
-            {
-                string colorDesc = GetColorDescription(gene);
-                if (!string.IsNullOrEmpty(colorDesc) && !label.ToLower().Contains(colorDesc.ToLower()))
-                {
-                    label = $"{label}: {colorDesc}";
-                }
-            }
+            string label = GetGeneDisplayLabel(gene);
 
             if (includeCategory && gene.displayCategory != null)
             {
@@ -156,16 +123,11 @@ namespace RimWorldAccess
             return label;
         }
 
-        /// <summary>
-        /// Builds the rich collapsed label by appending biostats and description excerpt
-        /// to the short label. Front-loads key info so users can browse without expanding.
-        /// </summary>
-        private static string BuildGeneRichLabel(string shortLabel, GeneDef gene)
+        /// <summary>The collapsed row's detail: biostats and description, so browsing needs no expansion.</summary>
+        private static string BuildGeneDetailText(GeneDef gene)
         {
             var parts = new List<string>();
-            parts.Add(shortLabel);
 
-            // Add non-zero biostats using translation keys
             if (gene.biostatCpx != 0)
             {
                 string cpxLabel = ((string)"Complexity".Translate()).CapitalizeFirst();
@@ -182,11 +144,10 @@ namespace RimWorldAccess
                 parts.Add($"{arcLabel}: {gene.biostatArc.ToStringWithSign()}");
             }
 
-            // Add full description (Def.description, not DescriptionFull which includes biostats)
+            // Def.description, not DescriptionFull, which would repeat the biostats.
             if (!string.IsNullOrEmpty(gene.description))
             {
                 string desc = gene.description.StripTags().TrimEnd();
-                // Ensure description ends with a period for proper screen reader pausing
                 if (!desc.EndsWith(".") && !desc.EndsWith("!") && !desc.EndsWith("?"))
                 {
                     desc += ".";
@@ -194,37 +155,19 @@ namespace RimWorldAccess
                 parts.Add(desc);
             }
 
-            return string.Join(", ", parts);
+            return parts.Count == 0 ? null : string.Join(", ", parts);
         }
 
-        /// <summary>
-        /// Tries to get a color description for cosmetic genes.
-        /// </summary>
+        // The melanin ladder's nine genes all carry the label "skin color" and differ on screen
+        // only by their swatch. Every other color gene names its own color.
         private static string GetColorDescription(GeneDef gene)
         {
-            // Check for hair color
-            if (gene.hairColorOverride.HasValue)
-            {
-                return DescribeColor(gene.hairColorOverride.Value);
-            }
+            if (gene.endogeneCategory != EndogeneCategory.Melanin || !gene.skinColorBase.HasValue)
+                return null;
 
-            // Check for skin color - use perceptual luminance for skin-specific shade names
-            if (gene.skinColorOverride.HasValue)
-            {
-                return DescribeSkinShade(gene.skinColorOverride.Value);
-            }
-            if (gene.skinColorBase.HasValue)
-            {
-                return DescribeSkinShade(gene.skinColorBase.Value);
-            }
-
-            return null;
+            return DescribeSkinShade(gene.skinColorBase.Value);
         }
 
-        /// <summary>
-        /// Converts a skin color to a human-readable shade using perceptual luminance.
-        /// Matches the labels used in InfoCardDataExtractor for consistency.
-        /// </summary>
         private static string DescribeSkinShade(UnityEngine.Color color)
         {
             float luminance = 0.299f * color.r + 0.587f * color.g + 0.114f * color.b;
@@ -238,85 +181,28 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Converts a Unity Color to a human-readable description for non-skin colors (hair, etc.).
-        /// </summary>
-        private static string DescribeColor(UnityEngine.Color color)
-        {
-            float r = color.r;
-            float g = color.g;
-            float b = color.b;
-            float brightness = (r + g + b) / 3f;
-
-            // Check for grayscale
-            float maxChannel = Math.Max(r, Math.Max(g, b));
-            float minChannel = Math.Min(r, Math.Min(g, b));
-            float saturation = maxChannel > 0 ? (maxChannel - minChannel) / maxChannel : 0;
-
-            if (saturation < 0.15f)
-            {
-                if (brightness < 0.2f) return "RimWorldAccess.Biotech.Color.VeryDark".Translate();
-                if (brightness < 0.35f) return "RimWorldAccess.Biotech.Color.Dark".Translate();
-                if (brightness < 0.5f) return "RimWorldAccess.Biotech.Color.MediumDark".Translate();
-                if (brightness < 0.65f) return "RimWorldAccess.Biotech.Color.Medium".Translate();
-                if (brightness < 0.8f) return "RimWorldAccess.Biotech.Color.Light".Translate();
-                return "RimWorldAccess.Biotech.Color.VeryLight".Translate();
-            }
-
-            // Colored - find dominant hue
-            if (r > g && r > b)
-            {
-                if (g > b) return (brightness > 0.5f ? "RimWorldAccess.Biotech.Color.Orange" : "RimWorldAccess.Biotech.Color.Brown").Translate();
-                return (brightness > 0.5f ? "RimWorldAccess.Biotech.Color.Pink" : "RimWorldAccess.Biotech.Color.Red").Translate();
-            }
-            if (g > r && g > b)
-            {
-                return (brightness > 0.5f ? "RimWorldAccess.Biotech.Color.LightGreen" : "RimWorldAccess.Biotech.Color.Green").Translate();
-            }
-            if (b > r && b > g)
-            {
-                return (brightness > 0.5f ? "RimWorldAccess.Biotech.Color.LightBlue" : "RimWorldAccess.Biotech.Color.Blue").Translate();
-            }
-
-            // Mixed colors
-            if (r > 0.4f && g > 0.4f && b < 0.3f) return "RimWorldAccess.Biotech.Color.Blonde".Translate();
-            if (r > 0.3f && g > 0.3f && b > 0.3f) return "RimWorldAccess.Biotech.Color.Gray".Translate();
-
-            return null;
-        }
-
-        /// <summary>
-        /// Builds the detail children for a gene node using DescriptionFull.
-        /// Biostats (complexity, metabolism, archites) are added as separate expandable items
-        /// with tooltip descriptions accessible via Right arrow.
+        /// The detail children for a gene node, from DescriptionFull. Biostats become separate
+        /// expandable items carrying their own tooltip descriptions.
         /// </summary>
         private static void BuildGeneDetails(InspectionTreeItem geneNode, GeneDef gene)
         {
             if (geneNode.Children.Count > 0)
                 return; // Already built
 
-            // Shorten label to just the gene name on expand (details are now in children)
-            // The rich label is preserved in Description for restore on collapse
-            geneNode.Label = GetGeneDisplayLabel(gene);
-
             int childIndent = geneNode.IndentLevel + 1;
 
-            // Add explicit biostat items first, each expandable with its tooltip description
             AddBiostatItems(geneNode, gene, childIndent);
 
-            // Build set of biostat label prefixes to filter from DescriptionFull
             var biostatPrefixes = new List<string>();
             biostatPrefixes.Add(((string)"Complexity".Translate()).StripTags());
             biostatPrefixes.Add(((string)"Metabolism".Translate()).StripTags());
             biostatPrefixes.Add(((string)"ArchitesRequired".Translate()).StripTags());
 
-            // Use the game's DescriptionFull which contains all tooltip information
             string fullDescription = gene.DescriptionFull;
             if (!string.IsNullOrEmpty(fullDescription))
             {
-                // Strip color tags but keep the text structure
                 fullDescription = fullDescription.StripTags();
 
-                // Split by double newlines to get sections, then by single newlines for lines
                 var sections = fullDescription.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
 
                 foreach (var section in sections)
@@ -325,7 +211,6 @@ namespace RimWorldAccess
 
                     if (lines.Length == 1)
                     {
-                        // Single line section - add directly if not a biostat line
                         string line = lines[0].Trim();
                         if (!string.IsNullOrEmpty(line) && !IsBiostatLine(line, biostatPrefixes))
                         {
@@ -334,11 +219,9 @@ namespace RimWorldAccess
                     }
                     else if (lines.Length > 1)
                     {
-                        // Multi-line section - check if it has a header (ends with :)
                         string firstLine = lines[0].Trim();
                         if (firstLine.EndsWith(":"))
                         {
-                            // This is a header with sub-items
                             var sectionNode = new InspectionTreeItem
                             {
                                 Type = InspectionTreeItem.ItemType.SubCategory,
@@ -348,7 +231,6 @@ namespace RimWorldAccess
                                 IndentLevel = childIndent
                             };
 
-                            // Add the sub-items
                             for (int i = 1; i < lines.Length; i++)
                             {
                                 string subLine = lines[i].Trim().TrimStart('-', ' ');
@@ -365,8 +247,7 @@ namespace RimWorldAccess
                         }
                         else
                         {
-                            // Multi-line without header - add each line separately,
-                            // filtering out biostat lines (already shown as explicit items)
+                            // Biostat lines are already explicit items above.
                             foreach (var rawLine in lines)
                             {
                                 string line = rawLine.Trim();
@@ -380,10 +261,8 @@ namespace RimWorldAccess
                 }
             }
 
-            // If no details were added, provide a basic message
             if (geneNode.Children.Count == 0)
             {
-                // For cosmetic genes, note that they have no gameplay effects
                 if (IsCosmeticGene(gene))
                 {
                     AddChild(geneNode, CreateInfoItem("RimWorldAccess.Biotech.Gene.CosmeticNoEffects".Translate(), childIndent));
@@ -395,10 +274,20 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Adds biostat items (complexity, metabolism, archites) as separate expandable
-        /// tree items with tooltip descriptions.
-        /// </summary>
+        /// <summary>Whether a gene is purely cosmetic: no biostats, no effects.</summary>
+        private static bool IsCosmeticGene(GeneDef gene)
+        {
+            return gene.biostatCpx == 0 &&
+                   gene.biostatMet == 0 &&
+                   gene.biostatArc == 0 &&
+                   (gene.statOffsets == null || gene.statOffsets.Count == 0) &&
+                   (gene.statFactors == null || gene.statFactors.Count == 0) &&
+                   (gene.capMods == null || gene.capMods.Count == 0) &&
+                   (gene.abilities == null || gene.abilities.Count == 0) &&
+                   (gene.forcedTraits == null || gene.forcedTraits.Count == 0);
+        }
+
+        /// <summary>Adds complexity, metabolism and archites as expandable items with their tooltip descriptions.</summary>
         private static void AddBiostatItems(InspectionTreeItem parent, GeneDef gene, int indent)
         {
             if (gene.biostatCpx != 0)
@@ -462,10 +351,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Checks if a line is a biostat line that should be filtered from DescriptionFull
-        /// (already shown as an explicit expandable item).
-        /// </summary>
+        /// <summary>Whether a DescriptionFull line is a biostat line, already shown as its own item.</summary>
         private static bool IsBiostatLine(string line, List<string> biostatPrefixes)
         {
             foreach (var prefix in biostatPrefixes)
@@ -476,53 +362,22 @@ namespace RimWorldAccess
             return false;
         }
 
-        /// <summary>
-        /// Returns a display label for a gene with shade/color descriptions for cosmetic genes.
-        /// Suitable for use in overviews and info card stat entries.
-        /// </summary>
+        /// <summary>A gene's display label, with a shade word where the game's own label is ambiguous.</summary>
         public static string GetGeneDisplayLabel(GeneDef gene)
         {
             string label = gene.LabelCap;
-
-            if (IsCosmeticGene(gene))
-            {
-                string colorDesc = GetColorDescription(gene);
-                if (!string.IsNullOrEmpty(colorDesc) && !label.ToLower().Contains(colorDesc.ToLower()))
-                {
-                    label = $"{label}: {colorDesc}";
-                }
-            }
-
-            return label;
+            string colorDesc = GetColorDescription(gene);
+            return string.IsNullOrEmpty(colorDesc) ? label : $"{label}: {colorDesc}";
         }
 
-        /// <summary>
-        /// Checks if a gene is purely cosmetic (no biostats, no effects).
-        /// </summary>
-        private static bool IsCosmeticGene(GeneDef gene)
-        {
-            return gene.biostatCpx == 0 &&
-                   gene.biostatMet == 0 &&
-                   gene.biostatArc == 0 &&
-                   (gene.statOffsets == null || gene.statOffsets.Count == 0) &&
-                   (gene.statFactors == null || gene.statFactors.Count == 0) &&
-                   (gene.capMods == null || gene.capMods.Count == 0) &&
-                   (gene.abilities == null || gene.abilities.Count == 0) &&
-                   (gene.forcedTraits == null || gene.forcedTraits.Count == 0);
-        }
-
-        /// <summary>
-        /// Adds a biostats summary section at the end of the tree.
-        /// </summary>
+        /// <summary>Adds the biostats summary section at the end of the tree.</summary>
         private static void AddBiostatsSummary(InspectionTreeItem root, GeneSet geneSet)
         {
             int complexity = geneSet.ComplexityTotal;
             int metabolism = geneSet.MetabolismTotal;
             int archites = geneSet.ArchitesTotal;
 
-            // Use the game's own "total" keys so the summary is fully localized with no
-            // mod-authored English glue. ComplexityTotal -> "Total complexity",
-            // MetabolismTotal -> "Metabolic efficiency".
+            // The game's own "total" keys, so the summary needs no mod-authored English glue.
             string cpxLabel = ((string)"ComplexityTotal".Translate()).CapitalizeFirst();
             string metLabel = ((string)"MetabolismTotal".Translate()).CapitalizeFirst();
             var parts = new List<string>();
@@ -544,24 +399,20 @@ namespace RimWorldAccess
                 IndentLevel = 0
             };
 
-            // Add expanded details with explanations inline
             summaryNode.OnActivate = () =>
             {
                 if (summaryNode.Children.Count > 0) return;
 
-                // Complexity with explanation inline
                 string complexityDesc = ((string)"ComplexityDesc".Translate()).StripTags();
                 AddChild(summaryNode, CreateInfoItem(
                     "RimWorldAccess.Biotech.Gene.BiostatComplexityWithDesc".Translate(complexity, complexityDesc),
                     summaryNode.IndentLevel + 1));
 
-                // Metabolism with explanation inline
                 string metabolismDesc = ((string)"MetabolismDesc".Translate()).StripTags();
                 AddChild(summaryNode, CreateInfoItem(
                     "RimWorldAccess.Biotech.Gene.BiostatMetabolismWithDesc".Translate(metabolism.ToStringWithSign(), metabolismDesc),
                     summaryNode.IndentLevel + 1));
 
-                // Archites if present
                 if (archites > 0)
                 {
                     string architesDesc = ((string)"ArchitesRequiredDesc".Translate()).StripTags();
@@ -575,11 +426,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Builds the gene tree for an adult pawn's Pawn_GeneTracker.
-        /// Groups genes into Endogenes and Xenogenes with active/overridden status.
+        /// The gene tree for an adult pawn's Pawn_GeneTracker, grouped into Endogenes and
+        /// Xenogenes with active/overridden status.
         /// </summary>
-        /// <param name="pawn">The pawn whose genes to display</param>
-        /// <returns>Root tree item with gene groups as children</returns>
         public static InspectionTreeItem BuildAdultGeneTree(Pawn pawn)
         {
             if (pawn?.genes == null || !ModsConfig.BiotechActive)
@@ -597,7 +446,6 @@ namespace RimWorldAccess
                 return CreateEmptyTree();
             }
 
-            // Build root label with xenotype
             string xenotypeLabel = geneTracker.XenotypeLabelCap;
             string countSuffix = GeneCountSuffix(totalCount);
             string rootLabel = "RimWorldAccess.Biotech.Gene.RootAdultGenes".Translate(xenotypeLabel, countSuffix);
@@ -611,7 +459,6 @@ namespace RimWorldAccess
                 IndentLevel = -1
             };
 
-            // Add Endogenes group
             if (endogenes != null && endogenes.Count > 0)
             {
                 string endoLabel = "Endogenes".Translate().CapitalizeFirst();
@@ -631,7 +478,6 @@ namespace RimWorldAccess
                 AddChild(root, endoGroup);
             }
 
-            // Add Xenogenes group
             if (xenogenes != null && xenogenes.Count > 0)
             {
                 string xenoLabel = "Xenogenes".Translate().CapitalizeFirst();
@@ -651,23 +497,20 @@ namespace RimWorldAccess
                 AddChild(root, xenoGroup);
             }
 
-            // Add biostats summary
             AddAdultBiostatsSummary(root, geneTracker);
 
             return root;
         }
 
-        /// <summary>
-        /// Builds children for a gene group (endogenes or xenogenes).
-        /// </summary>
+        /// <summary>Children for one gene group.</summary>
         private static void BuildGeneGroupChildren(InspectionTreeItem groupItem, List<Gene> genes)
         {
-
-            // Sort by display category priority, then by display order, then alphabetically
+            // Mirrors GeneUtility.SortGenes: active first, then displayPriorityInXenotype
+            // descending, then displayOrderInCategory. No label tiebreak, unlike SortGeneDefs.
             var sorted = genes
-                .OrderByDescending(g => g.def.displayCategory?.displayPriorityInGenepack ?? 0)
+                .OrderBy(g => !g.Active)
+                .ThenByDescending(g => g.def.displayCategory?.displayPriorityInXenotype ?? 0)
                 .ThenBy(g => g.def.displayOrderInCategory)
-                .ThenBy(g => g.def.label)
                 .ToList();
 
             foreach (var gene in sorted)
@@ -677,35 +520,23 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Creates a tree node for an active Gene instance (with active/overridden status).
-        /// </summary>
+        /// <summary>A live Gene: active/overridden status in the label, biostats and description in the detail.</summary>
         private static InspectionTreeItem CreateActiveGeneNode(Gene gene, int indent)
         {
             var parts = new List<string>();
 
-            // Gene label with color description for cosmetic genes
-            string label = gene.LabelCap;
-            if (IsCosmeticGene(gene.def))
-            {
-                string colorDesc = GetColorDescription(gene.def);
-                if (!string.IsNullOrEmpty(colorDesc) && !label.ToLower().Contains(colorDesc.ToLower()))
-                {
-                    label = $"{label}: {colorDesc}";
-                }
-            }
-            parts.Add(label);
+            parts.Add(GetGeneDisplayLabel(gene.def));
 
-            // Category
             if (gene.def.displayCategory != null)
             {
                 parts.Add($"({gene.def.displayCategory.LabelCap})");
             }
 
-            // Active/overridden status
             if (gene.Overridden)
             {
-                parts.Add("RimWorldAccess.Biotech.Gene.StatusOverridden".Translate().ToString());
+                // Vanilla's own wording, which names the winning gene and calls out an identical twin.
+                string key = gene.overriddenByGene.def != gene.def ? "OverriddenByGene" : "OverriddenByIdenticalGene";
+                parts.Add($"({((string)key.Translate()).StripTags()}: {gene.overriddenByGene.LabelCap})");
             }
             else if (!gene.Active)
             {
@@ -716,6 +547,7 @@ namespace RimWorldAccess
             {
                 Type = InspectionTreeItem.ItemType.Item,
                 Label = string.Join(" ", parts),
+                Detail = BuildGeneDetailText(gene.def),
                 Data = gene,
                 LinkedDef = gene.def,
                 IsExpandable = true,
@@ -723,18 +555,14 @@ namespace RimWorldAccess
                 IndentLevel = indent
             };
 
-            // Lazy-load children when expanded (reuse existing GeneDef detail builder)
             geneNode.OnActivate = () => BuildGeneDetails(geneNode, gene.def);
 
             return geneNode;
         }
 
-        /// <summary>
-        /// Adds a biostats summary for an adult pawn's gene tracker.
-        /// </summary>
+        /// <summary>Adds the biostats summary for an adult pawn's gene tracker.</summary>
         private static void AddAdultBiostatsSummary(InspectionTreeItem root, Pawn_GeneTracker geneTracker)
         {
-            // Calculate totals from all active genes
             int complexity = 0;
             int metabolism = 0;
             int archites = 0;
@@ -791,9 +619,7 @@ namespace RimWorldAccess
             AddChild(root, summaryNode);
         }
 
-        /// <summary>
-        /// Creates an empty tree for when no genes are available.
-        /// </summary>
+        /// <summary>The tree shown when there are no genes.</summary>
         private static InspectionTreeItem CreateEmptyTree()
         {
             var root = new InspectionTreeItem
@@ -808,9 +634,7 @@ namespace RimWorldAccess
             return root;
         }
 
-        /// <summary>
-        /// Creates a simple info item (non-expandable detail text).
-        /// </summary>
+        /// <summary>A non-expandable detail-text item.</summary>
         private static InspectionTreeItem CreateInfoItem(string label, int indent)
         {
             return new InspectionTreeItem
@@ -823,9 +647,7 @@ namespace RimWorldAccess
             };
         }
 
-        /// <summary>
-        /// Adds a child to a parent and sets the parent reference.
-        /// </summary>
+        /// <summary>Adds a child and sets its parent reference.</summary>
         public static void AddChild(InspectionTreeItem parent, InspectionTreeItem child)
         {
             child.Parent = parent;

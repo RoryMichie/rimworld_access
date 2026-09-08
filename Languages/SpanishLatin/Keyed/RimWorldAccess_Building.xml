@@ -61,23 +61,6 @@
        Toggles CompFlickable. Power consumption suffixes use {0} = wattage.
        LabelPowerSwitch: {0} = building label, {1} = vanilla "On"/"Off". -->
 
-  <!-- Uninstall designation (src/Building/UninstallControlState.cs).
-       Toggles DesignationDefOf.Uninstall on minifiable buildings. Vanilla
-       "DesignatorUninstall" / "DesignatorUninstallDesc" supply the verb;
-       these keys are the announcement-shaped wrappers. -->
-  <RimWorldAccess.Building.Uninstall.NotMinifiable>La construcción no se puede desinstalar</RimWorldAccess.Building.Uninstall.NotMinifiable>
-  <RimWorldAccess.Building.Uninstall.DesignationRemoved>{0} - Designación de desinstalar eliminada</RimWorldAccess.Building.Uninstall.DesignationRemoved>
-  <RimWorldAccess.Building.Uninstall.InstantlyUninstalled>{0} - Desinstalado al instante</RimWorldAccess.Building.Uninstall.InstantlyUninstalled>
-  <RimWorldAccess.Building.Uninstall.DesignatedForUninstall>{0} - Designado para desinstalar</RimWorldAccess.Building.Uninstall.DesignatedForUninstall>
-  <RimWorldAccess.Building.Uninstall.LabelStatusDesignated>{0} - Estado: Designado para desinstalar</RimWorldAccess.Building.Uninstall.LabelStatusDesignated>
-  <RimWorldAccess.Building.Uninstall.LabelStatusNotDesignated>{0} - Estado: No designado</RimWorldAccess.Building.Uninstall.LabelStatusNotDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailDesignated>Estado: Designado para desinstalar</RimWorldAccess.Building.Uninstall.DetailDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailDisassemblerTip>Un colono con habilidad de Construcción lo desmontará</RimWorldAccess.Building.Uninstall.DetailDisassemblerTip>
-  <RimWorldAccess.Building.Uninstall.DetailMinifiedTip>La construcción se convertirá en un objeto miniaturizado que se puede mover</RimWorldAccess.Building.Uninstall.DetailMinifiedTip>
-  <RimWorldAccess.Building.Uninstall.DetailNotDesignated>Estado: No designado para desinstalar</RimWorldAccess.Building.Uninstall.DetailNotDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailCanUninstallTip>Esta construcción se puede desinstalar para crear un objeto portátil</RimWorldAccess.Building.Uninstall.DetailCanUninstallTip>
-  <RimWorldAccess.Building.Uninstall.DetailHotkeyTip>Presiona Espacio o Intro para designar para desinstalar</RimWorldAccess.Building.Uninstall.DetailHotkeyTip>
-
   <!-- Temperature control (src/Building/TempControlMenuState.cs).
        Adjusts CompTempControl.TargetTemperature. Vanilla "PowerConsumptionOff",
        "PowerConsumptionHigh", "PowerConsumptionLow" supply the power-mode
@@ -106,10 +89,7 @@
   <RimWorldAccess.Building.Refuel.OptionViewStatus>Ver estado detallado del combustible</RimWorldAccess.Building.Refuel.OptionViewStatus>
   <RimWorldAccess.Building.Refuel.AutoRefuelOn>Recarga automática: encendida</RimWorldAccess.Building.Refuel.AutoRefuelOn>
   <RimWorldAccess.Building.Refuel.AutoRefuelOff>Recarga automática: apagada</RimWorldAccess.Building.Refuel.AutoRefuelOff>
-  <RimWorldAccess.Building.Refuel.ToggleValueOn>encendida</RimWorldAccess.Building.Refuel.ToggleValueOn>
-  <RimWorldAccess.Building.Refuel.ToggleValueOff>apagada</RimWorldAccess.Building.Refuel.ToggleValueOff>
   <RimWorldAccess.Building.Refuel.TargetFuelLevelLabel>Nivel de combustible objetivo: {0} / {1}</RimWorldAccess.Building.Refuel.TargetFuelLevelLabel>
-  <RimWorldAccess.Building.Refuel.AdjustHint>Usa las flechas Izquierda y Derecha para ajustar. Actual: {0} de {1}</RimWorldAccess.Building.Refuel.AdjustHint>
   <RimWorldAccess.Building.Refuel.ClassicMortarStatus>Modo de morteros clásicos, sin desgaste del cañón</RimWorldAccess.Building.Refuel.ClassicMortarStatus>
   <RimWorldAccess.Building.Refuel.FuelStatusLine>{0}: {1} / {2}</RimWorldAccess.Building.Refuel.FuelStatusLine>
   <RimWorldAccess.Building.Refuel.RemainingTimeSuffix> ({0})</RimWorldAccess.Building.Refuel.RemainingTimeSuffix>
@@ -139,16 +119,15 @@
        Replaces the vanilla FloatMenu shown when an area designator is
        chosen from the architect tree. Delegates "No map" to Common.
        Open: {0} = the designator's own label (e.g. "Allowed area").
-       AreaWithCells: {0} = area label, {1} = cell count.
-       Position keys come from RimWorldAccess.Menu.Position. -->
+       CellCount: {0} = cell count, spoken as the composer's Extras fragment.
+       Position is now composed from ElementDescription.PositionIndex/Count. -->
   <RimWorldAccess.Building.AreaSelect.NoAreasAvailable>No hay áreas disponibles. Crea un área primero con la opción Gestionar Áreas.</RimWorldAccess.Building.AreaSelect.NoAreasAvailable>
   <RimWorldAccess.Building.AreaSelect.OpenPrompt>{0}. Selecciona un área.</RimWorldAccess.Building.AreaSelect.OpenPrompt>
   <RimWorldAccess.Building.AreaSelect.Selected>Selección: {0}</RimWorldAccess.Building.AreaSelect.Selected>
   <RimWorldAccess.Building.AreaSelect.Cancelled>Selección de área cancelada</RimWorldAccess.Building.AreaSelect.Cancelled>
   <RimWorldAccess.Building.AreaSelect.ManageAreas>Gestionar Áreas</RimWorldAccess.Building.AreaSelect.ManageAreas>
-  <RimWorldAccess.Building.AreaSelect.AreaWithCells>{0}, {1} cuadros</RimWorldAccess.Building.AreaSelect.AreaWithCells>
+  <RimWorldAccess.Building.AreaSelect.CellCount>{0} cuadros</RimWorldAccess.Building.AreaSelect.CellCount>
   <RimWorldAccess.Building.AreaSelect.OpenFallbackName>Área</RimWorldAccess.Building.AreaSelect.OpenFallbackName>
-  <RimWorldAccess.Building.AreaSelect.ItemWithPosition>{0}, {1}</RimWorldAccess.Building.AreaSelect.ItemWithPosition>
 
   <!-- Shape selection menu (src/Building/ShapeSelectionMenuState.cs).
        Picks a placement shape (Line / Rectangle / Oval) from the architect
@@ -157,8 +136,6 @@
        ShapeWithPosition: {0} = shape name, {1} = position, {2} = description.
        ShapeNoPosition: {0} = shape name, {1} = description. -->
   <RimWorldAccess.Building.ShapeSelect.MenuOpened>Menú de formas</RimWorldAccess.Building.ShapeSelect.MenuOpened>
-  <RimWorldAccess.Building.ShapeSelect.ShapeWithPosition>{0}, {1}. {2}</RimWorldAccess.Building.ShapeSelect.ShapeWithPosition>
-  <RimWorldAccess.Building.ShapeSelect.ShapeNoPosition>{0}. {1}</RimWorldAccess.Building.ShapeSelect.ShapeNoPosition>
   <RimWorldAccess.Building.ShapeSelect.ShapeSelected>{0} seleccionada</RimWorldAccess.Building.ShapeSelect.ShapeSelected>
   <RimWorldAccess.Building.ShapeSelect.Cancelled>Selección de forma cancelada</RimWorldAccess.Building.ShapeSelect.Cancelled>
 
@@ -179,20 +156,8 @@
        count, {2} = staged total (Regular only adds the dimension info). -->
   <RimWorldAccess.Building.Paint.ModeBox>Modo de selección por caja</RimWorldAccess.Building.Paint.ModeBox>
   <RimWorldAccess.Building.Paint.ModeSingle>Modo de selección por cuadro</RimWorldAccess.Building.Paint.ModeSingle>
-  <RimWorldAccess.Building.Paint.ShapeChanged>Forma: {0}</RimWorldAccess.Building.Paint.ShapeChanged>
-  <RimWorldAccess.Building.Paint.ShapeUnavailable>Forma no disponible para este tipo de área</RimWorldAccess.Building.Paint.ShapeUnavailable>
-  <RimWorldAccess.Building.Paint.PromptHint>Tab para cambiar de modo. Intro para confirmar, Escape para cancelar</RimWorldAccess.Building.Paint.PromptHint>
-  <RimWorldAccess.Building.Paint.EnterExpand>Expandiendo área: {0}. Modo {1}. {2}</RimWorldAccess.Building.Paint.EnterExpand>
-  <RimWorldAccess.Building.Paint.EnterShrink>Reduciendo área: {0}. Modo {1}. {2}</RimWorldAccess.Building.Paint.EnterShrink>
   <RimWorldAccess.Building.Paint.NoShapeToConfirm>No hay forma que confirmar</RimWorldAccess.Building.Paint.NoShapeToConfirm>
-  <RimWorldAccess.Building.Paint.PositionOutOfBounds>Posición fuera de los límites</RimWorldAccess.Building.Paint.PositionOutOfBounds>
   <RimWorldAccess.Building.Paint.Deselected>Deseleccionado, {0}, {1}</RimWorldAccess.Building.Paint.Deselected>
-  <RimWorldAccess.Building.Paint.NoCellsSelected>No hay cuadros seleccionados. Área sin cambios.</RimWorldAccess.Building.Paint.NoCellsSelected>
-  <RimWorldAccess.Building.Paint.AddedTo>{0} cuadros añadidos a {1}. Total de cuadros: {2}</RimWorldAccess.Building.Paint.AddedTo>
-  <RimWorldAccess.Building.Paint.RemovedFrom>{0} cuadros eliminados de {1}. Total de cuadros: {2}</RimWorldAccess.Building.Paint.RemovedFrom>
-  <RimWorldAccess.Building.Paint.Cancelled>Edición de área cancelada</RimWorldAccess.Building.Paint.Cancelled>
-  <RimWorldAccess.Building.Paint.ConfirmShapeRegular>{0}, {1} cuadros añadidos. Total: {2}</RimWorldAccess.Building.Paint.ConfirmShapeRegular>
-  <RimWorldAccess.Building.Paint.ConfirmShapeIrregular>{0} cuadros añadidos. Total: {1}</RimWorldAccess.Building.Paint.ConfirmShapeIrregular>
 
   <!-- Zone editing (src/Building/ZoneEditingHelper.cs + GizmoZoneEditState.cs).
        Returned in ZoneEditResult.Message and announced when a cell is
@@ -204,6 +169,8 @@
   <RimWorldAccess.Building.Zone.NoZoneSelectedForEditing>No hay ningún área seleccionada para editar</RimWorldAccess.Building.Zone.NoZoneSelectedForEditing>
   <RimWorldAccess.Building.Zone.NoZoneAtLocation>No hay ningún área que editar en esta ubicación</RimWorldAccess.Building.Zone.NoZoneAtLocation>
   <RimWorldAccess.Building.Zone.CannotRemoveOriginalCell>No se puede eliminar el cuadro original del área durante la expansión</RimWorldAccess.Building.Zone.CannotRemoveOriginalCell>
+  <RimWorldAccess.Building.Zone.NowExpanding>Ampliando {0}</RimWorldAccess.Building.Zone.NowExpanding>
+  <RimWorldAccess.Building.Zone.AdjacentZonesAmbiguous>Hay varias áreas adyacentes. Presiona Espacio en un cuadro del área que quieras ampliar</RimWorldAccess.Building.Zone.AdjacentZonesAmbiguous>
   <RimWorldAccess.Building.Zone.WouldDisconnect>No se puede eliminar el cuadro, desconectaría el área</RimWorldAccess.Building.Zone.WouldDisconnect>
   <RimWorldAccess.Building.Zone.CellAlreadyInThisZone>El cuadro ya está en esta área</RimWorldAccess.Building.Zone.CellAlreadyInThisZone>
   <RimWorldAccess.Building.Zone.CellInOtherZone>El cuadro está en {0}</RimWorldAccess.Building.Zone.CellInOtherZone>
@@ -227,7 +194,6 @@
        CavePlantExposed: {0} = plant LabelCap. -->
   <RimWorldAccess.Building.PlantSelect.OpenPrompt>Selección de planta. Cultivo actual: {0}</RimWorldAccess.Building.PlantSelect.OpenPrompt>
   <RimWorldAccess.Building.PlantSelect.Selected>Selección: {0}</RimWorldAccess.Building.PlantSelect.Selected>
-  <RimWorldAccess.Building.PlantSelect.SelectionWithDetail>{0}. {1}</RimWorldAccess.Building.PlantSelect.SelectionWithDetail>
   <RimWorldAccess.Building.PlantSelect.NoColonistCanPlant>ADVERTENCIA: Ningún colono puede plantar {0} (requiere habilidad de Plantas {1})</RimWorldAccess.Building.PlantSelect.NoColonistCanPlant>
   <RimWorldAccess.Building.PlantSelect.CavePlantExposed>ADVERTENCIA: {0} es una planta de caverna pero el área tiene cuadros expuestos a la luz</RimWorldAccess.Building.PlantSelect.CavePlantExposed>
 
@@ -239,26 +205,13 @@
        AreaWithCellsAndPosition: {0} = label, {1} = cell count, {2} = position.
        AreaWithCellsNoPosition: {0} = label, {1} = cell count.
        Action.* keys are the per-action menu rows. -->
-  <RimWorldAccess.Building.AreaMgr.Closed>Gestor de áreas cerrado</RimWorldAccess.Building.AreaMgr.Closed>
   <RimWorldAccess.Building.AreaMgr.MaxAreasReached>No se puede crear el área. Se alcanzó el máximo de 10 áreas.</RimWorldAccess.Building.AreaMgr.MaxAreasReached>
-  <RimWorldAccess.Building.AreaMgr.MaxAreasReachedCopy>No se puede copiar el área. Se alcanzó el máximo de 10 áreas.</RimWorldAccess.Building.AreaMgr.MaxAreasReachedCopy>
   <RimWorldAccess.Building.AreaMgr.CreatedNewArea>Área nueva creada: {0}</RimWorldAccess.Building.AreaMgr.CreatedNewArea>
   <RimWorldAccess.Building.AreaMgr.RenamePrompt>Renombrar área: {0}. Escribe el nuevo nombre y presiona Intro.</RimWorldAccess.Building.AreaMgr.RenamePrompt>
-  <RimWorldAccess.Building.AreaMgr.Inverted>Área invertida: {0}. Todos los cuadros alternados.</RimWorldAccess.Building.AreaMgr.Inverted>
+  <RimWorldAccess.Building.AreaMgr.Inverted>Área invertida: {0}. Ahora {1} de {2} cuadros.</RimWorldAccess.Building.AreaMgr.Inverted>
   <RimWorldAccess.Building.AreaMgr.CopiedTo>Área copiada a: {0}</RimWorldAccess.Building.AreaMgr.CopiedTo>
   <RimWorldAccess.Building.AreaMgr.Deleted>Área eliminada: {0}</RimWorldAccess.Building.AreaMgr.Deleted>
-  <RimWorldAccess.Building.AreaMgr.AreaWithCellsAndPosition>{0} ({1} cuadros), {2}. Presiona el corchete derecho para ver acciones.</RimWorldAccess.Building.AreaMgr.AreaWithCellsAndPosition>
-  <RimWorldAccess.Building.AreaMgr.AreaWithCellsNoPosition>{0} ({1} cuadros). Presiona el corchete derecho para ver acciones.</RimWorldAccess.Building.AreaMgr.AreaWithCellsNoPosition>
-  <RimWorldAccess.Building.AreaMgr.NoAreasAvailable>No hay áreas disponibles. Presiona el corchete derecho para crear una.</RimWorldAccess.Building.AreaMgr.NoAreasAvailable>
-  <RimWorldAccess.Building.AreaMgr.ActionWithPosition>{0}, {1}</RimWorldAccess.Building.AreaMgr.ActionWithPosition>
-  <RimWorldAccess.Building.AreaMgr.Action.NewArea>Área Nueva</RimWorldAccess.Building.AreaMgr.Action.NewArea>
-  <RimWorldAccess.Building.AreaMgr.Action.RenameArea>Renombrar Área</RimWorldAccess.Building.AreaMgr.Action.RenameArea>
-  <RimWorldAccess.Building.AreaMgr.Action.ExpandArea>Expandir Área</RimWorldAccess.Building.AreaMgr.Action.ExpandArea>
-  <RimWorldAccess.Building.AreaMgr.Action.ShrinkArea>Reducir Área</RimWorldAccess.Building.AreaMgr.Action.ShrinkArea>
-  <RimWorldAccess.Building.AreaMgr.Action.InvertArea>Invertir Área</RimWorldAccess.Building.AreaMgr.Action.InvertArea>
-  <RimWorldAccess.Building.AreaMgr.Action.CopyArea>Copiar Área</RimWorldAccess.Building.AreaMgr.Action.CopyArea>
-  <RimWorldAccess.Building.AreaMgr.Action.DeleteArea>Eliminar Área</RimWorldAccess.Building.AreaMgr.Action.DeleteArea>
-  <RimWorldAccess.Building.AreaMgr.Action.Close>Cerrar</RimWorldAccess.Building.AreaMgr.Action.Close>
+  <RimWorldAccess.Building.AreaMgr.ColorFixed>El color de esta área no se puede cambiar.</RimWorldAccess.Building.AreaMgr.ColorFixed>
 
   <!-- Shape names + descriptions (src/Building/ShapeHelper.cs).
        Spoken by every menu that lets the user pick a placement shape
@@ -338,12 +291,31 @@
   <RimWorldAccess.Building.Place.PlacingDesignator>Colocando {0}</RimWorldAccess.Building.Place.PlacingDesignator>
   <RimWorldAccess.Building.Place.SizeOneTile>Tamaño: 1 cuadro</RimWorldAccess.Building.Place.SizeOneTile>
   <RimWorldAccess.Building.Place.SizeWxH>Tamaño: {0}x{1}</RimWorldAccess.Building.Place.SizeWxH>
+  <RimWorldAccess.Building.Place.SpotScannerCategory>Sitios para colocar {0}</RimWorldAccess.Building.Place.SpotScannerCategory>
+  <RimWorldAccess.Building.Place.SpotScannerItemLabel>Lugar</RimWorldAccess.Building.Place.SpotScannerItemLabel>
+  <RimWorldAccess.Building.Place.SpotFacing>orientado al {0}</RimWorldAccess.Building.Place.SpotFacing>
+  <RimWorldAccess.Building.Place.SpacingInRange>{0} cuadros de separación, espaciado correcto</RimWorldAccess.Building.Place.SpacingInRange>
+  <RimWorldAccess.Building.Place.SpacingOutOfRange>{0} cuadros de separación, espaciado incorrecto</RimWorldAccess.Building.Place.SpacingOutOfRange>
+  <RimWorldAccess.Building.Place.OutlineOkAt>Área necesaria, {0} por {1}, {2} cuadros {3}, adecuada</RimWorldAccess.Building.Place.OutlineOkAt>
+  <RimWorldAccess.Building.Place.OutlineOkHere>Área necesaria, {0} por {1}, en el cursor, adecuada</RimWorldAccess.Building.Place.OutlineOkHere>
+  <RimWorldAccess.Building.Place.OutlineBadAt>Área necesaria, {0} por {1}, {2} cuadros {3}, no adecuada</RimWorldAccess.Building.Place.OutlineBadAt>
+  <RimWorldAccess.Building.Place.OutlineBadHere>Área necesaria, {0} por {1}, en el cursor, no adecuada</RimWorldAccess.Building.Place.OutlineBadHere>
+  <RimWorldAccess.Building.Place.WatermillWheelOkAt>Rueda hidráulica, {0} por {1}, {2} cuadros {3}, sobre agua corriente</RimWorldAccess.Building.Place.WatermillWheelOkAt>
+  <RimWorldAccess.Building.Place.WatermillWheelOkHere>Rueda hidráulica, {0} por {1}, en el cursor, sobre agua corriente</RimWorldAccess.Building.Place.WatermillWheelOkHere>
+  <RimWorldAccess.Building.Place.WatermillWheelBadAt>Rueda hidráulica, {0} por {1}, {2} cuadros {3}, no sobre agua corriente</RimWorldAccess.Building.Place.WatermillWheelBadAt>
+  <RimWorldAccess.Building.Place.WatermillWheelBadHere>Rueda hidráulica, {0} por {1}, en el cursor, no sobre agua corriente</RimWorldAccess.Building.Place.WatermillWheelBadHere>
+  <RimWorldAccess.Building.Place.WatermillFlowOkAt>Área de flujo de agua, {0} por {1}, {2} cuadros {3}, no compartida</RimWorldAccess.Building.Place.WatermillFlowOkAt>
+  <RimWorldAccess.Building.Place.WatermillFlowOkHere>Área de flujo de agua, {0} por {1}, en el cursor, no compartida</RimWorldAccess.Building.Place.WatermillFlowOkHere>
+  <RimWorldAccess.Building.Place.WatermillFlowSharedAt>Área de flujo de agua, {0} por {1}, {2} cuadros {3}, compartida con otro molino de agua</RimWorldAccess.Building.Place.WatermillFlowSharedAt>
+  <RimWorldAccess.Building.Place.WatermillFlowSharedHere>Área de flujo de agua, {0} por {1}, en el cursor, compartida con otro molino de agua</RimWorldAccess.Building.Place.WatermillFlowSharedHere>
   <RimWorldAccess.Building.Place.HintManualOrder>Muévete a los objetivos, Espacio para seleccionar, Intro para confirmar, Tab para formas, Escape para cancelar</RimWorldAccess.Building.Place.HintManualOrder>
   <RimWorldAccess.Building.Place.HintManualBuildRotatable>Muévete a la posición y presiona Espacio para colocar, R para rotar, Escape para cancelar</RimWorldAccess.Building.Place.HintManualBuildRotatable>
   <RimWorldAccess.Building.Place.HintManualBuildFixed>Muévete a la posición y presiona Espacio para colocar, Escape para cancelar</RimWorldAccess.Building.Place.HintManualBuildFixed>
   <RimWorldAccess.Building.Place.HintShape>Muévete al primer punto y presiona Espacio</RimWorldAccess.Building.Place.HintShape>
   <RimWorldAccess.Building.Place.PlacedBuild>{0} {1} colocados{2}</RimWorldAccess.Building.Place.PlacedBuild>
   <RimWorldAccess.Building.Place.PlacedCostSuffix> ({0} {1})</RimWorldAccess.Building.Place.PlacedCostSuffix>
+  <RimWorldAccess.Building.Place.PlacedCostItem>{0} {1}</RimWorldAccess.Building.Place.PlacedCostItem>
+  <RimWorldAccess.Building.Place.PlacedCostSuffixMulti> ({0})</RimWorldAccess.Building.Place.PlacedCostSuffixMulti>
   <RimWorldAccess.Building.Place.DesignatedFor>{0} designados para {1}</RimWorldAccess.Building.Place.DesignatedFor>
   <RimWorldAccess.Building.Place.NoBlueprintsPlaced>No se colocaron anteproyectos</RimWorldAccess.Building.Place.NoBlueprintsPlaced>
   <RimWorldAccess.Building.Place.NoDesignationsPlaced>No se colocaron designaciones</RimWorldAccess.Building.Place.NoDesignationsPlaced>
@@ -351,6 +323,9 @@
   <RimWorldAccess.Building.Place.MeditationDisableHint>Desactiva la advertencia en el árbol para construir aquí</RimWorldAccess.Building.Place.MeditationDisableHint>
   <!-- {0} = comma-joined protecting thing labels, {1} = MeditationDisableHint. -->
   <RimWorldAccess.Building.Place.MeditationProtectedBy>Protegido por {0}. {1}.</RimWorldAccess.Building.Place.MeditationProtectedBy>
+  <RimWorldAccess.Building.Place.WillReplaceSuffix>Reemplazará a {0}</RimWorldAccess.Building.Place.WillReplaceSuffix>
+  <RimWorldAccess.Building.Place.WillReplaceItem>{0} x{1}</RimWorldAccess.Building.Place.WillReplaceItem>
+  <RimWorldAccess.Building.Place.WillReplaceConfirm>Reemplazará a {0}. Presiona Espacio de nuevo para colocar</RimWorldAccess.Building.Place.WillReplaceConfirm>
   <RimWorldAccess.Building.Place.Action.haul>transportar</RimWorldAccess.Building.Place.Action.haul>
   <RimWorldAccess.Building.Place.Action.hunt>cazar</RimWorldAccess.Building.Place.Action.hunt>
   <RimWorldAccess.Building.Place.Action.mine>minar</RimWorldAccess.Building.Place.Action.mine>
@@ -382,51 +357,9 @@
        "zone" fallback (this is a different fallback than
        Building.Zone.FallbackName, which is for zone.label being null). -->
   <RimWorldAccess.Building.Create.CannotRemoveDisconnect>No se puede eliminar, desconectaría la selección</RimWorldAccess.Building.Create.CannotRemoveDisconnect>
-  <RimWorldAccess.Building.Create.Deselected>Deseleccionado, {0}, {1}. Total: {2}</RimWorldAccess.Building.Create.Deselected>
-  <RimWorldAccess.Building.Create.SelectedWithTotal>{0}. Total: {1}</RimWorldAccess.Building.Create.SelectedWithTotal>
-  <RimWorldAccess.Building.Create.CellOutOfBounds>El cuadro está fuera de los límites</RimWorldAccess.Building.Create.CellOutOfBounds>
   <RimWorldAccess.Building.Create.CellAlreadyInZone>El cuadro ya está en {0}</RimWorldAccess.Building.Create.CellAlreadyInZone>
-  <RimWorldAccess.Building.Create.CannotPlaceZoneHere>No se puede colocar un área aquí</RimWorldAccess.Building.Create.CannotPlaceZoneHere>
   <RimWorldAccess.Building.Create.MustBeAdjacentToSelection>El cuadro debe ser adyacente a la selección</RimWorldAccess.Building.Create.MustBeAdjacentToSelection>
-  <RimWorldAccess.Building.Create.ShapeUnavailable>Forma no disponible para este tipo de área</RimWorldAccess.Building.Create.ShapeUnavailable>
-  <RimWorldAccess.Building.Create.ShapeInstructions>Modo {0}: Espacio para fijar esquinas. Tab para cambiar de modo. Intro para crear, Escape para cancelar.</RimWorldAccess.Building.Create.ShapeInstructions>
-  <RimWorldAccess.Building.Create.ExpandShrinkInstructions>Modo {0}: Presiona Espacio para fijar esquinas, Intro para confirmar, Escape para cancelar.</RimWorldAccess.Building.Create.ExpandShrinkInstructions>
-  <RimWorldAccess.Building.Create.OpenCreating>Creando {0}. {1}</RimWorldAccess.Building.Create.OpenCreating>
-  <RimWorldAccess.Building.Create.OpenExpanding>Expandiendo {0}. {1} cuadros seleccionados actualmente. {2}</RimWorldAccess.Building.Create.OpenExpanding>
-  <RimWorldAccess.Building.Create.OpenShrinking>Reduciendo {0}. Selecciona los cuadros que eliminar. {1}</RimWorldAccess.Building.Create.OpenShrinking>
-  <RimWorldAccess.Building.Create.NoZoneProvidedExpand>No se puede expandir: no se proporcionó ningún área</RimWorldAccess.Building.Create.NoZoneProvidedExpand>
-  <RimWorldAccess.Building.Create.NoZoneProvidedShrink>No se puede reducir: no se proporcionó ningún área</RimWorldAccess.Building.Create.NoZoneProvidedShrink>
-  <RimWorldAccess.Building.Create.NoCellsZoneNotCreated>No hay cuadros seleccionados. Área no creada.</RimWorldAccess.Building.Create.NoCellsZoneNotCreated>
-  <RimWorldAccess.Building.Create.NoCellsZoneUnchanged>No hay cuadros seleccionados. Área sin cambios.</RimWorldAccess.Building.Create.NoCellsZoneUnchanged>
-  <RimWorldAccess.Building.Create.MaxAllowedAreasReached>No se pueden crear más áreas asignables. Se alcanzó el máximo de 10.</RimWorldAccess.Building.Create.MaxAllowedAreasReached>
-  <RimWorldAccess.Building.Create.HomeAreaNotFound>Error: No se encontró el área del hogar</RimWorldAccess.Building.Create.HomeAreaNotFound>
-  <RimWorldAccess.Building.Create.NoZoneToModify>Error: No hay ningún área que modificar</RimWorldAccess.Building.Create.NoZoneToModify>
-  <RimWorldAccess.Building.Create.AllCellsRemovedZoneDeleted>Todos los cuadros eliminados. Área eliminada.</RimWorldAccess.Building.Create.AllCellsRemovedZoneDeleted>
-  <RimWorldAccess.Building.Create.AllCellsRemovedNamedDeleted>Todos los cuadros eliminados. {0} eliminada.</RimWorldAccess.Building.Create.AllCellsRemovedNamedDeleted>
-  <RimWorldAccess.Building.Create.ZoneCreated>{0} creada con {1} cuadros.{2}</RimWorldAccess.Building.Create.ZoneCreated>
-  <RimWorldAccess.Building.Create.ObstaclesFoundSuffix> {0} obstáculos encontrados.</RimWorldAccess.Building.Create.ObstaclesFoundSuffix>
-  <RimWorldAccess.Building.Create.ObstaclesInNewAreaSuffix>. {0} obstáculos en el área nueva.</RimWorldAccess.Building.Create.ObstaclesInNewAreaSuffix>
-  <RimWorldAccess.Building.Create.RemovedCellsFromZone>{0} cuadros eliminados de {1}. Quedan {2} cuadros.</RimWorldAccess.Building.Create.RemovedCellsFromZone>
-  <RimWorldAccess.Building.Create.UpdatePrefix>{0} actualizada: </RimWorldAccess.Building.Create.UpdatePrefix>
-  <RimWorldAccess.Building.Create.UpdateAddedAndRemoved>añadidos {0}, eliminados {1} cuadros</RimWorldAccess.Building.Create.UpdateAddedAndRemoved>
-  <RimWorldAccess.Building.Create.UpdateAddedOnly>añadidos {0} cuadros</RimWorldAccess.Building.Create.UpdateAddedOnly>
-  <RimWorldAccess.Building.Create.UpdateRemovedOnly>eliminados {0} cuadros</RimWorldAccess.Building.Create.UpdateRemovedOnly>
-  <RimWorldAccess.Building.Create.UpdateNoChanges>sin cambios</RimWorldAccess.Building.Create.UpdateNoChanges>
-  <RimWorldAccess.Building.Create.AllowedAreaName>Área asignable '{0}'</RimWorldAccess.Building.Create.AllowedAreaName>
   <RimWorldAccess.Building.Create.ErrorCreatingZone>Error al crear el área: {0}</RimWorldAccess.Building.Create.ErrorCreatingZone>
-  <RimWorldAccess.Building.Create.ErrorExpandingZone>Error al expandir el área: {0}</RimWorldAccess.Building.Create.ErrorExpandingZone>
-  <RimWorldAccess.Building.Create.ErrorShrinkingZone>Error al reducir el área: {0}</RimWorldAccess.Building.Create.ErrorShrinkingZone>
-  <RimWorldAccess.Building.Create.Cancelled>Creación de área cancelada</RimWorldAccess.Building.Create.Cancelled>
-  <RimWorldAccess.Building.Create.ZoneTypeName.Stockpile>área del almacén</RimWorldAccess.Building.Create.ZoneTypeName.Stockpile>
-  <RimWorldAccess.Building.Create.ZoneTypeName.DumpingStockpile>área de vertido</RimWorldAccess.Building.Create.ZoneTypeName.DumpingStockpile>
-  <RimWorldAccess.Building.Create.ZoneTypeName.GrowingZone>área de cultivo</RimWorldAccess.Building.Create.ZoneTypeName.GrowingZone>
-  <RimWorldAccess.Building.Create.ZoneTypeName.AllowedArea>área asignable</RimWorldAccess.Building.Create.ZoneTypeName.AllowedArea>
-  <RimWorldAccess.Building.Create.ZoneTypeName.HomeZone>área del hogar</RimWorldAccess.Building.Create.ZoneTypeName.HomeZone>
-  <RimWorldAccess.Building.Create.ZoneTypeName.Default>área</RimWorldAccess.Building.Create.ZoneTypeName.Default>
-  <RimWorldAccess.Building.Create.ZoneCapped.Stockpile>Área del almacén</RimWorldAccess.Building.Create.ZoneCapped.Stockpile>
-  <RimWorldAccess.Building.Create.ZoneCapped.DumpingStockpile>Área de vertido</RimWorldAccess.Building.Create.ZoneCapped.DumpingStockpile>
-  <RimWorldAccess.Building.Create.ZoneCapped.GrowingZone>Área de cultivo</RimWorldAccess.Building.Create.ZoneCapped.GrowingZone>
-  <RimWorldAccess.Building.Create.ZoneCapped.HomeZone>Área del hogar</RimWorldAccess.Building.Create.ZoneCapped.HomeZone>
 
   <!-- Viewing mode (src/Building/ViewingModeState.cs).
        Post-placement preview. Shape-name-and-description data still flows
@@ -455,6 +388,10 @@
   <RimWorldAccess.Building.View.CancelledBlueprint>{0} cancelado</RimWorldAccess.Building.View.CancelledBlueprint>
   <RimWorldAccess.Building.View.ActionRestored>Restaurado</RimWorldAccess.Building.View.ActionRestored>
   <RimWorldAccess.Building.View.ActionRemoved>Eliminado</RimWorldAccess.Building.View.ActionRemoved>
+  <RimWorldAccess.Building.View.RemovedZoneSizeZero>0 cuadros de área</RimWorldAccess.Building.View.RemovedZoneSizeZero>
+  <RimWorldAccess.Building.View.RemovedZoneSizeOne>1 cuadro de área</RimWorldAccess.Building.View.RemovedZoneSizeOne>
+  <RimWorldAccess.Building.View.RemovedZoneSizeMany>{0} cuadros de área</RimWorldAccess.Building.View.RemovedZoneSizeMany>
+  <RimWorldAccess.Building.View.RemovedZoneSizeWxH>Área de {0} por {1}</RimWorldAccess.Building.View.RemovedZoneSizeWxH>
   <RimWorldAccess.Building.View.SegmentRemovedSomeRemain>{0} {1} ({2}). Quedan {3}{4}.</RimWorldAccess.Building.View.SegmentRemovedSomeRemain>
   <RimWorldAccess.Building.View.SegmentRemovedNoneRemain>{0} {1} ({2}). No quedan segmentos.</RimWorldAccess.Building.View.SegmentRemovedNoneRemain>
   <RimWorldAccess.Building.View.RemainingInShapeSuffix> en {0}</RimWorldAccess.Building.View.RemainingInShapeSuffix>
@@ -746,6 +683,7 @@
   <RimWorldAccess.Building.Architect.CategorySelected>Categoría {0} seleccionada. Elige una herramienta</RimWorldAccess.Building.Architect.CategorySelected>
   <RimWorldAccess.Building.Architect.SelectMaterialFor>Selecciona el material para {0}</RimWorldAccess.Building.Architect.SelectMaterialFor>
   <RimWorldAccess.Building.Architect.Facing>Orientado al {0}</RimWorldAccess.Building.Architect.Facing>
+  <RimWorldAccess.Building.Architect.NowFacing>Ahora orientado al {0}</RimWorldAccess.Building.Architect.NowFacing>
   <RimWorldAccess.Building.Architect.SizeWxH>Tamaño: {0} por {1}</RimWorldAccess.Building.Architect.SizeWxH>
   <RimWorldAccess.Building.Architect.ExtendDirection>{0} {1}</RimWorldAccess.Building.Architect.ExtendDirection>
   <RimWorldAccess.Building.Architect.Extends>Se extiende {0}</RimWorldAccess.Building.Architect.Extends>
@@ -827,18 +765,19 @@
   <RimWorldAccess.Building.ArchitectPlace.GravshipFacing>Gravinave orientada al {0}.</RimWorldAccess.Building.ArchitectPlace.GravshipFacing>
   <RimWorldAccess.Building.ArchitectPlace.ErrorPlacing>Error al colocar: {0}</RimWorldAccess.Building.ArchitectPlace.ErrorPlacing>
   <RimWorldAccess.Building.ArchitectPlace.InvalidReason>No válido: {0}</RimWorldAccess.Building.ArchitectPlace.InvalidReason>
+  <RimWorldAccess.Building.ArchitectPlace.CanPlaceHere>Puede colocarse</RimWorldAccess.Building.ArchitectPlace.CanPlaceHere>
   <RimWorldAccess.Building.ArchitectPlace.GravshipPositioned>Gravinave posicionada en {0}, {1}. Selecciona el marcador de aterrizaje y usa los gizmos para confirmar el aterrizaje.</RimWorldAccess.Building.ArchitectPlace.GravshipPositioned>
   <!-- {0} = footprint width, {1} = footprint height (cells). -->
   <RimWorldAccess.Building.ArchitectPlace.GravshipLandingPrompt>Posiciona la zona de aterrizaje de la gravinave. Superficie: {0} por {1} cuadros. Flechas para mover, R para rotar, Espacio para colocar.</RimWorldAccess.Building.ArchitectPlace.GravshipLandingPrompt>
   <RimWorldAccess.Building.ArchitectPlace.NoZoneCellsTryAgain>No hay cuadros de área en la selección. Inténtalo de nuevo.</RimWorldAccess.Building.ArchitectPlace.NoZoneCellsTryAgain>
   <RimWorldAccess.Building.ArchitectPlace.NoValidCellsTryAgain>No hay cuadros válidos en la selección. Inténtalo de nuevo.</RimWorldAccess.Building.ArchitectPlace.NoValidCellsTryAgain>
   <RimWorldAccess.Building.ArchitectPlace.PlacementFailedClearing>La colocación falló. Borrando la selección.</RimWorldAccess.Building.ArchitectPlace.PlacementFailedClearing>
-  <RimWorldAccess.Building.ArchitectPlace.PlaceFirstPoint>Coloca el primer punto con Espacio</RimWorldAccess.Building.ArchitectPlace.PlaceFirstPoint>
   <RimWorldAccess.Building.ArchitectPlace.PlaceSecondPoint>Coloca el segundo punto con Espacio</RimWorldAccess.Building.ArchitectPlace.PlaceSecondPoint>
   <RimWorldAccess.Building.ArchitectPlace.PlacementCompleted>Colocación completada</RimWorldAccess.Building.ArchitectPlace.PlacementCompleted>
   <RimWorldAccess.Building.ArchitectPlace.ZoneEditingCompleted>Edición de área completada</RimWorldAccess.Building.ArchitectPlace.ZoneEditingCompleted>
   <RimWorldAccess.Building.ArchitectPlace.SelectionCleared>Selección borrada</RimWorldAccess.Building.ArchitectPlace.SelectionCleared>
-  <RimWorldAccess.Building.ArchitectPlace.PlacementCancelled>Colocación cancelada</RimWorldAccess.Building.ArchitectPlace.PlacementCancelled>
+  <RimWorldAccess.Building.ArchitectPlace.ExitedPlacement>Se salió del modo de colocación.</RimWorldAccess.Building.ArchitectPlace.ExitedPlacement>
+  <RimWorldAccess.Building.ArchitectPlace.ExitedZoneEditing>Se salió de la edición de zona.</RimWorldAccess.Building.ArchitectPlace.ExitedZoneEditing>
   <RimWorldAccess.Building.ArchitectPlace.InvalidTargetPosition>Posición objetivo no válida</RimWorldAccess.Building.ArchitectPlace.InvalidTargetPosition>
   <RimWorldAccess.Building.ArchitectPlace.CannotLandHere>No se puede aterrizar aquí: {0}</RimWorldAccess.Building.ArchitectPlace.CannotLandHere>
   <RimWorldAccess.Building.ArchitectPlace.LandingConfirmed>Aterrizaje confirmado en {0}, {1}</RimWorldAccess.Building.ArchitectPlace.LandingConfirmed>
@@ -878,6 +817,7 @@
   -->
   <RimWorldAccess.Building.ArchitectTree.MenuOpened>Menú de arquitecto</RimWorldAccess.Building.ArchitectTree.MenuOpened>
   <RimWorldAccess.Building.ArchitectTree.NoCategories>No hay categorías de arquitecto disponibles</RimWorldAccess.Building.ArchitectTree.NoCategories>
+  <RimWorldAccess.Building.ArchitectTree.RegionName>Arquitecto</RimWorldAccess.Building.ArchitectTree.RegionName>
 
   <!-- =================================================================
        Facility link info (FacilityLinkHelper). Spoken on placement of
@@ -944,6 +884,11 @@
   <RimWorldAccess.Building.View.ItemTypeZoneCellMany>cuadros de área</RimWorldAccess.Building.View.ItemTypeZoneCellMany>
   <RimWorldAccess.Building.View.ItemTypeDesignationOne>designación</RimWorldAccess.Building.View.ItemTypeDesignationOne>
   <RimWorldAccess.Building.View.ItemTypeDesignationMany>designaciones</RimWorldAccess.Building.View.ItemTypeDesignationMany>
+
+  <!-- Area undo description (src/Building/AreaUndoTracker.cs). A single area reports its own
+       game label; an ignore-roof stroke touches the build-roof and no-roof areas together, so
+       MultipleAreas wraps the joined labels. {0} = area labels joined by vanilla ToCommaList. -->
+  <RimWorldAccess.Building.AreaUndo.MultipleAreas>{0} áreas</RimWorldAccess.Building.AreaUndo.MultipleAreas>
 
   <!-- Ctrl+A / Ctrl+Shift+A select-all and undo-scope announcements
        (src/Building/ArchitectPlacementPatch.cs).

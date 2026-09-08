@@ -6,16 +6,22 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patch to intercept the in-game Factions tab and replace it
-    /// with the accessible FactionTabState.
-    /// Follows the same pattern as ResearchMenuPatch.
+    /// Opens the accessible screen for the Factions tab while the real vanilla window keeps drawing.
+    /// This no longer replaces the window, it just makes sure the windowless state is active while it
+    /// is open. The IsActive guard is load-bearing: this prefix now runs EVERY FRAME the window is
+    /// open.
     /// </summary>
     [HarmonyPatch(typeof(MainTabWindow_Factions), nameof(MainTabWindow_Factions.DoWindowContents))]
     public static class FactionTabPatch
     {
         [HarmonyPrefix]
-        public static bool Prefix()
+        public static void Prefix()
         {
+            if (FactionTabState.IsActive)
+            {
+                return;
+            }
+
             // If on the world map, switch to colony map first
             if (Find.World?.renderer?.wantedMode == WorldRenderMode.Planet)
             {
@@ -23,14 +29,7 @@ namespace RimWorldAccess
                 MapNavigationState.RestoreCursorForCurrentMap();
             }
 
-            // Open our windowless version instead
             FactionTabState.Open();
-
-            // Close the window that was just opened
-            Find.WindowStack.TryRemove(typeof(MainTabWindow_Factions), doCloseSound: false);
-
-            // Return false to prevent the original DoWindowContents from executing
-            return false;
         }
     }
 }

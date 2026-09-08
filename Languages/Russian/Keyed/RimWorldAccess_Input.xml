@@ -57,13 +57,24 @@
   <RimWorldAccess.Input.Cursor.NothingToInspect>Здесь нечего осматривать</RimWorldAccess.Input.Cursor.NothingToInspect>
   <RimWorldAccess.Input.Cursor.InvalidPosition>Недопустимая позиция</RimWorldAccess.Input.Cursor.InvalidPosition>
   <RimWorldAccess.Input.Cursor.NoAvailableActions>Нет доступных действий</RimWorldAccess.Input.Cursor.NoAvailableActions>
+  <RimWorldAccess.Input.Cursor.Coordinates>{0}, {1}</RimWorldAccess.Input.Cursor.Coordinates>
+
+  <!-- Mouse pointer bridge (Alt+J). PointerOffset is the answer when the pointer cannot
+       be moved: {0} = tile distance, {1} = compass direction of the cursor from it. -->
+  <RimWorldAccess.Input.Cursor.PointerMoved>Указатель мыши: {0}, {1}</RimWorldAccess.Input.Cursor.PointerMoved>
+  <RimWorldAccess.Input.Cursor.PointerOffset>Курсор от указателя мыши: {1}, {0_numCase ? клетка : клетки : клеток}</RimWorldAccess.Input.Cursor.PointerOffset>
+  <RimWorldAccess.Input.Cursor.PointerAtCursor>Указатель мыши у курсора</RimWorldAccess.Input.Cursor.PointerAtCursor>
+  <RimWorldAccess.Input.Cursor.PointerOffWindow>Указатель за пределами окна игры</RimWorldAccess.Input.Cursor.PointerOffWindow>
+  <RimWorldAccess.Input.Cursor.MouseTrackingOn>Отслеживание мыши включено</RimWorldAccess.Input.Cursor.MouseTrackingOn>
+  <RimWorldAccess.Input.Cursor.MouseTrackingOff>Отслеживание мыши выключено</RimWorldAccess.Input.Cursor.MouseTrackingOff>
+  <RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOn>Привязка указателя к клавиатуре включена</RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOn>
+  <RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOff>Привязка указателя к клавиатуре выключена</RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOff>
 
   <!-- F1 work menu, F4 animals/mechs menu. -->
   <RimWorldAccess.Input.WorkMenu.NoColonistsAvailable>Нет доступных поселенцев</RimWorldAccess.Input.WorkMenu.NoColonistsAvailable>
   <RimWorldAccess.Input.AnimalsMenu.NoAnimalsOrMechs>Нет животных или механоидов</RimWorldAccess.Input.AnimalsMenu.NoAnimalsOrMechs>
 
   <!-- Gizmo availability guard (G key). -->
-  <RimWorldAccess.Input.Gizmo.UnavailableDuringPlacement>Команды недоступны во время размещения или проверки</RimWorldAccess.Input.Gizmo.UnavailableDuringPlacement>
 
   <!-- Right/left bracket order execution feedback. -->
   <!-- {0} = single-pawn prefix ("Bob: " or ""), {1} = action label. -->
@@ -95,15 +106,10 @@
        {0} = tile info. -->
   <RimWorldAccess.Input.Map.Boundary>Край карты</RimWorldAccess.Input.Map.Boundary>
   <RimWorldAccess.Input.Map.PrefixSelected>Выбрано, {0}</RimWorldAccess.Input.Map.PrefixSelected>
-  <RimWorldAccess.Input.Map.PrefixPreview>Предпросмотр, {0}</RimWorldAccess.Input.Map.PrefixPreview>
   <RimWorldAccess.Input.Map.PrefixFirstPoint>Первая точка, {0}</RimWorldAccess.Input.Map.PrefixFirstPoint>
   <RimWorldAccess.Input.Map.PrefixSecondPoint>Вторая точка, {0}</RimWorldAccess.Input.Map.PrefixSecondPoint>
   <RimWorldAccess.Input.Map.PrefixInArea>В области, {0}</RimWorldAccess.Input.Map.PrefixInArea>
   <RimWorldAccess.Input.Map.PrefixDisconnected>Не соединено, {0}</RimWorldAccess.Input.Map.PrefixDisconnected>
 
   <!-- Schedule editor visual overlay (src/Input/UnifiedKeyboardPatch.cs). -->
-  <RimWorldAccess.Input.Schedule.OverlayTitle>Меню расписания - {0} ({1}/{2}) - Час {3}</RimWorldAccess.Input.Schedule.OverlayTitle>
-  <RimWorldAccess.Input.Schedule.OverlayCurrent>Текущее: {0}</RimWorldAccess.Input.Schedule.OverlayCurrent>
-  <RimWorldAccess.Input.Schedule.OverlayInstructions1>Стрелки: навигация | 1-5: выбрать кисть | Пробел/Enter: применить кисть</RimWorldAccess.Input.Schedule.OverlayInstructions1>
-  <RimWorldAccess.Input.Schedule.OverlayInstructions2>Shift+Стрелки: рисовать | Ctrl+C/V: копировать/вставить | Tab: области | Esc: закрыть</RimWorldAccess.Input.Schedule.OverlayInstructions2>
 </LanguageData>

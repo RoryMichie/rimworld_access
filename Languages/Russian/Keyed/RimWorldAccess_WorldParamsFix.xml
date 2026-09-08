@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.WorldParams.Population.Sparse>Разреженная</RimWorldAccess.WorldParams.Population.Sparse>
+  <RimWorldAccess.WorldParams.Population.MoreSparse>Немного более разреженная</RimWorldAccess.WorldParams.Population.MoreSparse>
+  <RimWorldAccess.WorldParams.Population.SlightSparse>Слегка разреженная</RimWorldAccess.WorldParams.Population.SlightSparse>
+  <RimWorldAccess.WorldParams.Population.Normal>Умеренная</RimWorldAccess.WorldParams.Population.Normal>
+  <RimWorldAccess.WorldParams.Population.SlightCrowded>Слегка плотная</RimWorldAccess.WorldParams.Population.SlightCrowded>
+  <RimWorldAccess.WorldParams.Population.MoreCrowded>Немного более плотная</RimWorldAccess.WorldParams.Population.MoreCrowded>
+  <RimWorldAccess.WorldParams.Population.Crowded>Плотная</RimWorldAccess.WorldParams.Population.Crowded>
+</LanguageData>

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using RimWorld;
 using Verse;
 
@@ -96,6 +95,50 @@ namespace RimWorldAccess
         }
 
         /// <summary>
+        /// The short label vanilla actually draws for a development-points reward, or null when
+        /// it draws no element at all. Mirrors <c>Reward_DevelopmentPoints.StackElements</c>: the
+        /// element exists only for a fluid ideoligion that can develop now on a quest actually
+        /// worth points, and its text is "Development points: +N". That reward's
+        /// <c>GetDescription</c> is the element's hover TOOLTIP -- a three-paragraph explainer --
+        /// so using it as label text made a three-choice quest recite the whole thing three
+        /// times.
+        /// </summary>
+        private static string DevelopmentPointsLabel(Reward_DevelopmentPoints reward)
+        {
+            Ideo fluidIdeo = Faction.OfPlayer.ideos.FluidIdeo;
+            if (fluidIdeo == null || !fluidIdeo.development.CanBeDevelopedNow)
+            {
+                return null;
+            }
+            int points = IdeoDevelopmentUtility.DevelopmentPointsForQuestSuccess(fluidIdeo, reward.quest.root);
+            if (points <= 0)
+            {
+                return null;
+            }
+            return "Reward_DevelopmentPointsLabel".Translate() + ": " + points.ToStringWithSign();
+        }
+
+        /// <summary>
+        /// Splits a reward element's tooltip into one navigable line per paragraph, the same way
+        /// the quest description itself is split (vanilla's tooltips use literal newlines).
+        /// </summary>
+        private static void AddTooltipLines(List<DetailLine> lines, string tooltip, string indent)
+        {
+            if (string.IsNullOrEmpty(tooltip))
+            {
+                return;
+            }
+            foreach (string paragraph in tooltip.StripTags().Split('\n'))
+            {
+                string trimmed = paragraph.Trim();
+                if (!string.IsNullOrEmpty(trimmed))
+                {
+                    lines.Add(new DetailLine(indent + trimmed));
+                }
+            }
+        }
+
+        /// <summary>
         /// Adds individual item lines for a set of rewards, with info card targets.
         /// </summary>
         private static void AddRewardItemLines(List<DetailLine> lines, List<Reward> rewards, string indent)
@@ -183,6 +226,19 @@ namespace RimWorldAccess
                         : DescribeReward(reward);
                     lines.Add(new DetailLine(indent + label));
                 }
+                else if (reward is Reward_DevelopmentPoints rewardPoints)
+                {
+                    // Nothing drawn on screen means nothing to read (see DevelopmentPointsLabel).
+                    // When it IS drawn, the label leads and the element's tooltip follows as its
+                    // own lines -- the tooltip belongs here in the details view, once, not
+                    // repeated on every choice of the list row.
+                    string label = DevelopmentPointsLabel(rewardPoints);
+                    if (!string.IsNullOrEmpty(label))
+                    {
+                        lines.Add(new DetailLine(indent + label));
+                        AddTooltipLines(lines, reward.GetDescription(default(RewardsGeneratorParams)), indent);
+                    }
+                }
                 else
                 {
                     // Fallback for other reward types - use GetDescription for human-readable text
@@ -206,7 +262,13 @@ namespace RimWorldAccess
 
             foreach (Reward reward in rewards)
             {
-                parts.Add(DescribeReward(reward));
+                string part = DescribeReward(reward);
+                // Null = vanilla draws no stack element for this reward, so there is nothing
+                // on screen to read out either.
+                if (!string.IsNullOrEmpty(part))
+                {
+                    parts.Add(part);
+                }
             }
 
             return string.Join(", ", parts);
@@ -274,6 +336,10 @@ namespace RimWorldAccess
                 return rp.pawn != null
                     ? "RimWorldAccess.Quests.Reward.PawnWithName".Translate(rp.pawn.LabelShort).ToString()
                     : "RimWorldAccess.Quests.Reward.PawnGeneric".Translate().ToString();
+            }
+            else if (reward is Reward_DevelopmentPoints rdp)
+            {
+                return DevelopmentPointsLabel(rdp);
             }
             else if (reward is Reward_DefinedThingDef rdt)
             {
@@ -344,15 +410,24 @@ namespace RimWorldAccess
         /// <summary>
         /// Returns a compact one-line reward summary for a quest.
         /// Used by the list view announcement to describe rewards without detail lines.
+        /// Every choice is named: a sighted player reads all of them off the row, so saying
+        /// only "multiple choices available" withheld the one fact the row exists to carry.
         /// </summary>
         public static string BuildCompactRewardSummary(Quest quest)
         {
             QuestPart_Choice choicePart = GetChoicePart(quest);
             if (choicePart == null || choicePart.choices.Count == 0)
                 return "RimWorldAccess.Quests.Reward.NoRewards".Translate();
-            if (choicePart.choices.Count >= 2)
-                return "RimWorldAccess.Quests.Reward.MultipleChoices".Translate();
-            return BuildRewardDescription(choicePart.choices[0].rewards);
+            if (choicePart.choices.Count == 1)
+                return BuildRewardDescription(choicePart.choices[0].rewards);
+
+            var parts = new List<string>();
+            for (int i = 0; i < choicePart.choices.Count; i++)
+            {
+                parts.Add("RimWorldAccess.Quests.Reward.ChoiceLabel".Translate(i + 1)
+                    + " " + BuildRewardDescription(choicePart.choices[i].rewards));
+            }
+            return string.Join(". ", parts);
         }
 
         /// <summary>
@@ -362,6 +437,9 @@ namespace RimWorldAccess
         {
             if (item == null || item.Faction == null) return;
 
+            // MUTATION-C: mirrors Dialog_RewardPrefsConfig.DoWindowContents, which
+            // toggles Faction.allowRoyalFavorRewards / allowGoodwillRewards via
+            // Widgets.Checkbox(ref ...) directly; vanilla has no gated setter.
             switch (item.Type)
             {
                 case RewardPrefType.RoyalFavor:

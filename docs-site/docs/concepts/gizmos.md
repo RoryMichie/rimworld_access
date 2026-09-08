@@ -10,6 +10,12 @@ Place the cursor on an object (a building, furniture, a pawn, a caravan) and pre
 
 What appears depends entirely on what is under the cursor. A wall offers deconstruct. A bed offers reinstall and deconstruct. A finished caravan hitching spot offers "Form caravan." If an object has no actions available, the menu will be short or empty.
 
+## Gizmos with a target you can set
+
+Some gizmos are sliders rather than buttons: the hemogen target on a bloodfeeder, the target fuel level on a generator, the psyfocus target on a psycaster, the suppression threshold on an entity. When one of these is focused in the menu, press **Left** and **Right** to move its target. Each press announces the new value and takes effect immediately, the same as dragging the bar with a mouse. Hold **Shift** for larger steps.
+
+**Enter** on these gizmos still does whatever the gizmo's own button does: toggle whether hemogen packs are allowed, toggle auto refuel, toggle the neural heat limiter, toggle auto-suppression.
+
 ## Gizmos can carry their own shortcuts
 
 As you arrow through the menu, the mod announces a gizmo's keyboard shortcut when it has one. These shortcuts come from the game, but RimWorld Access uses the plain letter keys for its own navigation. So it delegates a gizmo's shortcut to **Shift** plus that letter: if a gizmo's vanilla key is B, you press **Shift+B** to fire it.

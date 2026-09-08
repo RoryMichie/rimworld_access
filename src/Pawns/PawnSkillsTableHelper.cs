@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
@@ -73,7 +74,7 @@ namespace RimWorldAccess
             if (record == null) return "";
 
             if (record.TotallyDisabled)
-                return "incapable";
+                return "RimWorldAccess.Pawns.SkillsTable.Incapable".Translate();
 
             int level = record.GetLevelForUI();
             string descriptor = record.LevelDescriptor;
@@ -101,9 +102,12 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Column tooltip (announced once on column change): the skill's def description.
+        /// Column tooltip (the skill's def description) — a column-level
+        /// constant, not per-pawn, so it takes only the column index (the
+        /// ScreenScope table contract's <c>ContentColumnInfo</c> shape; the
+        /// composer speaks it once, on column change).
         /// </summary>
-        public static string GetColumnTooltip(Pawn pawn, int columnIndex)
+        public static string GetColumnTooltip(int columnIndex)
         {
             if (columnIndex == NameColumnIndex) return null;
             SkillDef def = SkillForColumn(columnIndex);
@@ -114,35 +118,42 @@ namespace RimWorldAccess
         public static bool IsColumnSortable(int columnIndex) => true;
 
         /// <summary>
-        /// Sort order: Name column is alphabetical; skill columns sort by level
-        /// with disabled pawns sorted to the bottom (compare value -1). Passion is
-        /// used as a tiebreaker (Major > Minor > None).
+        /// The one comparison behind both callers: the keyboard sort cycle here and the
+        /// vanilla <c>PawnColumnWorker</c> the skills window's table sorts with. Name column
+        /// is alphabetical; skill columns sort by level with disabled pawns at the bottom
+        /// (compare value -1) and passion as the tiebreaker (Major > Minor > None).
+        ///
+        /// It returns the DESCENDING order (highest first), which is the polarity PawnTable
+        /// wants: it feeds Compare straight to its stable sort when its descending flag is
+        /// set (decompiled RimWorld/PawnTable.cs:276-285), so this is what makes vanilla's
+        /// first header click and our first sort press produce the same rows. Remaining ties
+        /// are left alone — both callers sort stably over the colonist-bar order.
         /// </summary>
-        public static List<Pawn> SortPawnsByColumn(IList<Pawn> pawns, int columnIndex, bool descending)
+        public static int CompareByColumn(Pawn a, Pawn b, int columnIndex)
         {
             if (columnIndex == NameColumnIndex)
-            {
-                return descending
-                    ? pawns.OrderByDescending(p => p.LabelShort).ToList()
-                    : pawns.OrderBy(p => p.LabelShort).ToList();
-            }
+                return string.Compare(GetPawnLabel(b), GetPawnLabel(a), StringComparison.CurrentCulture);
 
             SkillDef def = SkillForColumn(columnIndex);
-            if (def == null) return pawns.ToList();
+            if (def == null) return 0;
 
+            int byLevel = SkillSortValue(b, def).CompareTo(SkillSortValue(a, def));
+            return byLevel != 0 ? byLevel : PassionSortValue(b, def).CompareTo(PassionSortValue(a, def));
+        }
+
+        /// <summary>
+        /// Row order for an open with no live table to sort, built the way
+        /// <c>PawnTable.RecachePawns</c> builds its own: a stable sort of the captured order
+        /// by <see cref="CompareByColumn"/>, reversed for the ascending half of the cycle.
+        /// </summary>
+        public static List<Pawn> SortPawnsByColumn(IReadOnlyList<Pawn> pawns, int columnIndex, bool descending)
+        {
+            List<Pawn> ordered = new List<Pawn>(pawns);
             if (descending)
-            {
-                return pawns
-                    .OrderByDescending(p => SkillSortValue(p, def))
-                    .ThenByDescending(p => PassionSortValue(p, def))
-                    .ThenBy(p => p.LabelShort)
-                    .ToList();
-            }
-            return pawns
-                .OrderBy(p => SkillSortValue(p, def))
-                .ThenBy(p => PassionSortValue(p, def))
-                .ThenBy(p => p.LabelShort)
-                .ToList();
+                ordered.SortStable((a, b) => CompareByColumn(a, b, columnIndex));
+            else
+                ordered.SortStable((a, b) => CompareByColumn(b, a, columnIndex));
+            return ordered;
         }
 
         private static int SkillSortValue(Pawn pawn, SkillDef def)

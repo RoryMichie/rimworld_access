@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!-- Styling station (vanilla Dialog_StylingStation, Ideology DLC).
+       src/Styling/StylingStationState.cs. Tab names, style item labels, apparel labels and the
+       color names themselves all come from the game's own translated data; the keys here own only
+       the announcement composition and the markers the game has no string for.
+
+       Opened: {0} = pawn short name. -->
+  <RimWorldAccess.Styling.Opened>Changement de style : {0}. Entrée applique un style et choisit sa couleur. Alt S applique tous les changements, le crochet droit réinitialise, Échap annule.</RimWorldAccess.Styling.Opened>
+
+  <!-- Tab header. TabPosition: {0} = tab number, {1} = tab count (only when position
+       announcements are on). TabHeader: {0} = tab name, {1} = item count. TabEmpty: {0} = tab name. -->
+  <RimWorldAccess.Styling.TabPosition>Onglet {0} sur {1}</RimWorldAccess.Styling.TabPosition>
+  <RimWorldAccess.Styling.TabHeader>{0}. {1} objets.</RimWorldAccess.Styling.TabHeader>
+  <RimWorldAccess.Styling.TabEmpty>{0}. Aucun élément disponible.</RimWorldAccess.Styling.TabEmpty>
+
+  <!-- Suffix (composed after ", ") on the style item currently applied to the pawn. -->
+  <RimWorldAccess.Styling.Selected>sélectionné</RimWorldAccess.Styling.Selected>
+  <!-- {0} = style item label. Spoken when a tattoo (no color) is applied with Enter. -->
+  <RimWorldAccess.Styling.ItemSelected>Sélection : {0}</RimWorldAccess.Styling.ItemSelected>
+
+  <!-- Color picker. CurrentColor: suffix (after ", ") on the currently selected color.
+       HairColorTitle / ApparelColorTitle ({0} = apparel label): spoken when the picker opens.
+       ColorSet: {0} = color name, spoken when a color is chosen. -->
+  <RimWorldAccess.Styling.CurrentColor>actuel</RimWorldAccess.Styling.CurrentColor>
+  <RimWorldAccess.Styling.HairColorTitle>Couleur des cheveux</RimWorldAccess.Styling.HairColorTitle>
+  <RimWorldAccess.Styling.ApparelColorTitle>Couleur de {0}</RimWorldAccess.Styling.ApparelColorTitle>
+  <RimWorldAccess.Styling.ColorSet>Couleur : {0}</RimWorldAccess.Styling.ColorSet>
+
+  <!-- Apparel tab rows. ApparelRow: {0} = apparel label, {1} = current color name.
+       Locked: suffix (after ", ") on apparel that cannot be recolored. -->
+  <RimWorldAccess.Styling.ApparelRow>{0}, couleur {1}</RimWorldAccess.Styling.ApparelRow>
+  <RimWorldAccess.Styling.Locked>verrouillé</RimWorldAccess.Styling.Locked>
+
+  <!-- Edge cases / actions. -->
+  <RimWorldAccess.Styling.NoApparel>Aucun vêtement à recolorer</RimWorldAccess.Styling.NoApparel>
+  <RimWorldAccess.Styling.ResetDone>Réinitialisé</RimWorldAccess.Styling.ResetDone>
+  <RimWorldAccess.Styling.Closed>Coiffeuse fermée</RimWorldAccess.Styling.Closed>
+</LanguageData>

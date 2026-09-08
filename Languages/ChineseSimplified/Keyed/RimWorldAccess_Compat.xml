@@ -1,0 +1,1174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Third-party mod compatibility strings (src/Compat/). Announces gizmos from
+    the Vanilla Expanded Framework (VEF) and its MVCF subsystem through the
+    same GizmoHandlerRegistry used for vanilla gizmos — see VefGizmoCompat and
+    its sibling handler files.
+  -->
+
+  <!-- VefAbilityCommandHandler / VefActionCooldownHandler: cooldown status,
+       shared because both mirror the same "X% ready" cooldown-bar text.
+       {0} = ready percent, e.g. "42%". -->
+  <RimWorldAccess.Compat.Vef.CooldownStatus>冷却中，{0} 就绪</RimWorldAccess.Compat.Vef.CooldownStatus>
+
+  <!-- VefAbilityCommandHandler: auto-cast status (spoken as part of the
+       gizmo's status readout) and the right-click-only toggle menu option
+       (label reflects the CURRENT state; confirmation is spoken after the
+       toggle actually flips). -->
+  <RimWorldAccess.Compat.Vef.AutoCastOn>自动施法: 开</RimWorldAccess.Compat.Vef.AutoCastOn>
+  <RimWorldAccess.Compat.Vef.AutoCastNowOn>自动施法: 开</RimWorldAccess.Compat.Vef.AutoCastNowOn>
+  <RimWorldAccess.Compat.Vef.AutoCastNowOff>自动施法: 关</RimWorldAccess.Compat.Vef.AutoCastNowOff>
+  <RimWorldAccess.Compat.Vef.EnableAutoCast>开启自动施法</RimWorldAccess.Compat.Vef.EnableAutoCast>
+  <RimWorldAccess.Compat.Vef.DisableAutoCast>关闭自动施法</RimWorldAccess.Compat.Vef.DisableAutoCast>
+
+  <!-- VefToggleRClickHandler: the hidden right-click branch has no visible
+       label or tooltip at all in vanilla drawing, so this is a generic name
+       for "the other thing this button does". -->
+  <RimWorldAccess.Compat.Vef.AlternateAction>备用操作</RimWorldAccess.Compat.Vef.AlternateAction>
+
+  <!-- MvcfVerbTargetHandler: per-part auto-reload checkbox. -->
+  <RimWorldAccess.Compat.Mvcf.EnableAutoReload>开启自动装填</RimWorldAccess.Compat.Mvcf.EnableAutoReload>
+  <RimWorldAccess.Compat.Mvcf.DisableAutoReload>关闭自动装填</RimWorldAccess.Compat.Mvcf.DisableAutoReload>
+  <RimWorldAccess.Compat.Mvcf.AutoReloadOn>自动装填: 开</RimWorldAccess.Compat.Mvcf.AutoReloadOn>
+  <RimWorldAccess.Compat.Mvcf.AutoReloadOff>自动装填: 关</RimWorldAccess.Compat.Mvcf.AutoReloadOff>
+
+  <!-- MvcfVerbTargetHandler: integrated-verb automatic-use checkbox. -->
+  <RimWorldAccess.Compat.Mvcf.EnableAutoUse>开启自动使用</RimWorldAccess.Compat.Mvcf.EnableAutoUse>
+  <RimWorldAccess.Compat.Mvcf.DisableAutoUse>关闭自动使用</RimWorldAccess.Compat.Mvcf.DisableAutoUse>
+  <RimWorldAccess.Compat.Mvcf.AutoUseOn>自动使用: 开</RimWorldAccess.Compat.Mvcf.AutoUseOn>
+  <RimWorldAccess.Compat.Mvcf.AutoUseOff>自动使用: 关</RimWorldAccess.Compat.Mvcf.AutoUseOff>
+
+  <!-- VpePsycastsTabAdapter: text for Vanilla Psycasts Expanded's psycasts
+       tab. check_l10n_keys.py's fake-key check only verifies keys against
+       Core/DLC Keyed XML under the local game install, not third-party mods
+       (VPE isn't in this repo's Mods folder), so calling VPE's OWN Translate
+       keys directly would build-fail as unverifiable "fake" keys even though
+       they resolve fine at runtime when VPE is loaded. These keys are ours
+       instead, wording matched to VPE's own Keyed/UI.xml strings (PsyLevel,
+       EarnXP, SpendPoints, PsycasterStats, Upgrade, NotEnoughPoints,
+       FocusTypes, PsysetCustomize, PsysetDesc, Locked, AbilitiesList, and the
+       tab's own labelKey Psycasts) so the spoken text still matches what a
+       sighted player reads, independent of which VPE build/translation is
+       actually loaded. -->
+  <RimWorldAccess.Compat.Vpe.Psycasts>心灵能力</RimWorldAccess.Compat.Vpe.Psycasts>
+  <RimWorldAccess.Compat.Vpe.PsyLevel>灵能等级: {0}</RimWorldAccess.Compat.Vpe.PsyLevel>
+  <RimWorldAccess.Compat.Vpe.EarnXP>通过冥想获得灵能经验值。</RimWorldAccess.Compat.Vpe.EarnXP>
+  <RimWorldAccess.Compat.Vpe.XpProgress>经验值: {0} / {1}</RimWorldAccess.Compat.Vpe.XpProgress>
+  <RimWorldAccess.Compat.Vpe.PointsAvailable>可用点数: {0}</RimWorldAccess.Compat.Vpe.PointsAvailable>
+  <RimWorldAccess.Compat.Vpe.SpendPoints>花费点数解锁新路径、解锁心灵能力、解锁冥想灵媒、提升属性等。</RimWorldAccess.Compat.Vpe.SpendPoints>
+  <RimWorldAccess.Compat.Vpe.PsycasterStats>灵能者属性</RimWorldAccess.Compat.Vpe.PsycasterStats>
+  <RimWorldAccess.Compat.Vpe.UpgradeAction>花费 1 点升级</RimWorldAccess.Compat.Vpe.UpgradeAction>
+  <RimWorldAccess.Compat.Vpe.NotEnoughPoints>可用点数不足</RimWorldAccess.Compat.Vpe.NotEnoughPoints>
+  <RimWorldAccess.Compat.Vpe.FocusTypes>灵媒类型</RimWorldAccess.Compat.Vpe.FocusTypes>
+  <RimWorldAccess.Compat.Vpe.PsysetCustomize>自定义灵能组</RimWorldAccess.Compat.Vpe.PsysetCustomize>
+  <RimWorldAccess.Compat.Vpe.PsysetDesc>灵能组可以让你将已学会的心灵能力分组，并在游戏中切换使用。</RimWorldAccess.Compat.Vpe.PsysetDesc>
+  <RimWorldAccess.Compat.Vpe.Locked>已锁定</RimWorldAccess.Compat.Vpe.Locked>
+  <RimWorldAccess.Compat.Vpe.AbilitiesList>包含的心灵能力</RimWorldAccess.Compat.Vpe.AbilitiesList>
+  <RimWorldAccess.Compat.Vpe.StateUnlocked>: 已解锁</RimWorldAccess.Compat.Vpe.StateUnlocked>
+  <RimWorldAccess.Compat.Vpe.StateCanUnlock>: 可花费 1 点解锁</RimWorldAccess.Compat.Vpe.StateCanUnlock>
+  <RimWorldAccess.Compat.Vpe.StateLocked>: 已锁定</RimWorldAccess.Compat.Vpe.StateLocked>
+  <RimWorldAccess.Compat.Vpe.StateLearned>: 已学会</RimWorldAccess.Compat.Vpe.StateLearned>
+  <RimWorldAccess.Compat.Vpe.StateCanLearn>: 可花费 1 点学习</RimWorldAccess.Compat.Vpe.StateCanLearn>
+  <RimWorldAccess.Compat.Vpe.PathLevel>路径等级 {0}。</RimWorldAccess.Compat.Vpe.PathLevel>
+  <RimWorldAccess.Compat.Vpe.Requires>需要: {0}。</RimWorldAccess.Compat.Vpe.Requires>
+  <RimWorldAccess.Compat.Vpe.PrereqLearned>{0}（已学会）</RimWorldAccess.Compat.Vpe.PrereqLearned>
+  <RimWorldAccess.Compat.Vpe.PrereqNotLearned>{0}（未学会）</RimWorldAccess.Compat.Vpe.PrereqNotLearned>
+  <RimWorldAccess.Compat.Vpe.NoPsysets>未定义灵能组</RimWorldAccess.Compat.Vpe.NoPsysets>
+  <RimWorldAccess.Compat.Vpe.UnlockAction>花费 1 点解锁</RimWorldAccess.Compat.Vpe.UnlockAction>
+  <RimWorldAccess.Compat.Vpe.LearnAction>花费 1 点学习</RimWorldAccess.Compat.Vpe.LearnAction>
+
+  <!-- VpePsysetCompat / VpePsysetEditorScope: psyset management (Create/Rename/
+       Edit/Remove) and the membership editor for Dialog_Psyset's own
+       drag-and-drop flow. -->
+  <RimWorldAccess.Compat.Vpe.PsysetEditAction>编辑心灵能力</RimWorldAccess.Compat.Vpe.PsysetEditAction>
+  <RimWorldAccess.Compat.Vpe.PsysetRenameAction>重命名</RimWorldAccess.Compat.Vpe.PsysetRenameAction>
+  <RimWorldAccess.Compat.Vpe.PsysetRemoveAction>移除灵能组</RimWorldAccess.Compat.Vpe.PsysetRemoveAction>
+  <RimWorldAccess.Compat.Vpe.PsysetCreateAction>创建新灵能组</RimWorldAccess.Compat.Vpe.PsysetCreateAction>
+  <RimWorldAccess.Compat.Vpe.UntitledPsyset>无标题</RimWorldAccess.Compat.Vpe.UntitledPsyset>
+  <RimWorldAccess.Compat.Vpe.PsysetRemoved>已移除灵能组 {0}。</RimWorldAccess.Compat.Vpe.PsysetRemoved>
+  <RimWorldAccess.Compat.Vpe.PsysetContents>组内心灵能力: {0}。</RimWorldAccess.Compat.Vpe.PsysetContents>
+  <RimWorldAccess.Compat.Vpe.PsysetEmptyContents>此组尚无心灵能力。</RimWorldAccess.Compat.Vpe.PsysetEmptyContents>
+  <RimWorldAccess.Compat.Vpe.PsysetMembersRegion>此组内的心灵能力</RimWorldAccess.Compat.Vpe.PsysetMembersRegion>
+  <RimWorldAccess.Compat.Vpe.PsysetAvailableRegion>可用心灵能力</RimWorldAccess.Compat.Vpe.PsysetAvailableRegion>
+  <RimWorldAccess.Compat.Vpe.PsysetAdded>已将 {0} 添加至该组。</RimWorldAccess.Compat.Vpe.PsysetAdded>
+  <RimWorldAccess.Compat.Vpe.PsysetRemovedFromSet>已将 {0} 从该组移除。</RimWorldAccess.Compat.Vpe.PsysetRemovedFromSet>
+  <RimWorldAccess.Compat.Vpe.PsysetEditorOpen>正在编辑灵能组 {0}。可在此组内的心灵能力与可用心灵能力之间移动；按回车键添加或移除。</RimWorldAccess.Compat.Vpe.PsysetEditorOpen>
+
+  <!-- VaeCompat / VaeNeedsCompat / GrowthMomentState's Aspirations tab: text for
+       Vanilla Aspirations Expanded's per-pawn aspirations (Fulfillment need) and
+       growth-moment aspiration choices. Same fake-key ratchet rationale as the Vpe
+       block above: check_l10n_keys.py only verifies keys against Core/DLC Keyed XML
+       under the local game install, so calling VAE's OWN Translate keys directly
+       would build-fail as unverifiable "fake" keys even though they resolve fine at
+       runtime when VAE is loaded. These keys are ours instead, wording matched to
+       VAE's own Languages/English/Keyed/UI.xml strings (SelectAspirationSingular,
+       SelectAspirationsPlural, AspirationDesc, AspirationSelectionArchiveSingular/
+       Plural) so the spoken text still matches what a sighted player reads,
+       independent of which VAE build/translation is actually loaded. -->
+  <RimWorldAccess.Compat.Vae.TabAspirations>志向</RimWorldAccess.Compat.Vae.TabAspirations>
+  <RimWorldAccess.Compat.Vae.AspirationsProgress>志向: 已完成 {0}/{1}</RimWorldAccess.Compat.Vae.AspirationsProgress>
+  <RimWorldAccess.Compat.Vae.StateCompleted>: 已完成</RimWorldAccess.Compat.Vae.StateCompleted>
+  <RimWorldAccess.Compat.Vae.ChooseAspirations>从 {1} 个志向中选择 {0} 个</RimWorldAccess.Compat.Vae.ChooseAspirations>
+  <RimWorldAccess.Compat.Vae.AspirationDesc>志向是 {0} 想在人生中实现的目标。实现志向会提高精神崩溃阈值，若所有志向都已达成，{0} 将迎来另一次成长时刻。</RimWorldAccess.Compat.Vae.AspirationDesc>
+  <RimWorldAccess.Compat.Vae.SelectAspirationSingular>选择一个志向。</RimWorldAccess.Compat.Vae.SelectAspirationSingular>
+  <RimWorldAccess.Compat.Vae.SelectAspirationsPlural>选择 {0} 个志向。</RimWorldAccess.Compat.Vae.SelectAspirationsPlural>
+  <RimWorldAccess.Compat.Vae.AspirationSelectedFeedback>已选择 {0}。已选 {1}/{2} 个志向</RimWorldAccess.Compat.Vae.AspirationSelectedFeedback>
+  <RimWorldAccess.Compat.Vae.AspirationDeselectedFeedback>已取消选择 {0}。已选 {1}/{2} 个志向</RimWorldAccess.Compat.Vae.AspirationDeselectedFeedback>
+  <RimWorldAccess.Compat.Vae.AspirationLimitReached>已选择 {0}/{0} 个志向。请先取消选择一个</RimWorldAccess.Compat.Vae.AspirationLimitReached>
+  <RimWorldAccess.Compat.Vae.ArchiveSingular>已获得志向 {0}。</RimWorldAccess.Compat.Vae.ArchiveSingular>
+  <RimWorldAccess.Compat.Vae.ArchivePlural>已获得以下志向: {0}。</RimWorldAccess.Compat.Vae.ArchivePlural>
+
+  <!-- VseExpertiseCompat: surfaces Vanilla Skills Expanded's Expertise feature. Owned
+       expertises are read under their matching skill in the Skills tab (ExpertiseRow),
+       and a qualifying pawn gets the Choose expertise action (ChooseExpertise). -->
+  <RimWorldAccess.Compat.Vse.ChooseExpertise>选择专精</RimWorldAccess.Compat.Vse.ChooseExpertise>
+  <RimWorldAccess.Compat.Vse.NoExpertiseAvailable>没有可选的专精</RimWorldAccess.Compat.Vse.NoExpertiseAvailable>
+  <RimWorldAccess.Compat.Vse.ExpertiseRow>专精: {0}，{1}</RimWorldAccess.Compat.Vse.ExpertiseRow>
+  <!-- {0} = VSE's own per-level stat effect text (e.g. "Shooting accuracy: +1.0"). -->
+  <RimWorldAccess.Compat.Vse.EffectsPerLevel>每级，{0}</RimWorldAccess.Compat.Vse.EffectsPerLevel>
+
+  <!-- VfCargoDialogAdapter / VfDialogCompat: text for Vehicle Framework's Dialog_LoadCargo
+       (the "Load Cargo" gizmo on a vehicle). Same fake-key ratchet rationale as the Vpe/Vae
+       blocks above: check_l10n_keys.py only verifies keys against Core/DLC Keyed XML under the
+       local game install, so calling VF's OWN Translate keys directly would build-fail as
+       unverifiable "fake" keys even though they resolve fine at runtime when VF is loaded.
+       These keys are ours instead. -->
+  <RimWorldAccess.Compat.Vf.LoadCargoOpen>为 {0} 装载货物。载重能力 {1}。</RimWorldAccess.Compat.Vf.LoadCargoOpen>
+  <RimWorldAccess.Compat.Vf.LoadCargoCancelled>货物装载已取消</RimWorldAccess.Compat.Vf.LoadCargoCancelled>
+  <RimWorldAccess.Compat.Vf.LoadCargoAccepted>已为 {0} 下达货物装载指令</RimWorldAccess.Compat.Vf.LoadCargoAccepted>
+
+  <!-- VfStashDialogAdapter / VfDialogCompat: text for Vehicle Framework's Dialog_StashVehicle
+       ("Dock to caravan": move items out of a vehicle caravan before stashing the vehicles).
+       Same fake-key ratchet rationale as the LoadCargo block above. VF's own on-screen title for
+       this dialog ("VF_DockToCaravan") is, despite its key name, the English text "Items to
+       Take" (verified against the mod's own Languages/English/Keyed/Caravans.xml), baked
+       directly into StashOpen's wording below rather than pulled dynamically. -->
+  <RimWorldAccess.Compat.Vf.StashOpen>「携带物品」对话框。选择要在收纳载具前移出的物品。</RimWorldAccess.Compat.Vf.StashOpen>
+  <RimWorldAccess.Compat.Vf.StashCancelled>并入远行队已取消。</RimWorldAccess.Compat.Vf.StashCancelled>
+  <RimWorldAccess.Compat.Vf.StashAccepted>载具已收纳。物品已转移至远行队。</RimWorldAccess.Compat.Vf.StashAccepted>
+  <RimWorldAccess.Compat.Vf.StashFailed>无法收纳载具。</RimWorldAccess.Compat.Vf.StashFailed>
+  <RimWorldAccess.Compat.Vf.StashArrival>将在 {0} 天后抵达。</RimWorldAccess.Compat.Vf.StashArrival>
+  <RimWorldAccess.Compat.Vf.StatArrival>抵达</RimWorldAccess.Compat.Vf.StatArrival>
+
+  <!-- VfAssignSeatsCompat / VfAssignSeatsScope: text for Vehicle Framework's
+       Dialog_AssignSeats (assigns colonists to vehicle role handlers during caravan formation).
+       Same fake-key ratchet rationale as above; several of these keys match the English
+       wording of VF's own VF_-prefixed keys (verified against the mod's own
+       Languages/English/Keyed/Labels.xml and Messages.xml) rather than calling them directly:
+       SeatsColonistsRegion mirrors VF_Colonists ("Colonists"), SeatsAutoAssignButton mirrors
+       VF_AutoAssign ("Autofill"), SeatsClearSeatsButton mirrors VF_ClearSeats ("Clear"),
+       SeatsIncapableForRole mirrors VF_IncapableStatusForRole ("{0} is incapable of fulfilling
+       this role."), and SeatsAssignFailureMessage mirrors VF_AssignFailure ("Failed to assign
+       seats. {0}"), reused for both the Messages.Message mirror (so the on-screen message log
+       reads the same) and the spoken announcement, so the two channels never diverge. -->
+  <RimWorldAccess.Compat.Vf.SeatsOpen>为 {0} 分配座位。{1} 人未分配，{2} 个职位。</RimWorldAccess.Compat.Vf.SeatsOpen>
+  <RimWorldAccess.Compat.Vf.SeatsColonistsRegion>殖民者</RimWorldAccess.Compat.Vf.SeatsColonistsRegion>
+  <RimWorldAccess.Compat.Vf.SeatsRoleNeeds>，还需 {0} 人才能运行</RimWorldAccess.Compat.Vf.SeatsRoleNeeds>
+  <RimWorldAccess.Compat.Vf.SeatsRoleFull>，已满</RimWorldAccess.Compat.Vf.SeatsRoleFull>
+  <RimWorldAccess.Compat.Vf.SeatsAlreadyAboard>，已在载具上，请通过载具离开</RimWorldAccess.Compat.Vf.SeatsAlreadyAboard>
+  <RimWorldAccess.Compat.Vf.SeatsAddToRoleOption>自动分配到职位</RimWorldAccess.Compat.Vf.SeatsAddToRoleOption>
+  <RimWorldAccess.Compat.Vf.SeatsAssignTo>分配至 {0}，剩余 {1}</RimWorldAccess.Compat.Vf.SeatsAssignTo>
+  <RimWorldAccess.Compat.Vf.SeatsAssignedRemaining>已将 {0} 分配至 {1}。剩余 {2} 个座位。</RimWorldAccess.Compat.Vf.SeatsAssignedRemaining>
+  <RimWorldAccess.Compat.Vf.SeatsRemovedRemaining>已将 {0} 从 {1} 移除。剩余 {2} 个座位。</RimWorldAccess.Compat.Vf.SeatsRemovedRemaining>
+  <RimWorldAccess.Compat.Vf.SeatsIncapableForRole>{0} 无法胜任此职位。</RimWorldAccess.Compat.Vf.SeatsIncapableForRole>
+  <RimWorldAccess.Compat.Vf.SeatsNoRoleAvailable>没有可分配的职位。</RimWorldAccess.Compat.Vf.SeatsNoRoleAvailable>
+  <RimWorldAccess.Compat.Vf.SeatsAutoAssignButton>自动填充</RimWorldAccess.Compat.Vf.SeatsAutoAssignButton>
+  <RimWorldAccess.Compat.Vf.SeatsAutoAssigned>已自动分配。现有 {0} 名角色已入座。</RimWorldAccess.Compat.Vf.SeatsAutoAssigned>
+  <RimWorldAccess.Compat.Vf.SeatsClearSeatsButton>清除</RimWorldAccess.Compat.Vf.SeatsClearSeatsButton>
+  <RimWorldAccess.Compat.Vf.SeatsCleared>所有座位分配已清除。</RimWorldAccess.Compat.Vf.SeatsCleared>
+  <RimWorldAccess.Compat.Vf.SeatsAssignFailureMessage>分配座位失败。{0}</RimWorldAccess.Compat.Vf.SeatsAssignFailureMessage>
+  <RimWorldAccess.Compat.Vf.SeatsConfirmed>已确认 {0} 的座位。</RimWorldAccess.Compat.Vf.SeatsConfirmed>
+  <RimWorldAccess.Compat.Vf.SeatsDiscarded>座位分配未保存。请重新打开「分配座位」并按确认以保留。</RimWorldAccess.Compat.Vf.SeatsDiscarded>
+
+  <!-- VfRefuelGizmoHandler: text for Vehicle Framework's vehicle fuel/charging gizmo
+       header buttons (Gizmo_RefuelableFuelTravel.DrawHeader). Same fake-key ratchet
+       rationale as above; wording mirrors VF's own Keyed Labels.xml. -->
+  <RimWorldAccess.Compat.Vf.ChargingToggle>充电 {0}</RimWorldAccess.Compat.Vf.ChargingToggle>
+  <RimWorldAccess.Compat.Vf.NoPowerNet>没有可用电网</RimWorldAccess.Compat.Vf.NoPowerNet>
+  <RimWorldAccess.Compat.Vf.HintAutoRefuelToggleArrows>。按回车键切换自动补充燃料，用左右方向键调整目标燃料量</RimWorldAccess.Compat.Vf.HintAutoRefuelToggleArrows>
+  <RimWorldAccess.Compat.Vf.RefuelFromCargo>从物品栏补充燃料</RimWorldAccess.Compat.Vf.RefuelFromCargo>
+  <RimWorldAccess.Compat.Vf.RefuelFromInventoryCount>补充燃料 {0}x {1}</RimWorldAccess.Compat.Vf.RefuelFromInventoryCount>
+
+  <!-- VfCaravanCompat / CaravanFormationScope / SplitCaravanScope: text for Vehicle Framework's
+       Vehicles tab in the caravan-formation dialog (TransferableVehicleWidget's vehicle cards).
+       Same fake-key ratchet rationale as the blocks above. RegionName mirrors VF_Vehicles
+       ("Vehicles") and TipMoveSpeed mirrors VF_Caravan_MoveSpeed ("Amount of tiles traveled in 1
+       day."), both verified against the mod's own Languages/English/Keyed/Labels.xml and
+       Caravans.xml. The disable-reason keys the widget's own CanCaravan hands back
+       (VF_ImpassableBiome and friends) are NOT mirrored here: they are runtime strings read off
+       VF's own installed language files at Translate() time, not literals in our source, so the
+       fake-key ratchet never sees them. -->
+  <RimWorldAccess.Compat.Vf.RegionName>载具</RimWorldAccess.Compat.Vf.RegionName>
+  <RimWorldAccess.Compat.Vf.ColSelected>已选择</RimWorldAccess.Compat.Vf.ColSelected>
+  <RimWorldAccess.Compat.Vf.CellSelected>已选择</RimWorldAccess.Compat.Vf.CellSelected>
+  <RimWorldAccess.Compat.Vf.CellNotSelected>未选择</RimWorldAccess.Compat.Vf.CellNotSelected>
+  <RimWorldAccess.Compat.Vf.TipMoveSpeed>一天内行进的地块数量。</RimWorldAccess.Compat.Vf.TipMoveSpeed>
+  <RimWorldAccess.Compat.Vf.VehicleSelected>已为远行队选择 {0}。</RimWorldAccess.Compat.Vf.VehicleSelected>
+  <RimWorldAccess.Compat.Vf.VehicleDeselected>已将 {0} 从远行队移除。其座位分配已清除。</RimWorldAccess.Compat.Vf.VehicleDeselected>
+  <RimWorldAccess.Compat.Vf.PawnSeatLocked>已分配至 {0} 的座位。请从「载具」区域中该载具所在行更改。</RimWorldAccess.Compat.Vf.PawnSeatLocked>
+  <RimWorldAccess.Compat.Vf.PawnAboardLocked>已在载具上。请从载具本身管理。</RimWorldAccess.Compat.Vf.PawnAboardLocked>
+
+  <!-- VfPassengersTabAdapter / VfPassengersTabCompat: text for Vehicle Framework's Pawns tab
+       (ITab_Vehicle_Passengers), which lists everyone aboard a vehicle by role plus its cargo
+       hold. Same fake-key ratchet rationale as the blocks above. PassengersTab mirrors
+       VF_TabPassengers ("Pawns") and PassengersCargoSection's leading word mirrors
+       VF_Caravan_Cargo ("Cargo"), both verified against the mod's own Languages/English/Keyed
+       XML. SeatsRoleFull (defined above) is reused verbatim for the role-full suffix. PassengersCargo
+       is a bare noun with no VF equivalent, needed only to fill the destination slot of
+       PassengersMoved when a pawn is moved into cargo rather than a role. -->
+  <RimWorldAccess.Compat.Vf.PassengersTab>角色</RimWorldAccess.Compat.Vf.PassengersTab>
+  <RimWorldAccess.Compat.Vf.PassengersRoleSection>{0}（{1}/{2} 已搭乘）</RimWorldAccess.Compat.Vf.PassengersRoleSection>
+  <RimWorldAccess.Compat.Vf.PassengersCargoSection>货物，{0}</RimWorldAccess.Compat.Vf.PassengersCargoSection>
+  <RimWorldAccess.Compat.Vf.PassengersCargo>货物</RimWorldAccess.Compat.Vf.PassengersCargo>
+  <RimWorldAccess.Compat.Vf.PassengersNoneAboard>无人搭乘。</RimWorldAccess.Compat.Vf.PassengersNoneAboard>
+  <RimWorldAccess.Compat.Vf.PassengersDowned>{0}，已倒地</RimWorldAccess.Compat.Vf.PassengersDowned>
+  <RimWorldAccess.Compat.Vf.PassengersMoodSection>心情与想法</RimWorldAccess.Compat.Vf.PassengersMoodSection>
+  <RimWorldAccess.Compat.Vf.PassengersMoveTo>移动至 {0}</RimWorldAccess.Compat.Vf.PassengersMoveTo>
+  <RimWorldAccess.Compat.Vf.PassengersSwapWith>与 {0} 交换座位，{1}</RimWorldAccess.Compat.Vf.PassengersSwapWith>
+  <RimWorldAccess.Compat.Vf.PassengersMoveToCargo>移动至货物区</RimWorldAccess.Compat.Vf.PassengersMoveToCargo>
+  <RimWorldAccess.Compat.Vf.PassengersMoved>已将 {0} 移动至 {1}。</RimWorldAccess.Compat.Vf.PassengersMoved>
+  <RimWorldAccess.Compat.Vf.PassengersSwapped>已将 {0} 与 {1} 交换座位。</RimWorldAccess.Compat.Vf.PassengersSwapped>
+
+  <!-- VfUpgradesTabAdapter / VfUpgradesTabCompat: text for Vehicle Framework's Upgrades tab
+       (ITab_Vehicle_Upgrades), which lists each node on a vehicle's upgrade grid with its
+       cost, effects, incompatibilities and current state. UpgradesTab mirrors VF_TabUpgrades
+       ("Upgrades"), verified against the mod's own Languages/English/Keyed XML. CancelButton
+       reuses Core's own key directly (check_l10n_keys.py can verify it there). VF's own keys
+       cannot be reused as literal Translate() calls the same way, since Vehicle Framework does
+       not ship inside the local game install's Core/DLC Keyed XML tree the ratchet scans, so
+       calling them would either go unchecked (without a game dir) or be flagged as fake (with
+       one), exactly like VfStashDialogAdapter's documented rationale. UpgradeActionLabel,
+       RemoveUpgradeActionLabel, UpgradeDisabledMessage and UpgradeMissingPrerequisiteMessage
+       below bake VF's own English text (VF_Upgrade, VF_RemoveUpgrade, VF_DisabledFromOtherNode,
+       VF_MissingPrerequisiteUpgrade, verified against the mod's own Languages/English/Keyed/
+       Upgrades.xml) into keys this ratchet can verify instead. -->
+  <RimWorldAccess.Compat.Vf.UpgradesTab>升级</RimWorldAccess.Compat.Vf.UpgradesTab>
+  <RimWorldAccess.Compat.Vf.UpgradeInProgressSummary>升级进行中: {0}。</RimWorldAccess.Compat.Vf.UpgradeInProgressSummary>
+  <RimWorldAccess.Compat.Vf.UpgradeNodeSection>{0}，{1}</RimWorldAccess.Compat.Vf.UpgradeNodeSection>
+  <RimWorldAccess.Compat.Vf.UpgradeStateUpgradeInProgress>升级进行中</RimWorldAccess.Compat.Vf.UpgradeStateUpgradeInProgress>
+  <RimWorldAccess.Compat.Vf.UpgradeStateRemovalInProgress>移除进行中</RimWorldAccess.Compat.Vf.UpgradeStateRemovalInProgress>
+  <RimWorldAccess.Compat.Vf.UpgradeStateUnlocked>已解锁</RimWorldAccess.Compat.Vf.UpgradeStateUnlocked>
+  <RimWorldAccess.Compat.Vf.UpgradeStateDisabledBy>被 {0} 禁用</RimWorldAccess.Compat.Vf.UpgradeStateDisabledBy>
+  <RimWorldAccess.Compat.Vf.UpgradeStateRequires>需要 {0}</RimWorldAccess.Compat.Vf.UpgradeStateRequires>
+  <RimWorldAccess.Compat.Vf.UpgradeStateAvailable>可用</RimWorldAccess.Compat.Vf.UpgradeStateAvailable>
+  <RimWorldAccess.Compat.Vf.UpgradeCostLine>{0}: 需要 {1}，拥有 {2}。</RimWorldAccess.Compat.Vf.UpgradeCostLine>
+  <RimWorldAccess.Compat.Vf.UpgradeCostLineNoMap>{0}: 需要 {1}。</RimWorldAccess.Compat.Vf.UpgradeCostLineNoMap>
+  <RimWorldAccess.Compat.Vf.UpgradeIncompatibleWith>与以下内容不兼容: {0}。</RimWorldAccess.Compat.Vf.UpgradeIncompatibleWith>
+  <RimWorldAccess.Compat.Vf.UpgradeLockedByDependents>无法移除: 后续升级依赖于此项。</RimWorldAccess.Compat.Vf.UpgradeLockedByDependents>
+  <RimWorldAccess.Compat.Vf.UpgradeStarted>{0} 升级已开始。材料将由殖民者运送。</RimWorldAccess.Compat.Vf.UpgradeStarted>
+  <RimWorldAccess.Compat.Vf.UpgradeCanceled>升级已取消。已运送的材料已丢弃。</RimWorldAccess.Compat.Vf.UpgradeCanceled>
+  <RimWorldAccess.Compat.Vf.UpgradeRemovalQueued>{0} 移除已排队。</RimWorldAccess.Compat.Vf.UpgradeRemovalQueued>
+  <RimWorldAccess.Compat.Vf.UpgradeCompletedInstant>{0} 升级已完成。</RimWorldAccess.Compat.Vf.UpgradeCompletedInstant>
+  <RimWorldAccess.Compat.Vf.UpgradeRemovedInstant>{0} 升级已移除。</RimWorldAccess.Compat.Vf.UpgradeRemovedInstant>
+  <RimWorldAccess.Compat.Vf.UpgradeActionLabel>升级</RimWorldAccess.Compat.Vf.UpgradeActionLabel>
+  <RimWorldAccess.Compat.Vf.RemoveUpgradeActionLabel>移除</RimWorldAccess.Compat.Vf.RemoveUpgradeActionLabel>
+  <RimWorldAccess.Compat.Vf.UpgradeDisabledMessage>不可用，已被其他升级禁用。</RimWorldAccess.Compat.Vf.UpgradeDisabledMessage>
+  <RimWorldAccess.Compat.Vf.UpgradeMissingPrerequisiteMessage>缺少前置条件。</RimWorldAccess.Compat.Vf.UpgradeMissingPrerequisiteMessage>
+
+  <!-- VfTurretGizmoHandler / VfTurretTargeterCompat: text for Vehicle Framework's
+       turret gizmo (Command_CooldownAction and its Command_TargeterCooldownAction
+       subclass) and its parallel TurretTargeter map-targeting session. Status
+       fragments mirror the gizmo's own drawn bars (ammo count, reload percent,
+       cooldown, heat percent, locked target); the sub-option labels mirror the
+       tooltip text on VF's own SubGizmo icons (VF_ReloadVehicleTurret "Reload",
+       VF_ToggleAutoTargeting "Toggle automatic targeting"). TurretSetQuotaLabel
+       mirrors VF_SetReloadLevel's English ("Set auto-reloading level for to {0}.",
+       verified against the mod's own Languages/English/Keyed/Turrets.xml) with its
+       "for to" typo corrected — not copied verbatim, since it is our own key, not a
+       .Translate() call on VF's literal key (the fake-key ratchet only forbids the
+       latter). Same fake-key ratchet rationale as the blocks above throughout. -->
+  <RimWorldAccess.Compat.Vf.TurretAmmo>弹药: {0}/{1}</RimWorldAccess.Compat.Vf.TurretAmmo>
+  <RimWorldAccess.Compat.Vf.TurretAmmoUnlimited>弹药: 无限</RimWorldAccess.Compat.Vf.TurretAmmoUnlimited>
+  <RimWorldAccess.Compat.Vf.TurretReloading>装填中: {0}%</RimWorldAccess.Compat.Vf.TurretReloading>
+  <RimWorldAccess.Compat.Vf.TurretOnCooldown>冷却中</RimWorldAccess.Compat.Vf.TurretOnCooldown>
+  <RimWorldAccess.Compat.Vf.TurretHeat>热量: {0}%</RimWorldAccess.Compat.Vf.TurretHeat>
+  <RimWorldAccess.Compat.Vf.TurretTargetLocked>已锁定目标: {0}</RimWorldAccess.Compat.Vf.TurretTargetLocked>
+  <RimWorldAccess.Compat.Vf.TurretFireBlockedCooldown>冷却中。尚无法开火。</RimWorldAccess.Compat.Vf.TurretFireBlockedCooldown>
+  <RimWorldAccess.Compat.Vf.TurretFireBlockedReloading>仍在装填。</RimWorldAccess.Compat.Vf.TurretFireBlockedReloading>
+  <RimWorldAccess.Compat.Vf.TurretHaltOption>停止炮塔</RimWorldAccess.Compat.Vf.TurretHaltOption>
+  <RimWorldAccess.Compat.Vf.TurretHalted>目标已清除。</RimWorldAccess.Compat.Vf.TurretHalted>
+  <RimWorldAccess.Compat.Vf.TurretUnloadOption>卸下 {0}</RimWorldAccess.Compat.Vf.TurretUnloadOption>
+  <RimWorldAccess.Compat.Vf.TurretUnloaded>{0} 已卸下。</RimWorldAccess.Compat.Vf.TurretUnloaded>
+  <RimWorldAccess.Compat.Vf.TurretReloadOption>装填</RimWorldAccess.Compat.Vf.TurretReloadOption>
+  <RimWorldAccess.Compat.Vf.TurretReloaded>已装填。{0}/{1}。</RimWorldAccess.Compat.Vf.TurretReloaded>
+  <RimWorldAccess.Compat.Vf.TurretFireModeOption>开火模式: {0}</RimWorldAccess.Compat.Vf.TurretFireModeOption>
+  <RimWorldAccess.Compat.Vf.TurretFireModeChanged>开火模式: {0}。</RimWorldAccess.Compat.Vf.TurretFireModeChanged>
+  <RimWorldAccess.Compat.Vf.TurretAutoTargetOption>自动索敌: {0}</RimWorldAccess.Compat.Vf.TurretAutoTargetOption>
+  <RimWorldAccess.Compat.Vf.TurretAutoTargetChanged>自动索敌 {0}。</RimWorldAccess.Compat.Vf.TurretAutoTargetChanged>
+  <RimWorldAccess.Compat.Vf.TurretSetQuotaOption>设置自动装载目标</RimWorldAccess.Compat.Vf.TurretSetQuotaOption>
+  <RimWorldAccess.Compat.Vf.TurretSetQuotaLabel>将自动装填水平设为 {0}。</RimWorldAccess.Compat.Vf.TurretSetQuotaLabel>
+  <RimWorldAccess.Compat.Vf.TurretTargetingStarted>{0} 瞄准中。射程 {1}。移动地图光标并按回车键开火。按 Escape 取消。</RimWorldAccess.Compat.Vf.TurretTargetingStarted>
+  <RimWorldAccess.Compat.Vf.TurretRangeMax>最高 {0}</RimWorldAccess.Compat.Vf.TurretRangeMax>
+  <RimWorldAccess.Compat.Vf.TurretRangeMinMax>{0} 至 {1}</RimWorldAccess.Compat.Vf.TurretRangeMinMax>
+  <RimWorldAccess.Compat.Vf.TurretRangeUnlimited>射程无限</RimWorldAccess.Compat.Vf.TurretRangeUnlimited>
+  <RimWorldAccess.Compat.Vf.TurretTargetConfirmed>正在射击 {0}。</RimWorldAccess.Compat.Vf.TurretTargetConfirmed>
+  <RimWorldAccess.Compat.Vf.TurretTargetInvalid>无法瞄准该位置。</RimWorldAccess.Compat.Vf.TurretTargetInvalid>
+  <RimWorldAccess.Compat.Vf.TurretTargetingCancelled>瞄准已取消。</RimWorldAccess.Compat.Vf.TurretTargetingCancelled>
+
+  <!-- VfHaulTargeterCompat: text for Vehicle Framework's HaulTargeter keyboard support
+       (the vehicle "Load Pawn" gizmo's multi-pick targeting session). -->
+  <RimWorldAccess.Compat.Vf.HaulTargetingStarted>正在装载 {0}。将地图光标移至角色或物品并按回车键逐个装载。完成后按 Escape。</RimWorldAccess.Compat.Vf.HaulTargetingStarted>
+  <RimWorldAccess.Compat.Vf.HaulTargetConfirmed>已选择装载 {0}。</RimWorldAccess.Compat.Vf.HaulTargetConfirmed>
+  <RimWorldAccess.Compat.Vf.HaulTargetInvalid>无法装载该目标。</RimWorldAccess.Compat.Vf.HaulTargetInvalid>
+  <RimWorldAccess.Compat.Vf.HaulTargetingEnded>装载已完成。</RimWorldAccess.Compat.Vf.HaulTargetingEnded>
+
+  <!-- VfWorldTargeterCompat: text for Vehicle Framework's aerial world targeting,
+       driven through SmashTools.Targeting.WorldTargeter (ground takeoff, VehicleCaravan
+       world orders, and in-flight retargeting all share this one machine). Validity and
+       fuel-cost clauses are spoken, never re-derived: the tooltip text comes straight
+       from the targeter's own CanTarget check, the same reason a sighted player reads
+       at the mouse. -->
+  <RimWorldAccess.Compat.Vf.WorldTargetingStarted>世界瞄准已开始。在世界地图上移动并按回车键设置目的地，再次按回车键起飞。按 Backspace 移除路径点，按 Escape 取消。</RimWorldAccess.Compat.Vf.WorldTargetingStarted>
+  <RimWorldAccess.Compat.Vf.WorldTargetingCancelled>世界瞄准已取消。</RimWorldAccess.Compat.Vf.WorldTargetingCancelled>
+  <RimWorldAccess.Compat.Vf.WorldTargetingEnded>世界瞄准已结束。</RimWorldAccess.Compat.Vf.WorldTargetingEnded>
+  <RimWorldAccess.Compat.Vf.WorldWaypointSet>目的地已设置。再次按回车键起飞。</RimWorldAccess.Compat.Vf.WorldWaypointSet>
+  <RimWorldAccess.Compat.Vf.WorldWaypointSetWithFuel>目的地已设置。燃料消耗 {0}。再次按回车键起飞。</RimWorldAccess.Compat.Vf.WorldWaypointSetWithFuel>
+  <RimWorldAccess.Compat.Vf.WorldWaypointRemoved>路径点已移除。</RimWorldAccess.Compat.Vf.WorldWaypointRemoved>
+  <RimWorldAccess.Compat.Vf.WorldNoWaypoint>没有可移除的路径点。</RimWorldAccess.Compat.Vf.WorldNoWaypoint>
+  <RimWorldAccess.Compat.Vf.WorldTargetInvalid>无法瞄准该位置。</RimWorldAccess.Compat.Vf.WorldTargetInvalid>
+  <RimWorldAccess.Compat.Vf.WorldTargetLaunched>目的地已确认。</RimWorldAccess.Compat.Vf.WorldTargetLaunched>
+  <RimWorldAccess.Compat.Vf.WorldFuelCost>燃料消耗: {0}。</RimWorldAccess.Compat.Vf.WorldFuelCost>
+  <RimWorldAccess.Compat.Vf.WorldNoDestinationInfo>此处没有目的地信息。</RimWorldAccess.Compat.Vf.WorldNoDestinationInfo>
+
+  <!-- VfLandingTargeterCompat: text for Vehicle Framework's LandingTargeter, the
+       map-level landing-spot picker opened as the continuation of an aerial arrival
+       at an existing map (ground takeoff's landing-side counterpart, and forced
+       landings out of fuel). Validity is spoken from the same GetPosState gate the
+       mouse click uses; the obstructed variant matches the orange ghost color a
+       sighted player sees when landing on a spot that crushes things beneath it. -->
+  <RimWorldAccess.Compat.Vf.LandingTargetingStarted>为 {0} 选择降落地点。移动地图光标并按回车键降落。按 Escape 取消。</RimWorldAccess.Compat.Vf.LandingTargetingStarted>
+  <RimWorldAccess.Compat.Vf.LandingTargetingStartedRotatable>为 {0} 选择降落地点。移动地图光标并按回车键降落。按 Q 和 E 旋转。按 Escape 取消。</RimWorldAccess.Compat.Vf.LandingTargetingStartedRotatable>
+  <RimWorldAccess.Compat.Vf.LandingSpotInvalid>无法在此降落。</RimWorldAccess.Compat.Vf.LandingSpotInvalid>
+  <RimWorldAccess.Compat.Vf.LandingConfirmed>正在降落于 {0}。</RimWorldAccess.Compat.Vf.LandingConfirmed>
+  <RimWorldAccess.Compat.Vf.LandingConfirmedObstructed>正在降落于 {0}。该地点有障碍物，下方物体将被压毁。</RimWorldAccess.Compat.Vf.LandingConfirmedObstructed>
+  <RimWorldAccess.Compat.Vf.LandingRotationChanged>朝向 {0}。</RimWorldAccess.Compat.Vf.LandingRotationChanged>
+  <RimWorldAccess.Compat.Vf.LandingTargetingEnded>降落瞄准已结束。</RimWorldAccess.Compat.Vf.LandingTargetingEnded>
+
+  <!-- Vehicle Framework health tab -->
+  <!-- VfHealthTabAdapter / VfHealthTabCompat: text for Vehicle Framework's Health tab
+       (ITab_Vehicle_Health), which shows a vehicle's production date, per-category
+       stat readouts and a components table of health, efficiency, armor ratings and
+       hazard indicators. HealthTab mirrors VF_TabComponents ("Health"), verified
+       against the mod's own Languages/English/Keyed XML. HealthOverview and
+       AgeChronological reuse Core's own keys directly (check_l10n_keys.py can verify
+       them there). VF's own keys cannot be reused as literal Translate() calls the
+       same way, since Vehicle Framework does not ship inside the local game install's
+       Core/DLC Keyed XML tree the ratchet scans, so calling them would either go
+       unchecked (without a game dir) or be flagged as fake (with one), exactly like
+       VfStashDialogAdapter's documented rationale. -->
+  <RimWorldAccess.Compat.Vf.HealthTab>健康</RimWorldAccess.Compat.Vf.HealthTab>
+  <RimWorldAccess.Compat.Vf.HealthProducedLine>制造日期: {0}。</RimWorldAccess.Compat.Vf.HealthProducedLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentsSection>部件</RimWorldAccess.Compat.Vf.HealthComponentsSection>
+  <RimWorldAccess.Compat.Vf.HealthStatLine>{0}: {1}</RimWorldAccess.Compat.Vf.HealthStatLine>
+  <RimWorldAccess.Compat.Vf.HealthStatBaseLine>基础值: {0}。</RimWorldAccess.Compat.Vf.HealthStatBaseLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentSection>{0}: {1} 耐久度</RimWorldAccess.Compat.Vf.HealthComponentSection>
+  <RimWorldAccess.Compat.Vf.HealthComponentHealthLine>耐久度: {0}/{1}。</RimWorldAccess.Compat.Vf.HealthComponentHealthLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentEfficiencyLine>效率: {0}。影响 {1}。</RimWorldAccess.Compat.Vf.HealthComponentEfficiencyLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentEfficiencyNone>效率: 不适用。</RimWorldAccess.Compat.Vf.HealthComponentEfficiencyNone>
+  <RimWorldAccess.Compat.Vf.HealthComponentArmorLine>{0}: {1}。</RimWorldAccess.Compat.Vf.HealthComponentArmorLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentArmorUpgradedLine>{0}: {1}。基础护甲值: {2}。</RimWorldAccess.Compat.Vf.HealthComponentArmorUpgradedLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentIndicatorLine>指示器: {0}。</RimWorldAccess.Compat.Vf.HealthComponentIndicatorLine>
+
+  <!-- Vehicle Framework info card tab (VfInfoCardTabAdapter). Covers a tab that renders
+       blank for vehicles specifically (e.g. the Records tab has no vehicle-relevant rows so
+       the Records case falls through). The tab titles and every stat row come from
+       VF's own report, so the only string needed here is the one that says a tab a
+       sighted player sees rendered blank really is blank. -->
+  <RimWorldAccess.Compat.Vf.InfoCardTabBlank>此选项卡对载具而言为空。</RimWorldAccess.Compat.Vf.InfoCardTabBlank>
+
+  <!-- Vehicle Framework cargo tab -->
+  <!-- VfCargoTabAdapter / VfCargoTabCompat: text for Vehicle Framework's cargo tab
+       (ITab_Vehicle_Cargo) and its base airdrop-container storage tab
+       (ITab_Airdrop_Container). CargoTab mirrors VF_TabCargo ("Cargo"), verified
+       against the mod's own Languages/English/Keyed XML; the airdrop tab reuses
+       Core's own TabStorage ("Storage") directly since its labelKey resolves to
+       exactly that. MassCarried, DropThing and TabStorage are Core keys reused
+       directly (check_l10n_keys.py can verify them there); the drop-all label is
+       baked into CargoDropAllAction because vanilla's EjectAll key ships with
+       Biotech, not Core, and would read as a raw key without that DLC. VF's own
+       keys cannot be reused as literal Translate() calls the same way, since
+       Vehicle Framework does not ship inside the local game install's Core/DLC
+       Keyed XML tree the ratchet scans, so calling them would either go unchecked
+       (without a game dir) or be flagged as fake (with one), exactly like
+       VfStashDialogAdapter's documented rationale. -->
+  <RimWorldAccess.Compat.Vf.CargoTab>货物</RimWorldAccess.Compat.Vf.CargoTab>
+  <RimWorldAccess.Compat.Vf.CargoDropAllAction>全部弹出</RimWorldAccess.Compat.Vf.CargoDropAllAction>
+  <RimWorldAccess.Compat.Vf.CargoMarketValueLine>{0}: {1}。</RimWorldAccess.Compat.Vf.CargoMarketValueLine>
+  <RimWorldAccess.Compat.Vf.CargoMassLine>载重: {0}。</RimWorldAccess.Compat.Vf.CargoMassLine>
+  <RimWorldAccess.Compat.Vf.CargoHitPointsLine>耐久度: {0}/{1}。</RimWorldAccess.Compat.Vf.CargoHitPointsLine>
+  <RimWorldAccess.Compat.Vf.CargoPendingRow>{0} x{1}，尚未装载</RimWorldAccess.Compat.Vf.CargoPendingRow>
+  <RimWorldAccess.Compat.Vf.CargoEmpty>未储存任何物品。</RimWorldAccess.Compat.Vf.CargoEmpty>
+  <RimWorldAccess.Compat.Vf.CargoDropped>已丢弃 {0}。</RimWorldAccess.Compat.Vf.CargoDropped>
+  <RimWorldAccess.Compat.Vf.CargoDropFailed>无法丢弃 {0}。</RimWorldAccess.Compat.Vf.CargoDropFailed>
+  <RimWorldAccess.Compat.Vf.CargoDroppedAll>所有货物已丢弃。</RimWorldAccess.Compat.Vf.CargoDroppedAll>
+  <RimWorldAccess.Compat.Vf.CargoDropAllFailed>无法丢弃货物。</RimWorldAccess.Compat.Vf.CargoDropAllFailed>
+
+  <!-- VfVehicleActionsCompat / VfRenameDialogScope: the vehicle inspect pane's Rename and
+       Recolor icon buttons (VehiclePawn_Rendering.DoInspectPaneButtons) as inspection
+       actions, and the Dialog_GiveVehicleName rename dialog. -->
+  <RimWorldAccess.Compat.Vf.RenameCategory>重命名</RimWorldAccess.Compat.Vf.RenameCategory>
+  <RimWorldAccess.Compat.Vf.RecolorCategory>重新上色</RimWorldAccess.Compat.Vf.RecolorCategory>
+  <RimWorldAccess.Compat.Vf.RecolorUnavailable>此载具不支持重新上色。</RimWorldAccess.Compat.Vf.RecolorUnavailable>
+  <RimWorldAccess.Compat.Vf.VehicleActionFailed>操作失败。</RimWorldAccess.Compat.Vf.VehicleActionFailed>
+  <RimWorldAccess.Compat.Vf.RenameOkFallback>确定</RimWorldAccess.Compat.Vf.RenameOkFallback>
+  <RimWorldAccess.Compat.Vf.RenameRemoveFallback>移除名称</RimWorldAccess.Compat.Vf.RenameRemoveFallback>
+
+  <!-- VfPainterScope / VfPainterCompat: Vehicle Framework's Dialog_VehiclePainter (opened by
+       the "VF Recolor" inspection action): color slots, hue/saturation/brightness and hex
+       editing, pattern/skin selection, palettes, and pattern placement sliders. -->
+  <RimWorldAccess.Compat.Vf.PainterOpen>{0} 上色器。{1} 种图案可用，20 个调色板。</RimWorldAccess.Compat.Vf.PainterOpen>
+  <RimWorldAccess.Compat.Vf.PainterColorsRegion>颜色</RimWorldAccess.Compat.Vf.PainterColorsRegion>
+  <RimWorldAccess.Compat.Vf.PainterAdjustRegion>调整颜色</RimWorldAccess.Compat.Vf.PainterAdjustRegion>
+  <RimWorldAccess.Compat.Vf.PainterPatternsRegion>图案</RimWorldAccess.Compat.Vf.PainterPatternsRegion>
+  <RimWorldAccess.Compat.Vf.PainterPalettesRegion>调色板</RimWorldAccess.Compat.Vf.PainterPalettesRegion>
+  <RimWorldAccess.Compat.Vf.PainterPlacementRegion>图案位置</RimWorldAccess.Compat.Vf.PainterPlacementRegion>
+  <RimWorldAccess.Compat.Vf.PainterColorOne>颜色一</RimWorldAccess.Compat.Vf.PainterColorOne>
+  <RimWorldAccess.Compat.Vf.PainterColorTwo>颜色二</RimWorldAccess.Compat.Vf.PainterColorTwo>
+  <RimWorldAccess.Compat.Vf.PainterColorThree>颜色三</RimWorldAccess.Compat.Vf.PainterColorThree>
+  <RimWorldAccess.Compat.Vf.PainterSelectedSuffix>，已选择</RimWorldAccess.Compat.Vf.PainterSelectedSuffix>
+  <RimWorldAccess.Compat.Vf.PainterSlotSelected>已选择 {0}。</RimWorldAccess.Compat.Vf.PainterSlotSelected>
+  <RimWorldAccess.Compat.Vf.PainterSwapColors>交换颜色</RimWorldAccess.Compat.Vf.PainterSwapColors>
+  <RimWorldAccess.Compat.Vf.PainterSwapped>颜色已轮换。颜色一现为 {0}，颜色二为 {1}，颜色三为 {2}。</RimWorldAccess.Compat.Vf.PainterSwapped>
+  <RimWorldAccess.Compat.Vf.PainterHexRow>十六进制: {0}</RimWorldAccess.Compat.Vf.PainterHexRow>
+  <RimWorldAccess.Compat.Vf.PainterHexFieldLabel>十六进制</RimWorldAccess.Compat.Vf.PainterHexFieldLabel>
+  <RimWorldAccess.Compat.Vf.PainterInvalidHex>不是有效的十六进制颜色。</RimWorldAccess.Compat.Vf.PainterInvalidHex>
+  <RimWorldAccess.Compat.Vf.PainterHue>色相</RimWorldAccess.Compat.Vf.PainterHue>
+  <RimWorldAccess.Compat.Vf.PainterSaturation>饱和度</RimWorldAccess.Compat.Vf.PainterSaturation>
+  <RimWorldAccess.Compat.Vf.PainterBrightness>明度</RimWorldAccess.Compat.Vf.PainterBrightness>
+  <RimWorldAccess.Compat.Vf.PainterShowingPatterns>显示: 图案</RimWorldAccess.Compat.Vf.PainterShowingPatterns>
+  <RimWorldAccess.Compat.Vf.PainterShowingSkins>显示: 皮肤</RimWorldAccess.Compat.Vf.PainterShowingSkins>
+  <RimWorldAccess.Compat.Vf.PainterSourceSwitched>{0}。{1} 种可用。</RimWorldAccess.Compat.Vf.PainterSourceSwitched>
+  <RimWorldAccess.Compat.Vf.PainterPatternSelected>已选择 {0}。</RimWorldAccess.Compat.Vf.PainterPatternSelected>
+  <RimWorldAccess.Compat.Vf.PainterPaletteRow>调色板 {0}: {1}，{2}，{3}</RimWorldAccess.Compat.Vf.PainterPaletteRow>
+  <RimWorldAccess.Compat.Vf.PainterPaletteApplied>已应用调色板 {0}: {1}，{2}，{3}。</RimWorldAccess.Compat.Vf.PainterPaletteApplied>
+  <RimWorldAccess.Compat.Vf.PainterPaletteDeselected>已取消选择调色板 {0}。</RimWorldAccess.Compat.Vf.PainterPaletteDeselected>
+  <RimWorldAccess.Compat.Vf.PainterSliderUnavailable>{0}: 此图案不支持。</RimWorldAccess.Compat.Vf.PainterSliderUnavailable>
+
+  <!-- VfRoutePlannerCompat / VfRoutePlannerScope: Vehicle Framework's standalone vehicle route
+       planner (Vehicles.World.VehicleRoutePlanner), opened from the world map. Reuses the vanilla
+       route planner's own RimWorldAccess.Route.* keys wherever the phrasing fits (no speed-source
+       argument, since VF has no single "caravan whose speed" concept); these VF-specific keys
+       cover only the ETA phrasing that would otherwise need one. -->
+  <RimWorldAccess.Compat.Vf.RoutePlannerOpenerInstructions>载具路线规划器已激活。空格添加路径点，Shift+空格移除光标处的路径点，E 查看旅行时间，Escape 退出。</RimWorldAccess.Compat.Vf.RoutePlannerOpenerInstructions>
+  <RimWorldAccess.Compat.Vf.RoutePlannerWaypointAddedWithEta>已添加路径点 {0}。距目的地 {1} 天。</RimWorldAccess.Compat.Vf.RoutePlannerWaypointAddedWithEta>
+  <RimWorldAccess.Compat.Vf.RoutePlannerWaypointRemovedWithEta>已移除路径点 {0}。剩余 {1} 个路径点。距目的地 {2} 天。</RimWorldAccess.Compat.Vf.RoutePlannerWaypointRemovedWithEta>
+  <RimWorldAccess.Compat.Vf.RoutePlannerEta>预计旅行时间: {0} 天。</RimWorldAccess.Compat.Vf.RoutePlannerEta>
+  <RimWorldAccess.Compat.Vf.RoutePlannerSummary>{0} 个路径点。{1}</RimWorldAccess.Compat.Vf.RoutePlannerSummary>
+
+  <!-- VfVehicleSelectorCompat / VfVehicleSelectorScope: Vehicle Framework's
+       Dialog_VehicleSelector, the vehicle picker the route planner's world-map button opens. -->
+  <RimWorldAccess.Compat.Vf.SelectorRegionMode>选择模式</RimWorldAccess.Compat.Vf.SelectorRegionMode>
+  <RimWorldAccess.Compat.Vf.SelectorRegionVehicles>载具</RimWorldAccess.Compat.Vf.SelectorRegionVehicles>
+  <RimWorldAccess.Compat.Vf.SelectorModeDefs>选择载具类型</RimWorldAccess.Compat.Vf.SelectorModeDefs>
+  <RimWorldAccess.Compat.Vf.SelectorModeVehicles>选择地图上的载具</RimWorldAccess.Compat.Vf.SelectorModeVehicles>
+  <RimWorldAccess.Compat.Vf.SelectorModeSwitched>{0}。{1} 个可用。</RimWorldAccess.Compat.Vf.SelectorModeSwitched>
+  <RimWorldAccess.Compat.Vf.SelectorSelected>已选择 {0}。</RimWorldAccess.Compat.Vf.SelectorSelected>
+  <RimWorldAccess.Compat.Vf.SelectorDeselected>已取消选择 {0}。</RimWorldAccess.Compat.Vf.SelectorDeselected>
+  <RimWorldAccess.Compat.Vf.SelectorIncompatibleType>与已选载具类型不兼容。</RimWorldAccess.Compat.Vf.SelectorIncompatibleType>
+
+  <!-- VefProcessorTabAdapter / VefProcessorTabCompat: text for Vanilla Expanded
+       Framework's PipeSystem processor tab (PipeSystem.ITab_Processor), the
+       bill-stack-style "Processes" editor on advanced resource processors.
+       PipeSystem ships in a Workshop mod, invisible to check_l10n_keys.py — all
+       PipeSystem_* strings referenced below (PipeSystem_Processes "Processes",
+       PipeSystem_AddProcess "Add process", PipeSystem_CopyProcesses "Copy
+       processes", PipeSystem_PasteProcesses "Paste processes", PipeSystem_NoProcess
+       "No current process", and the reorder/suspend/delete tooltip keys) are baked
+       into this mod's own keys instead of called as PipeSystem literal Translate()
+       keys, exactly like VfStashDialogAdapter's documented rationale. Core keys
+       (Forever, and the BillRepeatModeDef labels arriving through
+       RepeatLabel/RepeatInfoText as live game data) come through unmodified, not
+       literal Translate calls of our own. -->
+  <RimWorldAccess.Compat.Vef.ProcessorTab>流程</RimWorldAccess.Compat.Vef.ProcessorTab>
+  <RimWorldAccess.Compat.Vef.ProcessorAddProcessAction>添加流程</RimWorldAccess.Compat.Vef.ProcessorAddProcessAction>
+  <RimWorldAccess.Compat.Vef.ProcessorSettingsAction>设置</RimWorldAccess.Compat.Vef.ProcessorSettingsAction>
+  <RimWorldAccess.Compat.Vef.ProcessorCopyAction>复制流程</RimWorldAccess.Compat.Vef.ProcessorCopyAction>
+  <RimWorldAccess.Compat.Vef.ProcessorPasteAction>粘贴流程</RimWorldAccess.Compat.Vef.ProcessorPasteAction>
+  <RimWorldAccess.Compat.Vef.ProcessorCopied>流程已复制。</RimWorldAccess.Compat.Vef.ProcessorCopied>
+  <RimWorldAccess.Compat.Vef.ProcessorPasted>流程已粘贴。</RimWorldAccess.Compat.Vef.ProcessorPasted>
+  <RimWorldAccess.Compat.Vef.ProcessorNothingToPaste>此建筑没有可粘贴的内容。</RimWorldAccess.Compat.Vef.ProcessorNothingToPaste>
+  <RimWorldAccess.Compat.Vef.ProcessorCurrentLine>当前流程: {0}，已完成 {1}。</RimWorldAccess.Compat.Vef.ProcessorCurrentLine>
+  <RimWorldAccess.Compat.Vef.ProcessorNoProcess>当前没有流程。</RimWorldAccess.Compat.Vef.ProcessorNoProcess>
+  <RimWorldAccess.Compat.Vef.ProcessorCancelCurrentAction>取消当前流程</RimWorldAccess.Compat.Vef.ProcessorCancelCurrentAction>
+  <RimWorldAccess.Compat.Vef.ProcessorCancelled>流程已取消。</RimWorldAccess.Compat.Vef.ProcessorCancelled>
+  <RimWorldAccess.Compat.Vef.ProcessorRepeatLine>{0}: {1}。</RimWorldAccess.Compat.Vef.ProcessorRepeatLine>
+  <RimWorldAccess.Compat.Vef.ProcessorSuspendedClause>已暂停</RimWorldAccess.Compat.Vef.ProcessorSuspendedClause>
+  <RimWorldAccess.Compat.Vef.ProcessorInactiveClause>未激活</RimWorldAccess.Compat.Vef.ProcessorInactiveClause>
+  <RimWorldAccess.Compat.Vef.ProcessorMissingIngredientsClause>缺少原料</RimWorldAccess.Compat.Vef.ProcessorMissingIngredientsClause>
+  <RimWorldAccess.Compat.Vef.ProcessorIncreaseAction>增加数量</RimWorldAccess.Compat.Vef.ProcessorIncreaseAction>
+  <RimWorldAccess.Compat.Vef.ProcessorDecreaseAction>减少数量</RimWorldAccess.Compat.Vef.ProcessorDecreaseAction>
+  <RimWorldAccess.Compat.Vef.ProcessorCountSet>重复次数已设为 {0}。</RimWorldAccess.Compat.Vef.ProcessorCountSet>
+  <RimWorldAccess.Compat.Vef.ProcessorQualityAction>选择品质</RimWorldAccess.Compat.Vef.ProcessorQualityAction>
+  <RimWorldAccess.Compat.Vef.ProcessorSuspendAction>暂停</RimWorldAccess.Compat.Vef.ProcessorSuspendAction>
+  <RimWorldAccess.Compat.Vef.ProcessorUnsuspendAction>取消暂停</RimWorldAccess.Compat.Vef.ProcessorUnsuspendAction>
+  <RimWorldAccess.Compat.Vef.ProcessorSuspended>流程已暂停。</RimWorldAccess.Compat.Vef.ProcessorSuspended>
+  <RimWorldAccess.Compat.Vef.ProcessorResumed>流程已恢复。</RimWorldAccess.Compat.Vef.ProcessorResumed>
+  <RimWorldAccess.Compat.Vef.ProcessorMoveUpAction>上移</RimWorldAccess.Compat.Vef.ProcessorMoveUpAction>
+  <RimWorldAccess.Compat.Vef.ProcessorMoveDownAction>下移</RimWorldAccess.Compat.Vef.ProcessorMoveDownAction>
+  <RimWorldAccess.Compat.Vef.ProcessorMovedUp>已上移。</RimWorldAccess.Compat.Vef.ProcessorMovedUp>
+  <RimWorldAccess.Compat.Vef.ProcessorMovedDown>已下移。</RimWorldAccess.Compat.Vef.ProcessorMovedDown>
+  <RimWorldAccess.Compat.Vef.ProcessorDeleteAction>删除流程</RimWorldAccess.Compat.Vef.ProcessorDeleteAction>
+  <RimWorldAccess.Compat.Vef.ProcessorDeleted>流程已删除。</RimWorldAccess.Compat.Vef.ProcessorDeleted>
+  <RimWorldAccess.Compat.Vef.ProcessorActionFailed>操作失败。</RimWorldAccess.Compat.Vef.ProcessorActionFailed>
+
+  <!-- VefHireCompat / VefHireScope: text for Vanilla Expanded Framework's mercenary-hiring
+       dialog (VEF.Planet.Dialog_Hire), a quantity configurator with one region per hireable
+       faction plus a contract-terms region. Same fake-key ratchet rationale as the other Vef
+       blocks above: check_l10n_keys.py only verifies keys against Core/DLC Keyed XML under the
+       local game install, so calling VEF's OWN Translate keys directly would build-fail as
+       unverifiable "fake" keys even though they resolve fine at runtime when VEF is loaded. -->
+  <RimWorldAccess.Compat.Vef.HireEditorOpen>{0}。左右方向键调整数量；按回车键输入精确数字。</RimWorldAccess.Compat.Vef.HireEditorOpen>
+  <RimWorldAccess.Compat.Vef.HireTermsRegion>合同条款</RimWorldAccess.Compat.Vef.HireTermsRegion>
+  <RimWorldAccess.Compat.Vef.HireFactionLockedRegion>{0}，不可用，已选择其他公司</RimWorldAccess.Compat.Vef.HireFactionLockedRegion>
+  <RimWorldAccess.Compat.Vef.HireDays>合同期限（天）</RimWorldAccess.Compat.Vef.HireDays>
+  <RimWorldAccess.Compat.Vef.HireBaseCost>基础费用</RimWorldAccess.Compat.Vef.HireBaseCost>
+  <RimWorldAccess.Compat.Vef.HireRiskMultiplier>风险附加费</RimWorldAccess.Compat.Vef.HireRiskMultiplier>
+  <RimWorldAccess.Compat.Vef.HireTotalPrice>总价</RimWorldAccess.Compat.Vef.HireTotalPrice>
+  <RimWorldAccess.Compat.Vef.HireAvailableSilver>可用白银</RimWorldAccess.Compat.Vef.HireAvailableSilver>
+  <RimWorldAccess.Compat.Vef.HireCombatPower>战斗力 {0}</RimWorldAccess.Compat.Vef.HireCombatPower>
+  <RimWorldAccess.Compat.Vef.HireLockedReason>不可用，已选择其他公司</RimWorldAccess.Compat.Vef.HireLockedReason>
+  <RimWorldAccess.Compat.Vef.HireRunningTotal>总计 {0}</RimWorldAccess.Compat.Vef.HireRunningTotal>
+  <RimWorldAccess.Compat.Vef.HireOverBudget>超出预算</RimWorldAccess.Compat.Vef.HireOverBudget>
+  <RimWorldAccess.Compat.Vef.HireNotEnoughSilver>白银不足。</RimWorldAccess.Compat.Vef.HireNotEnoughSilver>
+
+  <!-- VefContractsCompat / VefContractsScope: text for Vanilla Expanded Framework's
+       Window_Contracts (the master/detail contract board opened from a comms console). Same
+       fake-key ratchet rationale as the blocks above. The detail pane reuses the mod's own vanilla
+       quest-detail wording (QuestMenuHelper/QuestRewardHelper); only the VEF-specific cost and
+       unmet-requirement lines are new keys here. The Accept and Close button labels reuse
+       vanilla's own "AcceptQuest"/"CloseButton" keys directly rather than duplicating them. -->
+  <RimWorldAccess.Compat.Vef.ContractsOpen>合同板。有 {0} 份合同可用。使用方向键浏览列表并按回车键选择，然后按 Tab 查看详情。</RimWorldAccess.Compat.Vef.ContractsOpen>
+  <RimWorldAccess.Compat.Vef.ContractsListRegion>可用合同</RimWorldAccess.Compat.Vef.ContractsListRegion>
+  <RimWorldAccess.Compat.Vef.ContractsDetailRegion>合同详情</RimWorldAccess.Compat.Vef.ContractsDetailRegion>
+  <RimWorldAccess.Compat.Vef.ContractsNoSelection>未选择合同。</RimWorldAccess.Compat.Vef.ContractsNoSelection>
+  <RimWorldAccess.Compat.Vef.ContractsSelected>已选择 {0}。{1} 行详情。</RimWorldAccess.Compat.Vef.ContractsSelected>
+  <RimWorldAccess.Compat.Vef.ContractsFrom>来自 {0}</RimWorldAccess.Compat.Vef.ContractsFrom>
+  <RimWorldAccess.Compat.Vef.ContractsRewards>奖励: {0}</RimWorldAccess.Compat.Vef.ContractsRewards>
+  <RimWorldAccess.Compat.Vef.ContractsCost>费用: {0}</RimWorldAccess.Compat.Vef.ContractsCost>
+  <RimWorldAccess.Compat.Vef.ContractsRequirement>未满足要求: {0}</RimWorldAccess.Compat.Vef.ContractsRequirement>
+  <RimWorldAccess.Compat.Vef.ContractsInfoCardHint>按回车键查看信息卡。</RimWorldAccess.Compat.Vef.ContractsInfoCardHint>
+  <RimWorldAccess.Compat.Vef.ContractsCannotAccept>此合同目前无法接受。</RimWorldAccess.Compat.Vef.ContractsCannotAccept>
+
+  <!-- VefGraphicCustomizationCompat / VefGraphicCustomizationScope: text for Vanilla Expanded
+       Framework's Dialog_GraphicCustomization (the appearance editor opened from an item's float
+       menu). The dialog's live preview image has no accessible substitute other than naming the
+       current variant of each appearance part; Confirm/Cancel reuse vanilla's own "Confirm"/
+       "CancelButton" keys directly rather than duplicating them. -->
+  <RimWorldAccess.Compat.Vef.GraphicOpen>正在自定义 {0}。每一行是一个外观部位；按回车键从列表中选择外观。可通过按钮随机化、确认或取消。</RimWorldAccess.Compat.Vef.GraphicOpen>
+  <RimWorldAccess.Compat.Vef.GraphicAppearanceRegion>外观</RimWorldAccess.Compat.Vef.GraphicAppearanceRegion>
+  <RimWorldAccess.Compat.Vef.GraphicNameRow>名称</RimWorldAccess.Compat.Vef.GraphicNameRow>
+  <RimWorldAccess.Compat.Vef.GraphicVariantHint>按回车键从列表中选择。</RimWorldAccess.Compat.Vef.GraphicVariantHint>
+  <RimWorldAccess.Compat.Vef.GraphicRandomize>随机</RimWorldAccess.Compat.Vef.GraphicRandomize>
+  <RimWorldAccess.Compat.Vef.GraphicRandomized>外观已随机化。</RimWorldAccess.Compat.Vef.GraphicRandomized>
+
+  <!-- HospitalityCompat / ModifyNumberGizmoHandler: Hospitality's guest-bed rental fee
+       and vending-machine price/threshold gizmos (Gizmo_GuestBed, Gizmo_VendingMachine,
+       Gizmo_VendingMachineContent). These never call the mod's own translation keys
+       directly (that would build-fail as an unverifiable fake key even though it
+       resolves fine at runtime with Hospitality loaded), so status/title text is
+       composed fresh here from the mod's own numeric values. -->
+  <RimWorldAccess.Compat.Hospitality.BedFeeStatus>租金: {0}。吸引力: {1}。</RimWorldAccess.Compat.Hospitality.BedFeeStatus>
+  <RimWorldAccess.Compat.Hospitality.VendingPriceStatus>价格: {0}。</RimWorldAccess.Compat.Hospitality.VendingPriceStatus>
+  <RimWorldAccess.Compat.Hospitality.VendingContentStatus>空置阈值: {0}。库存: {1}。</RimWorldAccess.Compat.Hospitality.VendingContentStatus>
+  <RimWorldAccess.Compat.Hospitality.BedRentalFeeTitle>租金</RimWorldAccess.Compat.Hospitality.BedRentalFeeTitle>
+  <RimWorldAccess.Compat.Hospitality.VendingPriceTitle>价格</RimWorldAccess.Compat.Hospitality.VendingPriceTitle>
+  <RimWorldAccess.Compat.Hospitality.VendingThresholdTitle>空置阈值</RimWorldAccess.Compat.Hospitality.VendingThresholdTitle>
+  <RimWorldAccess.Compat.Hospitality.ResetRentalFee>将租金重置为默认值</RimWorldAccess.Compat.Hospitality.ResetRentalFee>
+  <RimWorldAccess.Compat.Hospitality.SetAutoPrice>设为自动定价</RimWorldAccess.Compat.Hospitality.SetAutoPrice>
+  <RimWorldAccess.Compat.Hospitality.SetThresholdAuto>将阈值设为价格的十倍</RimWorldAccess.Compat.Hospitality.SetThresholdAuto>
+  <RimWorldAccess.Compat.Hospitality.RoyalTitlesSatisfied>此床铺满足的皇室头衔: {0}。</RimWorldAccess.Compat.Hospitality.RoyalTitlesSatisfied>
+  <RimWorldAccess.Compat.Hospitality.NoRoyalTitlesSatisfied>此床铺不满足任何皇室头衔。</RimWorldAccess.Compat.Hospitality.NoRoyalTitlesSatisfied>
+
+  <!-- CashRegisterCompat: CashRegister's register-radius gizmo (Gizmo_Radius), served
+       by the same ModifyNumberGizmoHandler as the Hospitality keys above. -->
+  <RimWorldAccess.Compat.CashRegister.RadiusStatus>半径: {0}。包含房间: {1}。</RimWorldAccess.Compat.CashRegister.RadiusStatus>
+  <RimWorldAccess.Compat.CashRegister.RadiusTitle>半径</RimWorldAccess.Compat.CashRegister.RadiusTitle>
+  <RimWorldAccess.Compat.CashRegister.ToggleIncludeRoom>切换是否包含房间</RimWorldAccess.Compat.CashRegister.ToggleIncludeRoom>
+
+  <!-- CashRegisterShiftsAdapter: the Shifts tab's staff/hour scheduling grid,
+       served as a structured tree instead of the tab's own invisible bare
+       GUI.DrawTexture hour cells. Wording baked from CashRegister's own
+       English strings ("TabRegisterShifts" = "Shifts", "TabRegisterShiftsEmpty"
+       = "No one") since those keys cannot be called via Translate() from our
+       C# — see the adapter's class remarks. -->
+  <RimWorldAccess.Compat.CashRegisterShifts.TabName>班次</RimWorldAccess.Compat.CashRegisterShifts.TabName>
+  <RimWorldAccess.Compat.CashRegisterShifts.ShiftLabel>班次 {0}。{1}。时段: {2}。</RimWorldAccess.Compat.CashRegisterShifts.ShiftLabel>
+  <RimWorldAccess.Compat.CashRegisterShifts.NoOne>无人</RimWorldAccess.Compat.CashRegisterShifts.NoOne>
+  <RimWorldAccess.Compat.CashRegisterShifts.HoursNone>无</RimWorldAccess.Compat.CashRegisterShifts.HoursNone>
+  <RimWorldAccess.Compat.CashRegisterShifts.HoursAllDay>全天</RimWorldAccess.Compat.CashRegisterShifts.HoursAllDay>
+  <RimWorldAccess.Compat.CashRegisterShifts.HourRangeSpan>{0} 至 {1}</RimWorldAccess.Compat.CashRegisterShifts.HourRangeSpan>
+  <RimWorldAccess.Compat.CashRegisterShifts.HourSingleSpan>{0}</RimWorldAccess.Compat.CashRegisterShifts.HourSingleSpan>
+  <RimWorldAccess.Compat.CashRegisterShifts.AssignedLine>已分配: {0}。</RimWorldAccess.Compat.CashRegisterShifts.AssignedLine>
+  <RimWorldAccess.Compat.CashRegisterShifts.AssignStaffAction>分配员工</RimWorldAccess.Compat.CashRegisterShifts.AssignStaffAction>
+  <RimWorldAccess.Compat.CashRegisterShifts.DeleteShiftAction>删除班次</RimWorldAccess.Compat.CashRegisterShifts.DeleteShiftAction>
+  <RimWorldAccess.Compat.CashRegisterShifts.AddShiftAction>添加班次</RimWorldAccess.Compat.CashRegisterShifts.AddShiftAction>
+  <RimWorldAccess.Compat.CashRegisterShifts.HourRow>第 {0} 小时: {1}</RimWorldAccess.Compat.CashRegisterShifts.HourRow>
+  <RimWorldAccess.Compat.CashRegisterShifts.HourToggled>{0}。</RimWorldAccess.Compat.CashRegisterShifts.HourToggled>
+  <RimWorldAccess.Compat.CashRegisterShifts.ShiftDeleted>班次已删除。</RimWorldAccess.Compat.CashRegisterShifts.ShiftDeleted>
+  <RimWorldAccess.Compat.CashRegisterShifts.ShiftAdded>班次已添加。</RimWorldAccess.Compat.CashRegisterShifts.ShiftAdded>
+  <RimWorldAccess.Compat.CashRegisterShifts.ShiftCapReached>此收银台已达到最多 {0} 个班次的上限。</RimWorldAccess.Compat.CashRegisterShifts.ShiftCapReached>
+  <RimWorldAccess.Compat.CashRegisterShifts.ActionFailed>操作失败。</RimWorldAccess.Compat.CashRegisterShifts.ActionFailed>
+
+  <!-- HospitalityAreaColumnHandler: the Guests table's area-of-accommodation
+       and shopping-area columns. Both null-area words are ours rather than
+       calling either vanilla's or the mod's own Translate() key on their
+       behalf (the mod's own "AreaNoShopping" reads "No shopping",
+       verified against its Languages/English/Keyed/Hospitality.xml). -->
+  <RimWorldAccess.Compat.Hospitality.NoAccommodationArea>不限</RimWorldAccess.Compat.Hospitality.NoAccommodationArea>
+  <RimWorldAccess.Compat.Hospitality.NoShoppingArea>不可购物</RimWorldAccess.Compat.Hospitality.NoShoppingArea>
+
+  <!-- JecsAbilityCompat / JecsAbilityCommandHandler: JecsTools' AbilityUser
+       framework (RimWorld of Magic spells and any other mod built on it).
+       CannotCastNow is the generic fallback when TryCastAbility refuses
+       without a reason of its own; Recharging is the live cooldown readout,
+       matching the mod's own gizmo cooldown fill. -->
+  <RimWorldAccess.Compat.JecsAbility.CannotCastNow>该能力目前无法使用。</RimWorldAccess.Compat.JecsAbility.CannotCastNow>
+  <RimWorldAccess.Compat.JecsAbility.Recharging>充能中，剩余 {0} 秒。</RimWorldAccess.Compat.JecsAbility.Recharging>
+
+  <!-- RwomClassCardAdapter: RimWorld of Magic's magic/might class card
+       (ITab_Pawn_Magic / ITab_Pawn_Might), read path. The tab's own category
+       label is resolved live from its labelKey (TabRegistry pattern), so no
+       "Magic"/"Might" key lives here. Numeric line items mirror the mod's own
+       English wording (MagicCardUtility.InfoPane/MightCardUtility.InfoPane's
+       mana/stamina tooltip, TM_MCU_* keys) since those keys cannot be called
+       via Translate() from our C# — baked as our own per the CashRegister
+       adapters' precedent. -->
+  <RimWorldAccess.Compat.Rwom.ClassInfoSection>职业信息</RimWorldAccess.Compat.Rwom.ClassInfoSection>
+  <RimWorldAccess.Compat.Rwom.GlobalSkillsSection>全局技能</RimWorldAccess.Compat.Rwom.GlobalSkillsSection>
+  <RimWorldAccess.Compat.Rwom.LevelRow>等级: {0}。距下一级已获得 {1} / {2} 点经验。</RimWorldAccess.Compat.Rwom.LevelRow>
+  <RimWorldAccess.Compat.Rwom.AbilityPointsRow>可用技能点: {0}。</RimWorldAccess.Compat.Rwom.AbilityPointsRow>
+  <RimWorldAccess.Compat.Rwom.ManaGainRow>每 5 秒法力恢复: {0}。</RimWorldAccess.Compat.Rwom.ManaGainRow>
+  <RimWorldAccess.Compat.Rwom.ManaBaseGain>基础法力恢复: {0}。</RimWorldAccess.Compat.Rwom.ManaBaseGain>
+  <RimWorldAccess.Compat.Rwom.ManaBaseRegen>法力恢复加成: {0}。</RimWorldAccess.Compat.Rwom.ManaBaseRegen>
+  <RimWorldAccess.Compat.Rwom.ManaSurge>法力涌动: +{0}。</RimWorldAccess.Compat.Rwom.ManaSurge>
+  <RimWorldAccess.Compat.Rwom.ManaSyrrium>赛瑞姆加成: +{0}。</RimWorldAccess.Compat.Rwom.ManaSyrrium>
+  <RimWorldAccess.Compat.Rwom.ManaModifiedGain>修正后法力恢复: {0}。</RimWorldAccess.Compat.Rwom.ManaModifiedGain>
+  <RimWorldAccess.Compat.Rwom.ManaRegenBonus>精力恢复加成: +{0}。</RimWorldAccess.Compat.Rwom.ManaRegenBonus>
+  <RimWorldAccess.Compat.Rwom.ManaWeakness>法力虚弱: -{0}。</RimWorldAccess.Compat.Rwom.ManaWeakness>
+  <RimWorldAccess.Compat.Rwom.ManaMinionCost>仆从消耗: -{0}。</RimWorldAccess.Compat.Rwom.ManaMinionCost>
+  <RimWorldAccess.Compat.Rwom.ManaSpriteCost>精灵消耗: -{0}。</RimWorldAccess.Compat.Rwom.ManaSpriteCost>
+  <RimWorldAccess.Compat.Rwom.ManaUndeadCost>亡灵消耗: -{0}。</RimWorldAccess.Compat.Rwom.ManaUndeadCost>
+  <RimWorldAccess.Compat.Rwom.ManaDrain>法力流失: -{0}。</RimWorldAccess.Compat.Rwom.ManaDrain>
+  <RimWorldAccess.Compat.Rwom.ManaSickness>法力紊乱: -{0}。</RimWorldAccess.Compat.Rwom.ManaSickness>
+  <RimWorldAccess.Compat.Rwom.ManaParacyte>寄生流失: -{0}。</RimWorldAccess.Compat.Rwom.ManaParacyte>
+  <RimWorldAccess.Compat.Rwom.ManaNet>法力总消耗: {0}。</RimWorldAccess.Compat.Rwom.ManaNet>
+  <RimWorldAccess.Compat.Rwom.StaminaGainRow>每 5 秒体力恢复: {0}。</RimWorldAccess.Compat.Rwom.StaminaGainRow>
+  <RimWorldAccess.Compat.Rwom.StaminaBaseGain>基础恢复: {0}。</RimWorldAccess.Compat.Rwom.StaminaBaseGain>
+  <RimWorldAccess.Compat.Rwom.StaminaRegenAdjustment>体力恢复调整: {0}。</RimWorldAccess.Compat.Rwom.StaminaRegenAdjustment>
+  <RimWorldAccess.Compat.Rwom.SkillProgressRow>{0}: {1} / {2}。</RimWorldAccess.Compat.Rwom.SkillProgressRow>
+  <RimWorldAccess.Compat.Rwom.PointAvailableToSpend>有可用于消耗的点数。</RimWorldAccess.Compat.Rwom.PointAvailableToSpend>
+  <RimWorldAccess.Compat.Rwom.AbilitySkillPointCost>有可用于消耗的点数。消耗 {0}。</RimWorldAccess.Compat.Rwom.AbilitySkillPointCost>
+  <RimWorldAccess.Compat.Rwom.AbilityTieredState>等级 {0} / {1}。</RimWorldAccess.Compat.Rwom.AbilityTieredState>
+  <RimWorldAccess.Compat.Rwom.AbilityLevelUpCost>升级需消耗 {0} 点。</RimWorldAccess.Compat.Rwom.AbilityLevelUpCost>
+  <RimWorldAccess.Compat.Rwom.AbilityLevelUpCostOne>升级需消耗 1 点。</RimWorldAccess.Compat.Rwom.AbilityLevelUpCostOne>
+  <RimWorldAccess.Compat.Rwom.AbilityLearned>已学习。</RimWorldAccess.Compat.Rwom.AbilityLearned>
+  <RimWorldAccess.Compat.Rwom.AbilityNotLearned>未学习。学习需消耗 {0} 点。</RimWorldAccess.Compat.Rwom.AbilityNotLearned>
+  <RimWorldAccess.Compat.Rwom.AbilityNotLearnedOne>未学习。学习需消耗 1 点。</RimWorldAccess.Compat.Rwom.AbilityNotLearnedOne>
+  <RimWorldAccess.Compat.Rwom.AbilityLocked>已锁定。需使用卷轴学习。</RimWorldAccess.Compat.Rwom.AbilityLocked>
+  <RimWorldAccess.Compat.Rwom.AbilityNextLevelDescription>下一级: {0}</RimWorldAccess.Compat.Rwom.AbilityNextLevelDescription>
+  <RimWorldAccess.Compat.Rwom.AutocastOn>自动施法: 开。</RimWorldAccess.Compat.Rwom.AutocastOn>
+  <RimWorldAccess.Compat.Rwom.AutocastOff>自动施法: 关。</RimWorldAccess.Compat.Rwom.AutocastOff>
+
+  <!-- RwomClassCardAdapter part D: write-path actions (learn/level-up/skill
+       spend/autocast toggle/god-mode). -->
+  <RimWorldAccess.Compat.Rwom.GodModeLevelUpAction>职业升级</RimWorldAccess.Compat.Rwom.GodModeLevelUpAction>
+  <RimWorldAccess.Compat.Rwom.GodModeResetAction>重置职业</RimWorldAccess.Compat.Rwom.GodModeResetAction>
+  <RimWorldAccess.Compat.Rwom.ClassLeveledUp>等级 {0}。</RimWorldAccess.Compat.Rwom.ClassLeveledUp>
+  <RimWorldAccess.Compat.Rwom.ClassReset>职业已重置。</RimWorldAccess.Compat.Rwom.ClassReset>
+  <RimWorldAccess.Compat.Rwom.LearnedAnnounce>已学习 {0}。剩余 {1} 点。</RimWorldAccess.Compat.Rwom.LearnedAnnounce>
+  <RimWorldAccess.Compat.Rwom.LearnedAnnounceOne>已学习 {0}。剩余 1 点。</RimWorldAccess.Compat.Rwom.LearnedAnnounceOne>
+  <RimWorldAccess.Compat.Rwom.PointSpentAnnounce>{0} 现在为 {1} / {2} 级。剩余 {3} 点。</RimWorldAccess.Compat.Rwom.PointSpentAnnounce>
+  <RimWorldAccess.Compat.Rwom.PointSpentAnnounceOne>{0} 现在为 {1} / {2} 级。剩余 1 点。</RimWorldAccess.Compat.Rwom.PointSpentAnnounceOne>
+  <RimWorldAccess.Compat.Rwom.AutocastToggled>{1} 的自动施法: {0}。</RimWorldAccess.Compat.Rwom.AutocastToggled>
+  <RimWorldAccess.Compat.Rwom.AutocastUnchanged>自动施法未改变，{1} 仍为 {0}。请稍后重试。</RimWorldAccess.Compat.Rwom.AutocastUnchanged>
+  <RimWorldAccess.Compat.Rwom.NotEnoughPoints>点数不足。</RimWorldAccess.Compat.Rwom.NotEnoughPoints>
+  <RimWorldAccess.Compat.Rwom.ActionFailed>操作失败。</RimWorldAccess.Compat.Rwom.ActionFailed>
+
+  <!-- RwomGizmoCompat: RimWorld of Magic's autocast toggle reachable from the
+       ability gizmo itself (parity with the map-view right-click checkbox the
+       mod draws; the class card has no autocast UI of its own). -->
+  <RimWorldAccess.Compat.Rwom.AutocastStatusOn>自动施法已开启。</RimWorldAccess.Compat.Rwom.AutocastStatusOn>
+  <RimWorldAccess.Compat.Rwom.AutocastStatusOff>自动施法已关闭。</RimWorldAccess.Compat.Rwom.AutocastStatusOff>
+  <RimWorldAccess.Compat.Rwom.ToggleAutocastOn>开启自动施法</RimWorldAccess.Compat.Rwom.ToggleAutocastOn>
+  <RimWorldAccess.Compat.Rwom.ToggleAutocastOff>关闭自动施法</RimWorldAccess.Compat.Rwom.ToggleAutocastOff>
+  <RimWorldAccess.Compat.Rwom.IncitePassionSelected>已选择 {0} 用于激情煽动。</RimWorldAccess.Compat.Rwom.IncitePassionSelected>
+
+  <!-- RwomGolemTabAdapter: RimWorld of Magic's golem tab (ITab_GolemPawn /
+       ITab_GolemWorkstation). Both tabs share one translated labelKey
+       ("TabGolem"), so the two disambiguated category names live here as our
+       own keys rather than being resolved from the tab live. -->
+  <RimWorldAccess.Compat.Rwom.TabGolemPawn>魔像</RimWorldAccess.Compat.Rwom.TabGolemPawn>
+  <RimWorldAccess.Compat.Rwom.TabGolemWorkstation>魔像工作站</RimWorldAccess.Compat.Rwom.TabGolemWorkstation>
+  <RimWorldAccess.Compat.Rwom.GolemNoData>没有可用的魔像数据。</RimWorldAccess.Compat.Rwom.GolemNoData>
+  <RimWorldAccess.Compat.Rwom.GolemNameRow>名称: {0}</RimWorldAccess.Compat.Rwom.GolemNameRow>
+  <RimWorldAccess.Compat.Rwom.GolemMasterRow>主人: {0}</RimWorldAccess.Compat.Rwom.GolemMasterRow>
+  <RimWorldAccess.Compat.Rwom.GolemMasterNone>无</RimWorldAccess.Compat.Rwom.GolemMasterNone>
+  <RimWorldAccess.Compat.Rwom.GolemMasterSet>主人已设为 {0}。</RimWorldAccess.Compat.Rwom.GolemMasterSet>
+  <RimWorldAccess.Compat.Rwom.GolemAbilitiesRow>能力和工作类型</RimWorldAccess.Compat.Rwom.GolemAbilitiesRow>
+  <RimWorldAccess.Compat.Rwom.GolemAreaRow>允许区域: {0}</RimWorldAccess.Compat.Rwom.GolemAreaRow>
+  <RimWorldAccess.Compat.Rwom.GolemAreaSet>允许区域已设为 {0}。</RimWorldAccess.Compat.Rwom.GolemAreaSet>
+  <RimWorldAccess.Compat.Rwom.GolemFollowsMaster>跟随主人</RimWorldAccess.Compat.Rwom.GolemFollowsMaster>
+  <RimWorldAccess.Compat.Rwom.GolemFollowsMasterDrafted>主人被征召时跟随</RimWorldAccess.Compat.Rwom.GolemFollowsMasterDrafted>
+  <RimWorldAccess.Compat.Rwom.GolemShowDormantPosition>显示休眠位置</RimWorldAccess.Compat.Rwom.GolemShowDormantPosition>
+  <RimWorldAccess.Compat.Rwom.GolemCheckThreatPath>检查威胁路径</RimWorldAccess.Compat.Rwom.GolemCheckThreatPath>
+  <RimWorldAccess.Compat.Rwom.GolemRemainDormantWhenUpgrading>升级时保持休眠</RimWorldAccess.Compat.Rwom.GolemRemainDormantWhenUpgrading>
+  <RimWorldAccess.Compat.Rwom.GolemUseAbilitiesWhenDormant>休眠时使用能力</RimWorldAccess.Compat.Rwom.GolemUseAbilitiesWhenDormant>
+  <RimWorldAccess.Compat.Rwom.GolemToggleAnnounce>{0}: {1}。</RimWorldAccess.Compat.Rwom.GolemToggleAnnounce>
+  <RimWorldAccess.Compat.Rwom.GolemThreatRange>威胁响应范围</RimWorldAccess.Compat.Rwom.GolemThreatRange>
+  <RimWorldAccess.Compat.Rwom.GolemMinEnergyForAbilities>使用能力所需最低能量百分比</RimWorldAccess.Compat.Rwom.GolemMinEnergyForAbilities>
+  <RimWorldAccess.Compat.Rwom.GolemRestAt>休息的能量百分比</RimWorldAccess.Compat.Rwom.GolemRestAt>
+  <RimWorldAccess.Compat.Rwom.GolemWakeAt>苏醒的能量百分比</RimWorldAccess.Compat.Rwom.GolemWakeAt>
+  <RimWorldAccess.Compat.Rwom.GolemSliderSet>{0} 已设为 {1}。</RimWorldAccess.Compat.Rwom.GolemSliderSet>
+  <RimWorldAccess.Compat.Rwom.GolemUpgradesSection>升级</RimWorldAccess.Compat.Rwom.GolemUpgradesSection>
+  <RimWorldAccess.Compat.Rwom.GolemUpgradeRow>{0}: {1} / {2} 级。</RimWorldAccess.Compat.Rwom.GolemUpgradeRow>
+  <RimWorldAccess.Compat.Rwom.GolemUpgradeMaxed>已满级。</RimWorldAccess.Compat.Rwom.GolemUpgradeMaxed>
+  <RimWorldAccess.Compat.Rwom.GolemUpgradeDisabled>已禁用。</RimWorldAccess.Compat.Rwom.GolemUpgradeDisabled>
+
+  <!-- RwomGolemCompat: RimWorld of Magic's golem overview table (window,
+       columns) and its map-view energy status gizmo. Reuses
+       GolemThreatRange/GolemRestAt/GolemWakeAt/GolemMasterNone above, which
+       already carry the exact same wording for the golem tab. -->
+  <RimWorldAccess.Compat.Rwom.GolemEnergyCell>{0}%</RimWorldAccess.Compat.Rwom.GolemEnergyCell>
+  <RimWorldAccess.Compat.Rwom.GolemThreatRangeCell>{0}</RimWorldAccess.Compat.Rwom.GolemThreatRangeCell>
+  <RimWorldAccess.Compat.Rwom.GolemPercentCell>{0}%</RimWorldAccess.Compat.Rwom.GolemPercentCell>
+  <RimWorldAccess.Compat.Rwom.EnergyStatusLabel>能量状态</RimWorldAccess.Compat.Rwom.EnergyStatusLabel>
+  <RimWorldAccess.Compat.Rwom.EnergyBarFragment>{0}: {1} / {2}。</RimWorldAccess.Compat.Rwom.EnergyBarFragment>
+  <RimWorldAccess.Compat.Rwom.EnergyBarCustomClass>职业能量</RimWorldAccess.Compat.Rwom.EnergyBarCustomClass>
+  <RimWorldAccess.Compat.Rwom.EnergyBarPsionic>灵能能量</RimWorldAccess.Compat.Rwom.EnergyBarPsionic>
+  <RimWorldAccess.Compat.Rwom.EnergyBarHate>憎恨</RimWorldAccess.Compat.Rwom.EnergyBarHate>
+  <RimWorldAccess.Compat.Rwom.EnergyBarChi>气</RimWorldAccess.Compat.Rwom.EnergyBarChi>
+  <RimWorldAccess.Compat.Rwom.EnergyBarStamina>体力</RimWorldAccess.Compat.Rwom.EnergyBarStamina>
+  <RimWorldAccess.Compat.Rwom.EnergyBarBlood>血液</RimWorldAccess.Compat.Rwom.EnergyBarBlood>
+  <RimWorldAccess.Compat.Rwom.EnergyBarLight>光能</RimWorldAccess.Compat.Rwom.EnergyBarLight>
+  <RimWorldAccess.Compat.Rwom.EnergyBarMana>法力</RimWorldAccess.Compat.Rwom.EnergyBarMana>
+  <RimWorldAccess.Compat.Rwom.EnergyBarSpirit>灵魂</RimWorldAccess.Compat.Rwom.EnergyBarSpirit>
+  <RimWorldAccess.Compat.Rwom.EnergyBarNecrotic>死灵能量</RimWorldAccess.Compat.Rwom.EnergyBarNecrotic>
+
+  <!-- RwomEnchantmentAdapter: RimWorld of Magic's per-item enchantment tab
+       (read-only stat lines, tier suffix, abilities/traits) and the matching
+       gear-tab enchantment rows. TierSuffix's argument is the EnchantmentTier
+       enum's own name lowercased (a runtime value, never a literal key). -->
+  <RimWorldAccess.Compat.Rwom.TabEnchantment>附魔</RimWorldAccess.Compat.Rwom.TabEnchantment>
+  <RimWorldAccess.Compat.Rwom.EnchantTierSuffix> 品级: {0}。</RimWorldAccess.Compat.Rwom.EnchantTierSuffix>
+  <RimWorldAccess.Compat.Rwom.EnchantAbilities>能力: {0}。</RimWorldAccess.Compat.Rwom.EnchantAbilities>
+  <RimWorldAccess.Compat.Rwom.EnchantTraits>吸收的特性: {0}。</RimWorldAccess.Compat.Rwom.EnchantTraits>
+  <RimWorldAccess.Compat.Rwom.GearEnchanted>已附魔。</RimWorldAccess.Compat.Rwom.GearEnchanted>
+
+  <!-- JecsGearSlotCompat: JecsTools' CompSlotLoadable gear slots (ships
+       dormant unless that separate assembly is loaded). -->
+  <RimWorldAccess.Compat.Jecs.GearSlot>槽位 {0}: {1}</RimWorldAccess.Compat.Jecs.GearSlot>
+  <RimWorldAccess.Compat.Jecs.GearSlotEmpty>空</RimWorldAccess.Compat.Jecs.GearSlotEmpty>
+
+  <!-- HugsLibNewsScope: HugsLib's update-news dialog (Dialog_UpdateFeatures /
+       Dialog_UpdateFeaturesFiltered), which auto-opens whenever an installed
+       HugsLib mod's version advances. -->
+  <RimWorldAccess.Compat.HugsLib.NewsRegion>更新公告</RimWorldAccess.Compat.HugsLib.NewsRegion>
+  <RimWorldAccess.Compat.HugsLib.NewsOpened>更新公告。{0} 条。</RimWorldAccess.Compat.HugsLib.NewsOpened>
+  <RimWorldAccess.Compat.HugsLib.NewsEntryTitle>{0} 版本 {1}</RimWorldAccess.Compat.HugsLib.NewsEntryTitle>
+  <RimWorldAccess.Compat.HugsLib.NewsImage>图片。</RimWorldAccess.Compat.HugsLib.NewsImage>
+  <RimWorldAccess.Compat.HugsLib.NewsCaption>说明: {0}</RimWorldAccess.Compat.HugsLib.NewsCaption>
+  <RimWorldAccess.Compat.HugsLib.NewsIgnoreToggle>不再显示来自 {0} 的公告</RimWorldAccess.Compat.HugsLib.NewsIgnoreToggle>
+  <RimWorldAccess.Compat.HugsLib.NewsIgnoreConfirmText>是否停止显示来自 {0} 的更新公告？</RimWorldAccess.Compat.HugsLib.NewsIgnoreConfirmText>
+  <RimWorldAccess.Compat.HugsLib.NewsIgnoreConfirmTitle>忽略模组公告</RimWorldAccess.Compat.HugsLib.NewsIgnoreConfirmTitle>
+  <RimWorldAccess.Compat.HugsLib.NewsLink>打开链接: {0}</RimWorldAccess.Compat.HugsLib.NewsLink>
+  <RimWorldAccess.Compat.HugsLib.NewsLinkOpened>已在浏览器中打开。</RimWorldAccess.Compat.HugsLib.NewsLinkOpened>
+  <RimWorldAccess.Compat.HugsLib.NewsFilter>筛选显示的模组: {0}</RimWorldAccess.Compat.HugsLib.NewsFilter>
+  <RimWorldAccess.Compat.HugsLib.ActionFailed>操作失败。</RimWorldAccess.Compat.HugsLib.ActionFailed>
+
+  <!-- RimTalkChatScope: RimTalk's CustomDialogueWindow ("chat with pawn" box), speech mods
+       campaign S5. {0}/{1} below are already-resolved passthrough strings (pawn LabelShortCap),
+       not authored prose fragments. -->
+  <RimWorldAccess.Compat.RimTalk.CustomDialogue.Opened>{0} 正在与 {1} 交谈。</RimWorldAccess.Compat.RimTalk.CustomDialogue.Opened>
+  <RimWorldAccess.Compat.RimTalk.CustomDialogue.MessageField>消息</RimWorldAccess.Compat.RimTalk.CustomDialogue.MessageField>
+  <RimWorldAccess.Compat.RimTalk.CustomDialogue.SendFallback>发送</RimWorldAccess.Compat.RimTalk.CustomDialogue.SendFallback>
+  <RimWorldAccess.Compat.RimTalk.CustomDialogue.CancelFallback>取消</RimWorldAccess.Compat.RimTalk.CustomDialogue.CancelFallback>
+
+  <!-- RimTalkNarrativeCompat: the vanilla "Rim Talk Debug" main button opens
+       RimTalk.UI.OverlayTabLauncher, whose PostOpen silently toggles the overlay setting and
+       instantly self-closes (decompiled-verified). Announce-only postfix, semantic quality
+       campaign slice D3. -->
+  <RimWorldAccess.Compat.RimTalk.OverlayOn>RimTalk 悬浮层已启用。</RimWorldAccess.Compat.RimTalk.OverlayOn>
+  <RimWorldAccess.Compat.RimTalk.OverlayOff>RimTalk 悬浮层已禁用。</RimWorldAccess.Compat.RimTalk.OverlayOff>
+
+  <!-- RimTalkPersonaScope: RimTalk's PersonaEditorWindow (persona/chattiness editor), speech
+       mods campaign S6. check_l10n_keys.py only scans OUR OWN Keyed XML, not a Workshop mod's
+       (the VfHealthTabAdapter precedent), so every string this scope speaks is baked into our
+       own keys below even where the English text mirrors RimTalk's own wording verbatim
+       (Title/Instruct/TalkFrequencyDesc/Chattiness/Save/SmartGen/RollGen/Clear) rather than
+       calling RimTalk's own translation keys directly. -->
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.PersonaField>对话风格</RimWorldAccess.Compat.RimTalk.PersonaEditor.PersonaField>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.OpenerRow>编辑对话风格</RimWorldAccess.Compat.RimTalk.PersonaEditor.OpenerRow>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.GenerationComplete>生成完成。</RimWorldAccess.Compat.RimTalk.PersonaEditor.GenerationComplete>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.Title>{0} 的对话风格</RimWorldAccess.Compat.RimTalk.PersonaEditor.Title>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.Instruct>描述这名殖民者的说话方式和行为。为获得最佳效果，请保持简短（300 字符以内）。</RimWorldAccess.Compat.RimTalk.PersonaEditor.Instruct>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.TalkFrequencyDesc>控制这名殖民者主动发起对话的频率。即使在最低设置下，当其他人和其交谈时，他们仍会回应。此设置只影响对话的发起频率。</RimWorldAccess.Compat.RimTalk.PersonaEditor.TalkFrequencyDesc>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.Chattiness>健谈度</RimWorldAccess.Compat.RimTalk.PersonaEditor.Chattiness>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.SaveFallback>保存</RimWorldAccess.Compat.RimTalk.PersonaEditor.SaveFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.SmartGenFallback>智能生成</RimWorldAccess.Compat.RimTalk.PersonaEditor.SmartGenFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.RollGenFallback>随机生成</RimWorldAccess.Compat.RimTalk.PersonaEditor.RollGenFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.ClearFallback>清除</RimWorldAccess.Compat.RimTalk.PersonaEditor.ClearFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.EvolveComplete>演化完成。</RimWorldAccess.Compat.RimTalk.PersonaEditor.EvolveComplete>
+
+  <!-- RimTalkDebugScope: RimTalk's DebugWindow (the log console: By Time / By Pawn / Talk Requests
+       views, filters, a details panel, stats, and bottom actions), speech mods campaign S8. -->
+  <RimWorldAccess.Compat.RimTalk.Debug.Opened>RimTalk 调试窗口。</RimWorldAccess.Compat.RimTalk.Debug.Opened>
+  <RimWorldAccess.Compat.RimTalk.Debug.FiltersRegionName>筛选条件</RimWorldAccess.Compat.RimTalk.Debug.FiltersRegionName>
+  <RimWorldAccess.Compat.RimTalk.Debug.PawnRequestsRegionName>角色请求</RimWorldAccess.Compat.RimTalk.Debug.PawnRequestsRegionName>
+  <RimWorldAccess.Compat.RimTalk.Debug.DetailsRegionName>详情</RimWorldAccess.Compat.RimTalk.Debug.DetailsRegionName>
+  <RimWorldAccess.Compat.RimTalk.Debug.StatsRegionName>统计</RimWorldAccess.Compat.RimTalk.Debug.StatsRegionName>
+  <RimWorldAccess.Compat.RimTalk.Debug.PawnFilterLabel>角色筛选</RimWorldAccess.Compat.RimTalk.Debug.PawnFilterLabel>
+  <RimWorldAccess.Compat.RimTalk.Debug.TextSearchLabel>文本搜索</RimWorldAccess.Compat.RimTalk.Debug.TextSearchLabel>
+  <RimWorldAccess.Compat.RimTalk.Debug.PawnRequestsHeader>{0} 的请求</RimWorldAccess.Compat.RimTalk.Debug.PawnRequestsHeader>
+  <RimWorldAccess.Compat.RimTalk.Debug.DetailHeader>{0}，{1}，{2}</RimWorldAccess.Compat.RimTalk.Debug.DetailHeader>
+  <RimWorldAccess.Compat.RimTalk.Debug.DetailHeaderShort>{0}，{1}</RimWorldAccess.Compat.RimTalk.Debug.DetailHeaderShort>
+  <RimWorldAccess.Compat.RimTalk.Debug.EnableFallback>启用 RimTalk</RimWorldAccess.Compat.RimTalk.Debug.EnableFallback>
+  <RimWorldAccess.Compat.RimTalk.Debug.ModSettingsFallback>模组设置</RimWorldAccess.Compat.RimTalk.Debug.ModSettingsFallback>
+  <RimWorldAccess.Compat.RimTalk.Debug.ExportFallback>导出日志</RimWorldAccess.Compat.RimTalk.Debug.ExportFallback>
+  <RimWorldAccess.Compat.RimTalk.Debug.ResetLogsFallback>重置日志</RimWorldAccess.Compat.RimTalk.Debug.ResetLogsFallback>
+
+  <!-- RimTalkTtsVoiceSelectionScope: the TTS addon's per-pawn voice picker (VoiceSelectionWindow),
+       speech mods campaign S10. -->
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceOpenerRow>选择语音模型</RimWorldAccess.Compat.RimTalk.TTS.VoiceOpenerRow>
+  <RimWorldAccess.Compat.RimTalk.TTS.ModelIdPrefix>模型 ID: {0}</RimWorldAccess.Compat.RimTalk.TTS.ModelIdPrefix>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.Opened>{0} 的语音</RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.Opened>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.CustomLanguageField>自定义语言</RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.CustomLanguageField>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.SaveFallback>保存</RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.SaveFallback>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.CancelFallback>取消</RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.CancelFallback>
+
+  <!-- RimTalkTtsVoiceLibraryScope: the TTS addon's Azure/Edge voice reference browser
+       (VoiceLibraryWindow), speech mods campaign S10. -->
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.Opened>语音库。</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.Opened>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.FiltersRegionName>筛选条件</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.FiltersRegionName>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.TableRegionName>语音</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.TableRegionName>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.GroupHeader>{0}（{1} 个语音）</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.GroupHeader>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnName>语音名称</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnName>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnGender>性别</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnGender>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnLanguage>语言</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnLanguage>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnPersonality>性格</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnPersonality>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnCategory>类别</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnCategory>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.SearchLabel>搜索</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.SearchLabel>
+
+  <!-- RimTalkMemoryMainTabScope: ExpandMemory's "Mind Stream" main tab (per-pawn
+       four-layer memory timeline), speech mods campaign S12. -->
+  <RimWorldAccess.Compat.RimTalk.Memory.Opened>意识流。</RimWorldAccess.Compat.RimTalk.Memory.Opened>
+  <RimWorldAccess.Compat.RimTalk.Memory.FiltersRegionName>筛选条件</RimWorldAccess.Compat.RimTalk.Memory.FiltersRegionName>
+  <RimWorldAccess.Compat.RimTalk.Memory.TimelineRegionName>记忆</RimWorldAccess.Compat.RimTalk.Memory.TimelineRegionName>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnInfo>信息</RimWorldAccess.Compat.RimTalk.Memory.ColumnInfo>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnContent>内容</RimWorldAccess.Compat.RimTalk.Memory.ColumnContent>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnImportance>重要性</RimWorldAccess.Compat.RimTalk.Memory.ColumnImportance>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnActivity>活跃度</RimWorldAccess.Compat.RimTalk.Memory.ColumnActivity>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnSelected>已选择</RimWorldAccess.Compat.RimTalk.Memory.ColumnSelected>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnPinned>已置顶</RimWorldAccess.Compat.RimTalk.Memory.ColumnPinned>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnEdit>编辑</RimWorldAccess.Compat.RimTalk.Memory.ColumnEdit>
+  <RimWorldAccess.Compat.RimTalk.Memory.Selected>已选择</RimWorldAccess.Compat.RimTalk.Memory.Selected>
+  <RimWorldAccess.Compat.RimTalk.Memory.NotSelected>未选择</RimWorldAccess.Compat.RimTalk.Memory.NotSelected>
+  <RimWorldAccess.Compat.RimTalk.Memory.Pinned>已置顶</RimWorldAccess.Compat.RimTalk.Memory.Pinned>
+  <RimWorldAccess.Compat.RimTalk.Memory.NotPinned>未置顶</RimWorldAccess.Compat.RimTalk.Memory.NotPinned>
+  <RimWorldAccess.Compat.RimTalk.Memory.EditAction>编辑此记忆</RimWorldAccess.Compat.RimTalk.Memory.EditAction>
+  <RimWorldAccess.Compat.RimTalk.Memory.InfoLine>{0}，{1}，{2}</RimWorldAccess.Compat.RimTalk.Memory.InfoLine>
+  <RimWorldAccess.Compat.RimTalk.Memory.InfoLineWithPawn>{0}，{1}，{2}，与 {3}</RimWorldAccess.Compat.RimTalk.Memory.InfoLineWithPawn>
+  <RimWorldAccess.Compat.RimTalk.Memory.StatsLabel>记忆数量</RimWorldAccess.Compat.RimTalk.Memory.StatsLabel>
+  <RimWorldAccess.Compat.RimTalk.Memory.NoPawnSelected>未选择殖民者</RimWorldAccess.Compat.RimTalk.Memory.NoPawnSelected>
+  <RimWorldAccess.Compat.RimTalk.Memory.NoMemoryComponent>此角色没有记忆组件</RimWorldAccess.Compat.RimTalk.Memory.NoMemoryComponent>
+  <RimWorldAccess.Compat.RimTalk.Memory.StatsValue>活跃 {0}，情境 {1}，事件日志 {2}，存档 {3}</RimWorldAccess.Compat.RimTalk.Memory.StatsValue>
+  <RimWorldAccess.Compat.RimTalk.Memory.FilterAll>全部</RimWorldAccess.Compat.RimTalk.Memory.FilterAll>
+  <RimWorldAccess.Compat.RimTalk.Memory.FilterConversation>对话</RimWorldAccess.Compat.RimTalk.Memory.FilterConversation>
+  <RimWorldAccess.Compat.RimTalk.Memory.FilterAction>行动</RimWorldAccess.Compat.RimTalk.Memory.FilterAction>
+  <RimWorldAccess.Compat.RimTalk.Memory.AddToActive>添加记忆到活跃层</RimWorldAccess.Compat.RimTalk.Memory.AddToActive>
+  <RimWorldAccess.Compat.RimTalk.Memory.AddToSituational>添加记忆到情境层</RimWorldAccess.Compat.RimTalk.Memory.AddToSituational>
+  <RimWorldAccess.Compat.RimTalk.Memory.AddToEventLog>添加记忆到事件日志层</RimWorldAccess.Compat.RimTalk.Memory.AddToEventLog>
+  <RimWorldAccess.Compat.RimTalk.Memory.AddToArchive>添加记忆到存档层</RimWorldAccess.Compat.RimTalk.Memory.AddToArchive>
+  <RimWorldAccess.Compat.RimTalk.Memory.PawnSelector>角色: {0}</RimWorldAccess.Compat.RimTalk.Memory.PawnSelector>
+
+  <!-- RimTalkMemoryCompat's read-only "Memories" inspection node (Character
+       category), reading FourLayerMemoryComp directly — speech mods campaign S12. -->
+  <RimWorldAccess.Compat.RimTalk.Memory.MemoriesNode>记忆（{0}）</RimWorldAccess.Compat.RimTalk.Memory.MemoriesNode>
+  <RimWorldAccess.Compat.RimTalk.Memory.LayerActive>活跃</RimWorldAccess.Compat.RimTalk.Memory.LayerActive>
+  <RimWorldAccess.Compat.RimTalk.Memory.LayerSituational>情境</RimWorldAccess.Compat.RimTalk.Memory.LayerSituational>
+  <RimWorldAccess.Compat.RimTalk.Memory.LayerEventLog>事件日志</RimWorldAccess.Compat.RimTalk.Memory.LayerEventLog>
+  <RimWorldAccess.Compat.RimTalk.Memory.LayerArchive>存档</RimWorldAccess.Compat.RimTalk.Memory.LayerArchive>
+  <RimWorldAccess.Compat.RimTalk.Memory.LayerNode>{0}（{1}）</RimWorldAccess.Compat.RimTalk.Memory.LayerNode>
+  <RimWorldAccess.Compat.RimTalk.Memory.MemoryLine>{0}: {1}（{2}，重要性 {3}，活跃度 {4}）</RimWorldAccess.Compat.RimTalk.Memory.MemoryLine>
+  <RimWorldAccess.Compat.RimTalk.Memory.MemoryLineWithPawn>{0}: {1}（{2}，重要性 {3}，活跃度 {4}，与 {5}）</RimWorldAccess.Compat.RimTalk.Memory.MemoryLineWithPawn>
+  <RimWorldAccess.Compat.RimTalk.Memory.MemoryLinePinned>{0}，已置顶</RimWorldAccess.Compat.RimTalk.Memory.MemoryLinePinned>
+
+  <!-- RimTalkCommonKnowledgeScope: ExpandMemory's colony-wide Common Knowledge
+       library (Dialog_CommonKnowledge), speech mods campaign S12. -->
+  <RimWorldAccess.Compat.RimTalk.Knowledge.Opened>常识库。</RimWorldAccess.Compat.RimTalk.Knowledge.Opened>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.SearchRegionName>搜索</RimWorldAccess.Compat.RimTalk.Knowledge.SearchRegionName>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.CategoriesRegionName>类别</RimWorldAccess.Compat.RimTalk.Knowledge.CategoriesRegionName>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.EntriesRegionName>条目</RimWorldAccess.Compat.RimTalk.Knowledge.EntriesRegionName>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailRegionName>详情</RimWorldAccess.Compat.RimTalk.Knowledge.DetailRegionName>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnTag>标签</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnTag>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnContent>内容</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnContent>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnImportance>重要性</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnImportance>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnEnabled>已启用</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnEnabled>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnSelected>已选择</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnSelected>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnExtract>可提取</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnExtract>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnMatch>可匹配</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnMatch>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.Yes>是</RimWorldAccess.Compat.RimTalk.Knowledge.Yes>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.No>否</RimWorldAccess.Compat.RimTalk.Knowledge.No>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.SearchLabel>搜索</RimWorldAccess.Compat.RimTalk.Knowledge.SearchLabel>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.CategoryRow>{0}（{1}）</RimWorldAccess.Compat.RimTalk.Knowledge.CategoryRow>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailEmpty>选择一个条目，或新建一个</RimWorldAccess.Compat.RimTalk.Knowledge.DetailEmpty>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailTag>标签</RimWorldAccess.Compat.RimTalk.Knowledge.DetailTag>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailCategoryExtra>类别: {0}</RimWorldAccess.Compat.RimTalk.Knowledge.DetailCategoryExtra>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailImportance>重要性</RimWorldAccess.Compat.RimTalk.Knowledge.DetailImportance>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailStatus>状态</RimWorldAccess.Compat.RimTalk.Knowledge.DetailStatus>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.StatusEnabled>已启用</RimWorldAccess.Compat.RimTalk.Knowledge.StatusEnabled>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.StatusDisabled>已禁用</RimWorldAccess.Compat.RimTalk.Knowledge.StatusDisabled>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailVisibility>可见性</RimWorldAccess.Compat.RimTalk.Knowledge.DetailVisibility>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailContent>内容</RimWorldAccess.Compat.RimTalk.Knowledge.DetailContent>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailExtendedProperties>扩展属性</RimWorldAccess.Compat.RimTalk.Knowledge.DetailExtendedProperties>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ExtendedPropertiesValue>可提取: {0}，可匹配: {1}</RimWorldAccess.Compat.RimTalk.Knowledge.ExtendedPropertiesValue>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailMultiCount>已选择 {0} 项</RimWorldAccess.Compat.RimTalk.Knowledge.DetailMultiCount>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailEnabledCount>已启用: {0}</RimWorldAccess.Compat.RimTalk.Knowledge.DetailEnabledCount>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailDisabledCount>已禁用: {0}</RimWorldAccess.Compat.RimTalk.Knowledge.DetailDisabledCount>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailAvgImportance>平均重要性: {0}</RimWorldAccess.Compat.RimTalk.Knowledge.DetailAvgImportance>
+  <!-- PersonaDirectorCompat / PersonaDirectorBatchScope: PersonaDirector's F12 three-way
+       opener, RimTalkPersonaScope's three extra buttons, and Window_BatchDirector's table,
+       speech mods campaign S13. Most labels reuse PersonaDirector's OWN translate keys
+       directly (RPD_*, vehicle A); these are only the RWA-native strings it has none of. -->
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenNotesFallback>导演笔记</RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenNotesFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenBatchFallback>批量导演</RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenBatchFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenSettingsFallback>Persona Director 设置</RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenSettingsFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.TextFieldsRegionName>笔记和搜索</RimWorldAccess.Compat.RimTalk.PersonaDirector.TextFieldsRegionName>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.PawnsRegionName>角色</RimWorldAccess.Compat.RimTalk.PersonaDirector.PawnsRegionName>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.SearchLabel>搜索</RimWorldAccess.Compat.RimTalk.PersonaDirector.SearchLabel>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.HeaderSelected>已选择</RimWorldAccess.Compat.RimTalk.PersonaDirector.HeaderSelected>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.Selected>已选择</RimWorldAccess.Compat.RimTalk.PersonaDirector.Selected>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.NotSelected>未选择</RimWorldAccess.Compat.RimTalk.PersonaDirector.NotSelected>
+  <!-- PromptEnhanceCompat / PromptEnhanceAnnouncementScope / PromptEnhanceColorPickerScope:
+       PromptEnhance's "Colony Status" main tab (Overview, task list, day-by-day History
+       reading, Custom Areas) and its color-picker swatch grid, speech mods campaign S14.
+       Most labels reuse the mod's OWN translate keys directly (RTE_*, vehicle A); these are
+       only the RWA-native strings it has none of. -->
+  <RimWorldAccess.Compat.PromptEnhance.Opened>殖民地状态。</RimWorldAccess.Compat.PromptEnhance.Opened>
+  <RimWorldAccess.Compat.PromptEnhance.OverviewRegionName>概览</RimWorldAccess.Compat.PromptEnhance.OverviewRegionName>
+  <RimWorldAccess.Compat.PromptEnhance.TasksRegionName>任务</RimWorldAccess.Compat.PromptEnhance.TasksRegionName>
+  <RimWorldAccess.Compat.PromptEnhance.OverviewLabel>殖民地概览</RimWorldAccess.Compat.PromptEnhance.OverviewLabel>
+  <RimWorldAccess.Compat.PromptEnhance.CategoryAll>所有类别</RimWorldAccess.Compat.PromptEnhance.CategoryAll>
+  <RimWorldAccess.Compat.PromptEnhance.ColumnInfo>信息</RimWorldAccess.Compat.PromptEnhance.ColumnInfo>
+  <RimWorldAccess.Compat.PromptEnhance.ColumnStatusCycle>状态循环</RimWorldAccess.Compat.PromptEnhance.ColumnStatusCycle>
+  <RimWorldAccess.Compat.PromptEnhance.TaskHeader>{0}。{1}，{2} 优先级，{3}。</RimWorldAccess.Compat.PromptEnhance.TaskHeader>
+  <RimWorldAccess.Compat.PromptEnhance.TaskProgress>进度 {0}。</RimWorldAccess.Compat.PromptEnhance.TaskProgress>
+  <RimWorldAccess.Compat.PromptEnhance.TaskAssigned>已分配给 {0}。</RimWorldAccess.Compat.PromptEnhance.TaskAssigned>
+  <RimWorldAccess.Compat.PromptEnhance.HistoryDetailsLabel>详情</RimWorldAccess.Compat.PromptEnhance.HistoryDetailsLabel>
+  <RimWorldAccess.Compat.PromptEnhance.HistoryDate>{0}。</RimWorldAccess.Compat.PromptEnhance.HistoryDate>
+  <RimWorldAccess.Compat.PromptEnhance.AreaStatusEnabled>{0} 格，已启用。</RimWorldAccess.Compat.PromptEnhance.AreaStatusEnabled>
+  <RimWorldAccess.Compat.PromptEnhance.AreaStatusDisabled>{0} 格，已禁用。</RimWorldAccess.Compat.PromptEnhance.AreaStatusDisabled>
+  <RimWorldAccess.Compat.PromptEnhance.ColorPickerRegionName>颜色</RimWorldAccess.Compat.PromptEnhance.ColorPickerRegionName>
+  <RimWorldAccess.Compat.PromptEnhance.ColorPickerOpened>选择一种颜色。</RimWorldAccess.Compat.PromptEnhance.ColorPickerOpened>
+
+  <!-- RimTalkLiteratureCompat: the Literature extension's three settings-page debug buttons
+       (Clear Book Cache / Clear Art Cache / Rescan Art/Books) give only Log.Message feedback in
+       the mod itself; these announce completion in the player's own voice, speech mods
+       campaign S15. -->
+  <RimWorldAccess.Compat.Literature.BookCacheCleared>已清除 {0} 条缓存的书籍简介。</RimWorldAccess.Compat.Literature.BookCacheCleared>
+  <RimWorldAccess.Compat.Literature.ArtCacheCleared>已清除 {0} 条缓存的艺术品描述。</RimWorldAccess.Compat.Literature.ArtCacheCleared>
+  <RimWorldAccess.Compat.Literature.RescanRequested>已请求对 {0} 张地图重新扫描。</RimWorldAccess.Compat.Literature.RescanRequested>
+
+  <!-- RimworldTogetherChatScope: the multiplayer chat panel (DLG_Chat). -->
+  <RimWorldAccess.Compat.RimworldTogether.Chat.Opened>聊天。</RimWorldAccess.Compat.RimworldTogether.Chat.Opened>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.HistoryRegionName>记录</RimWorldAccess.Compat.RimworldTogether.Chat.HistoryRegionName>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.MessageRegionName>消息</RimWorldAccess.Compat.RimworldTogether.Chat.MessageRegionName>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.ToolbarRegionName>工具栏</RimWorldAccess.Compat.RimworldTogether.Chat.ToolbarRegionName>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.MessageFieldCaption>聊天消息</RimWorldAccess.Compat.RimworldTogether.Chat.MessageFieldCaption>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.EmptyHistory>暂无消息。</RimWorldAccess.Compat.RimworldTogether.Chat.EmptyHistory>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.SendLabel>发送</RimWorldAccess.Compat.RimworldTogether.Chat.SendLabel>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.ClearLabel>清除聊天记录</RimWorldAccess.Compat.RimworldTogether.Chat.ClearLabel>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.PinLabel>将聊天固定到最新消息</RimWorldAccess.Compat.RimworldTogether.Chat.PinLabel>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.SoundsLabel>播放聊天音效</RimWorldAccess.Compat.RimworldTogether.Chat.SoundsLabel>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.PlayerCountSingular>{0} 名玩家在线。</RimWorldAccess.Compat.RimworldTogether.Chat.PlayerCountSingular>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.PlayerCountPlural>{0} 名玩家在线。</RimWorldAccess.Compat.RimworldTogether.Chat.PlayerCountPlural>
+
+  <!-- RimworldTogetherToolbarCompat: the mod's icon-only HUD button strip, presented as a
+       pause-menu drill-in list. The buttons ship without labels or tooltips, so these names
+       describe what each one's own click body does. -->
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Options>多人游戏选项</RimWorldAccess.Compat.RimworldTogether.Toolbar.Options>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.OpenChat>打开聊天</RimWorldAccess.Compat.RimworldTogether.Toolbar.OpenChat>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.CloseChat>关闭聊天</RimWorldAccess.Compat.RimworldTogether.Toolbar.CloseChat>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Guild>公会</RimWorldAccess.Compat.RimworldTogether.Toolbar.Guild>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Leaderboard>排行榜</RimWorldAccess.Compat.RimworldTogether.Toolbar.Leaderboard>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Market>市场</RimWorldAccess.Compat.RimworldTogether.Toolbar.Market>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.SettlementSearch>定居点搜索</RimWorldAccess.Compat.RimworldTogether.Toolbar.SettlementSearch>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Admin>管理面板</RimWorldAccess.Compat.RimworldTogether.Toolbar.Admin>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Ping>延迟: {0} 毫秒</RimWorldAccess.Compat.RimworldTogether.Toolbar.Ping>
+
+  <!-- RimworldTogetherBlankButtonCompat: the mod's blank click-handler buttons, named after
+       what a sighted player reads at each spot (a cosmetic twin or the covered vanilla slot). -->
+  <RimWorldAccess.Compat.RimworldTogether.Blank.QuickConnect>快速连接</RimWorldAccess.Compat.RimworldTogether.Blank.QuickConnect>
+  <RimWorldAccess.Compat.RimworldTogether.Blank.Disconnect>断开连接</RimWorldAccess.Compat.RimworldTogether.Blank.Disconnect>
+  <RimWorldAccess.Compat.RimworldTogether.Blank.HostWorld>主持世界</RimWorldAccess.Compat.RimworldTogether.Blank.HostWorld>
+
+  <!-- VefPreceptOptionsScope: VEF's searchable picker window, substituted for a plain float
+       menu on long precept lists. Every other line this screen speaks reuses the shared
+       float-menu and search keys. -->
+  <RimWorldAccess.Compat.Vef.PreceptOptions.Opened>选项选择器。共 {0} 项可选。</RimWorldAccess.Compat.Vef.PreceptOptions.Opened>
+
+  <!-- AllowToolRectDesignationHandler: spoken only when the mod's own area tool emitted no
+       message of its own, so these never double up on the mod's success/failure text. -->
+  <RimWorldAccess.Compat.AllowTool.SelectionAdded>已选择 {0}。共选中 {1} 个。</RimWorldAccess.Compat.AllowTool.SelectionAdded>
+  <RimWorldAccess.Compat.AllowTool.AreaApplied>{0} 已应用于 {1} 格。</RimWorldAccess.Compat.AllowTool.AreaApplied>
+  <RimWorldAccess.Compat.AllowTool.NothingSelected>未选中任何内容。</RimWorldAccess.Compat.AllowTool.NothingSelected>
+
+  <RimWorldAccess.Compat.Kau.StripMine.HorizontalSpacing>水平间距</RimWorldAccess.Compat.Kau.StripMine.HorizontalSpacing>
+  <RimWorldAccess.Compat.Kau.StripMine.VerticalSpacing>垂直间距</RimWorldAccess.Compat.Kau.StripMine.VerticalSpacing>
+  <RimWorldAccess.Compat.Kau.StripMine.HorizontalOffset>水平偏移</RimWorldAccess.Compat.Kau.StripMine.HorizontalOffset>
+  <RimWorldAccess.Compat.Kau.StripMine.VerticalOffset>垂直偏移</RimWorldAccess.Compat.Kau.StripMine.VerticalOffset>
+  <RimWorldAccess.Compat.Kau.StripMine.Increase>增加{0}，当前{1}</RimWorldAccess.Compat.Kau.StripMine.Increase>
+  <RimWorldAccess.Compat.Kau.StripMine.Decrease>减少{0}，当前{1}</RimWorldAccess.Compat.Kau.StripMine.Decrease>
+  <RimWorldAccess.Compat.Kau.StripMine.ValueNow>{0} {1}。</RimWorldAccess.Compat.Kau.StripMine.ValueNow>
+
+  <RimWorldAccess.Compat.Isekai.XpLine>经验 {0} / {1}</RimWorldAccess.Compat.Isekai.XpLine>
+  <RimWorldAccess.Compat.Isekai.NoTitle>尚无流派称号</RimWorldAccess.Compat.Isekai.NoTitle>
+  <RimWorldAccess.Compat.Isekai.TitleLine>称号：{0}</RimWorldAccess.Compat.Isekai.TitleLine>
+  <RimWorldAccess.Compat.Isekai.PointsAvailable>可用属性点 {0}</RimWorldAccess.Compat.Isekai.PointsAvailable>
+  <RimWorldAccess.Compat.Isekai.AuraRow>光环显示</RimWorldAccess.Compat.Isekai.AuraRow>
+  <RimWorldAccess.Compat.Isekai.NoClass>尚未分配职业。达到 11 级 D 阶后即可选择。</RimWorldAccess.Compat.Isekai.NoClass>
+  <RimWorldAccess.Compat.Isekai.GimmickNotUnlocked>{0}，未解锁</RimWorldAccess.Compat.Isekai.GimmickNotUnlocked>
+  <RimWorldAccess.Compat.Isekai.GimmickLine>{0}，第 {1} 阶，共 4 阶，{2}</RimWorldAccess.Compat.Isekai.GimmickLine>
+  <RimWorldAccess.Compat.Isekai.NoWeaponEquipped>未装备武器</RimWorldAccess.Compat.Isekai.NoWeaponEquipped>
+  <RimWorldAccess.Compat.Isekai.WeaponMasteryLine>武器精通：{0}，{1}，{2} 经验</RimWorldAccess.Compat.Isekai.WeaponMasteryLine>
+  <RimWorldAccess.Compat.Isekai.OpenCharacterForge>角色锻造（开发）</RimWorldAccess.Compat.Isekai.OpenCharacterForge>
+  <RimWorldAccess.Compat.Isekai.DevAddStatPoints>增加 10 属性点（上帝模式）</RimWorldAccess.Compat.Isekai.DevAddStatPoints>
+  <RimWorldAccess.Compat.Isekai.DevAddLevel>增加 1 级（上帝模式）</RimWorldAccess.Compat.Isekai.DevAddLevel>
+  <RimWorldAccess.Compat.Isekai.Elite>精英</RimWorldAccess.Compat.Isekai.Elite>
+  <RimWorldAccess.Compat.Isekai.StatsRegion>属性</RimWorldAccess.Compat.Isekai.StatsRegion>
+  <RimWorldAccess.Compat.Isekai.AffectedRegion>受影响的数值</RimWorldAccess.Compat.Isekai.AffectedRegion>
+  <RimWorldAccess.Compat.Isekai.PointsToApply>待应用 {0} 点</RimWorldAccess.Compat.Isekai.PointsToApply>
+  <RimWorldAccess.Compat.Isekai.PendingValue>{0}，另有 {1} 点待定</RimWorldAccess.Compat.Isekai.PendingValue>
+  <RimWorldAccess.Compat.Isekai.NothingToApply>尚未分配点数</RimWorldAccess.Compat.Isekai.NothingToApply>
+  <RimWorldAccess.Compat.Isekai.StatWindowOpen>{0} 的属性分配。{1}。可用 {2} 点。</RimWorldAccess.Compat.Isekai.StatWindowOpen>
+  <RimWorldAccess.Compat.Isekai.TreeRegion>星座节点</RimWorldAccess.Compat.Isekai.TreeRegion>
+  <RimWorldAccess.Compat.Isekai.ClassesRegion>职业</RimWorldAccess.Compat.Isekai.ClassesRegion>
+  <RimWorldAccess.Compat.Isekai.SummaryRegion>概要</RimWorldAccess.Compat.Isekai.SummaryRegion>
+  <RimWorldAccess.Compat.Isekai.ClassAssigned>你的职业</RimWorldAccess.Compat.Isekai.ClassAssigned>
+  <RimWorldAccess.Compat.Isekai.ClassEntered>已进入</RimWorldAccess.Compat.Isekai.ClassEntered>
+  <RimWorldAccess.Compat.Isekai.ClassLocked>已锁定，需要星辰碎片</RimWorldAccess.Compat.Isekai.ClassLocked>
+  <RimWorldAccess.Compat.Isekai.NodeAvailable>可解锁</RimWorldAccess.Compat.Isekai.NodeAvailable>
+  <RimWorldAccess.Compat.Isekai.NodeAlsoConnects>同时连接到 {0}</RimWorldAccess.Compat.Isekai.NodeAlsoConnects>
+  <RimWorldAccess.Compat.Isekai.NodeUnlocked>已解锁 {0}。剩余 {1} 点。</RimWorldAccess.Compat.Isekai.NodeUnlocked>
+  <RimWorldAccess.Compat.Isekai.CannotUnlock>无法解锁 {0}：{1}</RimWorldAccess.Compat.Isekai.CannotUnlock>
+  <RimWorldAccess.Compat.Isekai.RespecDone>已重置。可用 {0} 点。</RimWorldAccess.Compat.Isekai.RespecDone>
+  <RimWorldAccess.Compat.Isekai.TreeWindowOpen>{0} 的星座。职业 {1}。可用 {2} 点。</RimWorldAccess.Compat.Isekai.TreeWindowOpen>
+  <RimWorldAccess.Compat.Isekai.MasteredRegion>已精通武器，{0}</RimWorldAccess.Compat.Isekai.MasteredRegion>
+  <RimWorldAccess.Compat.Isekai.UnmasteredRegion>未精通武器，{0}</RimWorldAccess.Compat.Isekai.UnmasteredRegion>
+  <RimWorldAccess.Compat.Isekai.UnmasteredRow>尚无精通。装备并战斗以获取经验。{0}</RimWorldAccess.Compat.Isekai.UnmasteredRow>
+  <RimWorldAccess.Compat.Isekai.Equipped>已装备</RimWorldAccess.Compat.Isekai.Equipped>
+  <RimWorldAccess.Compat.Isekai.MasteredRowMax>{0}，{1} 经验，最高阶</RimWorldAccess.Compat.Isekai.MasteredRowMax>
+  <RimWorldAccess.Compat.Isekai.MasteredRow>{0}，{1} / {2} 经验</RimWorldAccess.Compat.Isekai.MasteredRow>
+  <RimWorldAccess.Compat.Isekai.MasteryBonuses>命中率 +{0}%，攻击速度 +{1}%，伤害 +{2}%</RimWorldAccess.Compat.Isekai.MasteryBonuses>
+  <RimWorldAccess.Compat.Isekai.MasteryNoBonus>尚无加成，达到学徒阶后生效</RimWorldAccess.Compat.Isekai.MasteryNoBonus>
+  <RimWorldAccess.Compat.Isekai.WeaponTypeRanged>远程</RimWorldAccess.Compat.Isekai.WeaponTypeRanged>
+  <RimWorldAccess.Compat.Isekai.WeaponTypeMelee>近战</RimWorldAccess.Compat.Isekai.WeaponTypeMelee>
+  <RimWorldAccess.Compat.Isekai.EquippedLine>已装备：{0}</RimWorldAccess.Compat.Isekai.EquippedLine>
+  <RimWorldAccess.Compat.Isekai.MasteryOpen>{0} 的武器精通。{1}</RimWorldAccess.Compat.Isekai.MasteryOpen>
+  <RimWorldAccess.Compat.Isekai.EquipmentRegion>装备</RimWorldAccess.Compat.Isekai.EquipmentRegion>
+  <RimWorldAccess.Compat.Isekai.DetailsRegion>详情</RimWorldAccess.Compat.Isekai.DetailsRegion>
+  <RimWorldAccess.Compat.Isekai.ActionsRegion>操作</RimWorldAccess.Compat.Isekai.ActionsRegion>
+  <RimWorldAccess.Compat.Isekai.CostLine>{0} × {1}，可用 {2}</RimWorldAccess.Compat.Isekai.CostLine>
+  <RimWorldAccess.Compat.Isekai.ItemOwnedBy>由 {0} 携带</RimWorldAccess.Compat.Isekai.ItemOwnedBy>
+  <RimWorldAccess.Compat.Isekai.ForgeOpen>{0}。{1} 件物品。</RimWorldAccess.Compat.Isekai.ForgeOpen>
+  <RimWorldAccess.Compat.Isekai.SlotsRegion>符文槽</RimWorldAccess.Compat.Isekai.SlotsRegion>
+  <RimWorldAccess.Compat.Isekai.RunesRegion>可用符文</RimWorldAccess.Compat.Isekai.RunesRegion>
+  <RimWorldAccess.Compat.Isekai.RuneCount>库存 {0}</RimWorldAccess.Compat.Isekai.RuneCount>
+  <RimWorldAccess.Compat.Isekai.RuneApplied>已将 {0} 应用于 {1}。</RimWorldAccess.Compat.Isekai.RuneApplied>
+  <RimWorldAccess.Compat.Isekai.RuneRemoved>已移除 {0}。</RimWorldAccess.Compat.Isekai.RuneRemoved>
+  <RimWorldAccess.Compat.Isekai.Rerolled>已重掷。{0}</RimWorldAccess.Compat.Isekai.Rerolled>
+
+  <!-- AnimalTraitsSpareColumnHandler: Animal Traits System's spare-traits
+       column (shield = protected from auto-slaughter, mark = culled). All
+       wording is ours: the mod ships no language files, so its own keys
+       resolve to raw key names. -->
+  <RimWorldAccess.Compat.AnimalTraits.SpareColumnName>屠宰豁免</RimWorldAccess.Compat.AnimalTraits.SpareColumnName>
+  <RimWorldAccess.Compat.AnimalTraits.Protected>免于屠宰</RimWorldAccess.Compat.AnimalTraits.Protected>
+  <RimWorldAccess.Compat.AnimalTraits.MarkedForCull>标记为淘汰</RimWorldAccess.Compat.AnimalTraits.MarkedForCull>
+  <RimWorldAccess.Compat.AnimalTraits.ConfigureSpare>设置豁免特性</RimWorldAccess.Compat.AnimalTraits.ConfigureSpare>
+  <RimWorldAccess.Compat.AnimalTraits.ConfigureCull>设置淘汰特性</RimWorldAccess.Compat.AnimalTraits.ConfigureCull>
+  <RimWorldAccess.Compat.AnimalTraits.TraitTipEntry>{0}，{1}。{2}</RimWorldAccess.Compat.AnimalTraits.TraitTipEntry>
+  <RimWorldAccess.Compat.AnimalTraits.Positive>正面</RimWorldAccess.Compat.AnimalTraits.Positive>
+  <RimWorldAccess.Compat.AnimalTraits.Negative>负面</RimWorldAccess.Compat.AnimalTraits.Negative>
+
+  <!-- Simple Sidearms compat. -->
+  <RimWorldAccess.Compat.SimpleSidearms.StatusPrefRanged>偏好远程</RimWorldAccess.Compat.SimpleSidearms.StatusPrefRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.StatusPrefMelee>偏好近战</RimWorldAccess.Compat.SimpleSidearms.StatusPrefMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.StatusPrefGenerated>按生成偏好</RimWorldAccess.Compat.SimpleSidearms.StatusPrefGenerated>
+  <RimWorldAccess.Compat.SimpleSidearms.StatusPrefSkillRanged>按技能偏好, 当前为远程</RimWorldAccess.Compat.SimpleSidearms.StatusPrefSkillRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.StatusPrefSkillMelee>按技能偏好, 当前为近战</RimWorldAccess.Compat.SimpleSidearms.StatusPrefSkillMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.DescCarriedRanged>远程: {0}</RimWorldAccess.Compat.SimpleSidearms.DescCarriedRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.DescCarriedMelee>近战: {0}</RimWorldAccess.Compat.SimpleSidearms.DescCarriedMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.DescMissing>缺少: {0}</RimWorldAccess.Compat.SimpleSidearms.DescMissing>
+  <RimWorldAccess.Compat.SimpleSidearms.MissingWithCount>{0}, 缺少 {1} 件</RimWorldAccess.Compat.SimpleSidearms.MissingWithCount>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkEquipped>手持</RimWorldAccess.Compat.SimpleSidearms.MarkEquipped>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkOffhand>副手</RimWorldAccess.Compat.SimpleSidearms.MarkOffhand>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkForced>强制使用</RimWorldAccess.Compat.SimpleSidearms.MarkForced>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkForcedDrafted>征召期间强制使用</RimWorldAccess.Compat.SimpleSidearms.MarkForcedDrafted>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkDefaultRanged>默认</RimWorldAccess.Compat.SimpleSidearms.MarkDefaultRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkPreferredMelee>偏好</RimWorldAccess.Compat.SimpleSidearms.MarkPreferredMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkTool>工具</RimWorldAccess.Compat.SimpleSidearms.MarkTool>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkManualUse>仅手动使用</RimWorldAccess.Compat.SimpleSidearms.MarkManualUse>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkEmp>电磁脉冲</RimWorldAccess.Compat.SimpleSidearms.MarkEmp>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkDangerous>危险</RimWorldAccess.Compat.SimpleSidearms.MarkDangerous>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkBlocked>无法使用, {0}</RimWorldAccess.Compat.SimpleSidearms.MarkBlocked>
+  <RimWorldAccess.Compat.SimpleSidearms.DescUnarmedPreferred>偏好徒手作战</RimWorldAccess.Compat.SimpleSidearms.DescUnarmedPreferred>
+  <RimWorldAccess.Compat.SimpleSidearms.DescUnarmedForced>强制徒手作战</RimWorldAccess.Compat.SimpleSidearms.DescUnarmedForced>
+  <RimWorldAccess.Compat.SimpleSidearms.DescUnarmedForcedDrafted>征召期间强制徒手作战</RimWorldAccess.Compat.SimpleSidearms.DescUnarmedForcedDrafted>
+  <RimWorldAccess.Compat.SimpleSidearms.CurrentSuffix>{0}, 当前</RimWorldAccess.Compat.SimpleSidearms.CurrentSuffix>
+  <RimWorldAccess.Compat.SimpleSidearms.OptPreferRanged>偏好远程武器</RimWorldAccess.Compat.SimpleSidearms.OptPreferRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.OptPreferSkill>按技能偏好武器</RimWorldAccess.Compat.SimpleSidearms.OptPreferSkill>
+  <RimWorldAccess.Compat.SimpleSidearms.OptPreferMelee>偏好近战武器</RimWorldAccess.Compat.SimpleSidearms.OptPreferMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.OptForce>强制使用 {0}</RimWorldAccess.Compat.SimpleSidearms.OptForce>
+  <RimWorldAccess.Compat.SimpleSidearms.OptForceDrafted>强制使用 {0} 直到战斗结束</RimWorldAccess.Compat.SimpleSidearms.OptForceDrafted>
+  <RimWorldAccess.Compat.SimpleSidearms.OptRemember>将 {0} 记为副武器</RimWorldAccess.Compat.SimpleSidearms.OptRemember>
+  <RimWorldAccess.Compat.SimpleSidearms.OptSetDefaultRanged>将 {0} 设为默认远程武器</RimWorldAccess.Compat.SimpleSidearms.OptSetDefaultRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.OptSetPreferredMelee>将 {0} 设为偏好近战武器</RimWorldAccess.Compat.SimpleSidearms.OptSetPreferredMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.OptStopForcing>取消强制使用 {0}</RimWorldAccess.Compat.SimpleSidearms.OptStopForcing>
+  <RimWorldAccess.Compat.SimpleSidearms.OptUnsetDefaultRanged>取消将 {0} 作为默认远程武器</RimWorldAccess.Compat.SimpleSidearms.OptUnsetDefaultRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.OptUnsetPreferredMelee>取消将 {0} 作为偏好近战武器</RimWorldAccess.Compat.SimpleSidearms.OptUnsetPreferredMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.OptDrop>丢下 {0}</RimWorldAccess.Compat.SimpleSidearms.OptDrop>
+  <RimWorldAccess.Compat.SimpleSidearms.OptDropForget>丢下并遗忘 {0}</RimWorldAccess.Compat.SimpleSidearms.OptDropForget>
+  <RimWorldAccess.Compat.SimpleSidearms.OptForget>遗忘 {0}</RimWorldAccess.Compat.SimpleSidearms.OptForget>
+  <RimWorldAccess.Compat.SimpleSidearms.OptForceUnarmed>强制徒手作战</RimWorldAccess.Compat.SimpleSidearms.OptForceUnarmed>
+  <RimWorldAccess.Compat.SimpleSidearms.OptForceUnarmedDrafted>强制徒手作战直到战斗结束</RimWorldAccess.Compat.SimpleSidearms.OptForceUnarmedDrafted>
+  <RimWorldAccess.Compat.SimpleSidearms.OptPreferUnarmed>将徒手作战设为偏好近战方式</RimWorldAccess.Compat.SimpleSidearms.OptPreferUnarmed>
+  <RimWorldAccess.Compat.SimpleSidearms.OptStopForcingUnarmed>取消强制徒手作战</RimWorldAccess.Compat.SimpleSidearms.OptStopForcingUnarmed>
+  <RimWorldAccess.Compat.SimpleSidearms.OptUnsetPreferUnarmed>取消偏好徒手作战</RimWorldAccess.Compat.SimpleSidearms.OptUnsetPreferUnarmed>
+  <RimWorldAccess.Compat.SimpleSidearms.OptEquipOffhand>将 {0} 装备到副手</RimWorldAccess.Compat.SimpleSidearms.OptEquipOffhand>
+  <RimWorldAccess.Compat.SimpleSidearms.OptUnequipOffhand>卸下副手武器 {0}</RimWorldAccess.Compat.SimpleSidearms.OptUnequipOffhand>
+  <RimWorldAccess.Compat.SimpleSidearms.OptOpenSettings>打开 Simple Sidearms 设置</RimWorldAccess.Compat.SimpleSidearms.OptOpenSettings>
+  <RimWorldAccess.Compat.SimpleSidearms.CurveRow>掉落武器后恢复几率曲线, {0} 个点</RimWorldAccess.Compat.SimpleSidearms.CurveRow>
+  <RimWorldAccess.Compat.SimpleSidearms.OptCurveSet>设置位于 {0} 的点, 当前 {1} %</RimWorldAccess.Compat.SimpleSidearms.OptCurveSet>
+  <RimWorldAccess.Compat.SimpleSidearms.OptCurveRemove>删除位于 {0} 的点, {1} %</RimWorldAccess.Compat.SimpleSidearms.OptCurveRemove>
+  <RimWorldAccess.Compat.SimpleSidearms.OptCurveAdd>添加一个点</RimWorldAccess.Compat.SimpleSidearms.OptCurveAdd>
+  <RimWorldAccess.Compat.SimpleSidearms.CurveXPrompt>点位置: {0}</RimWorldAccess.Compat.SimpleSidearms.CurveXPrompt>
+  <RimWorldAccess.Compat.SimpleSidearms.CurveYPrompt>位于 {0} 的点的值: {1} %</RimWorldAccess.Compat.SimpleSidearms.CurveYPrompt>
+  <RimWorldAccess.Compat.RimTalk.CustomDialogue.RegionName>聊天</RimWorldAccess.Compat.RimTalk.CustomDialogue.RegionName>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.RegionName>人格编辑器</RimWorldAccess.Compat.RimTalk.PersonaEditor.RegionName>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.RegionName>语音</RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.RegionName>
+  <RimWorldAccess.Compat.Vfet.EthosLockRow>信条锁定</RimWorldAccess.Compat.Vfet.EthosLockRow>
+  <RimWorldAccess.Compat.Vfet.EthosEditHint>按回车编辑。</RimWorldAccess.Compat.Vfet.EthosEditHint>
+  <RimWorldAccess.Compat.Vfet.Unlocked>已解锁</RimWorldAccess.Compat.Vfet.Unlocked>
+  <RimWorldAccess.Compat.Vfet.Locked>未解锁</RimWorldAccess.Compat.Vfet.Locked>
+  <RimWorldAccess.Compat.Vfet.NoPoints>没有可用的基石点数。</RimWorldAccess.Compat.Vfet.NoPoints>
+  <RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>已解锁{0}。剩余{1}点。</RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>
+  <RimWorldAccess.Compat.Pe.RoleRegion>{0}，已分配{1}/{2}</RimWorldAccess.Compat.Pe.RoleRegion>
+  <RimWorldAccess.Compat.Pe.AssignedElsewhere>已分配为{0}</RimWorldAccess.Compat.Pe.AssignedElsewhere>
+  <RimWorldAccess.Compat.Pe.CannotAssign>无法将{0}分配为{1}。</RimWorldAccess.Compat.Pe.CannotAssign>
+  <RimWorldAccess.Compat.Pe.TeacherFragment>教师：{0}</RimWorldAccess.Compat.Pe.TeacherFragment>
+  <RimWorldAccess.Compat.Pe.ClassSpeedFragment>授课速度{0}</RimWorldAccess.Compat.Pe.ClassSpeedFragment>
+  <RimWorldAccess.Compat.Pe.JumpToTeacher>前往教师{0}</RimWorldAccess.Compat.Pe.JumpToTeacher>
+  <RimWorldAccess.Compat.Pe.JumpToLearningBoard>前往学习板</RimWorldAccess.Compat.Pe.JumpToLearningBoard>
+  <RimWorldAccess.Compat.Pe.ProficiencyLine>{0}：{1}，第{2}级，共{3}级。</RimWorldAccess.Compat.Pe.ProficiencyLine>
+  <RimWorldAccess.Compat.Wq.PointsProgress>角色点数{0}/{1}</RimWorldAccess.Compat.Wq.PointsProgress>
+  <RimWorldAccess.Compat.Wq.RewardsRegion>奖励</RimWorldAccess.Compat.Wq.RewardsRegion>
+  <RimWorldAccess.Compat.Wq.PawnRowHint>按回车查看其愿望。</RimWorldAccess.Compat.Wq.PawnRowHint>
+  <RimWorldAccess.Compat.Wq.RarityCommon>普通</RimWorldAccess.Compat.Wq.RarityCommon>
+  <RimWorldAccess.Compat.Wq.RarityUncommon>罕见</RimWorldAccess.Compat.Wq.RarityUncommon>
+  <RimWorldAccess.Compat.Wq.RarityRare>稀有</RimWorldAccess.Compat.Wq.RarityRare>
+  <RimWorldAccess.Compat.Wq.RarityLegendary>传奇</RimWorldAccess.Compat.Wq.RarityLegendary>
+
+  <!-- Rjw: the pseudo-button designations gizmo (src/Compat/Rjw/). -->
+  <RimWorldAccess.Compat.Rjw.DesignationsLabel>RJW 标记</RimWorldAccess.Compat.Rjw.DesignationsLabel>
+</LanguageData>

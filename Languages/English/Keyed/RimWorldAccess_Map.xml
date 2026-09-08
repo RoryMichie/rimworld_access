@@ -112,7 +112,6 @@
        UnknownKey is a defensive fallback that should never reach a
        user in normal play.
        ================================================================= -->
-  <RimWorldAccess.Map.Detail.UnknownKey>Unknown key</RimWorldAccess.Map.Detail.UnknownKey>
 
   <!-- =================================================================
        Go-to dialog (GoToState, Ctrl+G).
@@ -165,6 +164,15 @@
   <RimWorldAccess.Map.Pawn.Idle>Idle</RimWorldAccess.Map.Pawn.Idle>
   <RimWorldAccess.Map.Pawn.Selection>{0} - {1}</RimWorldAccess.Map.Pawn.Selection>
   <RimWorldAccess.Map.Pawn.SelectionWithCover>{0}, {1} - {2}</RimWorldAccess.Map.Pawn.SelectionWithCover>
+  <RimWorldAccess.Map.Pawn.Follow.ActivityAndLocation>{0}, {1}</RimWorldAccess.Map.Pawn.Follow.ActivityAndLocation>
+
+  <!-- Selection announcements shared by pawn cycling and mouse clicks on the map.
+       Thing.Selection: {0} = thing label, {1} = location context.
+       Multiple: {0} = number of selected objects.
+       Cleared: the click emptied a selection that had something in it. -->
+  <RimWorldAccess.Map.Thing.Selection>{0}, {1}</RimWorldAccess.Map.Thing.Selection>
+  <RimWorldAccess.Map.Selection.Multiple>{0} selected</RimWorldAccess.Map.Selection.Multiple>
+  <RimWorldAccess.Map.Selection.Cleared>Selection cleared</RimWorldAccess.Map.Selection.Cleared>
 
   <!-- =================================================================
        Performance announcement (PerformanceAnnouncementState, Shift+T).
@@ -242,21 +250,28 @@
 
   <!-- =================================================================
        Jump-mode navigation (MapNavigationState).
-       PageUp/PageDown cycles between modes; Ctrl+arrows jumps in the
+       Shift+Up/Down cycles between modes; Ctrl+arrows jumps in the
        active mode.
        Distance:        {0} = the new preset jump distance (in tiles).
        PresetDistanceMode: {0} = the preset jump distance.
-       Boundary / NoWallFound / AlreadyAdjacent: spoken when the jump
-       cannot proceed.
+       Boundary / Blocked / NoTerrainChange / NoStructureChange: spoken
+       when the jump cannot proceed.
+       Moved:           {0} = tiles crossed, leading a scanning jump's
+       landing announcement.
        ================================================================= -->
   <RimWorldAccess.Map.Jump.Distance>Jump distance: {0}</RimWorldAccess.Map.Jump.Distance>
   <RimWorldAccess.Map.Jump.MinimumDistance>Minimum distance</RimWorldAccess.Map.Jump.MinimumDistance>
   <RimWorldAccess.Map.Jump.Mode.PresetDistance>Jump mode: Preset distance, {0} tiles</RimWorldAccess.Map.Jump.Mode.PresetDistance>
-  <RimWorldAccess.Map.Jump.Mode.AdjacentToWall>Jump mode: Adjacent to Wall</RimWorldAccess.Map.Jump.Mode.AdjacentToWall>
+  <RimWorldAccess.Map.Jump.Mode.Impassable>Jump mode: Impassable</RimWorldAccess.Map.Jump.Mode.Impassable>
+  <RimWorldAccess.Map.Jump.Mode.Terrain>Jump mode: Terrain</RimWorldAccess.Map.Jump.Mode.Terrain>
+  <RimWorldAccess.Map.Jump.Mode.Structure>Jump mode: Structure</RimWorldAccess.Map.Jump.Mode.Structure>
   <RimWorldAccess.Map.Jump.Mode.Unknown>Jump mode: Unknown</RimWorldAccess.Map.Jump.Mode.Unknown>
   <RimWorldAccess.Map.Jump.Boundary>Map boundary</RimWorldAccess.Map.Jump.Boundary>
-  <RimWorldAccess.Map.Jump.AlreadyAdjacent>Already adjacent to wall</RimWorldAccess.Map.Jump.AlreadyAdjacent>
-  <RimWorldAccess.Map.Jump.NoWallFound>No wall found</RimWorldAccess.Map.Jump.NoWallFound>
+  <RimWorldAccess.Map.Jump.Blocked>Blocked</RimWorldAccess.Map.Jump.Blocked>
+  <RimWorldAccess.Map.Jump.NoTerrainChange>No terrain change that way</RimWorldAccess.Map.Jump.NoTerrainChange>
+  <RimWorldAccess.Map.Jump.NoStructureChange>No structure change that way</RimWorldAccess.Map.Jump.NoStructureChange>
+  <RimWorldAccess.Map.Jump.Moved.One>1 tile</RimWorldAccess.Map.Jump.Moved.One>
+  <RimWorldAccess.Map.Jump.Moved.Many>{0} tiles</RimWorldAccess.Map.Jump.Moved.Many>
 
   <!-- =================================================================
        Map display name fallback (MapNavigationState.GetMapDisplayName).
@@ -314,12 +329,12 @@
   <RimWorldAccess.Map.Scanner.NoItemSelected>No item selected</RimWorldAccess.Map.Scanner.NoItemSelected>
   <RimWorldAccess.Map.Scanner.EmptyCategory>No items in this category</RimWorldAccess.Map.Scanner.EmptyCategory>
 
-  <!-- Category / subcategory switch announcements.
-       One/Many split for the item count.
-       {0} = localized category or subcategory name (see CatName.* /
-       SubName.* below), {1} = item count. -->
-  <RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>{0} - 1 item</RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>
-  <RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>{0} - {1} items</RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>
+  <!-- Category / subcategory heading with a live count of what exists on the
+       map (bulk groups count every member). The first item speaks right after
+       it as its own utterance. {0} = localized category or subcategory name
+       (see CatName.* / SubName.* below), {1} = count. -->
+  <RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>{0}, 1 item</RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>
+  <RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>{0}, {1} items</RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>
 
   <!-- End-key distance/direction readout. -->
   <RimWorldAccess.Map.Scanner.DistanceDirection>{0} tiles {1}</RimWorldAccess.Map.Scanner.DistanceDirection>
@@ -410,6 +425,7 @@
   <RimWorldAccess.Map.Scanner.SubName.Guests>Guests</RimWorldAccess.Map.Scanner.SubName.Guests>
   <RimWorldAccess.Map.Scanner.SubName.Hostile>Hostile</RimWorldAccess.Map.Scanner.SubName.Hostile>
   <RimWorldAccess.Map.Scanner.SubName.PlayerMechs>Player Mechs</RimWorldAccess.Map.Scanner.SubName.PlayerMechs>
+  <RimWorldAccess.Map.Scanner.SubName.Controllable>Controllable units</RimWorldAccess.Map.Scanner.SubName.Controllable>
   <RimWorldAccess.Map.Scanner.SubName.HostileMechs>Hostile Mechs</RimWorldAccess.Map.Scanner.SubName.HostileMechs>
   <RimWorldAccess.Map.Scanner.SubName.Pen>Pen</RimWorldAccess.Map.Scanner.SubName.Pen>
   <RimWorldAccess.Map.Scanner.SubName.NonPen>Non-Pen</RimWorldAccess.Map.Scanner.SubName.NonPen>
@@ -525,14 +541,14 @@
   <!-- Cell-info parenthesized suffix: " ({BuildingCellHelper})".
        Inlined onto the thing label, so leading space is intentional. -->
   <RimWorldAccess.Map.Tile.CellSuffix> ({0})</RimWorldAccess.Map.Tile.CellSuffix>
-  <!-- " wall" appended to smoothed-stone walls. -->
-  <RimWorldAccess.Map.Tile.WallSuffix> wall</RimWorldAccess.Map.Tile.WallSuffix>
+  <!-- Smoothed-stone wall label. {0} = the building's short label. -->
+  <RimWorldAccess.Map.Tile.WallLabel>{0} wall</RimWorldAccess.Map.Tile.WallLabel>
   <!-- Work-left fragment for unfinished things (e.g., joinery in progress). -->
   <RimWorldAccess.Map.Tile.WorkLeftAppend>work left: {0}</RimWorldAccess.Map.Tile.WorkLeftAppend>
   <!-- "Forbidden " prefix on item labels. -->
   <RimWorldAccess.Map.Tile.ForbiddenPrefix>Forbidden {0}</RimWorldAccess.Map.Tile.ForbiddenPrefix>
-  <!-- " floor" appended to smoothed-stone terrain labels. -->
-  <RimWorldAccess.Map.Tile.FloorSuffix> floor</RimWorldAccess.Map.Tile.FloorSuffix>
+  <!-- Smoothed-stone terrain label. {0} = the terrain's label. -->
+  <RimWorldAccess.Map.Tile.FloorLabel>{0} floor</RimWorldAccess.Map.Tile.FloorLabel>
   <!-- Paint color suffix appended to a painted floor or building label. {0} = color name
        (from the game's ColorDef labels), e.g. "Fine marble, purple". -->
   <RimWorldAccess.Map.Tile.PaintSuffix>, {0}</RimWorldAccess.Map.Tile.PaintSuffix>
@@ -665,5 +681,12 @@
   <RimWorldAccess.Map.Scanner.PressHomeForCenter>Press Home for center</RimWorldAccess.Map.Scanner.PressHomeForCenter>
   <RimWorldAccess.Map.Scanner.JumpedTilesToCenter>Jumped {0} tiles {1} to center</RimWorldAccess.Map.Scanner.JumpedTilesToCenter>
   <RimWorldAccess.Map.Scanner.JumpedToCenter>Jumped to center</RimWorldAccess.Map.Scanner.JumpedToCenter>
+
+  <!-- Mouse drag readouts. PaintExtent: {0} = width, {1} = height, {2} = the
+       number of cells the designator will act on (the same three numbers
+       vanilla paints over the drag box). SelectExtent: {0} = width,
+       {1} = height of the drag-select box, in cells. -->
+  <RimWorldAccess.Map.Drag.PaintExtent>{0} by {1}, {2} cells</RimWorldAccess.Map.Drag.PaintExtent>
+  <RimWorldAccess.Map.Drag.SelectExtent>{0} by {1}</RimWorldAccess.Map.Drag.SelectExtent>
 
 </LanguageData>

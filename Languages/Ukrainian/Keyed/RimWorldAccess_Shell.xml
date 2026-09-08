@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Shell element vocabulary (src/Shell/Elements/). Standard control role and
+    state words, following common Ukrainian screen reader terminology.
+  -->
+
+  <!-- Role words -->
+  <RimWorldAccess.Shell.Role.Button>кнопка</RimWorldAccess.Shell.Role.Button>
+  <RimWorldAccess.Shell.Role.Checkbox>прапорець</RimWorldAccess.Shell.Role.Checkbox>
+  <RimWorldAccess.Shell.Role.RadioButton>перемикач</RimWorldAccess.Shell.Role.RadioButton>
+  <RimWorldAccess.Shell.Role.ComboBox>поле зі списком</RimWorldAccess.Shell.Role.ComboBox>
+  <RimWorldAccess.Shell.Role.Slider>повзунок</RimWorldAccess.Shell.Role.Slider>
+  <RimWorldAccess.Shell.Role.Stepper>лічильник</RimWorldAccess.Shell.Role.Stepper>
+  <RimWorldAccess.Shell.Role.TextField>поле вводу</RimWorldAccess.Shell.Role.TextField>
+  <RimWorldAccess.Shell.Role.Tab>вкладка</RimWorldAccess.Shell.Role.Tab>
+  <RimWorldAccess.Shell.Role.Map>мапа</RimWorldAccess.Shell.Role.Map>
+
+  <!-- State words -->
+  <RimWorldAccess.Shell.State.Checked>позначено</RimWorldAccess.Shell.State.Checked>
+  <RimWorldAccess.Shell.State.Unchecked>не позначено</RimWorldAccess.Shell.State.Unchecked>
+  <RimWorldAccess.Shell.State.PartiallyChecked>частково позначено</RimWorldAccess.Shell.State.PartiallyChecked>
+  <RimWorldAccess.Shell.State.Selected>вибрано</RimWorldAccess.Shell.State.Selected>
+  <RimWorldAccess.Shell.State.NotSelected>не вибрано</RimWorldAccess.Shell.State.NotSelected>
+  <RimWorldAccess.Shell.State.Expanded>розгорнуто</RimWorldAccess.Shell.State.Expanded>
+  <RimWorldAccess.Shell.State.Collapsed>згорнуто</RimWorldAccess.Shell.State.Collapsed>
+  <RimWorldAccess.Shell.State.Blank>порожньо</RimWorldAccess.Shell.State.Blank>
+  <RimWorldAccess.Shell.State.Disabled>деактивовано</RimWorldAccess.Shell.State.Disabled>
+  <RimWorldAccess.Shell.State.ReadOnly>лише для читання</RimWorldAccess.Shell.State.ReadOnly>
+  <RimWorldAccess.Shell.State.AtMinimum>мінімум</RimWorldAccess.Shell.State.AtMinimum>
+  <RimWorldAccess.Shell.State.AtMaximum>максимум</RimWorldAccess.Shell.State.AtMaximum>
+  <RimWorldAccess.Shell.State.ColumnHeader>заголовок стовпця</RimWorldAccess.Shell.State.ColumnHeader>
+  <RimWorldAccess.Shell.State.Sortable>можна сортувати</RimWorldAccess.Shell.State.Sortable>
+  <RimWorldAccess.Shell.State.SortedAscending>відсортовано за зростанням</RimWorldAccess.Shell.State.SortedAscending>
+  <RimWorldAccess.Shell.State.SortedDescending>відсортовано за спаданням</RimWorldAccess.Shell.State.SortedDescending>
+
+  <!-- ScreenScope shared screen shape (screen-model refactor): the
+       automatic Buttons region name and the empty-region word. -->
+  <RimWorldAccess.Shell.Screen.ActionsRegion>Панель кнопок</RimWorldAccess.Shell.Screen.ActionsRegion>
+  <RimWorldAccess.Shell.Screen.ExtrasRegion>Додаткові елементи керування</RimWorldAccess.Shell.Screen.ExtrasRegion>
+  <RimWorldAccess.Shell.Screen.EmptyRegion>порожньо</RimWorldAccess.Shell.Screen.EmptyRegion>
+
+  <!-- Fail-safe (B1, semantic quality campaign): spoken once when a scope's own model build
+       throws, so the player is told the window went unreadable instead of finding every key
+       (including Escape) silently swallowed. See ScreenScope.RefreshModel. -->
+  <RimWorldAccess.Shell.ScopeFailed>Підтримка програми зчитування з екрана для цього вікна зазнала помилки. Натисніть Escape, щоб закрити вікно.</RimWorldAccess.Shell.ScopeFailed>
+
+  <!-- Band label inheritance (C1, semantic quality campaign): an unlabeled twin control that
+       inherited a neighbouring control's caption (BandLabelInheritance/GenericWindowScope).
+       {0} is the inherited label, {1} the 1-based ordinal ("Ideology 2"). -->
+  <RimWorldAccess.Shell.BandOrdinalLabel>{0} {1}</RimWorldAccess.Shell.BandOrdinalLabel>
+
+  <!-- Silent content swap echo (S8, meaning campaign): a captured Button whose click replaced
+       the window's whole page with no dialog, no menu, and no state change on the acted row
+       itself (Colony Manager Redux's "New job" button, which swaps the page to a fresh draft
+       job's settings) — the honest, generic summary a keyboard user gets instead of dead
+       silence. {0} is the new presentation row count. See GenericWindowScope.ResolvePendingStateChange. -->
+  <RimWorldAccess.Shell.ContentChanged>Вміст вікна змінено. Елементів: {0}.</RimWorldAccess.Shell.ContentChanged>
+  <RimWorldAccess.Shell.ContentReordered>Елементи перевпорядковано.</RimWorldAccess.Shell.ContentReordered>
+
+  <!-- Enter double-press proceed (DefaultAcceptActionId, S4c): the first Enter on an
+       inert element arms this prompt instead of doing nothing; a second Enter on the
+       same element fires the screen's default/proceed button. {0} is that button's label. -->
+  <RimWorldAccess.Shell.Screen.PressEnterAgain>Натисніть Enter ще раз, щоб активувати {0}.</RimWorldAccess.Shell.Screen.PressEnterAgain>
+
+  <!-- Shift+Enter one-chord proceed (SharedMenuGrammar.ActivateDefault, QA session 5):
+       presses the screen's default/proceed button from anywhere, bypassing the focused
+       control. PressingDefault is spoken BEFORE the button fires because the player
+       chose not to look the button up first; {0} is that button's label. -->
+  <RimWorldAccess.Shell.Screen.PressingDefault>Натискання: {0}.</RimWorldAccess.Shell.Screen.PressingDefault>
+  <RimWorldAccess.Shell.Screen.NoDefaultButton>Цей екран не має кнопки за замовчуванням.</RimWorldAccess.Shell.Screen.NoDefaultButton>
+
+  <!-- Shared reorder grammar (SharedMenuGrammar.ReorderUp/Down/Left/Right,
+       ScreenScope's Ctrl+Up/Down seam): the mod-wide keyboard equivalent of
+       the player's drag-and-drop gesture. MovedBetween/MovedToTop/MovedToBottom
+       name the item's new neighbors ({0}/{1} are neighbor labels, above then
+       below); Moved is the fallback when a neighbor's label cannot be resolved.
+       Whichever phrase is chosen prefixes the standard full item announcement
+       ("Moved between Duster and Parka. Duster, 3 of 7."); CannotReorder is the
+       refusal when the subclass's mutation vehicle vetoes the move. -->
+  <RimWorldAccess.Shell.Screen.Moved>Переміщено.</RimWorldAccess.Shell.Screen.Moved>
+  <RimWorldAccess.Shell.Screen.MovedBetween>Переміщено між {0} і {1}.</RimWorldAccess.Shell.Screen.MovedBetween>
+  <RimWorldAccess.Shell.Screen.MovedToTop>Переміщено вгору, над {0}.</RimWorldAccess.Shell.Screen.MovedToTop>
+  <RimWorldAccess.Shell.Screen.MovedToBottom>Переміщено вниз, під {0}.</RimWorldAccess.Shell.Screen.MovedToBottom>
+  <RimWorldAccess.Shell.Screen.CannotReorder>Цей елемент не можна перемістити.</RimWorldAccess.Shell.Screen.CannotReorder>
+
+  <!-- Table regions (docs/table-model.md): the shared table grammar.
+       No _numCase for Ukrainian (it silently blanks) — flat genitive
+       plural per this language's established convention. -->
+  <RimWorldAccess.Shell.Screen.TabCount>розділів: {0}</RimWorldAccess.Shell.Screen.TabCount>
+  <RimWorldAccess.Shell.Screen.SectionPosition>розділ {0} з {1}</RimWorldAccess.Shell.Screen.SectionPosition>
+  <RimWorldAccess.Shell.Table.RowPosition>рядок {0} з {1}</RimWorldAccess.Shell.Table.RowPosition>
+  <RimWorldAccess.Shell.Table.ColumnPosition>стовпець {0} з {1}</RimWorldAccess.Shell.Table.ColumnPosition>
+  <RimWorldAccess.Shell.Table.Dimensions>таблиця, стовпців: {0}, рядків: {1}</RimWorldAccess.Shell.Table.Dimensions>
+  <RimWorldAccess.Shell.Table.SortedBy>Відсортовано за «{0}», {1}</RimWorldAccess.Shell.Table.SortedBy>
+  <RimWorldAccess.Shell.Table.SortCleared>Сортування скинуто, усталений порядок</RimWorldAccess.Shell.Table.SortCleared>
+  <RimWorldAccess.Shell.Table.NotSortable>Цей стовпець не сортується</RimWorldAccess.Shell.Table.NotSortable>
+  <RimWorldAccess.Shell.Table.SortHint>Enter — сортування</RimWorldAccess.Shell.Table.SortHint>
+
+  <!-- Cross-region typeahead (docs/table-model.md section 7): the locating
+       frame spoken after a search jump lands in another region, and the
+       fallback name for unnamed regions on generic screens ({0} is the
+       1-based tab number). -->
+  <RimWorldAccess.Shell.Search.NowAt>Зараз: {0}</RimWorldAccess.Shell.Search.NowAt>
+  <RimWorldAccess.Shell.Search.UnnamedTab>вкладка {0}</RimWorldAccess.Shell.Search.UnnamedTab>
+
+  <!-- Transfer-screen table columns (table-model T3): mod-provided short
+       labels for columns vanilla shows only as icons with hover tooltips. -->
+  <RimWorldAccess.Shell.Table.Transferable.DaysUntilRot>Днів до псування</RimWorldAccess.Shell.Table.Transferable.DaysUntilRot>
+  <RimWorldAccess.Shell.Table.Transferable.DaysValue>{0} дн.</RimWorldAccess.Shell.Table.Transferable.DaysValue>
+  <RimWorldAccess.Shell.Table.Transferable.CanGraze>Може пастися</RimWorldAccess.Shell.Table.Transferable.CanGraze>
+
+  <!-- Generic pawn-table tier (table-model T5, GenericPawnTableScope). -->
+  <RimWorldAccess.Shell.Generic.CellNotReadable>значення недоступне</RimWorldAccess.Shell.Generic.CellNotReadable>
+  <RimWorldAccess.Shell.Generic.Incapable>нездатний</RimWorldAccess.Shell.Generic.Incapable>
+  <RimWorldAccess.Shell.Generic.Trained>навчено</RimWorldAccess.Shell.Generic.Trained>
+  <RimWorldAccess.Shell.Generic.HourRange>з {0} до {1}: {2}</RimWorldAccess.Shell.Generic.HourRange>
+  <RimWorldAccess.Shell.Generic.HourSingle>{0}: {1}</RimWorldAccess.Shell.Generic.HourSingle>
+  <RimWorldAccess.Shell.Generic.PawnTableRegion>Таблиця персонажів</RimWorldAccess.Shell.Generic.PawnTableRegion>
+  <!-- Dev-mode debug-action context menus embedded in the research menu and
+       entity codex (RightBracket). Only meaningful with dev mode enabled. -->
+  <!-- Dev-mode context menus embedded in the styling station, ideos tab, and
+       factions tab (RightBracket). Only meaningful with dev mode enabled. On the
+       styling station RightBracket is also "reset all", so its menu leads with
+       Reset. -->
+
+  <!-- Shared tree chords (ShellActionInventory.Part7, the "tree"/"filterTree"
+       pseudo-screens). These label the rebinding list entries for every migrated
+       tree screen. -->
+
+  <!-- Shared big-text reader (TextBufferScope): section jumps inside one block of text. -->
+
+  <!--
+    Spoken key names (KeyChordFormat, installed by ShellBootstrap). These are
+    words a screen reader reads aloud inside a sentence ("press Alt plus Page
+    Down"), not text drawn on screen, so they belong to the mod's spoken
+    vocabulary and get translated like every other spoken word. The key suffix
+    is the Unity KeyCode enum name so a binding traces to its key mechanically.
+    Keys with no entry here keep the humanized enum name, which is already
+    correct for letters, digits and the function row: those are never worded.
+    Ctrl and Option are the two modifier words the platform chooses between
+    (macOS substitutes Option for Ctrl); NumpadDigit formats the ten numeric
+    keypad keys, where {0} is the digit 0 to 9.
+  -->
+  <RimWorldAccess.Shell.Key.Ctrl>Ctrl</RimWorldAccess.Shell.Key.Ctrl>
+  <RimWorldAccess.Shell.Key.Option>Option</RimWorldAccess.Shell.Key.Option>
+  <RimWorldAccess.Shell.Key.Shift>Shift</RimWorldAccess.Shell.Key.Shift>
+  <RimWorldAccess.Shell.Key.Alt>Alt</RimWorldAccess.Shell.Key.Alt>
+
+  <RimWorldAccess.Shell.Key.UpArrow>Стрілка вгору</RimWorldAccess.Shell.Key.UpArrow>
+  <RimWorldAccess.Shell.Key.DownArrow>Стрілка вниз</RimWorldAccess.Shell.Key.DownArrow>
+  <RimWorldAccess.Shell.Key.LeftArrow>Стрілка ліворуч</RimWorldAccess.Shell.Key.LeftArrow>
+  <RimWorldAccess.Shell.Key.RightArrow>Стрілка праворуч</RimWorldAccess.Shell.Key.RightArrow>
+  <RimWorldAccess.Shell.Key.Return>Enter</RimWorldAccess.Shell.Key.Return>
+  <RimWorldAccess.Shell.Key.PageUp>Page Up</RimWorldAccess.Shell.Key.PageUp>
+  <RimWorldAccess.Shell.Key.PageDown>Page Down</RimWorldAccess.Shell.Key.PageDown>
+  <RimWorldAccess.Shell.Key.Escape>Escape</RimWorldAccess.Shell.Key.Escape>
+  <RimWorldAccess.Shell.Key.Tab>Tab</RimWorldAccess.Shell.Key.Tab>
+  <RimWorldAccess.Shell.Key.Space>Пробіл</RimWorldAccess.Shell.Key.Space>
+  <RimWorldAccess.Shell.Key.Backspace>Backspace</RimWorldAccess.Shell.Key.Backspace>
+  <RimWorldAccess.Shell.Key.Delete>Delete</RimWorldAccess.Shell.Key.Delete>
+  <RimWorldAccess.Shell.Key.Insert>Insert</RimWorldAccess.Shell.Key.Insert>
+  <RimWorldAccess.Shell.Key.Home>Home</RimWorldAccess.Shell.Key.Home>
+  <RimWorldAccess.Shell.Key.End>End</RimWorldAccess.Shell.Key.End>
+  <RimWorldAccess.Shell.Key.BackQuote>Зворотний апостроф</RimWorldAccess.Shell.Key.BackQuote>
+  <RimWorldAccess.Shell.Key.LeftBracket>Ліва квадратна дужка</RimWorldAccess.Shell.Key.LeftBracket>
+  <RimWorldAccess.Shell.Key.RightBracket>Права квадратна дужка</RimWorldAccess.Shell.Key.RightBracket>
+  <RimWorldAccess.Shell.Key.Comma>Кома</RimWorldAccess.Shell.Key.Comma>
+  <RimWorldAccess.Shell.Key.Period>Крапка</RimWorldAccess.Shell.Key.Period>
+  <RimWorldAccess.Shell.Key.Slash>Коса риска</RimWorldAccess.Shell.Key.Slash>
+  <RimWorldAccess.Shell.Key.Minus>Мінус</RimWorldAccess.Shell.Key.Minus>
+  <RimWorldAccess.Shell.Key.Plus>Плюс</RimWorldAccess.Shell.Key.Plus>
+  <RimWorldAccess.Shell.Key.Equals>Дорівнює</RimWorldAccess.Shell.Key.Equals>
+
+  <RimWorldAccess.Shell.Key.KeypadEnter>Enter на цифровій клавіатурі</RimWorldAccess.Shell.Key.KeypadEnter>
+  <RimWorldAccess.Shell.Key.KeypadPlus>Плюс на цифровій клавіатурі</RimWorldAccess.Shell.Key.KeypadPlus>
+  <RimWorldAccess.Shell.Key.KeypadMinus>Мінус на цифровій клавіатурі</RimWorldAccess.Shell.Key.KeypadMinus>
+  <RimWorldAccess.Shell.Key.KeypadMultiply>Зірочка на цифровій клавіатурі</RimWorldAccess.Shell.Key.KeypadMultiply>
+  <RimWorldAccess.Shell.Key.KeypadDivide>Коса риска на цифровій клавіатурі</RimWorldAccess.Shell.Key.KeypadDivide>
+  <RimWorldAccess.Shell.Key.KeypadPeriod>Крапка на цифровій клавіатурі</RimWorldAccess.Shell.Key.KeypadPeriod>
+  <RimWorldAccess.Shell.Key.NumpadDigit>{0} на цифровій клавіатурі</RimWorldAccess.Shell.Key.NumpadDigit>
+
+  <!-- Common glyph texture labels (C2, semantic quality campaign,
+       TextureButtonLabels/WidgetCapture.ImageButtonLabel's last-resort tier): a captured
+       icon-only button that resolved to nothing but its raw texture asset name used to
+       speak that name verbatim ("ReorderDown. button."). These are the well-known vanilla
+       TexButton textures a mod is also likely to draw its own equivalent icon with; the
+       key suffix is what TextureButtonLabels.TryGetGlyphKeySuffix returns, reached only by
+       string concatenation in code (never a literal .Translate() call). -->
+  <RimWorldAccess.Shell.Glyph.ReorderUp>Перемістити вгору</RimWorldAccess.Shell.Glyph.ReorderUp>
+  <RimWorldAccess.Shell.Glyph.ReorderDown>Перемістити вниз</RimWorldAccess.Shell.Glyph.ReorderDown>
+  <RimWorldAccess.Shell.Glyph.Plus>Додати</RimWorldAccess.Shell.Glyph.Plus>
+  <RimWorldAccess.Shell.Glyph.Minus>Вилучити</RimWorldAccess.Shell.Glyph.Minus>
+  <RimWorldAccess.Shell.Glyph.Delete>Видалити</RimWorldAccess.Shell.Glyph.Delete>
+  <RimWorldAccess.Shell.Glyph.Close>Закрити</RimWorldAccess.Shell.Glyph.Close>
+  <RimWorldAccess.Shell.Glyph.Copy>Копіювати</RimWorldAccess.Shell.Glyph.Copy>
+  <RimWorldAccess.Shell.Glyph.Paste>Вставити</RimWorldAccess.Shell.Glyph.Paste>
+  <RimWorldAccess.Shell.Glyph.Rename>Перейменувати</RimWorldAccess.Shell.Glyph.Rename>
+  <RimWorldAccess.Shell.Glyph.Info>Інформація</RimWorldAccess.Shell.Glyph.Info>
+  <RimWorldAccess.Shell.Glyph.Drag>Маркер перетягування</RimWorldAccess.Shell.Glyph.Drag>
+  <RimWorldAccess.Shell.Glyph.OpenInspector>Відкрити інспектор</RimWorldAccess.Shell.Glyph.OpenInspector>
+  <RimWorldAccess.Shell.Glyph.ToggleLog>Перемкнути журнал</RimWorldAccess.Shell.Glyph.ToggleLog>
+
+  <!-- Coverage-gaps packet: Dialog_ChooseColor / Dialog_SelectXenogerm. -->
+  <RimWorldAccess.Shell.ChooseColor.RegionName>Кольори</RimWorldAccess.Shell.ChooseColor.RegionName>
+
+  <RimWorldAccess.Shell.ColorPicker.PaletteRegion>Палітра кольорів</RimWorldAccess.Shell.ColorPicker.PaletteRegion>
+  <RimWorldAccess.Shell.ColorPicker.AdjustRegion>Точне налаштування</RimWorldAccess.Shell.ColorPicker.AdjustRegion>
+  <RimWorldAccess.Shell.ColorPicker.ReadbackRegion>Поточний вибір</RimWorldAccess.Shell.ColorPicker.ReadbackRegion>
+  <RimWorldAccess.Shell.SelectXenogerm.RegionName>Ксенозародки</RimWorldAccess.Shell.SelectXenogerm.RegionName>
+  <RimWorldAccess.Shell.SelectXenogerm.MoreGenes>і ще {0} генів</RimWorldAccess.Shell.SelectXenogerm.MoreGenes>
+
+  <!-- Action label keys (Shell.Action.*) are inert until the rebind UI exists — see
+       ShellActionInventory. -->
+</LanguageData>

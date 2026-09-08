@@ -5,6 +5,10 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
+    <!-- Pinned, not inherited: RimWorld runs Mono 4.7.2, and the net472 SDK default
+         happens to be 7.3 today. Relying on that default would let a future SDK
+         silently admit newer syntax the game's runtime cannot load. -->
+    <LangVersion>7.3</LangVersion>
     <!-- RimWorld install path - auto-detected per platform (override in GamePaths.props for custom locations) -->
     <RimWorldDir Condition="'$(RimWorldDir)'=='' And $([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app</RimWorldDir>
     <RimWorldDir Condition="'$(RimWorldDir)'=='' And $([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.steam/steam/steamapps/common/RimWorld</RimWorldDir>
@@ -15,11 +19,21 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <!-- Native Prism library directory (shared across worktrees) -->
     <NativeDir>$(ProjectDir)..\shared\native</NativeDir>
+    <!-- Doctrine rules are not advisory: a shadow copy fails the build. See analyzers/README.md. -->
+    <WarningsAsErrors>$(WarningsAsErrors);RWA0001</WarningsAsErrors>
   </PropertyGroup>
 
   <!-- Explicitly include only our source files -->
   <ItemGroup>
     <Compile Include="src/**/*.cs" />
+  </ItemGroup>
+
+  <!-- Doctrine analyzers (analyzers/README.md). Referenced for their compile-time effect only,
+       never linked into the mod, hence ReferenceOutputAssembly="false". -->
+  <ItemGroup>
+    <ProjectReference Include="analyzers\RimWorldAccess.Analyzers\RimWorldAccess.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <!-- Embed audio files as resources -->
@@ -59,6 +73,11 @@
     <DefFiles Include="Defs\**\*.xml" />
   </ItemGroup>
 
+  <!-- Patch XML files (think-tree inserts etc.) -->
+  <ItemGroup>
+    <PatchFiles Include="Patches\**\*.xml" />
+  </ItemGroup>
+
   <!-- About folder files. Shipped wholesale so About.xml AND, once it exists,
        PublishedFileId.txt (written by Steam after the first Workshop upload, then
        committed into source) both reach the package. Steam matches updates to the
@@ -95,11 +114,23 @@
     <Exec Command="python3 &quot;$(ProjectDir)scripts/check_l10n_keys.py&quot; --game-dir &quot;$(RimWorldDir)&quot;" />
   </Target>
 
+  <!-- Post-build: verify the mod version matches between src/Core/RimWorldAccessVersion.cs
+       and About/About.xml <modVersion>. Drift there would misfire update detection or ship a
+       mislabeled mod list, so the build fails if they disagree. (CHANGELOG.md is not checked:
+       its release headings are stamped from the version by scripts/build_changelog.py.) -->
+  <Target Name="CheckVersionSync" AfterTargets="Build" Condition="'$(OS)' != 'Windows_NT'">
+    <Exec Command="python3 &quot;$(ProjectDir)scripts/check_version_sync.py&quot;" />
+  </Target>
+
   <!-- Post-build: Copy mod files to RimWorld Mods folder (skip in CI) -->
   <Target Name="DeployMod" AfterTargets="Build" Condition="'$(CI)' != 'true'">
     <Message Text="--- Deploying RimWorld Access mod to $(ModOutputDir) ---" Importance="high" />
 
-    <!-- Create mod folder structure -->
+    <!-- Create mod folder structure. Wipe Assemblies first so DLLs no longer built
+         (e.g. the Roslyn set from an earlier Debug deploy) never linger: RimWorld
+         GetTypes()-sweeps every DLL in Assemblies at boot, so a stale corpse there
+         is a red boot error. -->
+    <RemoveDir Directories="$(ModOutputDir)\Assemblies" />
     <MakeDir Directories="$(ModOutputDir)\About" />
     <MakeDir Directories="$(ModOutputDir)\Assemblies" />
 
@@ -119,14 +150,19 @@
          needs to eval C# in-game. These DLLs exist only in the Debug output (the package is
          Debug-conditioned above), so this copy is a no-op for Release and the Release target
          never includes them - players never receive them. Everything in the output dir except
-         our own DLL is the Roslyn dependency set. -->
+         our own DLL is the Roslyn dependency set. They deploy OUTSIDE Assemblies/ because
+         RimWorld GetTypes()-sweeps every DLL there at boot and Microsoft.CodeAnalysis.Scripting
+         references System.Runtime.Loader types Mono lacks, producing a red boot error; the
+         bridge loads them itself from this folder (RoslynRuntimeLoader). The wipe is
+         unconditional so a Release deploy clears a previous Debug deploy's copy. -->
+    <RemoveDir Directories="$(ModOutputDir)\DevBridgeLibs" />
     <ItemGroup Condition="'$(Configuration)' == 'Debug'">
       <_DevBridgeDlls Include="$(OutDir)*.dll" Exclude="$(OutDir)$(TargetFileName)" />
     </ItemGroup>
     <Copy
       Condition="'$(Configuration)' == 'Debug'"
       SourceFiles="@(_DevBridgeDlls)"
-      DestinationFolder="$(ModOutputDir)\Assemblies\"
+      DestinationFolder="$(ModOutputDir)\DevBridgeLibs\"
     />
 
     <!-- Copy Defs folder, preserving subdirectory structure. Wipe first so a
@@ -135,6 +171,13 @@
     <Copy
       SourceFiles="@(DefFiles)"
       DestinationFiles="@(DefFiles->'$(ModOutputDir)\Defs\%(RecursiveDir)%(Filename)%(Extension)')"
+    />
+
+    <!-- Copy Patches folder, same wipe-first contract as Defs. -->
+    <RemoveDir Directories="$(ModOutputDir)\Patches" />
+    <Copy
+      SourceFiles="@(PatchFiles)"
+      DestinationFiles="@(PatchFiles->'$(ModOutputDir)\Patches\%(RecursiveDir)%(Filename)%(Extension)')"
     />
 
     <!-- Bundle each language into a .tar exactly as the Release package does, so the
@@ -157,9 +200,16 @@
       Condition="!$([MSBuild]::IsOSPlatform('Windows'))"
       Command="COPYFILE_DISABLE=1 tar --no-xattrs -cf &quot;%(_DeployLangDir.Identity).tar&quot; -C &quot;%(_DeployLangDir.Identity)&quot; Keyed"
     />
+    <!-- Windows ships bsdtar in System32, but Git for Windows puts GNU tar on PATH ahead
+         of it, and GNU tar reads a leading "C:" as a remote host (rmt "host:path" syntax),
+         failing with "Cannot connect to C: resolve failed". Which tar wins is a PATH race,
+         so the build broke on some machines and not others. GNU tar's force-local option
+         would fix GNU tar and break bsdtar, which rejects that option outright. Instead keep
+         every path relative via WorkingDirectory: no colon in an argument, both tars agree. -->
     <Exec
       Condition="$([MSBuild]::IsOSPlatform('Windows'))"
-      Command="tar -cf &quot;%(_DeployLangDir.Identity).tar&quot; -C &quot;%(_DeployLangDir.Identity)&quot; Keyed"
+      WorkingDirectory="%(_DeployLangDir.Identity)"
+      Command="tar -cf &quot;..\%(_DeployLangDir.Filename).tar&quot; Keyed"
     />
     <!-- Append DefInjected/ when a language ships it (chapters + concept overrides live
          there, not in Keyed/). Only some languages have it, so guard on existence or tar
@@ -170,7 +220,8 @@
     />
     <Exec
       Condition="$([MSBuild]::IsOSPlatform('Windows'))"
-      Command="if exist &quot;%(_DeployLangDir.Identity)\DefInjected&quot; tar -rf &quot;%(_DeployLangDir.Identity).tar&quot; -C &quot;%(_DeployLangDir.Identity)&quot; DefInjected"
+      WorkingDirectory="%(_DeployLangDir.Identity)"
+      Command="if exist DefInjected tar -rf &quot;..\%(_DeployLangDir.Filename).tar&quot; DefInjected"
     />
     <RemoveDir Directories="@(_DeployLangDir)" />
     <!-- Guard the silent-fallback gotcha: a mis-rooted archive (entries not at Keyed/)
@@ -199,6 +250,19 @@
     />
 
     <Message Text="--- Mod deployed successfully ---" Importance="high" />
+
+    <!-- Hot reload: if a Debug game session is running, ask its dev bridge to body-swap the
+         freshly deployed DLL into the live game. Connection refused (game not running) is
+         silent; the reload report prints so restart-required items are visible in the build. -->
+    <Exec
+      Condition="'$(Configuration)' == 'Debug' And !$([MSBuild]::IsOSPlatform('Windows'))"
+      Command="curl -s -m 120 -X POST --data-binary '' http://127.0.0.1:8787/reload 2>/dev/null || true"
+      ContinueOnError="true"
+      IgnoreExitCode="true"
+      ConsoleToMSBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="HotReloadReport" />
+    </Exec>
+    <Message Text="--- Hot reload: $(HotReloadReport) ---" Importance="high" Condition="'$(HotReloadReport)' != ''" />
   </Target>
 
   <!-- Release target -->
@@ -237,6 +301,12 @@
       DestinationFiles="@(DefFiles->'$(ReleaseFolderPath)Defs\%(RecursiveDir)%(Filename)%(Extension)')"
     />
 
+    <!-- Copy Patches folder, preserving subdirectory structure -->
+    <Copy
+      SourceFiles="@(PatchFiles)"
+      DestinationFiles="@(PatchFiles->'$(ReleaseFolderPath)Patches\%(RecursiveDir)%(Filename)%(Extension)')"
+    />
+
     <!-- Copy Languages folder, preserving subdirectory structure -->
     <Copy
       SourceFiles="@(LanguageFiles)"
@@ -257,9 +327,12 @@
       Condition="!$([MSBuild]::IsOSPlatform('Windows'))"
       Command="COPYFILE_DISABLE=1 tar --no-xattrs -cf &quot;%(_ReleaseLangDir.Identity).tar&quot; -C &quot;%(_ReleaseLangDir.Identity)&quot; Keyed"
     />
+    <!-- Relative paths via WorkingDirectory, same reason as the deploy step above: a
+         drive-letter argument makes GNU tar treat "C:" as a remote host. -->
     <Exec
       Condition="$([MSBuild]::IsOSPlatform('Windows'))"
-      Command="tar -cf &quot;%(_ReleaseLangDir.Identity).tar&quot; -C &quot;%(_ReleaseLangDir.Identity)&quot; Keyed"
+      WorkingDirectory="%(_ReleaseLangDir.Identity)"
+      Command="tar -cf &quot;..\%(_ReleaseLangDir.Filename).tar&quot; Keyed"
     />
     <!-- Append DefInjected/ for languages that ship it (doc chapters + concept overrides).
          Guard on existence: not every language has it, and tar errors on a missing member. -->
@@ -269,7 +342,8 @@
     />
     <Exec
       Condition="$([MSBuild]::IsOSPlatform('Windows'))"
-      Command="if exist &quot;%(_ReleaseLangDir.Identity)\DefInjected&quot; tar -rf &quot;%(_ReleaseLangDir.Identity).tar&quot; -C &quot;%(_ReleaseLangDir.Identity)&quot; DefInjected"
+      WorkingDirectory="%(_ReleaseLangDir.Identity)"
+      Command="if exist DefInjected tar -rf &quot;..\%(_ReleaseLangDir.Filename).tar&quot; DefInjected"
     />
     <!-- Guard the silent-fallback gotcha: fail the build if any .tar is not rooted at Keyed/. -->
     <Exec
@@ -307,11 +381,11 @@
       Condition="Exists('$(ProjectDir)LICENSE')"
     />
 
-    <!-- Copy changelog.txt to release ROOT (sibling of RimWorldAccess folder) -->
+    <!-- Copy CHANGELOG.md to release ROOT (sibling of RimWorldAccess folder) -->
     <Copy
-      SourceFiles="$(ProjectDir)changelog.txt"
+      SourceFiles="$(ProjectDir)CHANGELOG.md"
       DestinationFolder="$(ProjectDir)release\"
-      Condition="Exists('$(ProjectDir)changelog.txt')"
+      Condition="Exists('$(ProjectDir)CHANGELOG.md')"
     />
 
     <Message Text="--- Release package created at $(ReleaseFolderPath) ---" Importance="high" />
@@ -324,13 +398,14 @@
     detection, ethindp/prism#49). Bump only after verifying the target
     release, and keep the PrismConfig struct in PrismNative.cs in sync with
     the target's PRISM_CONFIG_VERSION: the struct is returned by value, so a
-    layout mismatch corrupts the stack. Must match PRISM_VERSION in
-    .github/workflows/build-dev.yml.
+    layout mismatch corrupts the stack. Never drop below v0.18.0: the Macaw
+    plugin load in TolkHelper needs prism_registry_builder_add_library.
+    Must match PRISM_VERSION in .github/workflows/build-dev.yml.
   -->
   <Target Name="UpdatePrism">
     <PropertyGroup>
       <PrismDownloadDir>$(ProjectDir)..\shared\native</PrismDownloadDir>
-      <PrismVersion>v0.17.0</PrismVersion>
+      <PrismVersion>v0.18.2</PrismVersion>
       <PrismBaseUrl>https://github.com/ethindp/prism/releases/download/$(PrismVersion)</PrismBaseUrl>
     </PropertyGroup>
     <Message Text="Downloading Prism $(PrismVersion) native libraries to $(PrismDownloadDir)..." Importance="high" />

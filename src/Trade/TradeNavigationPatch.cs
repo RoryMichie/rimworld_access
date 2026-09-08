@@ -37,7 +37,7 @@ namespace RimWorldAccess
             if (__instance is Dialog_Trade)
             {
                 // Always block the game's Cancel handling when our trade state is active
-                // This ensures our UnifiedKeyboardPatch handler runs and announces properly
+                // This ensures our own handler runs and announces properly
                 if (TradeNavigationState.IsActive)
                 {
                     return false; // Skip original method - let our handler close with announcement

@@ -83,11 +83,20 @@ namespace RimWorldAccess.DevBridge
                     break; // listener stopped/disposed
                 }
 
-                try { Handle(ctx); }
-                catch (Exception e)
+                // One worker per request: /inject long-polls for up to 90 seconds, and a
+                // serial accept-handle loop would queue every later request (including
+                // /health and /eval probes) behind it — smoke-caught when countdown probes
+                // during an in-flight sequence returned stale state and a concurrent
+                // /inject could never actually reach the already-running rejection.
+                // MainThreadDispatcher already serializes the game-state touches.
+                System.Threading.ThreadPool.QueueUserWorkItem(delegate
                 {
-                    try { Write(ctx, 500, "ERROR\n" + e); } catch { /* client gone */ }
-                }
+                    try { Handle(ctx); }
+                    catch (Exception e)
+                    {
+                        try { Write(ctx, 500, "ERROR\n" + e); } catch { /* client gone */ }
+                    }
+                });
             }
         }
 
@@ -119,15 +128,51 @@ namespace RimWorldAccess.DevBridge
                 return;
             }
 
+            if (path == "/inject")
+            {
+                HandleInject(ctx);
+                return;
+            }
+
+            if (path == "/reload")
+            {
+                // Optional body = explicit DLL path; default is the running assembly's own
+                // location, which the deploy step just overwrote. The 120s ceiling covers a
+                // first reload's cold reflection sweep.
+                string dllPath = ReadCode(ctx);
+                string result;
+                try
+                {
+                    result = MainThreadDispatcher.RunOnMainThread(
+                        () => HotReloader.Reload(string.IsNullOrWhiteSpace(dllPath) ? null : dllPath.Trim()),
+                        timeoutSeconds: 120);
+                }
+                catch (Exception e)
+                {
+                    result = "ERROR\n" + e;
+                }
+                Write(ctx, 200, result);
+                return;
+            }
+
             // Root / anything else: usage help.
             Write(ctx, 200,
                 "RimWorld Access dev bridge\n" +
                 "  GET  /health      - liveness + roslyn/game state\n" +
                 "  POST /eval        - body = C# script; returns the last expression's value\n" +
-                "  GET  /eval?code=  - same, url-encoded one-liner\n\n" +
+                "  GET  /eval?code=  - same, url-encoded one-liner\n" +
+                "  POST /inject      - body (or ?seq=) = a ';'-separated chord/wait/text script,\n" +
+                "                      run one step per real frame; optional ?wait=N overrides the\n" +
+                "                      default 30-frame gap between steps; returns per-step results\n" +
+                "                      plus everything spoken during the run\n" +
+                "  POST /reload      - hot-swap changed method bodies from the freshly deployed\n" +
+                "                      DLL (optional body = explicit DLL path); reports swapped\n" +
+                "                      methods and anything that needs a restart instead\n\n" +
                 "Example:\n" +
                 "  curl -s -X POST --data-binary 'return \"ViewEntityCodex\".Translate().ToString();' " +
-                $"http://127.0.0.1:{port}/eval");
+                $"http://127.0.0.1:{port}/eval\n" +
+                "  curl -s -X POST --data-binary 'F12; DownArrow; text:colonist' " +
+                $"http://127.0.0.1:{port}/inject");
         }
 
         private static string ReadCode(HttpListenerContext ctx)
@@ -145,6 +190,55 @@ namespace RimWorldAccess.DevBridge
             }
             // Fall back to the ?code= query parameter.
             return ctx.Request.QueryString["code"];
+        }
+
+        /// <summary>
+        /// Arms a multi-frame injection sequence and blocks this HTTP request (NOT the main thread —
+        /// every touch of the sequence state below goes through
+        /// <see cref="MainThreadDispatcher.RunOnMainThread{T}"/>, same as /eval) until it finishes or a
+        /// 90-second ceiling is hit.
+        /// </summary>
+        private static void HandleInject(HttpListenerContext ctx)
+        {
+            string script = ReadCode(ctx);
+            if (string.IsNullOrWhiteSpace(script))
+            {
+                script = ctx.Request.QueryString["seq"];
+            }
+            if (string.IsNullOrWhiteSpace(script))
+            {
+                Write(ctx, 400, "ERROR\nNo script provided. POST a sequence body, or GET /inject?seq=...");
+                return;
+            }
+
+            int wait = 30;
+            string waitParam = ctx.Request.QueryString["wait"];
+            if (!string.IsNullOrEmpty(waitParam))
+            {
+                int.TryParse(waitParam, out wait);
+            }
+
+            string startError = MainThreadDispatcher.RunOnMainThread(
+                () => RimWorldAccess.Shell.ShellDev.StartSequence(script, wait));
+            if (startError != null)
+            {
+                Write(ctx, 200, startError);
+                return;
+            }
+
+            DateTime deadline = DateTime.UtcNow.AddSeconds(90);
+            while (DateTime.UtcNow < deadline)
+            {
+                bool running = MainThreadDispatcher.RunOnMainThread(() => RimWorldAccess.Shell.ShellDev.SequenceRunning);
+                if (!running)
+                {
+                    break;
+                }
+                Thread.Sleep(100);
+            }
+
+            string result = MainThreadDispatcher.RunOnMainThread(() => RimWorldAccess.Shell.ShellDev.SequenceResult);
+            Write(ctx, 200, result ?? "ERROR: sequence timed out after 90s");
         }
 
         private static void Write(HttpListenerContext ctx, int status, string text)

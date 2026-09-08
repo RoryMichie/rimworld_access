@@ -445,3 +445,23 @@ Useful sub-paths: `Keyed/Designators.xml` (order verbs), `Keyed/GameplayCommands
 The English comments in the corpus (`<!-- EN: … -->`) let you confirm a key's meaning before trusting
 its Russian value. Always cite the file you took a term from when you add a row. **For any counted
 noun you add, prefer a `_numCase` three-form tag (§3.2) — Russian supports it.**
+
+## Mod-coined terms — watermill placement + read-only browsing (2026-08-13)
+
+Thirteen new keys (`RimWorldAccess.Building.Place.Spot*`, `.Watermill*`, `RimWorldAccess.TextInput.BrowsingField/ReadOnlyField`)
+had no reference translation to check: this local install only carries the English Core language pack,
+so RimWorld's own Russian wording for the `WatermillGenerator` ThingDef could not be verified against the
+game's corpus. Decided from context per house rule (no native-review parking); record here so later
+waves stay consistent instead of re-deriving these. Per §3.2, the tile-count placeholder in the
+Watermill keys keeps the established `_numCase` three-form tag, matching `OutlineOkAt`/`HighlightedAt`.
+
+| English | Русский | Basis |
+|---|---|---|
+| watermill (whole building) | водяная мельница | Standard Russian term for a water mill |
+| waterwheel (the wheel part) | водяное колесо | Standard Russian term for a water wheel |
+| moving/running water | проточная вода | Standard idiom for flowing water |
+| water flow area | зона водного потока | Coined; parallels `Требуемая область` (`OutlineOkAt`) |
+| unshared / shared with another watermill | не используется совместно / используется совместно с другой водяной мельницей | Coined |
+| placement spot (scanner category/item) | Места для размещения: {0} / Место | Mirrors `Abilities.Plant.ScannerCategory`/`ScannerItemLabel` ("Места для посадки: {0}" / "Место для посадки") |
+| facing {0} (trailing fragment) | лицом к {0} | Mirrors `Building.ArchitectPlace.GravshipFacing` ("Гравикорабль лицом к {0}") |
+| read only (BrowsingField) | только для чтения | Reuses `Shell.State.ReadOnly`'s full standalone form (vs. Biotech/UI's shorter inline "только чтение") |

@@ -63,22 +63,20 @@
   <RimWorldAccess.Tree.AllAlreadyExpanded>Усі елементи вже розгорнуто</RimWorldAccess.Tree.AllAlreadyExpanded>
   <RimWorldAccess.Tree.NoneToExpand>Немає елементів для розгортання</RimWorldAccess.Tree.NoneToExpand>
 
-  <!-- Two-level menu (src/UI/TwoLevelMenuHelper.cs).
-       Used by quest, history, notification, and mod-list menus.
-       ButtonAnnouncement/Disabled: {0} = button label, {1} = position suffix.
-       ButtonDisabled/Reason: {0} = button label, {1} = reason. -->
+  <!-- Two-level menu (src/UI/TwoLevelMenuHelper.cs). Used by the mod-list detail view,
+       notifications, and the History Graph sub-tab. ButtonAnnouncement/Disabled and
+       ButtonDisabled/Reason retired (Task 8 packet H): button focus now speaks through
+       the composer's own Button role + Disabled state, and the disabled-activation
+       refusal reuses the shared RimWorldAccess.Shell.GenericWindow.Disabled key. -->
   <RimWorldAccess.TwoLevel.BackToList>Назад до списку</RimWorldAccess.TwoLevel.BackToList>
   <RimWorldAccess.TwoLevel.BackToListWithSuffix>Назад до списку. {0}</RimWorldAccess.TwoLevel.BackToListWithSuffix>
-  <RimWorldAccess.TwoLevel.ButtonAnnouncement>{0}. Кнопка. {1}</RimWorldAccess.TwoLevel.ButtonAnnouncement>
-  <RimWorldAccess.TwoLevel.ButtonAnnouncementDisabled>{0} (деактивовано). Кнопка. {1}</RimWorldAccess.TwoLevel.ButtonAnnouncementDisabled>
-  <RimWorldAccess.TwoLevel.ButtonDisabled>{0}: деактивовано</RimWorldAccess.TwoLevel.ButtonDisabled>
-  <RimWorldAccess.TwoLevel.ButtonDisabledReason>{0}: деактивовано: {1}</RimWorldAccess.TwoLevel.ButtonDisabledReason>
 
   <!-- Menu formatting (src/UI/MenuHelper.cs).
        Position: {0} = 1-based index, {1} = total.
        LevelSuffix: {0} = indent level (1-based), appended to item announcements.
        CannotPaintColumn: tabular menus when a column cannot be paint-copied. -->
   <RimWorldAccess.Menu.Position>{0} з {1}</RimWorldAccess.Menu.Position>
+  <RimWorldAccess.Menu.TabPosition>вкладка {0} з {1}</RimWorldAccess.Menu.TabPosition>
   <RimWorldAccess.Menu.LevelSuffix> рівень {0}</RimWorldAccess.Menu.LevelSuffix>
   <RimWorldAccess.Menu.CannotPaintColumn>Неможливо скопіювати цей стовпець</RimWorldAccess.Menu.CannotPaintColumn>
 
@@ -117,4 +115,8 @@
   <RimWorldAccess.Common.SortAscending>за зростанням</RimWorldAccess.Common.SortAscending>
   <RimWorldAccess.Common.SortDescending>за спаданням</RimWorldAccess.Common.SortDescending>
   <RimWorldAccess.Common.RenameLabeled>Перейменувати {0}</RimWorldAccess.Common.RenameLabeled>
+
+  <!-- Where a row dragged with the mouse would land. {0} = 1-based position,
+       {1} = number of rows in the list being reordered. -->
+  <RimWorldAccess.Common.Drag.ReorderPosition>Позиція {0} з {1}</RimWorldAccess.Common.Drag.ReorderPosition>
 </LanguageData>

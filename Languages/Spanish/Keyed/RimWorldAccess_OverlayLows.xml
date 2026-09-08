@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Caravan.Split.KeyboardModeActive>Modo de teclado activo</RimWorldAccess.Caravan.Split.KeyboardModeActive>
+  <RimWorldAccess.Caravan.Split.KeyboardInstructions>Pestañas: Personajes, Elementos, Comida y medicina | Izquierda/Derecha: Cambiar pestañas/caravanas\nArriba/Abajo: Navegar/Estadísticas | Espacio/Enter: Alternar/Cantidad | Shift+Enter: Máximo | Supr: Eliminar\nTab: Resumen (Arriba/Abajo: estadísticas, I/D: caravanas) | Alt+I: Inspeccionar | Alt+S: Dividir</RimWorldAccess.Caravan.Split.KeyboardInstructions>
+  <RimWorldAccess.Pawns.SkillsTable.Incapable>incapaz</RimWorldAccess.Pawns.SkillsTable.Incapable>
+  <RimWorldAccess.Pawns.Presence.Colonist>{0} colono</RimWorldAccess.Pawns.Presence.Colonist>
+  <RimWorldAccess.Pawns.Presence.Colonists>{0} colonos</RimWorldAccess.Pawns.Presence.Colonists>
+  <RimWorldAccess.Pawns.Presence.Mech>{0} meca</RimWorldAccess.Pawns.Presence.Mech>
+  <RimWorldAccess.Pawns.Presence.Mechs>{0} mecas</RimWorldAccess.Pawns.Presence.Mechs>
+  <RimWorldAccess.Pawns.Presence.Animal>{0} animal</RimWorldAccess.Pawns.Presence.Animal>
+  <RimWorldAccess.Pawns.Presence.Animals>{0} animales</RimWorldAccess.Pawns.Presence.Animals>
+</LanguageData>

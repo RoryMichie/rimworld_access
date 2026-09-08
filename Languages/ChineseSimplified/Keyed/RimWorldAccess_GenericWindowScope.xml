@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Glossary-enablement plan, Phase 3 (GenericWindowScope,
+    src/Shell/Screens/GenericWindowScope.Game.cs). Every focused-row
+    announcement reuses the shared AnnouncementComposer/vocabulary keys; this
+    is the one genuinely new string the scope needs.
+  -->
+
+  <!-- Safety-valve empty state: spoken once the window's capture has had its
+       grace passes and still recorded nothing at all (e.g. a custom-drawn
+       window using none of the widened widget vocabulary). -->
+  <RimWorldAccess.UI.GenericWindow.NoElements>此窗口暂无 RimWorld Access 可以读取的元素。</RimWorldAccess.UI.GenericWindow.NoElements>
+  <RimWorldAccess.Shell.GenericWindow.SectionPrefix>{0}. {1}</RimWorldAccess.Shell.GenericWindow.SectionPrefix>
+  <RimWorldAccess.Shell.GenericWindow.Disabled>{0} 已禁用。</RimWorldAccess.Shell.GenericWindow.Disabled>
+</LanguageData>

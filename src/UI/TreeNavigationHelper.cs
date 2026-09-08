@@ -2,31 +2,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
-using UnityEngine;
+using RimWorldAccess.Shell;
 using Verse;
 using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Reusable tree navigation helper that encapsulates all standard treeview keyboard
-    /// handling, typeahead search, expand/collapse, level tracking, and announcements.
+    /// Treeview keyboard handling, typeahead search, expand/collapse, level tracking, and
+    /// announcements. Owns a <see cref="TreeModel{T}"/> for the flatten/cursor/expand index
+    /// math and adds everything render-related (sounds, speech, search, level tracking).
     ///
-    /// Usage:
-    ///   var tree = new TreeNavigationHelper("MyFeature");
-    ///   tree.OnActivate = item => { /* custom Enter behavior */ return false; };
-    ///   tree.Initialize(rootItem);
-    ///   // In input handler: tree.HandleInput(Event.current)
+    /// LEGACY: the only consumers are FactionTabState (via FactionTreeNavigation) and
+    /// IdeosDuringLandingScope (via IdeologyTreeNavigation). Do not add new consumers; new
+    /// trees subclass TreeRegionScope. Delete this class when those two migrate.
+    ///
+    /// Callers construct with a level-tracking key, set the callbacks, call Initialize, then
+    /// route keys through the public router methods (NavigateNext, ActivateCurrent, ...).
     /// </summary>
     public class TreeNavigationHelper
     {
         private readonly string levelTrackingKey;
         private readonly TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
+        private readonly InspectionTreeItemShape shape = new InspectionTreeItemShape();
+        private readonly TreeModel<InspectionTreeItem> model;
 
-        private InspectionTreeItem rootItem;
-        private List<InspectionTreeItem> visibleItems = new List<InspectionTreeItem>();
-        private int selectedIndex;
-        private Dictionary<InspectionTreeItem, InspectionTreeItem> lastChildPerParent;
         private InspectionTreeItem lastAnnouncedParent;
         // Snapshot of pre-search expansion state — non-null while a typeahead search
         // is auto-expanding the tree to surface matches across collapsed nodes.
@@ -35,103 +35,106 @@ namespace RimWorldAccess
         #region Configuration
 
         /// <summary>
-        /// Custom formatter for item announcements during normal navigation.
-        /// Receives the current item; returns the full announcement string.
-        /// If null, uses the default format: "Label, expanded, 3 items. 1 of 5. level 2"
+        /// Announcement formatter for normal navigation. Null uses the default format:
+        /// "Label, expanded, 3 items. 1 of 5. level 2".
         /// </summary>
         public Func<InspectionTreeItem, string> FormatItemAnnouncement { get; set; }
 
         /// <summary>
-        /// Custom formatter for item announcements after expand/collapse state changes.
-        /// If null, falls back to FormatItemAnnouncement (or default).
-        /// Useful when you want a shorter announcement after toggling (e.g., just label + state).
+        /// Announcement formatter for expand/collapse state changes, for a shorter form than
+        /// full navigation. Null falls back to FormatItemAnnouncement.
         /// </summary>
         public Func<InspectionTreeItem, string> FormatStateChangeAnnouncement { get; set; }
 
         /// <summary>
-        /// Custom formatter for announcements during typeahead search.
-        /// Receives the current item and typeahead helper; returns the full announcement string.
-        /// If null, uses default: "Label, expanded, 2 of 5 matches for 'w'"
+        /// Announcement formatter for typeahead search. Null uses the default format:
+        /// "Label, expanded, 2 of 5 matches for 'w'".
         /// </summary>
         public Func<InspectionTreeItem, TypeaheadSearchHelper, string> FormatSearchAnnouncement { get; set; }
 
         /// <summary>
-        /// Called when Enter is pressed on a node. Return true if handled;
-        /// false falls back to default toggle expand/collapse behavior.
+        /// Enter handler. Return true if handled; false falls back to toggle expand/collapse.
         /// </summary>
         public Func<InspectionTreeItem, bool> OnActivate { get; set; }
 
-        /// <summary>
-        /// Called when Delete is pressed. Return true if handled.
-        /// </summary>
+        /// <summary>Delete handler. Return true if handled.</summary>
         public Func<InspectionTreeItem, bool> OnDelete { get; set; }
 
         /// <summary>
-        /// Called when Alt+I is pressed. Return true if handled.
-        /// If null, default behavior tries item.OnInfo, then opens info card for item.LinkedDef.
+        /// Alt+I handler. Return true if handled; null falls back to item.OnInfo, then the
+        /// info card for item.LinkedDef.
         /// </summary>
         public Func<InspectionTreeItem, bool> OnInfo { get; set; }
 
         /// <summary>
-        /// Called before a node is expanded (right arrow or Enter toggle).
-        /// Use for lazy loading: populate item.Children in this callback.
+        /// Invoked by the model immediately before a node is set expanded. Populate
+        /// item.Children here for lazy loading.
         /// </summary>
-        public Action<InspectionTreeItem> OnBeforeExpand { get; set; }
+        public Action<InspectionTreeItem> OnBeforeExpand
+        {
+            get => model.OnBeforeExpand;
+            set => model.OnBeforeExpand = value;
+        }
 
         /// <summary>
-        /// Predicate selecting which expandable nodes should be auto-expanded for
-        /// the duration of a typeahead search, so matches inside collapsed nodes
-        /// become reachable without the user pressing '*' first. The original
-        /// expansion state is restored when the search ends (Escape, navigation,
-        /// or backspace-to-empty). If null, search is scoped to currently-visible
-        /// items only (legacy behavior).
+        /// Nodes matching this predicate are auto-expanded for the duration of a typeahead
+        /// search so matches inside collapsed nodes are reachable; the original expansion state
+        /// is restored when the search ends. Null scopes search to currently-visible items.
         /// </summary>
         public Func<InspectionTreeItem, bool> ShouldExpandForSearch { get; set; }
 
         /// <summary>
-        /// Optional override for which visible items typeahead can match, and what text
-        /// it matches against. Return the label to match on, or null/empty to exclude the
-        /// item from results entirely. When set, this fully replaces the default
-        /// label-selection logic (which ties matchability to <see cref="ShouldExpandForSearch"/>),
-        /// letting a consumer index only certain nodes (e.g. high-level inspection items)
-        /// independently of which nodes were auto-expanded for the search. If null, default
-        /// behavior applies. Indexes line up with the visible items list.
+        /// Text typeahead matches each visible item against; null/empty excludes the item.
+        /// Fully replaces the default selection (which ties matchability to
+        /// <see cref="ShouldExpandForSearch"/>), so a consumer can index an arbitrary subset
+        /// independently of what the search auto-expanded. Indexes line up with VisibleItems.
         /// </summary>
         public Func<InspectionTreeItem, string> SearchableLabelSelector { get; set; }
 
         /// <summary>
-        /// Predicate marking which visible items act as "section boundaries" for Page Up/Down
-        /// navigation. When set, Page Up/Down jump the cursor to the previous/next matching item
-        /// (e.g. a role's "Abilities" / "Requirements" detail headers). If null, Page Up/Down are
-        /// inert (consumed, no movement).
+        /// Items Page Up/Down jump between. Null leaves Page Up/Down inert (consumed, no
+        /// movement).
         /// </summary>
         public Func<InspectionTreeItem, bool> IsSectionBoundary { get; set; }
 
         /// <summary>
-        /// Whether to include child counts in expand/collapse announcements.
-        /// Default: true ("expanded, 3 items"). Set to false for just "expanded".
+        /// Whether expand/collapse announcements include child counts ("expanded, 3 items"
+        /// versus just "expanded").
         /// </summary>
         public bool AnnounceChildCounts { get; set; } = true;
 
         /// <summary>
-        /// Whether to skip the root node in the visible list.
-        /// Default: true (root is hidden, children are top-level visible items).
+        /// Whether the root node is hidden so its children are the top-level visible items.
         /// </summary>
-        public bool SkipRootInVisibleList { get; set; } = true;
+        public bool SkipRootInVisibleList
+        {
+            get => model.SkipRoot;
+            set => model.SkipRoot = value;
+        }
 
         /// <summary>
-        /// Whether to track the last visited child per parent node for cursor restoration.
-        /// Default: false. Enable for inspection-style trees where returning to a parent
-        /// should restore the previously visited child.
+        /// Whether returning to a parent restores the previously visited child.
         /// </summary>
-        public bool TrackLastChild { get; set; } = false;
+        public bool TrackLastChild
+        {
+            get => model.TrackLastChild;
+            set => model.TrackLastChild = value;
+        }
 
-        /// <summary>
-        /// Returns true if submenu-style treeview navigation is enabled in settings.
-        /// In submenu mode, expanded parents are hidden from the visible list.
-        /// </summary>
+        /// <summary>In submenu mode, expanded parents are hidden from the visible list.</summary>
         private bool IsSubmenuMode =>
             RimWorldAccessMod_Settings.Settings?.SubmenuTreeNavigation ?? false;
+
+        /// <summary>
+        /// Pushes the settings-derived config (wrap, submenu mode) onto the model, which caches
+        /// it in fields. Must run before any model op that depends on it; cheap enough to call
+        /// at the top of every method that touches the model.
+        /// </summary>
+        private void SyncModelConfig()
+        {
+            model.Wrap = (RimWorldAccessMod_Settings.Settings?.WrapNavigation == true);
+            model.SubmenuMode = IsSubmenuMode;
+        }
 
         #endregion
 
@@ -139,16 +142,13 @@ namespace RimWorldAccess
 
         public bool HasActiveSearch => typeahead.HasActiveSearch;
         public bool HasNoMatches => typeahead.HasNoMatches;
-        public int SelectedIndex => selectedIndex;
+        public int SelectedIndex => model.SelectedIndex;
 
-        public InspectionTreeItem SelectedItem =>
-            (selectedIndex >= 0 && selectedIndex < visibleItems.Count)
-                ? visibleItems[selectedIndex]
-                : null;
+        public InspectionTreeItem SelectedItem => model.SelectedItem;
 
-        public IReadOnlyList<InspectionTreeItem> VisibleItems => visibleItems;
-        public InspectionTreeItem RootItem => rootItem;
-        public int Count => visibleItems.Count;
+        public IReadOnlyList<InspectionTreeItem> VisibleItems => model.Visible;
+        public InspectionTreeItem RootItem => model.Root;
+        public int Count => model.Count;
         public TypeaheadSearchHelper Typeahead => typeahead;
 
         #endregion
@@ -156,59 +156,49 @@ namespace RimWorldAccess
         public TreeNavigationHelper(string levelTrackingKey)
         {
             this.levelTrackingKey = levelTrackingKey;
+            model = new TreeModel<InspectionTreeItem>(shape);
         }
 
         #region Lifecycle
 
         /// <summary>
-        /// Initializes the tree with a root node. Flattens visible items,
-        /// resets selection and search, and resets level tracking.
-        /// Does NOT announce — caller should announce opening in their own format.
+        /// Sets the root and resets selection, search, and level tracking. Does NOT announce —
+        /// the caller announces opening in its own format.
         /// </summary>
         public void Initialize(InspectionTreeItem root, int initialIndex = 0)
         {
-            rootItem = root;
-            selectedIndex = initialIndex;
+            SyncModelConfig();
             typeahead.ClearSearch();
             MenuHelper.ResetLevel(levelTrackingKey);
-            if (TrackLastChild || IsSubmenuMode)
-                lastChildPerParent = new Dictionary<InspectionTreeItem, InspectionTreeItem>();
             lastAnnouncedParent = null;
-            RebuildVisibleList();
-            if (selectedIndex >= visibleItems.Count)
-                selectedIndex = Math.Max(0, visibleItems.Count - 1);
+            model.SetRoot(root, initialIndex);
         }
 
-        /// <summary>
-        /// Resets all tree state.
-        /// </summary>
+        /// <summary>Resets all tree state.</summary>
         public void Reset()
         {
-            rootItem = null;
-            visibleItems.Clear();
-            selectedIndex = 0;
             typeahead.ClearSearch();
             MenuHelper.ResetLevel(levelTrackingKey);
-            lastChildPerParent?.Clear();
             lastAnnouncedParent = null;
             preSearchExpansion = null;
+            model.Reset();
         }
 
         /// <summary>
-        /// Snapshots current expansion state and expands all eligible nodes per
-        /// ShouldExpandForSearch. No-op if a snapshot is already active or the
-        /// feature is not configured. Returns true if the visible list changed.
+        /// Snapshots expansion state and expands every node ShouldExpandForSearch accepts.
+        /// No-op if a snapshot is already active. Returns true if the visible list changed.
         /// </summary>
         private bool EnsureSearchExpansion()
         {
             if (ShouldExpandForSearch == null) return false;
             if (preSearchExpansion != null) return false;
-            if (rootItem == null) return false;
+            if (model.Root == null) return false;
 
+            SyncModelConfig();
             preSearchExpansion = new Dictionary<InspectionTreeItem, bool>();
-            bool changed = SnapshotAndExpand(rootItem);
+            bool changed = SnapshotAndExpand(model.Root);
             if (changed)
-                RebuildVisibleList();
+                model.Reflatten();
             return changed;
         }
 
@@ -233,274 +223,33 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Restores expansion state from the snapshot taken when search began.
-        /// Repositions the cursor onto the previously-selected item if it remains
-        /// visible; otherwise walks up to its nearest visible ancestor. No-op if
-        /// no snapshot is active.
+        /// Restores the pre-search expansion snapshot, repositioning the cursor onto the
+        /// previously-selected item or its nearest visible ancestor.
         /// </summary>
         private void RestorePreSearchExpansion()
         {
             if (preSearchExpansion == null) return;
 
-            var prevSelected = (selectedIndex >= 0 && selectedIndex < visibleItems.Count)
-                ? visibleItems[selectedIndex] : null;
+            SyncModelConfig();
+            var prevSelected = model.SelectedItem;
 
             foreach (var kv in preSearchExpansion)
                 kv.Key.IsExpanded = kv.Value;
             preSearchExpansion = null;
 
-            RebuildVisibleList();
+            model.Reflatten();
 
             int newIdx = -1;
             var target = prevSelected;
             while (target != null && newIdx < 0)
             {
-                newIdx = visibleItems.IndexOf(target);
+                newIdx = model.IndexOf(target);
                 if (newIdx < 0) target = target.Parent;
             }
             if (newIdx >= 0)
-                selectedIndex = newIdx;
+                model.SetSelectedIndex(newIdx);
             else
-                selectedIndex = Math.Max(0, Math.Min(selectedIndex, visibleItems.Count - 1));
-        }
-
-        #endregion
-
-        #region Primary Input Handler
-
-        /// <summary>
-        /// Handles keyboard input for tree navigation.
-        /// Returns true if input was consumed; false for unhandled events
-        /// (Escape with no active search — caller decides close behavior).
-        /// </summary>
-        public bool HandleInput(Event ev)
-        {
-            if (ev.type != EventType.KeyDown)
-                return false;
-
-            KeyCode key = ev.keyCode;
-
-            // Alt+I — info card (use KeyboardHelper.IsAltHeld for AZERTY compatibility)
-            if (KeyboardHelper.IsAltHeld && key == KeyCode.I)
-            {
-                HandleInfoKey();
-                return true;
-            }
-
-            // Delete
-            if (key == KeyCode.Delete)
-            {
-                HandleDeleteKey();
-                return true;
-            }
-
-            // Escape — clear search only; return false if no search (caller handles close)
-            if (key == KeyCode.Escape)
-            {
-                if (typeahead.HasActiveSearch)
-                {
-                    typeahead.ClearSearchAndAnnounce();
-                    RestorePreSearchExpansion();
-                    AnnounceCurrentItem();
-                    return true;
-                }
-                if (preSearchExpansion != null)
-                {
-                    // Search was already cleared (e.g., no-match) but expansion is still
-                    // in search mode — restore on Escape so the tree returns to normal.
-                    RestorePreSearchExpansion();
-                    AnnounceCurrentItem();
-                    return true;
-                }
-                return false;
-            }
-
-            // Up arrow
-            if (key == KeyCode.UpArrow)
-            {
-                if (visibleItems.Count == 0) return true;
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    int prev = typeahead.GetPreviousMatch(selectedIndex);
-                    if (prev >= 0)
-                    {
-                        selectedIndex = prev;
-                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                        AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    selectedIndex = MenuHelper.SelectPrevious(selectedIndex, visibleItems.Count);
-                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                    AnnounceCurrentItem();
-                }
-                return true;
-            }
-
-            // Down arrow
-            if (key == KeyCode.DownArrow)
-            {
-                if (visibleItems.Count == 0) return true;
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    int next = typeahead.GetNextMatch(selectedIndex);
-                    if (next >= 0)
-                    {
-                        selectedIndex = next;
-                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                        AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    selectedIndex = MenuHelper.SelectNext(selectedIndex, visibleItems.Count);
-                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                    AnnounceCurrentItem();
-                }
-                return true;
-            }
-
-            // Right arrow — expand or drill down
-            if (key == KeyCode.RightArrow)
-            {
-                ExpandOrDrillDown();
-                return true;
-            }
-
-            // Left arrow — collapse or drill up
-            if (key == KeyCode.LeftArrow)
-            {
-                CollapseOrDrillUp();
-                return true;
-            }
-
-            // Home — first sibling (Ctrl = absolute first)
-            if (key == KeyCode.Home)
-            {
-                if (visibleItems.Count == 0) return true;
-                // During an active search, Home goes to the first match and keeps the
-                // search, rather than clearing it and jumping out to the top of the tree.
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    int first = typeahead.GetFirstMatch();
-                    if (first >= 0)
-                    {
-                        selectedIndex = first;
-                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                        AnnounceWithSearch();
-                    }
-                    return true;
-                }
-                typeahead.ClearSearch();
-                RestorePreSearchExpansion();
-                MenuHelper.HandleTreeHomeKey(visibleItems, ref selectedIndex,
-                    item => item.IndentLevel, ev.control, PlayTickAndAnnounce);
-                return true;
-            }
-
-            // End — last sibling (Ctrl = absolute last)
-            if (key == KeyCode.End)
-            {
-                if (visibleItems.Count == 0) return true;
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    int last = typeahead.GetLastMatch();
-                    if (last >= 0)
-                    {
-                        selectedIndex = last;
-                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                        AnnounceWithSearch();
-                    }
-                    return true;
-                }
-                typeahead.ClearSearch();
-                RestorePreSearchExpansion();
-                MenuHelper.HandleTreeEndKey(visibleItems, ref selectedIndex,
-                    item => item.IndentLevel,
-                    item => item.IsExpanded,
-                    item => item.IsExpandable && item.Children.Count > 0,
-                    ev.control, PlayTickAndAnnounce);
-                return true;
-            }
-
-            // Page Up / Page Down — jump between section boundaries (opt-in via IsSectionBoundary)
-            if (key == KeyCode.PageUp)
-            {
-                JumpToAdjacentSection(forward: false);
-                return true;
-            }
-            if (key == KeyCode.PageDown)
-            {
-                JumpToAdjacentSection(forward: true);
-                return true;
-            }
-
-            // Space — re-announce current item
-            if (key == KeyCode.Space)
-            {
-                AnnounceCurrentItem();
-                return true;
-            }
-
-            // Enter — custom activate, then fall back to toggle expand/collapse
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                HandleEnterKey();
-                return true;
-            }
-
-            // * key — expand all siblings
-            bool isStar = key == KeyCode.KeypadMultiply
-                          || (ev.shift && key == KeyCode.Alpha8);
-            if (isStar)
-            {
-                ExpandAllSiblings();
-                return true;
-            }
-
-            // Backspace — delete last search character
-            if (key == KeyCode.Backspace && typeahead.HasActiveSearch)
-            {
-                var labels = GetSearchableLabels();
-                if (typeahead.ProcessBackspace(labels, out int newIndex))
-                {
-                    if (newIndex >= 0)
-                        selectedIndex = newIndex;
-                    SoundDefOf.Click.PlayOneShotOnCamera();
-                    if (!typeahead.HasActiveSearch)
-                    {
-                        // Buffer fully emptied — restore the pre-search tree shape.
-                        RestorePreSearchExpansion();
-                        AnnounceCurrentItem();
-                    }
-                    else
-                    {
-                        AnnounceWithSearch();
-                    }
-                }
-                return true;
-            }
-
-            // Typeahead search — alphanumeric keys
-            {
-                bool isLetter = key >= KeyCode.A && key <= KeyCode.Z;
-                bool isNumber = key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9;
-
-                if ((isLetter || isNumber) && !KeyboardHelper.IsAltHeld && !ev.control)
-                {
-                    // Consume the first half of Unity's two-event pair so game
-                    // hotkeys (e.g. vanilla 'G' gizmo shortcut) don't fire.
-                    // The second half (keyCode=None, char='x') is handled below.
-                    return true;
-                }
-            }
-
-            // Consume all other keys to prevent pass-through — EXCEPT the
-            // KeyCode.None character event. UnifiedKeyboardPatch's priority -1.5
-            // TypeaheadDispatcher needs that event to route the layout-aware
-            // character to the registered consumer (e.g. ArchitectTreeState).
-            return key != KeyCode.None;
+                model.SetSelectedIndex(model.SelectedIndex);
         }
 
         #endregion
@@ -509,354 +258,408 @@ namespace RimWorldAccess
 
         public void SelectNext()
         {
-            if (visibleItems.Count == 0) return;
-            selectedIndex = MenuHelper.SelectNext(selectedIndex, visibleItems.Count);
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrentItem();
+            if (model.Count == 0) return;
+            SyncModelConfig();
+            StepAndAnnounce(forward: true);
         }
 
         public void SelectPrevious()
         {
-            if (visibleItems.Count == 0) return;
-            selectedIndex = MenuHelper.SelectPrevious(selectedIndex, visibleItems.Count);
+            if (model.Count == 0) return;
+            SyncModelConfig();
+            StepAndAnnounce(forward: false);
+        }
+
+        /// <summary>One plain row step; an unwrapped end answers with the edge tone alone.</summary>
+        private void StepAndAnnounce(bool forward)
+        {
+            MoveResult result = forward ? model.MoveNext() : model.MovePrevious();
+            if (!MenuHelper.SoundMove(result))
+                return;
             SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
             AnnounceCurrentItem();
         }
 
+        /// <summary>
+        /// Up arrow: steps between typeahead matches while a search has any, otherwise moves
+        /// like <see cref="SelectPrevious"/>, which never consults the search.
+        /// </summary>
+        public void NavigatePrevious()
+        {
+            if (model.Count == 0) return;
+            SyncModelConfig();
+            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
+            {
+                int prev = typeahead.GetPreviousMatch(model.SelectedIndex);
+                if (prev >= 0)
+                {
+                    MenuHelper.SoundMatchMove(model.SelectedIndex, prev, -1);
+                    model.SetSelectedIndex(prev);
+                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
+                    AnnounceWithSearch();
+                }
+            }
+            else
+            {
+                StepAndAnnounce(forward: false);
+            }
+        }
+
+        /// <summary>Down arrow: the <see cref="NavigatePrevious"/> twin.</summary>
+        public void NavigateNext()
+        {
+            if (model.Count == 0) return;
+            SyncModelConfig();
+            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
+            {
+                int next = typeahead.GetNextMatch(model.SelectedIndex);
+                if (next >= 0)
+                {
+                    MenuHelper.SoundMatchMove(model.SelectedIndex, next, 1);
+                    model.SetSelectedIndex(next);
+                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
+                    AnnounceWithSearch();
+                }
+            }
+            else
+            {
+                StepAndAnnounce(forward: true);
+            }
+        }
+
+        /// <summary>
+        /// Home: first sibling, or (<paramref name="ctrl"/>) absolute first. During an active
+        /// search with matches, jumps to the first match and KEEPS the search, unlike
+        /// <see cref="JumpToFirst"/>, which always clears it first.
+        /// </summary>
+        public void HandleHomeKey(bool ctrl)
+        {
+            if (model.Count == 0) return;
+            SyncModelConfig();
+            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
+            {
+                int first = typeahead.GetFirstMatch();
+                if (first >= 0)
+                {
+                    model.SetSelectedIndex(first);
+                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
+                    AnnounceWithSearch();
+                }
+                return;
+            }
+            typeahead.ClearSearch();
+            RestorePreSearchExpansion();
+            var homeResult = model.HomeKey(ctrl);
+            if (homeResult.Changed) PlayTickAndAnnounce();
+        }
+
+        /// <summary>End: the <see cref="HandleHomeKey"/> twin.</summary>
+        public void HandleEndKey(bool ctrl)
+        {
+            if (model.Count == 0) return;
+            SyncModelConfig();
+            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
+            {
+                int last = typeahead.GetLastMatch();
+                if (last >= 0)
+                {
+                    model.SetSelectedIndex(last);
+                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
+                    AnnounceWithSearch();
+                }
+                return;
+            }
+            typeahead.ClearSearch();
+            RestorePreSearchExpansion();
+            var endResult = model.EndKey(ctrl);
+            if (endResult.Changed) PlayTickAndAnnounce();
+        }
+
         public void ExpandOrDrillDown()
         {
-            if (visibleItems.Count == 0 || selectedIndex < 0 || selectedIndex >= visibleItems.Count)
+            // Out of bounds must return before any search orchestration runs.
+            if (model.Count == 0 || model.SelectedIndex < 0 || model.SelectedIndex >= model.Count)
                 return;
 
+            SyncModelConfig();
             typeahead.ClearSearch();
-            // User is interacting with a search result — commit the auto-expansion
-            // (don't undo what the search opened up).
+            // Interacting with a search result commits its auto-expansion.
             preSearchExpansion = null;
-            var item = visibleItems[selectedIndex];
 
-            if (!item.IsExpandable)
+            var result = model.ExpandOrDrillDown();
+            switch (result.Kind)
             {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                return;
-            }
+                case TreeActionKind.Rejected:
+                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                    break;
 
-            if (!item.IsExpanded)
-            {
-                OnBeforeExpand?.Invoke(item);
-                item.IsExpanded = true;
-                SoundDefOf.FloatMenu_Open.PlayOneShotOnCamera();
-
-                if (IsSubmenuMode)
-                {
-                    // Parent disappears — land on remembered or first child
-                    InspectionTreeItem targetChild = null;
-                    if (lastChildPerParent != null && lastChildPerParent.TryGetValue(item, out var remembered))
-                        targetChild = remembered;
-                    if (targetChild == null && item.Children.Count > 0)
-                        targetChild = item.Children[0];
-
-                    RebuildVisibleList();
-
-                    if (targetChild != null)
-                    {
-                        int idx = visibleItems.IndexOf(targetChild);
-                        if (idx >= 0)
-                            selectedIndex = idx;
-                        else
-                            selectedIndex = Math.Max(0, Math.Min(selectedIndex, visibleItems.Count - 1));
-                    }
-                    else
-                    {
-                        selectedIndex = Math.Max(0, Math.Min(selectedIndex, visibleItems.Count - 1));
-                    }
-                    // User just expanded this node — they know which section they're in,
-                    // so suppress the parent prefix on the first announcement
-                    lastAnnouncedParent = item;
-                    AnnounceCurrentItem();
-                }
-                else
-                {
-                    RebuildVisibleList();
+                case TreeActionKind.Expanded:
+                    SoundDefOf.FloatMenu_Open.PlayOneShotOnCamera();
                     AnnounceStateChange();
-                }
-            }
-            else if (item.Children.Count > 0)
-            {
-                // Already expanded — drill into first child (standard mode only;
-                // in submenu mode expanded items aren't visible)
-                int childIndex = visibleItems.IndexOf(item.Children[0]);
-                if (childIndex >= 0)
-                {
-                    if (TrackLastChild && lastChildPerParent != null)
-                        lastChildPerParent[item] = item.Children[0];
-                    selectedIndex = childIndex;
+                    break;
+
+                case TreeActionKind.ExpandedSubmenu:
+                    SoundDefOf.FloatMenu_Open.PlayOneShotOnCamera();
+                    // The user just expanded this node, so suppress the parent prefix.
+                    lastAnnouncedParent = result.Node;
+                    AnnounceCurrentItem();
+                    break;
+
+                case TreeActionKind.DrilledToChild:
                     SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
                     AnnounceCurrentItem();
-                }
+                    break;
             }
         }
 
         public void CollapseOrDrillUp()
         {
-            if (visibleItems.Count == 0 || selectedIndex < 0 || selectedIndex >= visibleItems.Count)
+            // Out of bounds must return before any search orchestration runs.
+            if (model.Count == 0 || model.SelectedIndex < 0 || model.SelectedIndex >= model.Count)
                 return;
 
+            SyncModelConfig();
             typeahead.ClearSearch();
             preSearchExpansion = null;
-            var item = visibleItems[selectedIndex];
 
-            if (IsSubmenuMode)
+            var result = model.CollapseOrDrillUp();
+            switch (result.Kind)
             {
-                // In submenu mode, expanded parents are never visible.
-                // Left arrow always means: collapse my parent and go to it.
-                var parent = item.Parent;
-                if (parent != null && parent != rootItem)
-                {
-                    if (lastChildPerParent != null)
-                        lastChildPerParent[parent] = item;
-
-                    parent.IsExpanded = false;
-                    RebuildVisibleList();
-                    SoundDefOf.FloatMenu_Cancel.PlayOneShotOnCamera();
-
-                    int parentIndex = visibleItems.IndexOf(parent);
-                    if (parentIndex >= 0)
-                        selectedIndex = parentIndex;
-                    else
-                        selectedIndex = Math.Max(0, Math.Min(selectedIndex, visibleItems.Count - 1));
-                    AnnounceCurrentItem();
-                }
-                else
-                {
+                case TreeActionKind.Rejected:
                     SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                }
-                return;
-            }
+                    break;
 
-            // Standard mode
-            if (item.IsExpandable && item.IsExpanded)
-            {
-                item.IsExpanded = false;
-                RebuildVisibleList();
-                if (selectedIndex >= visibleItems.Count)
-                    selectedIndex = Math.Max(0, visibleItems.Count - 1);
-                SoundDefOf.FloatMenu_Cancel.PlayOneShotOnCamera();
-                AnnounceStateChange();
-            }
-            else if (item.Parent != null && item.Parent != rootItem)
-            {
-                int parentIndex = visibleItems.IndexOf(item.Parent);
-                if (parentIndex >= 0)
-                {
-                    if (TrackLastChild && lastChildPerParent != null)
-                        lastChildPerParent[item.Parent] = item;
-                    selectedIndex = parentIndex;
+                case TreeActionKind.Collapsed:
+                    SoundDefOf.FloatMenu_Cancel.PlayOneShotOnCamera();
+                    AnnounceStateChange();
+                    break;
+
+                case TreeActionKind.CollapsedToParent:
+                    SoundDefOf.FloatMenu_Cancel.PlayOneShotOnCamera();
+                    AnnounceCurrentItem();
+                    break;
+
+                case TreeActionKind.DrilledToParent:
                     SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
                     AnnounceCurrentItem();
-                }
-            }
-            else
-            {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                    break;
             }
         }
 
         public void ExpandAllSiblings()
         {
-            if (visibleItems.Count == 0 || selectedIndex < 0 || selectedIndex >= visibleItems.Count)
+            // Checked here as well as in the model: an out-of-range no-op must stay silent,
+            // and the model's own guard is indistinguishable from "nothing to expand".
+            if (model.Count == 0 || model.SelectedIndex < 0 || model.SelectedIndex >= model.Count)
                 return;
 
-            var currentItem = visibleItems[selectedIndex];
-            var siblings = (currentItem.Parent == null || currentItem.Parent == rootItem)
-                ? rootItem.Children
-                : currentItem.Parent.Children;
+            SyncModelConfig();
+            var result = model.ExpandAllSiblings();
 
-            int expandedCount = 0;
-            foreach (var sibling in siblings)
+            if (result.ExpandedCount > 0)
             {
-                if (sibling.IsExpandable && !sibling.IsExpanded)
-                {
-                    OnBeforeExpand?.Invoke(sibling);
-                    sibling.IsExpanded = true;
-                    expandedCount++;
-                }
-            }
+                typeahead.ClearSearch();
+                // An explicit expand commits; the pre-search snapshot is not restored.
+                preSearchExpansion = null;
 
-            if (expandedCount > 0)
-            {
+                EmbeddedAudioHelper.PlaySoundDefWithReverb(SoundDefOf.FloatMenu_Open);
+                TolkHelper.Speak(
+                    (result.ExpandedCount == 1
+                        ? "RimWorldAccess.Tree.ExpandedCountOne"
+                        : "RimWorldAccess.Tree.ExpandedCountMany").Loc(result.ExpandedCount));
+
                 if (IsSubmenuMode)
-                {
-                    // All expanded siblings disappear — land on current item's first/remembered child
-                    InspectionTreeItem targetChild = null;
-                    if (currentItem.IsExpandable && currentItem.Children.Count > 0)
-                    {
-                        if (lastChildPerParent != null && lastChildPerParent.TryGetValue(currentItem, out var remembered))
-                            targetChild = remembered;
-                        if (targetChild == null)
-                            targetChild = currentItem.Children[0];
-                    }
-
-                    RebuildVisibleList();
-                    typeahead.ClearSearch();
-                    // User explicitly chose to expand; commit those expansions
-                    // (don't restore the pre-search snapshot).
-                    preSearchExpansion = null;
-
-                    if (targetChild != null)
-                    {
-                        int idx = visibleItems.IndexOf(targetChild);
-                        if (idx >= 0)
-                            selectedIndex = idx;
-                        else
-                            selectedIndex = Math.Max(0, Math.Min(selectedIndex, visibleItems.Count - 1));
-                    }
-                    else
-                    {
-                        selectedIndex = Math.Max(0, Math.Min(selectedIndex, visibleItems.Count - 1));
-                    }
-
-                    EmbeddedAudioHelper.PlaySoundDefWithReverb(SoundDefOf.FloatMenu_Open);
-                    TolkHelper.Speak(
-                        (expandedCount == 1
-                            ? "RimWorldAccess.Tree.ExpandedCountOne"
-                            : "RimWorldAccess.Tree.ExpandedCountMany").Loc(expandedCount));
                     AnnounceCurrentItem();
-                }
-                else
-                {
-                    RebuildVisibleList();
-                    typeahead.ClearSearch();
-                    preSearchExpansion = null;
-                    EmbeddedAudioHelper.PlaySoundDefWithReverb(SoundDefOf.FloatMenu_Open);
-                    TolkHelper.Speak(
-                        (expandedCount == 1
-                            ? "RimWorldAccess.Tree.ExpandedCountOne"
-                            : "RimWorldAccess.Tree.ExpandedCountMany").Loc(expandedCount));
-                }
             }
             else
             {
-                // Nothing expanded: say why the keypress was a no-op instead of staying silent.
+                // Nothing expanded: say why rather than staying silent.
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                TolkHelper.Speak((siblings.Any(s => s.IsExpandable)
+                TolkHelper.Speak((result.AnyExpandable
                     ? "RimWorldAccess.Tree.AllAlreadyExpanded"
                     : "RimWorldAccess.Tree.NoneToExpand").Loc());
             }
         }
 
         /// <summary>
-        /// Moves the cursor to the previous/next item satisfying <see cref="IsSectionBoundary"/>.
-        /// Used by Page Up/Down to skip between detail sections. No-op (reject sound) when no
-        /// boundary predicate is configured, a search is active, or there is no further section.
+        /// Escape: clears an active typeahead search and restores pre-search expansion, or
+        /// restores expansion alone when a no-match already cleared the search. Returns false
+        /// when there is nothing search-related to unwind, leaving close behavior to the caller.
         /// </summary>
-        public void JumpToAdjacentSection(bool forward)
+        public bool HandleEscape()
         {
-            if (IsSectionBoundary == null || visibleItems.Count == 0 || typeahead.HasActiveSearch)
+            SyncModelConfig();
+
+            if (typeahead.HasActiveSearch)
+            {
+                typeahead.ClearSearchAndAnnounce();
+                RestorePreSearchExpansion();
+                AnnounceCurrentItem();
+                return true;
+            }
+            if (preSearchExpansion != null)
+            {
+                RestorePreSearchExpansion();
+                AnnounceCurrentItem();
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Moves the cursor to the previous/next item satisfying <see cref="IsSectionBoundary"/>.
+        /// Rejects with a sound when no boundary predicate is configured, a search is active, or
+        /// there is no further section. With <paramref name="wrap"/>, an unsuccessful scan
+        /// continues from the opposite end back toward the cursor instead of rejecting.
+        /// </summary>
+        public void JumpToAdjacentSection(bool forward, bool wrap = false)
+        {
+            SyncModelConfig();
+
+            if (IsSectionBoundary == null || model.Count == 0 || typeahead.HasActiveSearch)
             {
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
                 return;
             }
 
             int step = forward ? 1 : -1;
-            for (int i = selectedIndex + step; i >= 0 && i < visibleItems.Count; i += step)
+            int start = model.SelectedIndex;
+
+            for (int i = start + step; i >= 0 && i < model.Count; i += step)
             {
-                if (IsSectionBoundary(visibleItems[i]))
+                if (IsSectionBoundary(model.Visible[i]))
                 {
-                    selectedIndex = i;
+                    model.SetSelectedIndex(i);
                     SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
                     AnnounceCurrentItem();
                     return;
                 }
             }
+
+            if (wrap)
+            {
+                for (int i = forward ? 0 : model.Count - 1; i != start && i >= 0 && i < model.Count; i += step)
+                {
+                    if (IsSectionBoundary(model.Visible[i]))
+                    {
+                        MenuHelper.PlayWrapTone();
+                        model.SetSelectedIndex(i);
+                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
+                        AnnounceCurrentItem();
+                        return;
+                    }
+                }
+            }
+
             SoundDefOf.ClickReject.PlayOneShotOnCamera();
         }
 
         public void JumpToFirst(bool absolute)
         {
-            if (visibleItems.Count == 0) return;
+            if (model.Count == 0) return;
+            SyncModelConfig();
             typeahead.ClearSearch();
             RestorePreSearchExpansion();
-            MenuHelper.HandleTreeHomeKey(visibleItems, ref selectedIndex,
-                item => item.IndentLevel, absolute, PlayTickAndAnnounce);
+            var result = model.HomeKey(absolute);
+            if (result.Changed) PlayTickAndAnnounce();
         }
 
         public void JumpToLast(bool absolute)
         {
-            if (visibleItems.Count == 0) return;
+            if (model.Count == 0) return;
+            SyncModelConfig();
             typeahead.ClearSearch();
             RestorePreSearchExpansion();
-            MenuHelper.HandleTreeEndKey(visibleItems, ref selectedIndex,
-                item => item.IndentLevel,
-                item => item.IsExpanded,
-                item => item.IsExpandable && item.Children.Count > 0,
-                absolute, PlayTickAndAnnounce);
+            var result = model.EndKey(absolute);
+            if (result.Changed) PlayTickAndAnnounce();
         }
 
-        /// <summary>
-        /// Re-announces the current item using the standard announcement format.
-        /// </summary>
+        /// <summary>Re-announces the current item in the standard format.</summary>
         public void ReannounceCurrentItem()
         {
             AnnounceCurrentItem();
         }
 
         /// <summary>
-        /// Rebuilds the flattened visible items list from the tree structure.
-        /// Call after modifying tree nodes externally (adding/removing children).
+        /// Rebuilds the flattened visible list. Call after adding or removing tree nodes
+        /// externally.
         /// </summary>
         public void RebuildVisibleList()
         {
-            visibleItems.Clear();
-            if (rootItem == null) return;
-
-            if (IsSubmenuMode)
-            {
-                foreach (var child in rootItem.Children)
-                    GetVisibleItemsSubmenuMode(child, visibleItems);
-            }
-            else if (SkipRootInVisibleList)
-            {
-                foreach (var child in rootItem.Children)
-                {
-                    visibleItems.AddRange(child.GetVisibleItems());
-                }
-            }
-            else
-            {
-                visibleItems.AddRange(rootItem.GetVisibleItems());
-            }
+            SyncModelConfig();
+            model.Reflatten();
         }
 
-        /// <summary>
-        /// Sets the selected index directly. Clamps to valid range.
-        /// </summary>
+        /// <summary>Sets the selected index, clamped to the valid range.</summary>
         public void SetSelectedIndex(int index)
         {
-            selectedIndex = Math.Max(0, Math.Min(index, Math.Max(0, visibleItems.Count - 1)));
+            model.SetSelectedIndex(index);
         }
 
         /// <summary>
-        /// Gets the last visited child for a parent node (if TrackLastChild is enabled).
-        /// Returns null if no child was tracked for this parent.
+        /// The last visited child of a parent, or null when TrackLastChild is off or nothing
+        /// was tracked.
         /// </summary>
         public InspectionTreeItem GetLastChild(InspectionTreeItem parent)
         {
-            if (lastChildPerParent != null && lastChildPerParent.TryGetValue(parent, out var child))
-                return child;
-            return null;
+            return model.GetLastChild(parent);
         }
 
         /// <summary>
-        /// Marks the current selected item's parent as already announced.
-        /// Call this before ReannounceCurrentItem() when the user already knows
-        /// which section they're in (e.g., they just expanded a node or opened
-        /// inspection). This prevents GetSubmenuParentPrefix from announcing
-        /// the section name redundantly.
+        /// Moves the cursor to <paramref name="target"/> after a structural tree change,
+        /// re-expanding its ancestor chain. Unlike a plain IndexOf over
+        /// <see cref="VisibleItems"/> this works in submenu mode, where an expanded target is
+        /// itself invisible and the cursor lands on its first visible descendant. Returns false
+        /// when the target is no longer attached to the tree — a rebuilt subtree orphans its old
+        /// items, so callers walk up item.Parent and retry with the nearest surviving ancestor.
+        /// </summary>
+        public bool TryRevealAndSelect(InspectionTreeItem target)
+        {
+            if (target == null || model.Root == null)
+                return false;
+
+            // Orphans keep stale Parent pointers after a Children.Clear(), so attachment must be
+            // checked hop by hop up to the current root.
+            var cur = target;
+            while (cur.Parent != null)
+            {
+                if (!cur.Parent.Children.Contains(cur))
+                    return false;
+                cur = cur.Parent;
+            }
+            if (!ReferenceEquals(cur, model.Root))
+                return false;
+
+            for (var ancestor = target.Parent; ancestor != null; ancestor = ancestor.Parent)
+                ancestor.IsExpanded = true;
+
+            SyncModelConfig();
+            model.Reflatten();
+
+            var landing = target;
+            int index = model.IndexOf(landing);
+            while (index < 0 && landing.IsExpanded && landing.Children.Count > 0)
+            {
+                landing = landing.Children[0];
+                index = model.IndexOf(landing);
+            }
+            if (index < 0)
+                return false;
+
+            model.SetSelectedIndex(index);
+            return true;
+        }
+
+        /// <summary>
+        /// Marks the selected item's parent as already announced, suppressing the submenu
+        /// parent prefix. Call before ReannounceCurrentItem when the user already knows which
+        /// section they are in.
         /// </summary>
         public void MarkCurrentParentAsAnnounced()
         {
-            if (visibleItems.Count > 0 && selectedIndex >= 0 && selectedIndex < visibleItems.Count)
-                lastAnnouncedParent = visibleItems[selectedIndex].Parent;
+            var item = model.SelectedItem;
+            if (item != null)
+                lastAnnouncedParent = item.Parent;
         }
 
         #endregion
@@ -865,10 +668,9 @@ namespace RimWorldAccess
 
         private void AnnounceCurrentItem()
         {
-            if (visibleItems.Count == 0 || selectedIndex < 0 || selectedIndex >= visibleItems.Count)
-                return;
+            var item = model.SelectedItem;
+            if (item == null) return;
 
-            var item = visibleItems[selectedIndex];
             string announcement = FormatItemAnnouncement != null
                 ? FormatItemAnnouncement(item)
                 : DefaultFormatItemAnnouncement(item);
@@ -878,10 +680,8 @@ namespace RimWorldAccess
 
         private void AnnounceStateChange()
         {
-            if (visibleItems.Count == 0 || selectedIndex < 0 || selectedIndex >= visibleItems.Count)
-                return;
-
-            var item = visibleItems[selectedIndex];
+            var item = model.SelectedItem;
+            if (item == null) return;
 
             if (FormatStateChangeAnnouncement != null)
             {
@@ -889,24 +689,21 @@ namespace RimWorldAccess
                 return;
             }
 
-            // When ExpandedLabel is set, state changes always use the short label
-            // so the user doesn't hear the full summary on every expand/collapse
+            // The short label keeps the full summary out of every expand/collapse.
             if (!string.IsNullOrEmpty(item.ExpandedLabel))
             {
                 TolkHelper.SpeakData(item.ExpandedLabel + FormatExpansionSuffix(item, AnnounceChildCounts));
                 return;
             }
 
-            // Fall back to regular announcement
             AnnounceCurrentItem();
         }
 
         private void AnnounceWithSearch()
         {
-            if (visibleItems.Count == 0 || selectedIndex < 0 || selectedIndex >= visibleItems.Count)
-                return;
+            var item = model.SelectedItem;
+            if (item == null) return;
 
-            var item = visibleItems[selectedIndex];
             string announcement = FormatSearchAnnouncement != null
                 ? FormatSearchAnnouncement(item, typeahead)
                 : DefaultFormatSearchAnnouncement(item);
@@ -919,12 +716,11 @@ namespace RimWorldAccess
         #region Default Announcement Formats
 
         /// <summary>
-        /// Default item announcement: "Label, expanded, 3 items. 1 of 5. level 2"
-        /// When ExpandedLabel is set: uses short label when expanded, full label when collapsed.
+        /// Default item announcement: "Label, expanded, 3 items. 1 of 5. level 2". An item with
+        /// an ExpandedLabel uses the short form while expanded.
         /// </summary>
         public string DefaultFormatItemAnnouncement(InspectionTreeItem item)
         {
-            // Smart labels: use ExpandedLabel (short form) when expanded, full Label when collapsed
             string label;
             if (item.IsExpandable && item.IsExpanded && !string.IsNullOrEmpty(item.ExpandedLabel))
                 label = item.ExpandedLabel;
@@ -948,7 +744,6 @@ namespace RimWorldAccess
         /// </summary>
         public string DefaultFormatSearchAnnouncement(InspectionTreeItem item)
         {
-            // Smart labels: use short form when expanded during search too
             string label;
             if (item.IsExpandable && item.IsExpanded && !string.IsNullOrEmpty(item.ExpandedLabel))
                 label = item.ExpandedLabel;
@@ -965,9 +760,8 @@ namespace RimWorldAccess
         #region Expansion State Formatting
 
         /// <summary>
-        /// Returns the bare expansion state word ("expanded" or "collapsed") for an
-        /// expandable item, or an empty string if not expandable. Keeps the localizable
-        /// vocabulary in one place so callers don't hand-roll the ternary.
+        /// The bare state word ("expanded" or "collapsed"), or empty for a non-expandable item.
+        /// Keeps the localizable vocabulary in one place.
         /// </summary>
         public static string GetExpansionStateWord(InspectionTreeItem item)
         {
@@ -978,11 +772,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Returns a formatted expansion-state suffix suitable for appending to an
-        /// announcement. Returns an empty string if the item is not expandable.
-        /// With default args the result is ", expanded" or ", collapsed". When
-        /// <paramref name="includeChildCount"/> is true, the child count is appended
-        /// on both expanded and collapsed nodes (", expanded, 3 items" / ", collapsed, 3 items").
+        /// An appendable state suffix — ", expanded" or ", collapsed", plus the child count on
+        /// both states when <paramref name="includeChildCount"/> is set. Empty for a
+        /// non-expandable item.
         /// </summary>
         public static string FormatExpansionSuffix(InspectionTreeItem item, bool includeChildCount = false)
         {
@@ -999,8 +791,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Returns a space-prefixed expansion-state suffix: " expanded" or " collapsed",
-        /// or an empty string if the item is not expandable.
+        /// A space-prefixed state suffix, " expanded" or " collapsed"; empty for a
+        /// non-expandable item.
         /// </summary>
         public static string FormatExpansionSpaceSuffix(InspectionTreeItem item)
         {
@@ -1013,39 +805,28 @@ namespace RimWorldAccess
 
         #region Internal Helpers
 
-        /// <summary>
-        /// Gets the sibling position (1-indexed) and total count for a node.
-        /// Uses the parent's children list (or root's children for top-level nodes).
-        /// </summary>
+        /// <summary>The node's 1-indexed position among its siblings, and their total.</summary>
         public (int position, int total) GetSiblingPosition(InspectionTreeItem item)
         {
-            var siblings = (item.Parent == null || item.Parent == rootItem)
-                ? rootItem.Children
-                : item.Parent.Children;
-            int pos = siblings.IndexOf(item) + 1;
-            return (pos, siblings.Count);
+            return model.GetSiblingPosition(item);
         }
 
         private List<string> GetVisibleLabels()
         {
-            return visibleItems.Select(item => item.Label).ToList();
+            return model.Visible.Select(item => item.Label).ToList();
         }
 
         /// <summary>
-        /// Labels used for typeahead matching. When ShouldExpandForSearch is in
-        /// effect, the structural nodes we auto-expanded are excluded from results
-        /// (an empty string never matches), so the cursor lands on leaf items the
-        /// expansion exposed rather than on the freshly-opened parent itself.
-        /// Indexes line up with visibleItems.
+        /// Labels typeahead matches against, index-aligned with VisibleItems. Under
+        /// ShouldExpandForSearch the auto-expanded structural nodes get an empty string, which
+        /// never matches, so the cursor lands on the leaves the expansion exposed.
         /// </summary>
         private List<string> GetSearchableLabels()
         {
-            // Explicit per-item selector wins: lets a consumer match an arbitrary subset
-            // of nodes against arbitrary text, decoupled from the expand-for-search set.
             if (SearchableLabelSelector != null)
             {
-                var selected = new List<string>(visibleItems.Count);
-                foreach (var item in visibleItems)
+                var selected = new List<string>(model.Count);
+                foreach (var item in model.Visible)
                     selected.Add(SearchableLabelSelector(item) ?? "");
                 return selected;
             }
@@ -1053,8 +834,8 @@ namespace RimWorldAccess
             if (ShouldExpandForSearch == null)
                 return GetVisibleLabels();
 
-            var result = new List<string>(visibleItems.Count);
-            foreach (var item in visibleItems)
+            var result = new List<string>(model.Count);
+            foreach (var item in model.Visible)
             {
                 bool skip = item.IsExpandable && ShouldExpandForSearch(item);
                 result.Add(skip ? "" : item.Label);
@@ -1064,15 +845,15 @@ namespace RimWorldAccess
 
         public void HandleTypeahead(char c)
         {
-            // Auto-expand collapsed nodes for menus that opt in, so typeahead matches
-            // items across the whole tree without the user pressing '*' first.
+            SyncModelConfig();
+
             if (!typeahead.HasActiveSearch)
                 EnsureSearchExpansion();
 
             var labels = GetSearchableLabels();
             if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
             {
-                selectedIndex = newIndex;
+                model.SetSelectedIndex(newIndex);
                 SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
                 AnnounceWithSearch();
             }
@@ -1085,28 +866,24 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Public typeahead-character entry point for states that drive their own
-        /// keyboard routing instead of going through HandleInput. Honors the same
-        /// search-time auto-expansion (ShouldExpandForSearch) and announcement format
-        /// (FormatSearchAnnouncement) as the in-helper handler.
+        /// Typeahead-character entry point for states that drive their own keyboard routing.
         /// </summary>
         public void HandleTypeaheadCharacter(char c) => HandleTypeahead(c);
 
         /// <summary>
-        /// Public backspace handler for states that drive their own keyboard
-        /// routing. Delegates through TypeaheadSearchHelper.ProcessBackspace and
-        /// re-announces via AnnounceWithSearch / restores pre-search expansion
-        /// when the buffer empties.
+        /// Backspace handler for states that drive their own keyboard routing. Restores
+        /// pre-search expansion once the buffer empties.
         /// </summary>
         public void HandleTypeaheadBackspace()
         {
             if (!typeahead.HasActiveSearch) return;
 
+            SyncModelConfig();
             var labels = GetSearchableLabels();
             if (typeahead.ProcessBackspace(labels, out int newIndex))
             {
                 if (newIndex >= 0)
-                    selectedIndex = newIndex;
+                    model.SetSelectedIndex(newIndex);
                 SoundDefOf.Click.PlayOneShotOnCamera();
                 if (!typeahead.HasActiveSearch)
                 {
@@ -1121,10 +898,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Clears any active typeahead search and restores the pre-search expansion
-        /// snapshot so the tree returns to its original shape. Use this after the
-        /// user commits to an item via Enter / Space — matches the behavior the
-        /// helper applies internally on expand/collapse.
+        /// Clears any active search and restores the pre-search expansion snapshot. Use after
+        /// the user commits to an item via Enter or Space.
         /// </summary>
         public void CommitAndClearSearch()
         {
@@ -1140,23 +915,20 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Commits the current search result: clears the search buffer and collapses the
-        /// tree back to its pre-search shape, but keeps the path to the selected item
-        /// expanded so the cursor stays on it. Use when the user picks a search result and
-        /// wants to remain positioned there (rather than expanding it or jumping away).
-        /// No-op if no search/snapshot is active.
+        /// Clears the search buffer and collapses back to the pre-search shape, but keeps the
+        /// selected item's ancestor chain expanded so the cursor stays on it. Use when the user
+        /// picks a search result and remains positioned there.
         /// </summary>
         public void CommitSearchKeepingPath()
         {
             if (!typeahead.HasActiveSearch && preSearchExpansion == null)
                 return;
 
-            var target = (selectedIndex >= 0 && selectedIndex < visibleItems.Count)
-                ? visibleItems[selectedIndex] : null;
+            SyncModelConfig();
+            var target = model.SelectedItem;
 
             typeahead.ClearSearch();
 
-            // Collapse back to the pre-search shape (undo the bulk search expansion)...
             if (preSearchExpansion != null)
             {
                 foreach (var kv in preSearchExpansion)
@@ -1164,7 +936,7 @@ namespace RimWorldAccess
                 preSearchExpansion = null;
             }
 
-            // ...then re-expand only the ancestor chain of the target so it stays visible.
+            // Re-expand only the target's ancestor chain, so it stays visible.
             var ancestor = target?.Parent;
             while (ancestor != null)
             {
@@ -1173,24 +945,25 @@ namespace RimWorldAccess
                 ancestor = ancestor.Parent;
             }
 
-            RebuildVisibleList();
+            model.Reflatten();
 
-            int idx = target != null ? visibleItems.IndexOf(target) : -1;
+            int idx = target != null ? model.IndexOf(target) : -1;
             if (idx >= 0)
-                selectedIndex = idx;
+                model.SetSelectedIndex(idx);
             else
-                selectedIndex = Math.Max(0, Math.Min(selectedIndex, visibleItems.Count - 1));
+                model.SetSelectedIndex(model.SelectedIndex);
         }
 
-        private void HandleEnterKey()
+        /// <summary>
+        /// Enter/KeypadEnter: custom activate, then fall back to toggle expand/collapse.
+        /// </summary>
+        public void ActivateCurrent()
         {
-            if (visibleItems.Count == 0 || selectedIndex < 0 || selectedIndex >= visibleItems.Count)
-                return;
+            var item = model.SelectedItem;
+            if (item == null) return;
 
-            var item = visibleItems[selectedIndex];
-
-            // Try custom activate first. The user committed to this item, so drop
-            // the search-expansion snapshot (don't restore it on a later Escape).
+            // Committing to an item drops the search-expansion snapshot, so a later Escape
+            // does not restore it.
             if (OnActivate != null && OnActivate(item))
             {
                 typeahead.ClearSearch();
@@ -1198,7 +971,6 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Try the item's own OnActivate callback
             if (item.OnActivate != null)
             {
                 typeahead.ClearSearch();
@@ -1207,7 +979,6 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Default: expand-and-enter (submenu mode) or toggle (standard mode)
             if (item.IsExpandable)
             {
                 if (IsSubmenuMode)
@@ -1221,7 +992,8 @@ namespace RimWorldAccess
                     if (!item.IsExpanded)
                         OnBeforeExpand?.Invoke(item);
                     item.IsExpanded = !item.IsExpanded;
-                    RebuildVisibleList();
+                    SyncModelConfig();
+                    model.Reflatten();
                     if (item.IsExpanded)
                         SoundDefOf.FloatMenu_Open.PlayOneShotOnCamera();
                     else
@@ -1231,18 +1003,15 @@ namespace RimWorldAccess
             }
         }
 
-        private void HandleDeleteKey()
+        /// <summary>Delete: custom delete handler, else the item's own OnDelete callback.</summary>
+        public void DeleteCurrent()
         {
-            if (visibleItems.Count == 0 || selectedIndex < 0 || selectedIndex >= visibleItems.Count)
-                return;
+            var item = model.SelectedItem;
+            if (item == null) return;
 
-            var item = visibleItems[selectedIndex];
-
-            // Try custom delete handler
             if (OnDelete != null && OnDelete(item))
                 return;
 
-            // Try item's own OnDelete callback
             if (item.OnDelete != null)
             {
                 item.OnDelete();
@@ -1250,37 +1019,36 @@ namespace RimWorldAccess
             }
         }
 
-        private void HandleInfoKey()
+        /// <summary>
+        /// Alt+I: custom info handler, else the item's own OnInfo callback, else the LinkedDef
+        /// walk up the ancestor chain.
+        /// </summary>
+        public void InfoCurrent()
         {
-            if (visibleItems.Count == 0 || selectedIndex < 0 || selectedIndex >= visibleItems.Count)
+            var item = model.SelectedItem;
+            if (item == null)
             {
                 InfoCardState.SpeakNoInfoCardAvailable();
                 return;
             }
 
-            var item = visibleItems[selectedIndex];
-
-            // Try custom info handler
             if (OnInfo != null && OnInfo(item))
                 return;
 
-            // Try item's own OnInfo callback
             if (item.OnInfo != null)
             {
                 item.OnInfo();
                 return;
             }
 
-            // Default: open info card for LinkedDef
             if (item.LinkedDef != null)
             {
                 InfoCardState.OpenInfoCardForDef(item.LinkedDef);
                 return;
             }
 
-            // Walk up tree looking for a LinkedDef
             var parent = item.Parent;
-            while (parent != null && parent != rootItem)
+            while (parent != null && parent != model.Root)
             {
                 if (parent.LinkedDef != null)
                 {
@@ -1294,19 +1062,16 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Returns a parent label prefix when the current item's parent differs from
-        /// the last announced parent. Only active in submenu mode. Used to announce
-        /// parent boundary crossings during up/down navigation.
-        /// The section name is announced before the item so the user hears the
-        /// context first (e.g., "Gear. Steel sword" rather than "Steel sword. Gear").
-        /// Always uses ExpandedLabel (short form) when available.
+        /// A parent label prefix announcing a boundary crossing, when the item's parent differs
+        /// from the last announced one. Submenu mode only. The section leads so the user hears
+        /// the context first ("Gear. Steel sword", not "Steel sword. Gear").
         /// </summary>
         private string GetSubmenuParentPrefix(InspectionTreeItem item)
         {
             if (!IsSubmenuMode) return "";
 
             var parent = item.Parent;
-            if (parent == null || parent == rootItem)
+            if (parent == null || parent == model.Root)
             {
                 if (lastAnnouncedParent != null)
                     lastAnnouncedParent = null;
@@ -1322,24 +1087,6 @@ namespace RimWorldAccess
             return $"{parentLabel}. ";
         }
 
-        /// <summary>
-        /// Builds visible items for submenu mode. Expanded parents with children
-        /// are excluded — only their children appear. Collapsed expandable nodes
-        /// and leaf nodes are included normally.
-        /// </summary>
-        private void GetVisibleItemsSubmenuMode(InspectionTreeItem node, List<InspectionTreeItem> result)
-        {
-            if (node.IsExpandable && node.IsExpanded && node.Children.Count > 0)
-            {
-                foreach (var child in node.Children)
-                    GetVisibleItemsSubmenuMode(child, result);
-            }
-            else
-            {
-                result.Add(node);
-            }
-        }
-
         private void PlayTickAndAnnounce()
         {
             SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
@@ -1351,20 +1098,12 @@ namespace RimWorldAccess
         #region Smart Label Utilities
 
         /// <summary>
-        /// Walks the tree and builds aggregated "smart labels" for expandable nodes
-        /// with informational children. For each qualifying node:
-        /// - ExpandedLabel is set to the current Label (the short title)
-        /// - Label is rebuilt as: title + ". " + child1 + ". " + child2 + ...
-        ///
-        /// Nodes are skipped if shouldAggregate returns false. By default, nodes
-        /// whose children are all non-Action types are aggregated.
-        ///
-        /// Treeviews with custom summarization (inventory, architect) simply
-        /// don't call this and set ExpandedLabel manually where needed.
+        /// Builds aggregated "smart labels" for expandable nodes with informational children:
+        /// the node's current Label moves to ExpandedLabel (the short title) and Label becomes
+        /// the title followed by every child label. <paramref name="shouldAggregate"/> selects
+        /// which nodes qualify, defaulting to those with no Action-type children. Treeviews with
+        /// their own summarization skip this and set ExpandedLabel themselves.
         /// </summary>
-        /// <param name="root">Root of the tree to process</param>
-        /// <param name="shouldAggregate">Optional predicate to control which nodes get smart labels.
-        /// If null, defaults to: aggregate if no children are Action type.</param>
         public static void BuildSmartLabels(InspectionTreeItem root, Func<InspectionTreeItem, bool> shouldAggregate = null)
         {
             if (root == null) return;
@@ -1382,7 +1121,7 @@ namespace RimWorldAccess
 
         private static void BuildSmartLabelsRecursive(InspectionTreeItem node, Func<InspectionTreeItem, bool> shouldAggregate)
         {
-            // Process children first (bottom-up so child labels are finalized before aggregation)
+            // Bottom-up, so child labels are finalized before they are aggregated.
             foreach (var child in node.Children)
             {
                 BuildSmartLabelsRecursive(child, shouldAggregate);
@@ -1391,10 +1130,8 @@ namespace RimWorldAccess
             if (!shouldAggregate(node))
                 return;
 
-            // Save current label as the short form
             node.ExpandedLabel = node.Label;
 
-            // Build aggregated label from children
             var sb = new System.Text.StringBuilder(node.Label);
             foreach (var child in node.Children)
             {
@@ -1402,7 +1139,7 @@ namespace RimWorldAccess
                 if (string.IsNullOrEmpty(childText))
                     continue;
 
-                // Use ". " as sentence separator, avoiding double periods
+                // ". " separates sentences, without doubling an existing terminator.
                 if (sb.Length > 0)
                 {
                     char lastChar = sb[sb.Length - 1];
@@ -1420,4 +1157,3 @@ namespace RimWorldAccess
         #endregion
     }
 }
-

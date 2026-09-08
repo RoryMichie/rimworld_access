@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Shell.GeneDialogs.ControlsRegionName>Управление</RimWorldAccess.Shell.GeneDialogs.ControlsRegionName>
+  <RimWorldAccess.Shell.GeneDialogs.NameLockLabel>Блокировка имени</RimWorldAccess.Shell.GeneDialogs.NameLockLabel>
+  <RimWorldAccess.Biotech.GeneDialogsMigration.XenogermOpeningPreamble>{0}. {1}: предел {2}.</RimWorldAccess.Biotech.GeneDialogsMigration.XenogermOpeningPreamble>
+</LanguageData>

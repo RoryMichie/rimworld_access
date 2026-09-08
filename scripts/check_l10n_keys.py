@@ -16,6 +16,20 @@ Catches the two failure classes the Localized-type compile guard cannot see:
    the announcement silently became hardcoded English. Keys reached through
    string-prefix concatenation ("RimWorldAccess.X." + suffix) are honored.
 
+3. MALFORMED XML (build ERROR): any Languages/**/*.xml that a real XML
+   parser rejects. RimWorld's loader discards such a file WHOLE and silently
+   — every key in it then speaks as its raw key name — while this script's
+   own regex scanner would happily keep reading keys out of it (the July 2026
+   incident: a "--" inside an XML comment, illegal in XML, invalidated the
+   entire Compat file in-game yet passed both the regex key scan and the
+   ratchets).
+
+4. BARE CONCATENATION FRAGMENTS (build ERROR): an English Keyed value with
+   no {0}-style placeholder and stray leading/trailing whitespace — the
+   FloorSuffix/MalePrefix/PlacedPrefix pattern of gluing a fragment onto
+   another string in C#. This freezes an English word order that other
+   languages need to reorder; the fix is a whole-phrase template key.
+
 Usage: check_l10n_keys.py [--game-dir <RimWorld install dir>]
 The game dir is optional; without it (e.g. CI) the fake-key check only
 validates against our own keys it can prove fake (RimWorldAccess.* prefixed),
@@ -26,6 +40,7 @@ import glob
 import os
 import re
 import sys
+import xml.etree.ElementTree as ET
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -37,6 +52,15 @@ LIT_CALL_RE = re.compile(r'"([A-Za-z0-9_.]+)"\s*\.\s*(?:Translate|Loc)\s*[(<]')
 # ("Tutorial".CanTranslate() ? "Tutorial" : "LearnToPlay"), mirrored exactly.
 ALLOWED_FAKES = {"LearnToPlay"}
 DYN_PREFIX_RE = re.compile(r'"(RimWorldAccess[A-Za-z0-9_.]*\.)"\s*\+')
+
+# Reviewed list-joiner/hint fragments: legitimately bare (no placeholder,
+# leading/trailing whitespace) because they are concatenated between two
+# other fragments in C#, not spoken as a standalone phrase.
+ALLOWED_BARE_FRAGMENTS = {
+    "RimWorldAccess.Work.Task.SkillListAndSeparator",
+    "RimWorldAccess.Inspection.Gizmo.Status.GrowthRewardsAnd",
+    "RimWorldAccess.Work.NameList.ThreePlusLastJoiner",
+}
 
 
 def keys_from(pattern):
@@ -50,6 +74,36 @@ def keys_from(pattern):
     return keys
 
 
+def is_annotation_shaped(value):
+    stripped = value.strip()
+    return stripped.startswith(("(", "-", "•")) or stripped.endswith((":", ",", "."))
+
+
+def bare_fragment_offenders(pattern):
+    """English Keyed values with no {0}-style placeholder AND stray leading/
+    trailing whitespace: the FloorSuffix/MalePrefix/PlacedPrefix pattern of
+    gluing a fragment onto another string in C#, which freezes an English
+    word order that French/Spanish/Turkish/Russian need to reorder."""
+    offenders = []
+    for f in glob.glob(pattern):
+        try:
+            root = ET.parse(f).getroot()
+        except ET.ParseError:
+            continue  # malformed XML already reported above
+        for child in root:
+            key = child.tag
+            if key in ALLOWED_BARE_FRAGMENTS:
+                continue
+            value = child.text or ""
+            # Whitespace-only values are layout padding, never word order.
+            if not value.strip():
+                continue
+            if "{" in value or value == value.strip() or is_annotation_shaped(value):
+                continue
+            offenders.append((key, os.path.relpath(f, REPO)))
+    return offenders
+
+
 def strip_comments(line):
     stripped = line.lstrip()
     if stripped.startswith("//"):  # includes /// doc comments
@@ -61,6 +115,21 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--game-dir", default=None)
     args = ap.parse_args()
+
+    # Failure class 3: RimWorld's loader silently discards any XML file a real
+    # parser rejects, so validate every language file with one before trusting
+    # the regex key scan below.
+    malformed = []
+    for f in glob.glob(os.path.join(REPO, "Languages/**/*.xml"), recursive=True):
+        try:
+            ET.parse(f)
+        except ET.ParseError as e:
+            malformed.append((os.path.relpath(f, REPO), str(e)))
+    if malformed:
+        for path, err in malformed:
+            print(f"error RWA-L10N: malformed XML (RimWorld will silently "
+                  f"discard the WHOLE file in-game): {path}: {err}")
+        return 1
 
     our_keys = keys_from(os.path.join(REPO, "Languages/English/Keyed/*.xml"))
 
@@ -104,16 +173,30 @@ def main():
         print(f"warning RWA-L10N: orphaned key (defined in English XML, "
               f"unreferenced in src — reverted code?): {k}")
 
+    # Failure class 4: a fragment concatenated onto another string in C#
+    # (leading/trailing whitespace, no placeholder) freezes an English word
+    # order that other languages need to reorder — should be a template key.
+    bare_fragments = bare_fragment_offenders(
+        os.path.join(REPO, "Languages/English/Keyed/*.xml"))
+    for k, path in bare_fragments:
+        print(f"error RWA-L10N: bare concatenation fragment '{k}' in {path} "
+              f"(no placeholder, leading/trailing whitespace glues English "
+              f"word order onto another string — translations can't "
+              f"reorder it; use a whole-phrase template key instead)")
+
     if fakes:
         for k in sorted(fakes):
             sites = "; ".join(fakes[k][:5])
             print(f"error RWA-L10N: fake translation key '{k}' "
                   f"(exists in no Keyed XML, will speak raw key name in "
                   f"every language) at {sites}")
+
+    if fakes or bare_fragments:
         return 1
 
     print(f"check_l10n_keys: OK — {len(our_keys)} keys, "
-          f"{len(orphans)} orphan warning(s), 0 fake keys"
+          f"{len(orphans)} orphan warning(s), 0 fake keys, "
+          f"0 bare concatenation fragments"
           + ("" if vanilla_keys is not None
              else " (vanilla keys not checked: no game dir)"))
     return 0

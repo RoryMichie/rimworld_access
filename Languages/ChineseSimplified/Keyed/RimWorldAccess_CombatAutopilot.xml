@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Autopilot.Engage.Label>攻击目标</RimWorldAccess.Autopilot.Engage.Label>
+  <RimWorldAccess.Autopilot.Engage.Desc>命令{0}攻击所选目标。{0}将按照指派的战斗方针接近并攻击目标，途中遭到攻击时会先反击来袭之敌。</RimWorldAccess.Autopilot.Engage.Desc>
+  <RimWorldAccess.Autopilot.Engage.CurrentOrders>当前命令：{0}。</RimWorldAccess.Autopilot.Engage.CurrentOrders>
+  <RimWorldAccess.Autopilot.Patrol.Label>巡逻：{0}</RimWorldAccess.Autopilot.Patrol.Label>
+  <RimWorldAccess.Autopilot.Patrol.Desc>命令{0}在所选区域内巡逻，遇到进入射程的敌人便停下作战。</RimWorldAccess.Autopilot.Patrol.Desc>
+  <RimWorldAccess.Autopilot.Patrol.NoneOption>不巡逻</RimWorldAccess.Autopilot.Patrol.NoneOption>
+  <RimWorldAccess.Autopilot.PatrolAssigned>{0}：正在巡逻{1}。</RimWorldAccess.Autopilot.PatrolAssigned>
+  <RimWorldAccess.Autopilot.PatrolCleared>{0}：已取消巡逻。</RimWorldAccess.Autopilot.PatrolCleared>
+  <RimWorldAccess.Autopilot.SeekDestroy.Label>搜索歼灭</RimWorldAccess.Autopilot.SeekDestroy.Label>
+  <RimWorldAccess.Autopilot.SeekDestroy.Desc>{0}将主动追击敌人，而不是坚守位置。已标记和已下令的目标优先。</RimWorldAccess.Autopilot.SeekDestroy.Desc>
+  <RimWorldAccess.Autopilot.PickerLabel>战斗方针：{0}</RimWorldAccess.Autopilot.PickerLabel>
+  <RimWorldAccess.Autopilot.PickerDesc>{0}作战所遵循的战斗方针。</RimWorldAccess.Autopilot.PickerDesc>
+  <RimWorldAccess.Autopilot.HuntAnimals.Label>猎杀动物</RimWorldAccess.Autopilot.HuntAnimals.Label>
+  <RimWorldAccess.Autopilot.HuntAnimals.Desc>{0}在被征召期间猎杀野生动物。敌人始终优先。{0}的狩猎方针决定可猎杀哪些动物。</RimWorldAccess.Autopilot.HuntAnimals.Desc>
+  <RimWorldAccess.Autopilot.AutocastAll.Label>自动施放全部能力</RimWorldAccess.Autopilot.AutocastAll.Label>
+  <RimWorldAccess.Autopilot.AutocastAll.Desc>将{0}的全部能力标记为被征召时自动施放。也可在每个能力自己的菜单中单独标记或取消标记。</RimWorldAccess.Autopilot.AutocastAll.Desc>
+  <RimWorldAccess.Autopilot.Pause.Label>暂停战斗自动驾驶</RimWorldAccess.Autopilot.Pause.Label>
+  <RimWorldAccess.Autopilot.Pause.Desc>停止{0}的全部自动战斗行为，交还完全控制权。方针和命令都会保留，但在取消勾选之前不会执行。下达新的进攻或巡逻命令也会恢复运作。</RimWorldAccess.Autopilot.Pause.Desc>
+
+  <RimWorldAccess.Autopilot.TakeCover.Label>寻找掩体</RimWorldAccess.Autopilot.TakeCover.Label>
+  <RimWorldAccess.Autopilot.TakeCover.Desc>远程角色转移到有掩体的射击位置。近战角色忽略此项。</RimWorldAccess.Autopilot.TakeCover.Desc>
+  <RimWorldAccess.Autopilot.MeleeCharge.Label>近战冲锋</RimWorldAccess.Autopilot.MeleeCharge.Label>
+  <RimWorldAccess.Autopilot.MeleeCharge.Desc>近战角色会冲向远处目标。关闭时，只攻击靠近的敌人。</RimWorldAccess.Autopilot.MeleeCharge.Desc>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Label>全图追击</RimWorldAccess.Autopilot.PursueAnywhere.Label>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Desc>搜索歼灭从全地图选取目标，并且无论目标逃多远都会追击。关闭时只选取附近可见的敌人。搜索歼灭关闭时此项无效。</RimWorldAccess.Autopilot.PursueAnywhere.Desc>
+  <RimWorldAccess.Autopilot.FightAsSquad.Label>小队作战</RimWorldAccess.Autopilot.FightAsSquad.Label>
+  <RimWorldAccess.Autopilot.FightAsSquad.Desc>与附近同样启用小队作战策略的已征召角色协同：将火力分散到敌群，而不是全员围攻同一目标；彼此保持一格间距，让流弹和爆炸只波及一人而非一群。</RimWorldAccess.Autopilot.FightAsSquad.Desc>
+  <RimWorldAccess.Autopilot.BashDoors.Label>破门</RimWorldAccess.Autopilot.BashDoors.Label>
+  <RimWorldAccess.Autopilot.BashDoors.Desc>破坏挡在通向目标路上的上锁或敌方房门。</RimWorldAccess.Autopilot.BashDoors.Desc>
+  <RimWorldAccess.Autopilot.KeepDistance.Label>保持距离</RimWorldAccess.Autopilot.KeepDistance.Label>
+  <RimWorldAccess.Autopilot.KeepDistance.Desc>远程角色在近战敌人过于接近时后撤。</RimWorldAccess.Autopilot.KeepDistance.Desc>
+  <RimWorldAccess.Autopilot.FallBackInjured.Label>重伤时后撤</RimWorldAccess.Autopilot.FallBackInjured.Label>
+  <RimWorldAccess.Autopilot.FallBackInjured.Desc>重伤时先撤离逼近的敌人，随后依托掩体在远距离谨慎作战，而不是继续冲锋。</RimWorldAccess.Autopilot.FallBackInjured.Desc>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Label>躲避爆炸</RimWorldAccess.Autopilot.AvoidBlasts.Label>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Desc>远离已点燃的爆炸物和即将到来的爆炸。</RimWorldAccess.Autopilot.AvoidBlasts.Desc>
+  <RimWorldAccess.Autopilot.AutocastMarked.Label>自动施放已标记的能力</RimWorldAccess.Autopilot.AutocastMarked.Label>
+  <RimWorldAccess.Autopilot.AutocastMarked.Desc>施放角色已标记为自动施放的能力。标记决定施放哪些，此项决定是否施放。关闭时标记会保留但被忽略。</RimWorldAccess.Autopilot.AutocastMarked.Desc>
+
+  <RimWorldAccess.Autopilot.AutocastOption>自动施放</RimWorldAccess.Autopilot.AutocastOption>
+  <RimWorldAccess.Autopilot.AutocastOn>自动施放已开启</RimWorldAccess.Autopilot.AutocastOn>
+
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>启用战斗自动驾驶</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>允许被征召的角色自行作战。为被征召角色添加战斗方针、狩猎方针和新按钮。关闭后移除这些按钮并停止自动化。</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>解除征召时关闭搜索歼灭和猎杀动物</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>角色被解除征召时，取消勾选搜索歼灭和猎杀动物。</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>
+
+  <RimWorldAccess.Autopilot.PolicyTitle>战斗方针</RimWorldAccess.Autopilot.PolicyTitle>
+  <RimWorldAccess.Autopilot.PolicyTip>创建并管理决定被征召角色如何自行作战的模板。在分配、动物或机械体标签页中分配方针；载具保留战斗方针按钮。</RimWorldAccess.Autopilot.PolicyTip>
+  <RimWorldAccess.Autopilot.PolicyName>战斗方针</RimWorldAccess.Autopilot.PolicyName>
+  <RimWorldAccess.Autopilot.ManagePolicies>管理战斗方针</RimWorldAccess.Autopilot.ManagePolicies>
+  <RimWorldAccess.Autopilot.Policy.None>无</RimWorldAccess.Autopilot.Policy.None>
+  <RimWorldAccess.Autopilot.Policy.None.Tip>无战斗方针。该角色的战斗自动化完全关闭：不会搜索歼灭、不接受进攻命令、不自动施放能力。猎杀动物与巡逻是独立功能，仍然有效。</RimWorldAccess.Autopilot.Policy.None.Tip>
+  <RimWorldAccess.Autopilot.PolicyInUse>战斗方针正被{0}使用。</RimWorldAccess.Autopilot.PolicyInUse>
+  <RimWorldAccess.Autopilot.Policy.FullControl>完全自主</RimWorldAccess.Autopilot.Policy.FullControl>
+  <RimWorldAccess.Autopilot.Policy.FightNearby>就近作战</RimWorldAccess.Autopilot.Policy.FightNearby>
+  <RimWorldAccess.Autopilot.Policy.StaySafe>保全自身</RimWorldAccess.Autopilot.Policy.StaySafe>
+
+  <RimWorldAccess.Autopilot.HuntPolicyTitle>狩猎方针</RimWorldAccess.Autopilot.HuntPolicyTitle>
+  <RimWorldAccess.Autopilot.HuntPolicyTip>创建并管理决定被征召角色可猎杀哪些动物的模板：允许的物种列表、报复几率范围和受尊崇动物保护。狩猎本身由每个角色的“猎杀动物”按钮开启。角色被征召期间，这些规则优先于狩猎标记。</RimWorldAccess.Autopilot.HuntPolicyTip>
+  <RimWorldAccess.Autopilot.HuntPolicyName>狩猎方针</RimWorldAccess.Autopilot.HuntPolicyName>
+  <RimWorldAccess.Autopilot.ManageHuntPolicies>管理狩猎方针</RimWorldAccess.Autopilot.ManageHuntPolicies>
+  <RimWorldAccess.Autopilot.HuntPolicyInUse>狩猎方针正被{0}使用。</RimWorldAccess.Autopilot.HuntPolicyInUse>
+  <RimWorldAccess.Autopilot.HuntPolicyIsDefault>默认狩猎方针无法删除。</RimWorldAccess.Autopilot.HuntPolicyIsDefault>
+  <RimWorldAccess.Autopilot.HuntPolicy.SafeGame>安全猎物</RimWorldAccess.Autopilot.HuntPolicy.SafeGame>
+  <RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>任何动物</RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>
+  <RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>允许的动物</RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.Desc>只有“受伤报复几率”落在此范围内的动物才可猎杀。</RimWorldAccess.Autopilot.HuntRevengeRange.Desc>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>受伤报复几率: {0}</RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Label>放过受尊崇的动物</RimWorldAccess.Autopilot.HuntSpareVenerated.Label>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>绝不猎杀角色思潮所尊崇的动物。</RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>
+
+  <RimWorldAccess.Autopilot.SummaryPrefix>启用：{0}。</RimWorldAccess.Autopilot.SummaryPrefix>
+  <RimWorldAccess.Autopilot.SummarySeparator>、</RimWorldAccess.Autopilot.SummarySeparator>
+  <RimWorldAccess.Autopilot.SummaryNothing>不启用任何行为。角色坚守阵地并自由射击。</RimWorldAccess.Autopilot.SummaryNothing>
+
+  <RimWorldAccess.Autopilot.Report.MovingToCover>正前往{0}, {1}处的掩体。</RimWorldAccess.Autopilot.Report.MovingToCover>
+  <RimWorldAccess.Autopilot.Report.MovingToCoverBehind>正前往{1}, {2}处，以{0}作掩体。</RimWorldAccess.Autopilot.Report.MovingToCoverBehind>
+  <RimWorldAccess.Autopilot.Report.MovingToEngage>正前往迎击{0}。</RimWorldAccess.Autopilot.Report.MovingToEngage>
+  <RimWorldAccess.Autopilot.Report.FallingBack>重伤，正在后撤至{0}, {1}。</RimWorldAccess.Autopilot.Report.FallingBack>
+  <RimWorldAccess.Autopilot.Report.FleeingBlast>正在撤离{0}的爆炸范围。</RimWorldAccess.Autopilot.Report.FleeingBlast>
+  <RimWorldAccess.Autopilot.Report.BackingAway>正在避开{0}。</RimWorldAccess.Autopilot.Report.BackingAway>
+  <RimWorldAccess.Autopilot.Report.Casting>正在施放{0}。</RimWorldAccess.Autopilot.Report.Casting>
+  <RimWorldAccess.Autopilot.Report.CastingOn>正在对{1}施放{0}。</RimWorldAccess.Autopilot.Report.CastingOn>
+  <RimWorldAccess.Autopilot.Report.VehicleAdvance>正驶向最近的敌人。</RimWorldAccess.Autopilot.Report.VehicleAdvance>
+  <RimWorldAccess.Autopilot.Report.VehicleFiringPosition>正驶向射击阵位。</RimWorldAccess.Autopilot.Report.VehicleFiringPosition>
+  <RimWorldAccess.Autopilot.Report.VehicleHolding>正在坚守射击阵位。</RimWorldAccess.Autopilot.Report.VehicleHolding>
+  <RimWorldAccess.Autopilot.Report.EngagingOrdered>正在奉命攻击{0}。</RimWorldAccess.Autopilot.Report.EngagingOrdered>
+  <RimWorldAccess.Autopilot.Report.EngagingMarked>正在攻击已标记目标{0}。</RimWorldAccess.Autopilot.Report.EngagingMarked>
+  <RimWorldAccess.Autopilot.Report.ReturningToPost>正在返回{0}, {1}处的岗位。</RimWorldAccess.Autopilot.Report.ReturningToPost>
+  <RimWorldAccess.Autopilot.Report.Patrolling>正在巡逻{0}。</RimWorldAccess.Autopilot.Report.Patrolling>
+  <RimWorldAccess.Autopilot.Report.FightingOff>正在击退{0}。</RimWorldAccess.Autopilot.Report.FightingOff>
+  <RimWorldAccess.Autopilot.Report.HoldingFiring>正在原地据守射击。</RimWorldAccess.Autopilot.Report.HoldingFiring>
+  <RimWorldAccess.Autopilot.Report.SpreadingFire>正在分散火力至{0}。</RimWorldAccess.Autopilot.Report.SpreadingFire>
+  <RimWorldAccess.Autopilot.Report.WoundedHolding>受伤，正在原地据守。</RimWorldAccess.Autopilot.Report.WoundedHolding>
+
+  <RimWorldAccess.Autopilot.EngageOption>攻击{0}</RimWorldAccess.Autopilot.EngageOption>
+  <RimWorldAccess.Autopilot.EngageOption.Tip>攻击该目标直至其倒下。途中来袭的敌人会先被击退。</RimWorldAccess.Autopilot.EngageOption.Tip>
+  <RimWorldAccess.Autopilot.EngagePawnCount>{0}名角色</RimWorldAccess.Autopilot.EngagePawnCount>
+  <RimWorldAccess.Autopilot.EngageOrdered>{0}：攻击{1}。</RimWorldAccess.Autopilot.EngageOrdered>
+  <RimWorldAccess.Autopilot.EngageQueued>{0}：{1}已加入队列。</RimWorldAccess.Autopilot.EngageQueued>
+  <RimWorldAccess.Autopilot.ClearOrders>撤销攻击命令</RimWorldAccess.Autopilot.ClearOrders>
+  <RimWorldAccess.Autopilot.OrdersCleared>攻击命令已撤销。</RimWorldAccess.Autopilot.OrdersCleared>
+
+  <RimWorldAccess.Autopilot.AttackDesignator.Label>标记攻击</RimWorldAccess.Autopilot.AttackDesignator.Label>
+  <RimWorldAccess.Autopilot.AttackDesignator.Desc>标记搜索歼灭角色优先攻击的目标。区域扫选只标记敌对目标；Shift加入无派系生物，Ctrl加Shift加入所有人。</RimWorldAccess.Autopilot.AttackDesignator.Desc>
+  <RimWorldAccess.Autopilot.AttackDesignator.MustTarget>必须标记可攻击的角色。</RimWorldAccess.Autopilot.AttackDesignator.MustTarget>
+</LanguageData>

@@ -36,16 +36,20 @@
        mostly defensive for null-check paths. -->
   <RimWorldAccess.Work.UnknownPawn>Невідомо</RimWorldAccess.Work.UnknownPawn>
 
+  <!-- Work-priority copy/paste (Ctrl+C / Ctrl+V), sharing vanilla's own
+       clipboard. CopyPasteAnnouncement: {0} = the game's own Copy/Paste word,
+       {1} = pawn name. NoPrioritiesCopied is the refusal when nothing has been
+       copied yet. -->
+  <RimWorldAccess.Work.CopyPasteAnnouncement>{0}: {1}</RimWorldAccess.Work.CopyPasteAnnouncement>
+  <RimWorldAccess.Work.NoPrioritiesCopied>Пріоритети праці не скопійовано</RimWorldAccess.Work.NoPrioritiesCopied>
+
   <!-- Mode names. Toggle (Alt+M) announces just the new mode; the overlay
        shows the same strings in the header row. -->
   <RimWorldAccess.Work.Mode.Manual>Ручний режим пріоритетів</RimWorldAccess.Work.Mode.Manual>
   <RimWorldAccess.Work.Mode.Basic>Простий режим</RimWorldAccess.Work.Mode.Basic>
-  <RimWorldAccess.Work.Mode.ManualOverlay>Ручний режим пріоритетів</RimWorldAccess.Work.Mode.ManualOverlay>
-  <RimWorldAccess.Work.Mode.BasicOverlay>Простий режим</RimWorldAccess.Work.Mode.BasicOverlay>
 
   <!-- Spoken when Up/Down is pressed in Basic Mode (navigation is
        Left/Right only there). -->
-  <RimWorldAccess.Work.UpDownOnlyManual>Навігація вгору/вниз доступна лише в ручному режимі. Натисніть Alt+M для перемикання.</RimWorldAccess.Work.UpDownOnlyManual>
 
   <!-- Column names for the 5-column priority grid. Used in the spoken
        announcements, the overlay's position readout, and composed into
@@ -75,11 +79,7 @@
        NoTaskSelected: BuildTaskAnnouncement fallback.
        CursorNowEmpty: {0} = column name. Spoken after SetPriority moved
        the only item out of the current column. -->
-  <RimWorldAccess.Work.ColumnEmpty>{0}: порожньо</RimWorldAccess.Work.ColumnEmpty>
-  <RimWorldAccess.Work.NoWorkTypesAvailable>Немає доступних видів робіт</RimWorldAccess.Work.NoWorkTypesAvailable>
   <RimWorldAccess.Work.NoWorkTypeSelected>Вид роботи не вибрано</RimWorldAccess.Work.NoWorkTypeSelected>
-  <RimWorldAccess.Work.NoTaskSelected>Завдання не вибрано</RimWorldAccess.Work.NoTaskSelected>
-  <RimWorldAccess.Work.CursorNowEmpty>Курсор тепер на {0}, тут порожньо</RimWorldAccess.Work.CursorNowEmpty>
 
   <!-- Single-pawn SetPriority feedback.
        AlreadyAtPriority: {0} = work labelShort, {1} = priority word
@@ -89,7 +89,7 @@
        MovedToPriority: {0} = labelShort, {1} = priority word. Used when
          the new column has only one movable item, so no neighbour context.
        MovedToPriorityWithContext: {0} = labelShort, {1} = priority word,
-         {2} = placement-context clause (trimmed, without "placed " prefix). -->
+         {2} = placement-context clause (see PlacementContext.* below). -->
   <RimWorldAccess.Work.SetPriority.AlreadyAtPriority>{0}: вже {1}</RimWorldAccess.Work.SetPriority.AlreadyAtPriority>
   <RimWorldAccess.Work.SetPriority.MovedToDisabled>{0}, вимкнено</RimWorldAccess.Work.SetPriority.MovedToDisabled>
   <RimWorldAccess.Work.SetPriority.MovedToPriority>{0}, {1}</RimWorldAccess.Work.SetPriority.MovedToPriority>
@@ -129,17 +129,14 @@
   <!-- Passion suffixes appended at the end of the task announcement. -->
 
   <!-- Placement context announced after a SetPriority move, describing
-       where the item landed inside the destination column. C# strips the
-       "placed " prefix (StripPlacedPrefix) when composing the final
-       announcement with MovedToPriorityWithContext; that prefix is kept
-       as a key so languages that don't use it can leave it empty.
+       where the item landed inside the destination column. Consumed bare
+       by MovedToPriorityWithContext.
        {0} = neighbour (or left neighbour), {1} = right neighbour. -->
-  <RimWorldAccess.Work.Placement.PlacedPrefix>розміщено </RimWorldAccess.Work.Placement.PlacedPrefix>
-  <RimWorldAccess.Work.Placement.LeftOf>розміщено ліворуч від {0}</RimWorldAccess.Work.Placement.LeftOf>
-  <RimWorldAccess.Work.Placement.RightOf>розміщено праворуч від {0}</RimWorldAccess.Work.Placement.RightOf>
-  <RimWorldAccess.Work.Placement.FirstLeftOf>розміщено першим, ліворуч від {0}</RimWorldAccess.Work.Placement.FirstLeftOf>
-  <RimWorldAccess.Work.Placement.LastRightOf>розміщено останнім, праворуч від {0}</RimWorldAccess.Work.Placement.LastRightOf>
-  <RimWorldAccess.Work.Placement.Between>розміщено між {0} та {1}</RimWorldAccess.Work.Placement.Between>
+  <RimWorldAccess.Work.PlacementContext.LeftOf>ліворуч: {0}</RimWorldAccess.Work.PlacementContext.LeftOf>
+  <RimWorldAccess.Work.PlacementContext.RightOf>праворуч: {0}</RimWorldAccess.Work.PlacementContext.RightOf>
+  <RimWorldAccess.Work.PlacementContext.FirstLeftOf>на початку, ліворуч: {0}</RimWorldAccess.Work.PlacementContext.FirstLeftOf>
+  <RimWorldAccess.Work.PlacementContext.LastRightOf>в кінці, праворуч: {0}</RimWorldAccess.Work.PlacementContext.LastRightOf>
+  <RimWorldAccess.Work.PlacementContext.Between>між: {0} і {1}</RimWorldAccess.Work.PlacementContext.Between>
 
   <!-- Bulk-set announcement (Shift+0-4: apply priority to all pawns).
        {0} = work type labelShort, {1} = priority label (e.g. "Priority 2"
@@ -168,7 +165,6 @@
        {0} = task announcement, {1} = column name, {2} = current match 1-
        based, {3} = total matches. Pattern mirrors the feature's other
        position announcements. -->
-  <RimWorldAccess.Work.Search.JumpPrompt>{0}, {1}, збіг {2} з {3}, натисніть Enter для переходу до цього завдання</RimWorldAccess.Work.Search.JumpPrompt>
 
   <!-- Pawn-switch brief announcement composition (no entry case).
        {0} = pawn name, {1} = position suffix "{i} of {n}". -->
@@ -189,8 +185,6 @@
        WithColumn: {0} = column name, {1} = task announcement, {2} = pos.
        WithoutColumn: {0} = task announcement, {1} = pos.
        BasicModeItem: {0} = task announcement, {1} = status, {2} = pos. -->
-  <RimWorldAccess.Work.Position.WithColumn>{0}, {1} {2}</RimWorldAccess.Work.Position.WithColumn>
-  <RimWorldAccess.Work.Position.WithoutColumn>{0} {1}</RimWorldAccess.Work.Position.WithoutColumn>
 
   <!-- WorkTableState lifecycle and mode announcements.
        OpeningAnnouncement: {0} = colonist count, {1} = work type count, {2} = mode string.
@@ -201,8 +195,6 @@
   <!-- Table view: sort announcements.
        CannotSort: {0} = column name.
        SortedBy: {0} = column name, {1} = direction word. -->
-  <RimWorldAccess.Work.Table.CannotSort>{0}: сортування недоступне</RimWorldAccess.Work.Table.CannotSort>
-  <RimWorldAccess.Work.Table.SortedBy>Відсортовано за {0} ({1})</RimWorldAccess.Work.Table.SortedBy>
 
   <!-- Table view: priority-change feedback.
        AlreadyState: {0} = pawn LabelShort, {1} = work labelShort, {2} = state label.
@@ -244,36 +236,6 @@
        NoChangeFor: {0} = work labelShort. Used when no pawn changed.
        RaisedForList / LoweredForList reused from Work.Table above. -->
   <RimWorldAccess.Work.Menu.NoChangeFor>Без змін для {0}</RimWorldAccess.Work.Menu.NoChangeFor>
-
-  <!-- Visual overlay (WorkMenuPatch.DrawMenuOverlay). Screen-reader users
-       navigate by spoken announcements; these keys are the on-screen
-       labels for sighted users and mod testers.
-       Title: {0} = pawn name, {1} = 1-based pawn index, {2} = total,
-         {3} = mode-overlay label.
-       PositionInfoManual: {0} = column name, {1} = row 1-based,
-         {2} = column count, {3} = labelShort.
-       PositionInfoBasic: {0} = status word ("Enabled"/"Disabled"),
-         {1} = labelShort.
-       SearchInfo: {0} = search buffer, {1} = current match 1-based,
-         {2} = total matches. -->
-  <RimWorldAccess.Work.Overlay.Title>Меню праці - {0} ({1}/{2}) - {3}</RimWorldAccess.Work.Overlay.Title>
-  <RimWorldAccess.Work.Overlay.PositionInfoManual>[{0}: {1}/{2}] {3}</RimWorldAccess.Work.Overlay.PositionInfoManual>
-  <RimWorldAccess.Work.Overlay.PositionInfoBasic>[{0}] {1}</RimWorldAccess.Work.Overlay.PositionInfoBasic>
-  <RimWorldAccess.Work.Overlay.SearchInfo>Пошук: '{0}' - збігів {1}/{2}</RimWorldAccess.Work.Overlay.SearchInfo>
-  <RimWorldAccess.Work.Overlay.StatusEnabled>Увімкнено</RimWorldAccess.Work.Overlay.StatusEnabled>
-  <RimWorldAccess.Work.Overlay.StatusDisabled>Вимкнено</RimWorldAccess.Work.Overlay.StatusDisabled>
-
-  <!-- Overlay instruction lines (three rows of help text below the title). -->
-  <RimWorldAccess.Work.Overlay.ManualInstructions1>Вгору/Вниз: змінити пріоритети | Ліворуч/Праворуч: навігація завданнями</RimWorldAccess.Work.Overlay.ManualInstructions1>
-  <RimWorldAccess.Work.Overlay.ManualInstructions2>0-4: встановити пріоритет | Shift+0-4: встановити для всіх | Tab/Shift+Tab: змінити персонажа</RimWorldAccess.Work.Overlay.ManualInstructions2>
-  <RimWorldAccess.Work.Overlay.ManualInstructions3>Enter/Escape: зберегти та закрити | Alt+M: перейти в простий режим</RimWorldAccess.Work.Overlay.ManualInstructions3>
-  <RimWorldAccess.Work.Overlay.BasicInstructions1>Ліворуч/Праворуч: навігація завданнями | Пробіл: перемкнути</RimWorldAccess.Work.Overlay.BasicInstructions1>
-  <RimWorldAccess.Work.Overlay.BasicInstructions2>Tab/Shift+Tab: змінити персонажа</RimWorldAccess.Work.Overlay.BasicInstructions2>
-  <RimWorldAccess.Work.Overlay.BasicInstructions3>Enter/Escape: зберегти та закрити | Alt+M: перейти в ручний режим</RimWorldAccess.Work.Overlay.BasicInstructions3>
-  <RimWorldAccess.Work.Overlay.TableTitle>Праця (табличний вигляд) - {0} ({1}/{2}) - Стовпець: {3}</RimWorldAccess.Work.Overlay.TableTitle>
-  <RimWorldAccess.Work.Overlay.TableInstructions1>Вгору/Вниз: колоніст | Ліворуч/Праворуч: тип роботи | 0-4: пріоритет | [ ]: циклічна зміна пріоритету</RimWorldAccess.Work.Overlay.TableInstructions1>
-  <RimWorldAccess.Work.Overlay.TableInstructions2>Shift+[ ]: змінити для всіх колоністів | Shift+стрілки: малювання | Alt+S: сортування | Alt+M: режим</RimWorldAccess.Work.Overlay.TableInstructions2>
-  <RimWorldAccess.Work.Overlay.TableInstructions3>{0}+Tab: перейти до зосередженого вигляду | Enter/Escape: зберегти й закрити</RimWorldAccess.Work.Overlay.TableInstructions3>
 
   <!-- Task detail composition pieces restored/added after the merge.
        IncludesPrefix leads the comma-joined work-giver list; leading

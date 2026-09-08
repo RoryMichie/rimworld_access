@@ -39,57 +39,76 @@ namespace RimWorldAccess
 
         #region State Management
 
-        /// <summary>
-        /// Initializes state for zone editing from a gizmo.
-        /// Call this when entering manual mode with a zone designator from a gizmo.
-        /// </summary>
-        /// <param name="designator">The zone designator (expand or shrink)</param>
-        public static void Initialize(Designator designator)
+        /// <summary>How the zone under edit was found, which decides what the first Space does.</summary>
+        private enum ZoneTargetSource
         {
-            if (designator == null)
-                return;
+            None,
+            Ambiguous,
+            Selection,
+            Cursor,
+            Adjacent,
+        }
 
+        /// <summary>
+        /// Finds the zone this designator acts on: the selected zone (a gizmo's own zone), else the
+        /// zone under the cursor, else the single zone the cursor cell touches. Zone growth is
+        /// adjacency-bound, so a lone neighbour is the only zone an empty cell can join.
+        /// </summary>
+        private static ZoneTargetSource ResolveTargetZone(Designator designator, out Zone zone)
+        {
+            zone = Find.Selector?.SelectedZone;
+            if (zone != null)
+                return ZoneTargetSource.Selection;
+
+            Map map = Find.CurrentMap;
+            if (map?.zoneManager == null)
+                return ZoneTargetSource.None;
+
+            IntVec3 cursorPos = MapNavigationState.CurrentCursorPosition;
+            System.Type zoneTypeToPlace = ZoneSelectionHelper.GetZoneTypeToPlace(designator);
+
+            zone = map.zoneManager.ZoneAt(cursorPos);
+            if (zone != null)
+            {
+                // A zone of another type cannot take this cell, so it is no target.
+                if (zoneTypeToPlace != null && zone.GetType() != zoneTypeToPlace)
+                {
+                    zone = null;
+                    return ZoneTargetSource.None;
+                }
+                return ZoneTargetSource.Cursor;
+            }
+
+            bool ambiguous;
+            zone = ZoneSelectionHelper.FindAdjacentZone(designator, cursorPos, out ambiguous);
+            if (zone != null)
+                return ZoneTargetSource.Adjacent;
+
+            return ambiguous ? ZoneTargetSource.Ambiguous : ZoneTargetSource.None;
+        }
+
+        /// <summary>
+        /// Initializes state for editing <paramref name="zone"/> with this designator.
+        /// </summary>
+        private static void Initialize(Designator designator, Zone zone)
+        {
             activeDesignator = designator;
             isDeleteDesignator = ShapeHelper.IsDeleteDesignator(designator);
+            targetZone = zone;
 
-            // Get the target zone - for gizmo mode, it should be selected
-            Zone selectedZone = Find.Selector?.SelectedZone;
-
-            if (selectedZone == null)
+            // Original cells are what expansion may not take back and what shrinking may restore.
+            originalZoneCells.Clear();
+            foreach (IntVec3 cell in zone.Cells)
             {
-                // Try to get zone at cursor
-                Map map = Find.CurrentMap;
-                if (map?.zoneManager != null)
-                {
-                    IntVec3 cursorPos = MapNavigationState.CurrentCursorPosition;
-                    selectedZone = map.zoneManager.ZoneAt(cursorPos);
-                }
+                originalZoneCells.Add(cell);
             }
 
-            if (selectedZone != null)
-            {
-                targetZone = selectedZone;
+            createdZones.Clear();
+            createdZones.Add(zone);
 
-                // Capture original cells for shrink mode (allows re-adding removed cells)
-                originalZoneCells.Clear();
-                foreach (IntVec3 cell in selectedZone.Cells)
-                {
-                    originalZoneCells.Add(cell);
-                }
+            isActive = true;
 
-                // Track this zone as being edited
-                createdZones.Clear();
-                createdZones.Add(selectedZone);
-
-                isActive = true;
-
-                Log.Message($"[GizmoZoneEditState] Initialized for {selectedZone.label}, {originalZoneCells.Count} original cells, isDelete={isDeleteDesignator}");
-            }
-            else
-            {
-                Log.Warning("[GizmoZoneEditState] Could not find target zone for editing");
-                Reset();
-            }
+            ModLogger.Dev($"[GizmoZoneEditState] Initialized for {zone.label}, {originalZoneCells.Count} original cells, isDelete={isDeleteDesignator}");
         }
 
         /// <summary>
@@ -110,15 +129,39 @@ namespace RimWorldAccess
         #region Zone Cell Operations
 
         /// <summary>
-        /// Toggles a zone cell at the current cursor position.
-        /// Uses the same logic as ViewingModeState via ZoneEditingHelper.
+        /// Toggles a zone cell at the current cursor position, adopting a target zone first when
+        /// none is being edited yet. Uses the same logic as ViewingModeState via ZoneEditingHelper.
         /// </summary>
-        public static void ToggleZoneCellAtCursor()
+        public static void ToggleZoneCellAtCursor(Designator designator)
         {
-            if (!isActive)
+            if (!isActive || activeDesignator != designator)
             {
-                TolkHelper.Speak("RimWorldAccess.Building.Zone.NoZoneBeingEdited".Loc(), SpeechPriority.Normal);
-                return;
+                Zone resolved;
+                ZoneTargetSource source = ResolveTargetZone(designator, out resolved);
+
+                if (source == ZoneTargetSource.Ambiguous)
+                {
+                    TolkHelper.Speak("RimWorldAccess.Building.Zone.AdjacentZonesAmbiguous".Loc(), SpeechPriority.Normal);
+                    return;
+                }
+
+                if (source == ZoneTargetSource.None)
+                {
+                    TolkHelper.Speak("RimWorldAccess.Building.Zone.NoZoneBeingEdited".Loc(), SpeechPriority.Normal);
+                    return;
+                }
+
+                Initialize(designator, resolved);
+
+                // Vanilla's own single-cell click on a zone cell only targets that zone
+                // (Designator_ZoneAdd.DesignateMultiCell), and an expansion may not take that cell
+                // back anyway, so the press stops at naming its new target.
+                if (source == ZoneTargetSource.Cursor && !isDeleteDesignator)
+                {
+                    string adopted = resolved.label ?? (string)"RimWorldAccess.Building.Zone.FallbackName".Translate();
+                    TolkHelper.SpeakData("RimWorldAccess.Building.Zone.NowExpanding".Translate(adopted), SpeechPriority.Normal);
+                    return;
+                }
             }
 
             // Use ZoneEditingHelper for consistent behavior with viewing mode
@@ -136,66 +179,14 @@ namespace RimWorldAccess
                 IntVec3 cursorPos = MapNavigationState.CurrentCursorPosition;
                 if (result.ZoneDeleted)
                 {
-                    Log.Message($"[GizmoZoneEditState] Zone cell operation at {cursorPos}: zone was deleted");
+                    ModLogger.Dev($"[GizmoZoneEditState] Zone cell operation at {cursorPos}: zone was deleted");
                     // Zone was deleted - reset state
                     Reset();
                 }
                 else
                 {
-                    Log.Message($"[GizmoZoneEditState] Zone cell operation at {cursorPos}: {result.Message}");
+                    ModLogger.Dev($"[GizmoZoneEditState] Zone cell operation at {cursorPos}: {result.Message}");
                 }
-            }
-        }
-
-        /// <summary>
-        /// Checks if the state should be initialized for the given designator.
-        /// Returns true if this is a zone designator selected from a gizmo (not architect mode).
-        /// </summary>
-        /// <param name="designator">The designator to check</param>
-        /// <returns>True if this is a gizmo-selected zone designator</returns>
-        public static bool ShouldInitializeFor(Designator designator)
-        {
-            if (designator == null)
-                return false;
-
-            // Must be a zone designator
-            if (!ShapeHelper.IsZoneDesignator(designator))
-                return false;
-
-            // Must have a selected zone (indicates gizmo selection)
-            // For architect menu, the zone isn't typically selected
-            Zone selectedZone = Find.Selector?.SelectedZone;
-            if (selectedZone != null)
-                return true;
-
-            // Also check if cursor is on a zone (for expand/shrink from any source)
-            Map map = Find.CurrentMap;
-            if (map?.zoneManager != null)
-            {
-                IntVec3 cursorPos = MapNavigationState.CurrentCursorPosition;
-                Zone zoneAtCursor = map.zoneManager.ZoneAt(cursorPos);
-                if (zoneAtCursor != null)
-                    return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Ensures state is initialized for the given designator if needed.
-        /// Safe to call multiple times - will only initialize once.
-        /// </summary>
-        /// <param name="designator">The designator to initialize for</param>
-        public static void EnsureInitialized(Designator designator)
-        {
-            // Already active with same designator - nothing to do
-            if (isActive && activeDesignator == designator)
-                return;
-
-            // Check if we should initialize
-            if (ShouldInitializeFor(designator))
-            {
-                Initialize(designator);
             }
         }
 

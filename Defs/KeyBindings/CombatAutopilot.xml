@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Ordinary gizmo hotkeys (rebindable in Options); the shell exposes every gizmo
+       hotkey behind Shift. Defaults avoid vanilla's Misc bindings and the draft key. -->
+  <KeyBindingDef>
+    <defName>RWA_GizmoEngage</defName>
+    <label>gizmo: engage target</label>
+    <category>SelectionMisc</category>
+    <defaultKeyCodeA>E</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>RWA_GizmoSeekDestroy</defName>
+    <label>gizmo: seek and destroy</label>
+    <category>SelectionMisc</category>
+    <defaultKeyCodeA>S</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>RWA_GizmoCombatPolicy</defName>
+    <label>gizmo: combat policy</label>
+    <category>SelectionMisc</category>
+    <defaultKeyCodeA>C</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>RWA_GizmoPause</defName>
+    <label>gizmo: pause automation</label>
+    <category>SelectionMisc</category>
+    <defaultKeyCodeA>P</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>RWA_GizmoHuntAnimals</defName>
+    <label>gizmo: hunt animals</label>
+    <category>SelectionMisc</category>
+    <defaultKeyCodeA>H</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>RWA_GizmoAutocastAll</defName>
+    <label>gizmo: autocast all</label>
+    <category>SelectionMisc</category>
+    <defaultKeyCodeA>Q</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>RWA_GizmoPatrol</defName>
+    <label>gizmo: patrol</label>
+    <category>SelectionMisc</category>
+    <defaultKeyCodeA>T</defaultKeyCodeA>
+  </KeyBindingDef>
+</Defs>

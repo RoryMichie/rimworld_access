@@ -1,6 +1,6 @@
+using System.Collections.Generic;
 using Verse;
 using RimWorld;
-using UnityEngine;
 
 namespace RimWorldAccess
 {
@@ -15,6 +15,9 @@ namespace RimWorldAccess
         private static bool isActive = false;
 
         public static bool IsActive => isActive;
+
+        /// <summary>Live target temperature for TempControlScope's stepper row (read fresh each announce, never cached).</summary>
+        public static float TargetTemperature => tempControl?.TargetTemperature ?? 0f;
 
         public static void Open(Building targetBuilding)
         {
@@ -43,48 +46,35 @@ namespace RimWorldAccess
             MapNavigationState.SuppressMapNavigation = false;
         }
 
-        public static void IncreaseTemperatureSmall()
+        // DOCTRINE FIX: the five adjust/reset methods below now ride MUTATION vehicle A instead of the
+        // old raw TargetTemperature +=/= writes. CompTempControl.CompGetGizmosExtra (decompiled
+        // RimWorld/CompTempControl.cs:55-121) yields exactly five Command_Action gizmos in this fixed
+        // order: -10, -1, reset, +1, +10 — base ThingComp.CompGetGizmosExtra
+        // (Verse/ThingComp.cs:108-111) yields nothing, so the position is exact and stable, not
+        // label-matched. Invoking each gizmo's own ProcessInput (not the bare .action delegate) rides
+        // the same real vanilla command RefuelableComponentState.OpenTargetFuelDialog already uses this
+        // pattern for, restoring vanilla's own sound cues (SoundDefOf.DragSlider on adjust, Tick_Tiny
+        // on reset, both currently silent below the level of Command.ProcessInput's CurActivateSound
+        // check since neither gizmo sets activateSound -- the sound comes from
+        // InterfaceChangeTargetTemperature/the reset delegate themselves, called by action()) and
+        // vanilla's own clamp (InterfaceChangeTargetTemperature's Mathf.Clamp) instead of a
+        // hand-duplicated one.
+        private static void InvokeGizmoAt(int index)
         {
             if (tempControl == null) return;
-            AdjustTemperature(RoundedToCurrentTempModeOffset(1f));
-        }
-
-        public static void IncreaseTemperatureLarge()
-        {
-            if (tempControl == null) return;
-            AdjustTemperature(RoundedToCurrentTempModeOffset(10f));
-        }
-
-        public static void DecreaseTemperatureSmall()
-        {
-            if (tempControl == null) return;
-            AdjustTemperature(RoundedToCurrentTempModeOffset(-1f));
-        }
-
-        public static void DecreaseTemperatureLarge()
-        {
-            if (tempControl == null) return;
-            AdjustTemperature(RoundedToCurrentTempModeOffset(-10f));
-        }
-
-        public static void ResetTemperature()
-        {
-            if (tempControl == null) return;
-
-            tempControl.TargetTemperature = 21f;
+            var gizmos = new List<Gizmo>(tempControl.CompGetGizmosExtra());
+            if (index < 0 || index >= gizmos.Count) return;
+            gizmos[index].ProcessInput(null);
             AnnounceCurrentSettings();
         }
 
-        private static void AdjustTemperature(float offset)
-        {
-            if (tempControl == null) return;
+        public static void DecreaseTemperatureLarge() => InvokeGizmoAt(0); // -10
+        public static void DecreaseTemperatureSmall() => InvokeGizmoAt(1); // -1
+        public static void ResetTemperature() => InvokeGizmoAt(2);        // reset to 21C
+        public static void IncreaseTemperatureSmall() => InvokeGizmoAt(3); // +1
+        public static void IncreaseTemperatureLarge() => InvokeGizmoAt(4); // +10
 
-            tempControl.TargetTemperature += offset;
-            tempControl.TargetTemperature = Mathf.Clamp(tempControl.TargetTemperature, -273.15f, 1000f);
-            AnnounceCurrentSettings();
-        }
-
-        private static void AnnounceCurrentSettings()
+        public static void AnnounceCurrentSettings()
         {
             if (tempControl == null || building == null)
                 return;
@@ -109,14 +99,6 @@ namespace RimWorldAccess
             }
 
             TolkHelper.Speak("RimWorldAccess.Building.Temp.LabelTarget".Loc(building.LabelCap, targetTemp, powerSuffix));
-        }
-
-        private static float RoundedToCurrentTempModeOffset(float celsiusTemp)
-        {
-            return GenTemperature.ConvertTemperatureOffset(
-                Mathf.RoundToInt(GenTemperature.CelsiusToOffset(celsiusTemp, Prefs.TemperatureMode)),
-                Prefs.TemperatureMode,
-                TemperatureDisplayMode.Celsius);
         }
     }
 }

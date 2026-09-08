@@ -1,19 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Verse;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Shared utilities for ThingFilter navigation across all three implementations
-    /// (ThingFilterNavigationState, ThingFilterMenuState, StorageSettingsMenuState).
-    /// Provides tri-state allowance logic, visibility checks, and summary formatting.
+    /// Shared ThingFilter navigation utilities for the filter screens: tri-state allowance,
+    /// visibility checks, and summary formatting.
     /// </summary>
     public static class ThingFilterHelper
     {
-        /// <summary>
-        /// Tri-state allowance matching vanilla's MultiCheckboxState behavior.
-        /// </summary>
+        /// <summary>Tri-state allowance, matching vanilla's MultiCheckboxState.</summary>
         public enum CategoryAllowanceState
         {
             NoneAllowed,
@@ -21,9 +19,7 @@ namespace RimWorldAccess
             AllAllowed
         }
 
-        /// <summary>
-        /// Detailed summary of a category's allowance state for smart announcements.
-        /// </summary>
+        /// <summary>A category's allowance state in detail, for smart announcements.</summary>
         public struct CategorySummary
         {
             public CategoryAllowanceState State;
@@ -35,12 +31,38 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Computes the tri-state allowance for a category, matching vanilla's AllowanceStateOf().
-        /// Only counts visible ThingDefs (not special filters) for the state determination.
+        /// The tri-state allowance for a category, matching vanilla's AllowanceStateOf(). Counts
+        /// visible ThingDefs only, unless <paramref name="isVisibleSpecial"/> is supplied AND
+        /// <paramref name="filter"/> is <see cref="ThingFilter.OnlySpecialFilters"/> — for a
+        /// category made entirely of SpecialThingFilterDefs the state is driven by its visible
+        /// descendant special filters instead, exactly as
+        /// Listing_TreeThingFilter.AllowanceStateOf's own OnlySpecialFilters branch does.
         /// </summary>
         public static CategoryAllowanceState GetAllowanceState(
-            ThingCategoryDef catDef, ThingFilter filter, Func<ThingDef, bool> isVisible)
+            ThingCategoryDef catDef, ThingFilter filter, Func<ThingDef, bool> isVisible,
+            Func<SpecialThingFilterDef, bool> isVisibleSpecial = null)
         {
+            if (filter.OnlySpecialFilters && isVisibleSpecial != null)
+            {
+                int visibleSpecialCount = 0;
+                int allowedSpecialCount = 0;
+                foreach (SpecialThingFilterDef sf in catDef.DescendantSpecialThingFilterDefs)
+                {
+                    if (isVisibleSpecial(sf))
+                    {
+                        visibleSpecialCount++;
+                        if (filter.Allows(sf))
+                            allowedSpecialCount++;
+                    }
+                }
+
+                if (allowedSpecialCount == 0)
+                    return CategoryAllowanceState.NoneAllowed;
+                if (allowedSpecialCount == visibleSpecialCount)
+                    return CategoryAllowanceState.AllAllowed;
+                return CategoryAllowanceState.SomeAllowed;
+            }
+
             int visibleCount = 0;
             int allowedCount = 0;
 
@@ -54,20 +76,40 @@ namespace RimWorldAccess
                 }
             }
 
+            // Vanilla also counts visible descendant special filters toward the all-allowed
+            // decision: a category is fully On only when every visible special filter is allowed
+            // too. Off stays decided by ThingDefs alone, as vanilla's own num2 == 0 check does.
+            int visibleSpecial = 0;
+            int allowedSpecial = 0;
+            if (isVisibleSpecial != null)
+            {
+                foreach (SpecialThingFilterDef sf in catDef.DescendantSpecialThingFilterDefs)
+                {
+                    if (isVisibleSpecial(sf))
+                    {
+                        visibleSpecial++;
+                        if (filter.Allows(sf))
+                            allowedSpecial++;
+                    }
+                }
+            }
+
             if (allowedCount == 0)
                 return CategoryAllowanceState.NoneAllowed;
-            if (allowedCount == visibleCount)
+            if (allowedCount == visibleCount && allowedSpecial == visibleSpecial)
                 return CategoryAllowanceState.AllAllowed;
             return CategoryAllowanceState.SomeAllowed;
         }
 
         /// <summary>
-        /// Computes detailed category summary including exception names for announcements.
-        /// Collects up to maxNames+1 names for each side to determine whether to list or count.
+        /// A category summary with exception names, collecting maxNames+1 per side so the caller can
+        /// tell listing from counting. With <paramref name="isVisibleSpecial"/> supplied and an
+        /// <see cref="ThingFilter.OnlySpecialFilters"/> filter, the summary is built from the
+        /// category's visible descendant SpecialThingFilterDefs; see <see cref="GetAllowanceState"/>.
         /// </summary>
         public static CategorySummary GetCategorySummary(
             ThingCategoryDef catDef, ThingFilter filter, Func<ThingDef, bool> isVisible,
-            int maxNames = 10)
+            int maxNames = 10, Func<SpecialThingFilterDef, bool> isVisibleSpecial = null)
         {
             var summary = new CategorySummary
             {
@@ -75,24 +117,50 @@ namespace RimWorldAccess
                 DisallowedNames = new List<string>()
             };
 
-            foreach (ThingDef td in catDef.DescendantThingDefs)
+            if (filter.OnlySpecialFilters && isVisibleSpecial != null)
             {
-                if (!isVisible(td))
-                    continue;
-
-                summary.TotalVisible++;
-
-                if (filter.Allows(td))
+                foreach (SpecialThingFilterDef sf in catDef.DescendantSpecialThingFilterDefs)
                 {
-                    summary.AllowedCount++;
-                    if (summary.AllowedNames.Count < maxNames)
-                        summary.AllowedNames.Add(td.LabelCap);
+                    if (!isVisibleSpecial(sf))
+                        continue;
+
+                    summary.TotalVisible++;
+
+                    if (filter.Allows(sf))
+                    {
+                        summary.AllowedCount++;
+                        if (summary.AllowedNames.Count < maxNames)
+                            summary.AllowedNames.Add(sf.LabelCap);
+                    }
+                    else
+                    {
+                        summary.DisallowedCount++;
+                        if (summary.DisallowedNames.Count < maxNames)
+                            summary.DisallowedNames.Add(sf.LabelCap);
+                    }
                 }
-                else
+            }
+            else
+            {
+                foreach (ThingDef td in catDef.DescendantThingDefs)
                 {
-                    summary.DisallowedCount++;
-                    if (summary.DisallowedNames.Count < maxNames)
-                        summary.DisallowedNames.Add(td.LabelCap);
+                    if (!isVisible(td))
+                        continue;
+
+                    summary.TotalVisible++;
+
+                    if (filter.Allows(td))
+                    {
+                        summary.AllowedCount++;
+                        if (summary.AllowedNames.Count < maxNames)
+                            summary.AllowedNames.Add(td.LabelCap);
+                    }
+                    else
+                    {
+                        summary.DisallowedCount++;
+                        if (summary.DisallowedNames.Count < maxNames)
+                            summary.DisallowedNames.Add(td.LabelCap);
+                    }
                 }
             }
 
@@ -107,18 +175,16 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Formats a category summary for screen reader announcement.
-        /// Reports from the minority perspective:
-        /// - "disallowed, except for: item1, item2" (minority allowed, ≤maxNames)
-        /// - "allowed, except for: item1, item2" (minority disallowed, ≤maxNames)
-        /// - "disallowed, except for 15 items" (too many to list)
+        /// A category summary phrased from the minority perspective: "disallowed, except for: item1,
+        /// item2", "allowed, except for: item1, item2", or "disallowed, except for 15 items" when
+        /// there are too many to list.
         /// </summary>
         public static string FormatCategorySummary(CategorySummary summary)
         {
-            if (summary.AllowedCount == 0)
-                return "RimWorldAccess.Inspection.Storage.Summary.AllDisallowed".Translate();
-            if (summary.DisallowedCount == 0)
-                return "RimWorldAccess.Inspection.Storage.Summary.AllAllowed".Translate();
+            // The only caller invokes this solely for a PartiallyChecked category, so both counts
+            // are nonzero in practice; the empty guard covers the impossible zero/zero case.
+            if (summary.AllowedCount == 0 || summary.DisallowedCount == 0)
+                return string.Empty;
 
             if (summary.AllowedCount <= summary.DisallowedCount)
             {
@@ -140,10 +206,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Vanilla-matching visibility check for ThingDefs.
-        /// Mirrors Listing_TreeThingFilter.Visible(ThingDef).
-        /// </summary>
+        /// <summary>Vanilla-matching ThingDef visibility, mirroring Listing_TreeThingFilter.Visible(ThingDef).</summary>
         public static bool IsVisible(ThingDef td, ThingFilter parentFilter)
         {
             if (!td.PlayerAcquirable)
@@ -163,10 +226,28 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Checks if a category has any visible descendants.
+        /// Whether a category has visible descendants, mirroring
+        /// Listing_TreeThingFilter.Visible(TreeNode_ThingCategory): with
+        /// <paramref name="currentFilter"/> set to <see cref="ThingFilter.OnlySpecialFilters"/>,
+        /// existence is decided by descendant SpecialThingFilterDefs rather than ThingDefs. Without
+        /// that branch a category built entirely of special filters always reports invisible and
+        /// its whole subtree becomes unreachable, though vanilla shows and lets players toggle it.
+        /// <paramref name="currentFilter"/> defaults to null so callers whose filter is never
+        /// OnlySpecialFilters keep their prior behavior.
         /// </summary>
-        public static bool IsVisibleCategory(TreeNode_ThingCategory node, ThingFilter parentFilter)
+        public static bool IsVisibleCategory(TreeNode_ThingCategory node, ThingFilter parentFilter,
+            ThingFilter currentFilter = null)
         {
+            if (currentFilter != null && currentFilter.OnlySpecialFilters)
+            {
+                foreach (SpecialThingFilterDef sf in node.catDef.DescendantSpecialThingFilterDefs)
+                {
+                    if (IsVisibleForCategoryExistence(sf, parentFilter))
+                        return true;
+                }
+                return false;
+            }
+
             foreach (ThingDef td in node.catDef.DescendantThingDefs)
             {
                 if (IsVisible(td, parentFilter))
@@ -176,36 +257,45 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Checks if a special filter is visible given a parent filter, matching
-        /// vanilla's Listing_TreeThingFilter.CalculateHiddenSpecialFilters: a
-        /// special filter is hidden when no descendant ThingDef allowed by the
-        /// parent filter can ever be matched by its Worker (e.g. "Allow rotten"
-        /// on the bionic-eye recipe — there's nothing rottable to apply it to).
+        /// Mirrors Listing_TreeThingFilter's one-arg Visible(SpecialThingFilterDef), used only by
+        /// the category overload's OnlySpecialFilters branch to decide whether a node exists at all.
+        /// Deliberately simpler than the per-checkbox <see cref="IsVisibleSpecialFilter"/>: no
+        /// CanEverMatch or hiddenSpecialFilters scoping, just the parent filter's Allows check.
         /// </summary>
+        private static bool IsVisibleForCategoryExistence(SpecialThingFilterDef f, ThingFilter parentFilter)
+        {
+            if (parentFilter != null && !parentFilter.Allows(f))
+                return false;
+            return true;
+        }
+
         /// <summary>
-        /// Vanilla-matching visibility check for a special filter against a
-        /// containing category and a parent filter, mirroring
-        /// `Listing_TreeThingFilter.Visible(SpecialThingFilterDef, TreeNode_ThingCategory)`
-        /// + `CalculateHiddenSpecialFilters`. The current filter is also passed
-        /// because vanilla short-circuits to "visible" when
-        /// `filter.OnlySpecialFilters` is true.
+        /// Vanilla-matching visibility for a special filter against a containing category and a
+        /// parent filter, mirroring Listing_TreeThingFilter.Visible plus
+        /// CalculateHiddenSpecialFilters: a special filter is hidden when no descendant ThingDef the
+        /// parent filter allows can ever be matched by its Worker. The current filter is passed too,
+        /// because vanilla short-circuits to visible when <c>filter.OnlySpecialFilters</c> is true.
+        /// <paramref name="forceHiddenFilters"/> mirrors the call-site list vanilla folds into its
+        /// own hiddenSpecialFilters cache.
         /// </summary>
         public static bool IsVisibleSpecialFilter(SpecialThingFilterDef f, TreeNode_ThingCategory node,
-            ThingFilter currentFilter, ThingFilter parentFilter)
+            ThingFilter currentFilter, ThingFilter parentFilter,
+            ICollection<SpecialThingFilterDef> forceHiddenFilters = null)
         {
             if (parentFilter != null && !parentFilter.Allows(f))
                 return false;
             if (currentFilter != null && currentFilter.OnlySpecialFilters)
                 return true;
+            if (forceHiddenFilters != null && forceHiddenFilters.Contains(f))
+                return false;
             if (parentFilter != null && parentFilter.hiddenSpecialFilters != null
                 && parentFilter.hiddenSpecialFilters.Contains(f))
                 return false;
             if (f.Worker == null || node == null)
                 return true;
 
-            // For each descendant ThingDef of the current category, ask the
-            // worker if it could ever match. Restrict to defs the parent
-            // filter actually allows — same scoping vanilla uses.
+            // Ask the worker whether it could ever match any descendant ThingDef, restricted to the
+            // defs the parent filter allows, the same scoping vanilla uses.
             foreach (ThingDef td in node.catDef.DescendantThingDefs)
             {
                 if (parentFilter != null && !parentFilter.Allows(td))
@@ -216,14 +306,50 @@ namespace RimWorldAccess
             return false;
         }
 
-        /// <summary>
-        /// Backwards-compatible overload. Resolves the category to the parent
-        /// filter's DisplayRootCategory (or null when no parent filter).
-        /// </summary>
+        /// <summary>Resolves the category to the parent filter's DisplayRootCategory, or null when there is no parent filter.</summary>
         public static bool IsVisibleSpecialFilter(SpecialThingFilterDef f, ThingFilter parentFilter)
         {
             var node = parentFilter?.DisplayRootCategory;
             return IsVisibleSpecialFilter(f, node, currentFilter: null, parentFilter);
+        }
+
+        /// <summary>
+        /// Mirrors Listing_TreeThingFilter.CalculateHiddenSpecialFilters plus its instance merge of
+        /// the call-site force-hidden list: every special filter under or above the node whose
+        /// Worker can never match a parent-allowed descendant ThingDef, or which the parent filter's
+        /// own hiddenSpecialFilters names, or which the call site force-hides.
+        /// </summary>
+        public static List<SpecialThingFilterDef> ComputeHiddenSpecialFilters(
+            TreeNode_ThingCategory node, ThingFilter parentFilter,
+            ICollection<SpecialThingFilterDef> forceHidden)
+        {
+            var list = new List<SpecialThingFilterDef>();
+            IEnumerable<SpecialThingFilterDef> candidates =
+                node.catDef.ParentsSpecialThingFilterDefs.Concat(node.catDef.DescendantSpecialThingFilterDefs);
+            IEnumerable<ThingDef> defs = node.catDef.DescendantThingDefs;
+            if (parentFilter != null)
+                defs = defs.Where(parentFilter.Allows);
+            foreach (SpecialThingFilterDef f in candidates)
+            {
+                bool matched = false;
+                foreach (ThingDef td in defs)
+                {
+                    if (f.Worker.CanEverMatch(td))
+                    {
+                        matched = true;
+                        break;
+                    }
+                }
+                // Vanilla omits the inner null check; guard it as IsVisibleSpecialFilter does.
+                if (parentFilter != null && parentFilter.hiddenSpecialFilters != null
+                    && parentFilter.hiddenSpecialFilters.Contains(f))
+                    matched = false;
+                if (!matched)
+                    list.Add(f);
+            }
+            if (forceHidden != null)
+                list.AddRange(forceHidden);
+            return list;
         }
     }
 }

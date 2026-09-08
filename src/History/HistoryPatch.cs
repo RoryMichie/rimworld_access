@@ -28,11 +28,27 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Prefix patch for Window.Close to clean up our state when MainTabWindow_History closes.
+        /// Postfix patch for Window.PostClose to clean up our state when MainTabWindow_History
+        /// closes.
+        ///
+        /// Was patched on Window.Close prior to this fix -- Close() is only the REQUEST path
+        /// (it calls WindowStack.TryRemove internally), and removal paths that call TryRemove
+        /// directly (dialog jumps, tab switches through some paths, ScopeForWindow's own
+        /// detach sweep) never invoke Close(), so the cleanup silently never fired. Confirmed
+        /// live: removing the window via TryRemove left HistoryState.IsActive stuck true
+        /// forever with nothing on screen, keeping KeyboardHelper.IsAnyAccessibilityMenuActive
+        /// true via that lingering membership and killing map keyboard input -- the exact
+        /// orphan-state bug the legacy handler's safety check used to heal. PostClose is the
+        /// lifecycle callback WindowStack.TryRemove ALWAYS invokes (decompiled-verified:
+        /// neither MainTabWindow nor MainTabWindow_History overrides PostClose, so this
+        /// Window-level patch reaches every instance with no declaring-type trap). The retired
+        /// orphan safety check is therefore subsumed by TWO mechanisms, not one:
+        /// ScopeForWindow.ReconcileLiveness (the scope half) plus this PostClose cleanup (the
+        /// state half).
         /// </summary>
-        [HarmonyPatch(typeof(Window), "Close")]
-        [HarmonyPrefix]
-        public static void Window_Close_Prefix(Window __instance)
+        [HarmonyPatch(typeof(Window), "PostClose")]
+        [HarmonyPostfix]
+        public static void Window_PostClose_Postfix(Window __instance)
         {
             if (__instance is MainTabWindow_History)
             {
@@ -48,8 +64,8 @@ namespace RimWorldAccess
         /// Patch for Window.OnCancelKeyPressed to block RimWorld's Escape key handling
         /// when our accessibility states are active over the History window.
         ///
-        /// CRITICAL: RimWorld's Window.OnCancelKeyPressed runs independently of our
-        /// UnifiedKeyboardPatch. Event.current.Use() does NOT block it. The only way
+        /// CRITICAL: RimWorld's Window.OnCancelKeyPressed runs independently of the shell
+        /// dispatcher. Event.current.Use() does NOT block it. The only way
         /// to prevent double-close bugs is to patch the method directly.
         /// </summary>
         [HarmonyPatch(typeof(Window), "OnCancelKeyPressed")]
@@ -64,7 +80,7 @@ namespace RimWorldAccess
             // This prevents the window from closing when user presses Escape to:
             // 1. Clear typeahead search
             // 2. Go back from detail view to list view in Messages tab
-            if (HistoryStatisticsState.IsActive || HistoryMessagesState.IsActive)
+            if (HistoryGraphState.IsActive || HistoryStatisticsState.IsActive || HistoryMessagesState.IsActive)
             {
                 // Check if there's something to handle first:
                 // - Active typeahead search that needs to be cleared
@@ -72,6 +88,11 @@ namespace RimWorldAccess
                 if (HistoryState.HasActiveTypeahead)
                 {
                     return false; // Block - our handler will clear the search
+                }
+
+                if (HistoryGraphState.IsActive && HistoryGraphState.IsInDetailView)
+                {
+                    return false; // Block - our handler will go back to list view
                 }
 
                 if (HistoryMessagesState.IsActive && HistoryMessagesState.IsInDetailView)
@@ -103,7 +124,7 @@ namespace RimWorldAccess
             // This prevents the window from closing when user presses Enter to:
             // 1. Enter detail view
             // 2. Activate a button
-            if (HistoryStatisticsState.IsActive || HistoryMessagesState.IsActive)
+            if (HistoryGraphState.IsActive || HistoryStatisticsState.IsActive || HistoryMessagesState.IsActive)
             {
                 return false; // Block - our handler will process Enter
             }
@@ -161,15 +182,19 @@ namespace RimWorldAccess
             Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.UpperLeft;
 
-            string instructions = "Tab/Shift+Tab: Switch tabs | Up/Down: Navigate | Enter: Details\n";
+            string instructions = (string)"RimWorldAccess.History.Overlay.BaseInstructions".Translate() + "\n";
 
             if (HistoryState.CurrentTab == HistoryState.Tab.Messages)
             {
-                instructions += "Alt+L: Toggle Letters | Alt+M: Toggle Messages | Alt+P: Pin | Alt+J: Jump";
+                instructions += (string)"RimWorldAccess.History.Overlay.MessagesInstructions".Translate();
+            }
+            else if (HistoryState.CurrentTab == HistoryState.Tab.Graph)
+            {
+                instructions += (string)"RimWorldAccess.History.Overlay.GraphInstructions".Translate();
             }
             else
             {
-                instructions += "Type to search | Home/End: First/Last";
+                instructions += (string)"RimWorldAccess.History.Overlay.StatisticsInstructions".Translate();
             }
 
             Widgets.Label(instructionsRect, instructions);

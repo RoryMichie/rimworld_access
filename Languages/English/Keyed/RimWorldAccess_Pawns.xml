@@ -44,12 +44,12 @@
        (pregnant)"). Each grammatical case is its own key so the
        gender-noun agreement stays the translator's call.
        ================================================================= -->
-  <RimWorldAccess.Pawns.Group.MalePrefix>Male </RimWorldAccess.Pawns.Group.MalePrefix>
-  <RimWorldAccess.Pawns.Group.FemalePrefix>Female </RimWorldAccess.Pawns.Group.FemalePrefix>
+  <RimWorldAccess.Pawns.Group.MaleGroup>Male {0}</RimWorldAccess.Pawns.Group.MaleGroup>
+  <RimWorldAccess.Pawns.Group.FemaleGroup>Female {0}</RimWorldAccess.Pawns.Group.FemaleGroup>
   <RimWorldAccess.Pawns.Group.Pregnant>pregnant</RimWorldAccess.Pawns.Group.Pregnant>
-  <!-- Final composition: "{0} = gender prefix (or empty), {1} =
-       capitalized kind label, {2} = " (suffix1, suffix2, ...)" or "". -->
-  <RimWorldAccess.Pawns.Group.Label>{0}{1}{2}</RimWorldAccess.Pawns.Group.Label>
+  <!-- Final composition: {0} = the (already gendered) capitalized kind
+       label, {1} = " (suffix1, suffix2, ...)" or "". -->
+  <RimWorldAccess.Pawns.Group.Label>{0}{1}</RimWorldAccess.Pawns.Group.Label>
   <RimWorldAccess.Pawns.Group.SuffixWrap> ({0})</RimWorldAccess.Pawns.Group.SuffixWrap>
 
   <!-- =================================================================
@@ -151,27 +151,18 @@
        Dialog_NamePawn fields; only the announcement strings live here.
        NameFallback: {0} = 1-based field index used when the dialog
                      does not provide a label. -->
-  <RimWorldAccess.Pawns.NameDialog.NoPawn>Error: Could not find pawn</RimWorldAccess.Pawns.NameDialog.NoPawn>
-  <RimWorldAccess.Pawns.NameDialog.MethodNotFound>Error: BuildName method not found</RimWorldAccess.Pawns.NameDialog.MethodNotFound>
-  <RimWorldAccess.Pawns.NameDialog.Invalid>Name is invalid. Please check the name fields.</RimWorldAccess.Pawns.NameDialog.Invalid>
-  <RimWorldAccess.Pawns.NameDialog.Named>Named {0}</RimWorldAccess.Pawns.NameDialog.Named>
-  <RimWorldAccess.Pawns.NameDialog.RandomCannotFindPawn>Could not find pawn</RimWorldAccess.Pawns.NameDialog.RandomCannotFindPawn>
-  <RimWorldAccess.Pawns.NameDialog.RandomInvalidIndex>Invalid field index</RimWorldAccess.Pawns.NameDialog.RandomInvalidIndex>
   <RimWorldAccess.Pawns.NameDialog.RandomCannotRandomize>This field cannot be randomized</RimWorldAccess.Pawns.NameDialog.RandomCannotRandomize>
   <RimWorldAccess.Pawns.NameDialog.RandomizedTo>Randomized to {0}</RimWorldAccess.Pawns.NameDialog.RandomizedTo>
-  <RimWorldAccess.Pawns.NameDialog.RandomCouldNotGenerate>Could not generate random name</RimWorldAccess.Pawns.NameDialog.RandomCouldNotGenerate>
-  <RimWorldAccess.Pawns.NameDialog.RandomFailed>Could not randomize</RimWorldAccess.Pawns.NameDialog.RandomFailed>
-  <RimWorldAccess.Pawns.NameDialog.NameFallback>Name {0}</RimWorldAccess.Pawns.NameDialog.NameFallback>
+  <RimWorldAccess.Pawns.NameDialog.EditHint>Press enter on a name field to edit it</RimWorldAccess.Pawns.NameDialog.EditHint>
+  <RimWorldAccess.Pawns.NameDialog.EditingField>Editing {0}: {1}</RimWorldAccess.Pawns.NameDialog.EditingField>
+  <RimWorldAccess.Pawns.NameDialog.ReadOnlyField>{0} can't be edited</RimWorldAccess.Pawns.NameDialog.ReadOnlyField>
 
   <!-- =================================================================
        Pawn info hotkeys (PawnInfoPatch).
-       UnknownInfoType: defensive fallback for an unrecognized info
-       type enum (should never be heard in normal play).
-       NoPawnSelected / NotAPawn: spoken when Alt+C / F1 fires without
+       NoPawnSelected / NotAPawn: spoken when Alt+C fires without
        a valid pawn under selection.
        JumpPickerRow: shape for the multi-select Alt+C float menu;
                       {0} = pawn label, {1} = job report. -->
-  <RimWorldAccess.Pawns.Info.UnknownInfoType>Unknown info type</RimWorldAccess.Pawns.Info.UnknownInfoType>
   <RimWorldAccess.Pawns.Info.NoPawnSelected>No pawn selected</RimWorldAccess.Pawns.Info.NoPawnSelected>
   <RimWorldAccess.Pawns.Info.NotAPawn>Selected object is not a pawn</RimWorldAccess.Pawns.Info.NotAPawn>
   <RimWorldAccess.Pawns.Info.JumpPickerRow>{0}: {1}</RimWorldAccess.Pawns.Info.JumpPickerRow>
@@ -213,77 +204,36 @@
        the actual menu options for the bed-type submenu (via
        Type.Colonist/Prisoner/Slave keys).
        ================================================================= -->
-  <RimWorldAccess.Pawns.Bed.NoBed>No bed to configure</RimWorldAccess.Pawns.Bed.NoBed>
-  <RimWorldAccess.Pawns.Bed.Action.AssignPawn>Assign pawn</RimWorldAccess.Pawns.Bed.Action.AssignPawn>
-  <RimWorldAccess.Pawns.Bed.Action.UnassignPawn>Unassign pawn</RimWorldAccess.Pawns.Bed.Action.UnassignPawn>
-  <RimWorldAccess.Pawns.Bed.Action.ChangeBedType>Change bed type</RimWorldAccess.Pawns.Bed.Action.ChangeBedType>
-  <RimWorldAccess.Pawns.Bed.Action.ToggleMedical>Toggle medical</RimWorldAccess.Pawns.Bed.Action.ToggleMedical>
-  <RimWorldAccess.Pawns.Bed.Action.CloseMenu>Close menu</RimWorldAccess.Pawns.Bed.Action.CloseMenu>
-  <RimWorldAccess.Pawns.Bed.ForPrisoners> - For prisoners</RimWorldAccess.Pawns.Bed.ForPrisoners>
-  <RimWorldAccess.Pawns.Bed.ForSlaves> - For slaves</RimWorldAccess.Pawns.Bed.ForSlaves>
-  <RimWorldAccess.Pawns.Bed.ForColonists> - For colonists</RimWorldAccess.Pawns.Bed.ForColonists>
-  <RimWorldAccess.Pawns.Bed.MedicalSuffix> - Medical</RimWorldAccess.Pawns.Bed.MedicalSuffix>
-  <RimWorldAccess.Pawns.Bed.NotMedicalSuffix> - Not medical</RimWorldAccess.Pawns.Bed.NotMedicalSuffix>
-  <RimWorldAccess.Pawns.Bed.AssignedToList> - Assigned to: {0}</RimWorldAccess.Pawns.Bed.AssignedToList>
-  <RimWorldAccess.Pawns.Bed.UnassignedSuffix> - Unassigned</RimWorldAccess.Pawns.Bed.UnassignedSuffix>
-  <RimWorldAccess.Pawns.Bed.OptionSuffix> - {0}</RimWorldAccess.Pawns.Bed.OptionSuffix>
-  <RimWorldAccess.Pawns.Bed.MenuClosed>Bed menu closed</RimWorldAccess.Pawns.Bed.MenuClosed>
-  <RimWorldAccess.Pawns.Bed.CannotAssign>Cannot assign pawns to this bed</RimWorldAccess.Pawns.Bed.CannotAssign>
-  <RimWorldAccess.Pawns.Bed.NoCandidates>No available pawns to assign</RimWorldAccess.Pawns.Bed.NoCandidates>
-  <RimWorldAccess.Pawns.Bed.AssignWithCannot>{0} (Cannot assign)</RimWorldAccess.Pawns.Bed.AssignWithCannot>
-  <RimWorldAccess.Pawns.Bed.AssignIdeologyForbids>{0} (Ideology forbids)</RimWorldAccess.Pawns.Bed.AssignIdeologyForbids>
-  <RimWorldAccess.Pawns.Bed.AlreadyAssigned>{0} (Already assigned)</RimWorldAccess.Pawns.Bed.AlreadyAssigned>
-  <RimWorldAccess.Pawns.Bed.AssignFirstOption>Assign pawn - {0}</RimWorldAccess.Pawns.Bed.AssignFirstOption>
-  <RimWorldAccess.Pawns.Bed.CannotAssignSingle>Cannot assign pawn</RimWorldAccess.Pawns.Bed.CannotAssignSingle>
-  <RimWorldAccess.Pawns.Bed.CannotAssignToBed>Cannot assign {0} to this bed</RimWorldAccess.Pawns.Bed.CannotAssignToBed>
-  <RimWorldAccess.Pawns.Bed.IdeologyForbidsBed>Ideology forbids {0} from using this bed</RimWorldAccess.Pawns.Bed.IdeologyForbidsBed>
-  <RimWorldAccess.Pawns.Bed.AssignedSuccess>{0} assigned to {1}</RimWorldAccess.Pawns.Bed.AssignedSuccess>
-  <RimWorldAccess.Pawns.Bed.AssignFailed>Failed to assign {0}</RimWorldAccess.Pawns.Bed.AssignFailed>
-  <RimWorldAccess.Pawns.Bed.CannotUnassign>Cannot unassign pawns from this bed</RimWorldAccess.Pawns.Bed.CannotUnassign>
-  <RimWorldAccess.Pawns.Bed.NoneAssigned>No pawns assigned to this bed</RimWorldAccess.Pawns.Bed.NoneAssigned>
-  <RimWorldAccess.Pawns.Bed.UnassignFirstOption>Unassign pawn - {0}</RimWorldAccess.Pawns.Bed.UnassignFirstOption>
-  <RimWorldAccess.Pawns.Bed.CannotUnassignSingle>Cannot unassign pawn</RimWorldAccess.Pawns.Bed.CannotUnassignSingle>
-  <RimWorldAccess.Pawns.Bed.UnassignedSuccess>{0} unassigned from {1}</RimWorldAccess.Pawns.Bed.UnassignedSuccess>
-  <RimWorldAccess.Pawns.Bed.UnassignFailed>Failed to unassign {0}</RimWorldAccess.Pawns.Bed.UnassignFailed>
-  <RimWorldAccess.Pawns.Bed.Type.Colonist>Colonist</RimWorldAccess.Pawns.Bed.Type.Colonist>
-  <RimWorldAccess.Pawns.Bed.Type.Prisoner>Prisoner</RimWorldAccess.Pawns.Bed.Type.Prisoner>
-  <RimWorldAccess.Pawns.Bed.Type.Slave>Slave</RimWorldAccess.Pawns.Bed.Type.Slave>
-  <RimWorldAccess.Pawns.Bed.ChangeTypeOption>Change bed type - {0} (current)</RimWorldAccess.Pawns.Bed.ChangeTypeOption>
-  <RimWorldAccess.Pawns.Bed.NeedEnclosed>Cannot set bed for prisoners - not in an enclosed room. Build walls around the bed first.</RimWorldAccess.Pawns.Bed.NeedEnclosed>
-  <RimWorldAccess.Pawns.Bed.TypeChanged>Bed type changed to: {0}</RimWorldAccess.Pawns.Bed.TypeChanged>
-  <RimWorldAccess.Pawns.Bed.MedicalStatus>Bed medical status: {0}</RimWorldAccess.Pawns.Bed.MedicalStatus>
-  <RimWorldAccess.Pawns.Bed.MedicalState.Medical>Medical</RimWorldAccess.Pawns.Bed.MedicalState.Medical>
-  <RimWorldAccess.Pawns.Bed.MedicalState.NotMedical>Not medical</RimWorldAccess.Pawns.Bed.MedicalState.NotMedical>
-  <RimWorldAccess.Pawns.Bed.Prefix.Assign>Assign: </RimWorldAccess.Pawns.Bed.Prefix.Assign>
-  <RimWorldAccess.Pawns.Bed.Prefix.Unassign>Unassign: </RimWorldAccess.Pawns.Bed.Prefix.Unassign>
-  <RimWorldAccess.Pawns.Bed.Prefix.BedType>Bed type: </RimWorldAccess.Pawns.Bed.Prefix.BedType>
-  <RimWorldAccess.Pawns.Bed.PrefixedOption>{0}{1}</RimWorldAccess.Pawns.Bed.PrefixedOption>
 
   <!-- =================================================================
        Colonist bar navigation (ColonistBarState).
-       Page-based bar with mechs after colonists. Navigation uses
-       Alt+Arrow for movement and Ctrl+Alt+Arrow for reorder.
-       NoPawnAtPosition: {0} = "mech" or "colonist", {1} = 1-based
-                         page slot.
+       Page-based bar with an ordered list of sections: colonists, then
+       mechs, then other player-controlled units (e.g. vehicles from
+       Vehicle Framework or similar mods; see PlayerControllables).
+       Navigation uses Alt+Arrow for movement and Ctrl+Alt+Arrow for
+       reorder (colonists only — the only reorderable section).
+       NoPawnAtPosition: {0} = "mech", "colonist", or "controllable unit",
+                         {1} = 1-based page slot.
        Reorder.Position: {0} = pawn label, {1} = 1-based new position,
                          {2} = neighbor context.
        BetweenContext: {0}/{1} = neighbor labels.
        Page: {0} = 1-based page number. -->
-  <RimWorldAccess.Pawns.Bar.StartOfBar>Start of bar</RimWorldAccess.Pawns.Bar.StartOfBar>
-  <RimWorldAccess.Pawns.Bar.LastPage>Last page</RimWorldAccess.Pawns.Bar.LastPage>
-  <RimWorldAccess.Pawns.Bar.FirstPage>First page</RimWorldAccess.Pawns.Bar.FirstPage>
   <RimWorldAccess.Pawns.Bar.AlreadyOnLastPage>Already on last page</RimWorldAccess.Pawns.Bar.AlreadyOnLastPage>
   <RimWorldAccess.Pawns.Bar.AlreadyOnFirstPage>Already on first page</RimWorldAccess.Pawns.Bar.AlreadyOnFirstPage>
   <RimWorldAccess.Pawns.Bar.NoMechsHere>No mechs on this map</RimWorldAccess.Pawns.Bar.NoMechsHere>
   <RimWorldAccess.Pawns.Bar.NoColonistsHere>No colonists on this map</RimWorldAccess.Pawns.Bar.NoColonistsHere>
+  <RimWorldAccess.Pawns.Bar.NoControllablesHere>No controllable units on this map</RimWorldAccess.Pawns.Bar.NoControllablesHere>
   <RimWorldAccess.Pawns.Bar.NotOnBar>Not on colonist bar</RimWorldAccess.Pawns.Bar.NotOnBar>
-  <RimWorldAccess.Pawns.Bar.CannotReorderMechs>Cannot reorder mechs</RimWorldAccess.Pawns.Bar.CannotReorderMechs>
+  <RimWorldAccess.Pawns.Bar.CannotReorderSection>Only colonists can be reordered.</RimWorldAccess.Pawns.Bar.CannotReorderSection>
   <RimWorldAccess.Pawns.Bar.NoMechAtPosition>No mech at position {0}</RimWorldAccess.Pawns.Bar.NoMechAtPosition>
   <RimWorldAccess.Pawns.Bar.NoColonistAtPosition>No colonist at position {0}</RimWorldAccess.Pawns.Bar.NoColonistAtPosition>
+  <RimWorldAccess.Pawns.Bar.NoControllableAtPosition>No controllable unit at position {0}</RimWorldAccess.Pawns.Bar.NoControllableAtPosition>
   <RimWorldAccess.Pawns.Bar.MechsPage>Mechs page {0}</RimWorldAccess.Pawns.Bar.MechsPage>
+  <RimWorldAccess.Pawns.Bar.ControllablesPage>Controllable units page {0}</RimWorldAccess.Pawns.Bar.ControllablesPage>
   <RimWorldAccess.Pawns.Bar.Page>Page {0}</RimWorldAccess.Pawns.Bar.Page>
   <RimWorldAccess.Pawns.Bar.SectionMechs>Mechs</RimWorldAccess.Pawns.Bar.SectionMechs>
   <RimWorldAccess.Pawns.Bar.SectionColonists>Colonists</RimWorldAccess.Pawns.Bar.SectionColonists>
+  <RimWorldAccess.Pawns.Bar.SectionControllables>Controllable units</RimWorldAccess.Pawns.Bar.SectionControllables>
   <RimWorldAccess.Pawns.Bar.OnlyColonist>only colonist</RimWorldAccess.Pawns.Bar.OnlyColonist>
   <RimWorldAccess.Pawns.Bar.Leftmost>leftmost</RimWorldAccess.Pawns.Bar.Leftmost>
   <RimWorldAccess.Pawns.Bar.Rightmost>rightmost</RimWorldAccess.Pawns.Bar.Rightmost>
@@ -355,40 +305,52 @@
                   {3} = position phrase.
        AppliedAt: {0} = pawn label, {1} = applied value,
                   {2} = position phrase.
+       NotAppliedAt: {0} = pawn label, {1} = column name,
+                     {2} = position phrase. Spoken instead of AppliedAt when
+                     the target pawn's own generated menu has no matching
+                     entry for the source's value (e.g. painting
+                     HostilityResponse "Attack" onto a Violence-disabled
+                     pawn) — the write correctly no-opped, so the
+                     announcement must say so rather than claim success.
        PaintedTo: {0} = column name, {1} = source value, {2} = name list.
-       AllAlready: {0} = column name, {1} = source value. -->
+       PaintedToWithSkips: {0} = column name, {1} = source value,
+                           {2} = name list, {3} = skipped count. Spoken
+                           instead of PaintedTo when some painted pawns
+                           applied and others were correctly skipped because
+                           the value wasn't offered to them.
+       AllAlready: {0} = column name, {1} = source value.
+       NotOfferedAll: {0} = column name, {1} = source value,
+                      {2} = skipped count. Spoken instead of AllAlready when
+                      nothing changed because every candidate's own menu
+                      lacked the source's value (not because they already
+                      matched it). -->
   <RimWorldAccess.Pawns.AssignMenu.NoColonists>No colonists found</RimWorldAccess.Pawns.AssignMenu.NoColonists>
   <RimWorldAccess.Pawns.AssignMenu.Opened>{0}, {1} colonists</RimWorldAccess.Pawns.AssignMenu.Opened>
   <RimWorldAccess.Pawns.AssignMenu.Closed>{0} closed</RimWorldAccess.Pawns.AssignMenu.Closed>
-  <RimWorldAccess.Pawns.AssignMenu.SortCannot>{0} cannot be sorted</RimWorldAccess.Pawns.AssignMenu.SortCannot>
-  <RimWorldAccess.Pawns.AssignMenu.SortCleared>Sort cleared, default order</RimWorldAccess.Pawns.AssignMenu.SortCleared>
-  <RimWorldAccess.Pawns.AssignMenu.SortedBy>Sorted by {0} ({1})</RimWorldAccess.Pawns.AssignMenu.SortedBy>
   <RimWorldAccess.Pawns.AssignMenu.PawnNotOnMap>Pawn not on map</RimWorldAccess.Pawns.AssignMenu.PawnNotOnMap>
   <RimWorldAccess.Pawns.AssignMenu.NotApplicable>N/A</RimWorldAccess.Pawns.AssignMenu.NotApplicable>
-  <RimWorldAccess.Pawns.AssignMenu.NoOptions>No options available</RimWorldAccess.Pawns.AssignMenu.NoOptions>
-  <RimWorldAccess.Pawns.AssignMenu.SetTo>{0}: {1} set to {2}</RimWorldAccess.Pawns.AssignMenu.SetTo>
   <RimWorldAccess.Pawns.AssignMenu.ResortNowAt>Now at {0}</RimWorldAccess.Pawns.AssignMenu.ResortNowAt>
   <RimWorldAccess.Pawns.AssignMenu.NoContextMenuColumn>No context menu for this column</RimWorldAccess.Pawns.AssignMenu.NoContextMenuColumn>
-  <RimWorldAccess.Pawns.AssignMenu.NoContextMenuItem>No context menu for this item</RimWorldAccess.Pawns.AssignMenu.NoContextMenuItem>
   <RimWorldAccess.Pawns.AssignMenu.AlreadyAt>{0}: {1} already {2}. {3}</RimWorldAccess.Pawns.AssignMenu.AlreadyAt>
   <RimWorldAccess.Pawns.AssignMenu.AppliedAt>{0}: {1} applied. {2}</RimWorldAccess.Pawns.AssignMenu.AppliedAt>
+  <RimWorldAccess.Pawns.AssignMenu.NotAppliedAt>{0}: {1} not offered for this pawn, skipped. {2}</RimWorldAccess.Pawns.AssignMenu.NotAppliedAt>
   <RimWorldAccess.Pawns.AssignMenu.PaintedTo>Painted {0} to {1} for {2}</RimWorldAccess.Pawns.AssignMenu.PaintedTo>
+  <RimWorldAccess.Pawns.AssignMenu.PaintedToWithSkips>Painted {0} to {1} for {2}. {3} skipped, not offered</RimWorldAccess.Pawns.AssignMenu.PaintedToWithSkips>
   <RimWorldAccess.Pawns.AssignMenu.AllAlready>{0} already {1} for all colonists</RimWorldAccess.Pawns.AssignMenu.AllAlready>
-  <RimWorldAccess.Pawns.AssignMenu.NoColonistsShort>No colonists</RimWorldAccess.Pawns.AssignMenu.NoColonistsShort>
+  <RimWorldAccess.Pawns.AssignMenu.NotOfferedAll>{0} {1} not offered for {2} colonists, skipped</RimWorldAccess.Pawns.AssignMenu.NotOfferedAll>
 
   <!-- =================================================================
-       Schedule menu (WindowlessScheduleState).
-       Two-column timetable: 24 hour cells per pawn (Schedule) and an
-       allowed-area picker (Areas). Brush keys 1-9,0 select the active
-       assignment def. Each composed shape is its own key so the
-       hour/pawn/area phrasing can localize independently.
+       Schedule tab (ScheduleScope).
+       One table: 24 hour columns per pawn plus the allowed-area column.
+       Brush keys 1-9,0 select the active assignment def. Each composed
+       shape is its own key so the hour/pawn/area phrasing can localize
+       independently.
 
        HourColumn: {0} = hour index (0-23), used as the "column name" in
                    table announcements.
        Closed: {0} = schedule tab label.
-       NoSchedule: {0} = pawn label (timetable component missing).
-       Cell: {0} = pawn label, {1} = hour, {2} = assignment label.
-       CellWithPositions: appends ". Pawn {3}, Hour {4}." to Cell shape.
+       NoSchedule: {0} = pawn label (no timetable, or subhuman — the
+                   read-only hour cell and its refusal both use this).
        PaintApplied: {0} = pawn label, {1} = hour, {2} = assignment.
        AlreadyAtHour: {0} = hour, {1} = assignment.
        AlreadyAtPawnHour: {0} = pawn label, {1} = hour, {2} = assignment.
@@ -398,7 +360,6 @@
        Brush.NoBrushOnKey: {0} = digit pressed without a brush bound.
        Brush.CopyPasteHelp: {0} = "Copy", {1} = "Paste" (vanilla
                             translations passed in from C#).
-       Brush.TabForArea: {0} = "AllowedArea" (vanilla translation).
        BulkPaint.HourRangeOne: {0} = single hour.
        BulkPaint.HourRange: {0} = start hour, {1} = end hour.
        BulkPaint.HoursLabelOne / Many: prefix word for the formatted list.
@@ -408,35 +369,23 @@
                                 {2} = pawn label.
        BulkPaint.HourRangeOneSlot: {0} = hour (e.g. "Hour 0").
        BulkPaint.HourRangeFromTo: {0} = start hour, {1} = end hour.
-       AreaApplied: {0} = pawn label, {1} = area name, {2} = position.
        AreaPaintedFor: {0} = area name, {1} = name list.
        AreaAllAlready: {0} = area name.
-       AreaCellSummary: {0} = pawn label, {1} = area, {2} = pawn pos,
-                        {3} = area pos.
-       AreaSwitchHeader: {0} = "AllowedArea" (vanilla), {1} = AreaCellSummary
-                          composition.
-       AreaSwitchEmpty: {0} = "AllowedArea" (vanilla).
        NoSchedCopied / NoHomeArea / ContextOnlyAreas: bare strings.
        ContextMenu.SetAllHome / ClearAll: bulk-paint context-menu labels.
        SetCountToHome: {0} = count.
        ClearedCount: {0} = count. -->
-  <RimWorldAccess.Pawns.Schedule.HourColumn>Hour {0}</RimWorldAccess.Pawns.Schedule.HourColumn>
   <RimWorldAccess.Pawns.Schedule.Closed>{0} closed</RimWorldAccess.Pawns.Schedule.Closed>
-  <RimWorldAccess.Pawns.Schedule.NoPawnsAvailable>No pawns available</RimWorldAccess.Pawns.Schedule.NoPawnsAvailable>
   <RimWorldAccess.Pawns.Schedule.NoSchedule>{0}: No schedule</RimWorldAccess.Pawns.Schedule.NoSchedule>
-  <RimWorldAccess.Pawns.Schedule.Cell>{0}, Hour {1}: {2}</RimWorldAccess.Pawns.Schedule.Cell>
-  <RimWorldAccess.Pawns.Schedule.CellWithPositions>{0}, Hour {1}: {2}. Pawn {3}, Hour {4}.</RimWorldAccess.Pawns.Schedule.CellWithPositions>
-  <!-- Partial cell shapes for single-axis announcements (pawn-only /
-       hour-only) plus the position-fragment join used with them.
-       CellPawnOnly: {0} = pawn label, {1} = assignment.
-       CellHourOnly: {0} = hour, {1} = assignment.
-       PositionPawn/PositionHour: {0} = "x of y" position phrase.
-       CellWithSuffix: {0} = value line, {1} = position fragment. -->
-  <RimWorldAccess.Pawns.Schedule.CellPawnOnly>{0}: {1}</RimWorldAccess.Pawns.Schedule.CellPawnOnly>
-  <RimWorldAccess.Pawns.Schedule.CellHourOnly>Hour {0}: {1}</RimWorldAccess.Pawns.Schedule.CellHourOnly>
-  <RimWorldAccess.Pawns.Schedule.PositionPawn>Pawn {0}</RimWorldAccess.Pawns.Schedule.PositionPawn>
-  <RimWorldAccess.Pawns.Schedule.PositionHour>Hour {0}</RimWorldAccess.Pawns.Schedule.PositionHour>
-  <RimWorldAccess.Pawns.Schedule.CellWithSuffix>{0}. {1}.</RimWorldAccess.Pawns.Schedule.CellWithSuffix>
+  <!-- The COLUMN NAME of one hour of the timetable grid (element-uniformity
+       campaign, task 8 packet E). {0} = the hour, 0 to 23. The schedule column
+       is a real table now: ScheduleScope fills an ElementDescription and
+       AnnouncementComposer.ComposeCell speaks the pawn row, this column name,
+       the cell's assignment and the row position in the mod-wide cell order, so
+       the five whole-line keys that used to be concatenated here (Cell,
+       CellPawnOnly, CellHourOnly, PositionPawn, CellWithSuffix) are gone. The
+       pawn position now uses the shared table phrase RimWorldAccess.Shell.Table.RowPosition. -->
+  <RimWorldAccess.Pawns.Schedule.HourColumn>Hour {0}</RimWorldAccess.Pawns.Schedule.HourColumn>
   <RimWorldAccess.Pawns.Schedule.PaintApplied>{0}, Hour {1} set to {2}</RimWorldAccess.Pawns.Schedule.PaintApplied>
   <RimWorldAccess.Pawns.Schedule.AlreadyAtHour>Hour {0}: already set to {1}</RimWorldAccess.Pawns.Schedule.AlreadyAtHour>
   <RimWorldAccess.Pawns.Schedule.AlreadyAtPawnHour>{0}, Hour {1}: already set to {2}</RimWorldAccess.Pawns.Schedule.AlreadyAtPawnHour>
@@ -446,7 +395,6 @@
   <RimWorldAccess.Pawns.Schedule.Brush.ApplyHelp>Press space to apply the active brush to the current cell.</RimWorldAccess.Pawns.Schedule.Brush.ApplyHelp>
   <RimWorldAccess.Pawns.Schedule.Brush.PaintHelp>Hold down the shift key and tap the arrow keys to paint the selected brush across multiple cells.</RimWorldAccess.Pawns.Schedule.Brush.PaintHelp>
   <RimWorldAccess.Pawns.Schedule.Brush.CopyPasteHelp>{0} Ctrl+C, {1} Ctrl+V.</RimWorldAccess.Pawns.Schedule.Brush.CopyPasteHelp>
-  <RimWorldAccess.Pawns.Schedule.Brush.TabForArea>Tab for {0}.</RimWorldAccess.Pawns.Schedule.Brush.TabForArea>
   <RimWorldAccess.Pawns.Schedule.Brush.NoBrushOnKey>No brush assigned to key {0}</RimWorldAccess.Pawns.Schedule.Brush.NoBrushOnKey>
   <RimWorldAccess.Pawns.Schedule.BulkPaint.HourRangeOne>{0}</RimWorldAccess.Pawns.Schedule.BulkPaint.HourRangeOne>
   <RimWorldAccess.Pawns.Schedule.BulkPaint.HourRange>{0} through {1}</RimWorldAccess.Pawns.Schedule.BulkPaint.HourRange>
@@ -462,14 +410,17 @@
   <RimWorldAccess.Pawns.Schedule.BulkPaint.PaintedHourForPawns>Painted {0} on hour {1} for {2}</RimWorldAccess.Pawns.Schedule.BulkPaint.PaintedHourForPawns>
   <RimWorldAccess.Pawns.Schedule.BulkPaint.HourAllPawnsAlready>Hour {0} already set to {1} for all pawns</RimWorldAccess.Pawns.Schedule.BulkPaint.HourAllPawnsAlready>
   <RimWorldAccess.Pawns.Schedule.NoSchedCopied>No schedule copied</RimWorldAccess.Pawns.Schedule.NoSchedCopied>
-  <RimWorldAccess.Pawns.Schedule.AreaApplied>{0}: {1} applied. {2}</RimWorldAccess.Pawns.Schedule.AreaApplied>
   <RimWorldAccess.Pawns.Schedule.AreaAppliedPawnPos>{0}: {1} applied. Pawn {2}</RimWorldAccess.Pawns.Schedule.AreaAppliedPawnPos>
+  <RimWorldAccess.Pawns.Schedule.AreaApplied>{0}: {1} applied. {2}</RimWorldAccess.Pawns.Schedule.AreaApplied>
+  <RimWorldAccess.Pawns.Schedule.AreaFocus>{0}. {1}</RimWorldAccess.Pawns.Schedule.AreaFocus>
+  <RimWorldAccess.Pawns.Schedule.AreaReadOnly>{0}: area can't be assigned</RimWorldAccess.Pawns.Schedule.AreaReadOnly>
+  <RimWorldAccess.Pawns.Schedule.AreaReadOnlyPos>{0}: area can't be assigned. Pawn {1}</RimWorldAccess.Pawns.Schedule.AreaReadOnlyPos>
   <RimWorldAccess.Pawns.Schedule.AreaPaintedFor>Painted {0} for {1}</RimWorldAccess.Pawns.Schedule.AreaPaintedFor>
   <RimWorldAccess.Pawns.Schedule.AreaAllAlready>All pawns already set to {0}</RimWorldAccess.Pawns.Schedule.AreaAllAlready>
-  <RimWorldAccess.Pawns.Schedule.AreaCellSummary>{0}: {1}. Pawn {2}, Area {3}</RimWorldAccess.Pawns.Schedule.AreaCellSummary>
-  <RimWorldAccess.Pawns.Schedule.AreaSwitchHeader>{0}. {1}</RimWorldAccess.Pawns.Schedule.AreaSwitchHeader>
-  <RimWorldAccess.Pawns.Schedule.AreaSwitchEmpty>{0}. No pawns available</RimWorldAccess.Pawns.Schedule.AreaSwitchEmpty>
-  <RimWorldAccess.Pawns.Schedule.AreaFocus>{0}. {1}</RimWorldAccess.Pawns.Schedule.AreaFocus>
+  <!-- The per-area focus line that used to sit here (AreaFocus, "{0}. {1}") is
+       retired: ScheduleScope.AnnounceAreaFocus fills an ElementDescription and
+       AnnouncementComposer renders the area name plus its position in the shared
+       element order (element-uniformity campaign, task 8 packets E and G). -->
   <RimWorldAccess.Pawns.Schedule.ContextOnlyAreas>Context menu only available in Areas column</RimWorldAccess.Pawns.Schedule.ContextOnlyAreas>
   <RimWorldAccess.Pawns.Schedule.ContextMenu.SetAllHome>Set All to Home Area</RimWorldAccess.Pawns.Schedule.ContextMenu.SetAllHome>
   <RimWorldAccess.Pawns.Schedule.ContextMenu.ClearAll>Clear All Allowed Areas</RimWorldAccess.Pawns.Schedule.ContextMenu.ClearAll>
@@ -491,16 +442,12 @@
 
   <!-- =================================================================
        Social tab actions (SocialTabHelper).
-       Action-result announcements for assigning ideology roles, setting
-       pregnancy approach, and initiating romance. Each verb is its own
-       key so it can inflect independently.
-       RoleAssigned: {0} = pawn label, {1} = role name.
-       RoleUnassigned: same shape, "unassigned from".
+       Action-result announcements for setting pregnancy approach and
+       initiating romance, plus the role-change-ritual failure fallback.
+       (Role changes open the vanilla RoleChange ritual dialog — the
+       success/failure wording is vanilla's own.)
        PregnancyApproachSet: {0} = approach label (already capitalized). -->
-  <RimWorldAccess.Pawns.Social.RoleAssigned>{0} assigned as {1}</RimWorldAccess.Pawns.Social.RoleAssigned>
-  <RimWorldAccess.Pawns.Social.RoleUnassigned>{0} unassigned from {1}</RimWorldAccess.Pawns.Social.RoleUnassigned>
   <RimWorldAccess.Pawns.Social.ErrorAssignRole>Error assigning role</RimWorldAccess.Pawns.Social.ErrorAssignRole>
-  <RimWorldAccess.Pawns.Social.ErrorUnassignRole>Error unassigning role</RimWorldAccess.Pawns.Social.ErrorUnassignRole>
   <RimWorldAccess.Pawns.Social.PregnancyApproachSet>Pregnancy approach set to: {0}</RimWorldAccess.Pawns.Social.PregnancyApproachSet>
   <RimWorldAccess.Pawns.Social.ErrorSetPregnancyApproach>Error setting pregnancy approach</RimWorldAccess.Pawns.Social.ErrorSetPregnancyApproach>
   <RimWorldAccess.Pawns.Social.ErrorInitiateRomance>Error initiating romance</RimWorldAccess.Pawns.Social.ErrorInitiateRomance>
@@ -543,12 +490,11 @@
   <RimWorldAccess.Pawns.Social.Romance.TargetUnavailable>{0} ({1})</RimWorldAccess.Pawns.Social.Romance.TargetUnavailable>
   <RimWorldAccess.Pawns.Social.Romance.BreakdownHeader>{0} - {1}: {2}</RimWorldAccess.Pawns.Social.Romance.BreakdownHeader>
 
-  <!-- Ideology role assign/unassign actions and headers. LabelWithHolder:
-       {0} = role label, {1} = current holder name (or vanilla
-       "NoRoleAssigned"). Assign/Unassign: {0} = pawn name. -->
+  <!-- Ideology role headers. LabelWithHolder: {0} = role label, {1} =
+       current holder name (or vanilla "NoRoleAssigned"). The change
+       actions compose vanilla's own "ChooseRole" / "RemoveCurrentRole"
+       keys and open the RoleChange ritual dialog. -->
   <RimWorldAccess.Pawns.Social.Role.LabelWithHolder>{0}: {1}</RimWorldAccess.Pawns.Social.Role.LabelWithHolder>
-  <RimWorldAccess.Pawns.Social.Role.Assign>Assign {0}</RimWorldAccess.Pawns.Social.Role.Assign>
-  <RimWorldAccess.Pawns.Social.Role.Unassign>Unassign {0}</RimWorldAccess.Pawns.Social.Role.Unassign>
   <RimWorldAccess.Pawns.Social.Role.CannotAssignReason>Cannot assign: {0}</RimWorldAccess.Pawns.Social.Role.CannotAssignReason>
   <RimWorldAccess.Pawns.Social.Role.CannotAssignDefault>Cannot assign: requirements not met</RimWorldAccess.Pawns.Social.Role.CannotAssignDefault>
   <RimWorldAccess.Pawns.Social.Role.RequirementsHeader>Requirements</RimWorldAccess.Pawns.Social.Role.RequirementsHeader>
@@ -667,10 +613,6 @@
                           {3} = position.
        SettingChange: {0} = label, {1} = new value.
        ================================================================= -->
-  <RimWorldAccess.Pawns.DrugPolicy.DrugLine>{0}. {1}. {2}</RimWorldAccess.Pawns.DrugPolicy.DrugLine>
-  <RimWorldAccess.Pawns.DrugPolicy.SettingNoTooltip>{0}: {1}. {2}</RimWorldAccess.Pawns.DrugPolicy.SettingNoTooltip>
-  <RimWorldAccess.Pawns.DrugPolicy.SettingWithTooltip>{0}: {1}. {2} {3}</RimWorldAccess.Pawns.DrugPolicy.SettingWithTooltip>
-  <RimWorldAccess.Pawns.DrugPolicy.SettingChange>{0}: {1}</RimWorldAccess.Pawns.DrugPolicy.SettingChange>
 
   <!-- =================================================================
        Policy editor announcement (PolicyEditorState).
@@ -679,7 +621,6 @@
        {1} = the policy label (e.g. "Restricted"). The two-token space
        glue is one phrase so a translator can re-order them.
        ================================================================= -->
-  <RimWorldAccess.Pawns.Policy.EditAnnouncement>{0} {1}</RimWorldAccess.Pawns.Policy.EditAnnouncement>
 
   <!-- Schedule copy/paste announcement (WindowlessScheduleState). The
        leading word is the vanilla "Copy"/"Paste" key resolved at the

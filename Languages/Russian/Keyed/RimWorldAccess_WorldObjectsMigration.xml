@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.WorldObject.SettlementAnnounceWithRelation>{0}. {1}. {2}.</RimWorldAccess.WorldObject.SettlementAnnounceWithRelation>
+  <RimWorldAccess.WorldObject.LabelWithDescription>{0}. {1}</RimWorldAccess.WorldObject.LabelWithDescription>
+  <RimWorldAccess.WorldObject.RegionName>Объекты мира</RimWorldAccess.WorldObject.RegionName>
+</LanguageData>

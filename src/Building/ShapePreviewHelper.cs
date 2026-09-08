@@ -8,7 +8,7 @@ namespace RimWorldAccess
 {
     /// <summary>
     /// Shared helper for shape preview functionality.
-    /// Centralizes two-point selection logic used by ShapePlacementState, ZoneCreationState, and AreaPaintingState.
+    /// Centralizes two-point selection logic used by ShapePlacementState.
     /// </summary>
     public class ShapePreviewHelper
     {
@@ -47,10 +47,10 @@ namespace RimWorldAccess
                 TolkHelper.Speak("RimWorldAccess.Building.Preview.FirstPoint".Loc(cell.x, cell.z));
             }
             if (!string.IsNullOrEmpty(context))
-                Log.Message($"{context}: First point set at {cell}");
+                ModLogger.Dev($"{context}: First point set at {cell}");
         }
 
-        public void SetSecondCorner(IntVec3 cell, string context = "", bool silent = false)
+        public void SetSecondCorner(IntVec3 cell, string context = "", bool silent = false, string extraInfo = null)
         {
             if (!firstCorner.HasValue)
             {
@@ -69,30 +69,38 @@ namespace RimWorldAccess
                     ? (string)"RimWorldAccess.Building.Preview.SecondPointRegular".Translate(sizeText, previewCells.Count)
                     : (string)"RimWorldAccess.Building.Preview.SecondPointIrregular".Translate(sizeText);
 
+                if (!extraInfo.NullOrEmpty())
+                {
+                    announcement += ". " + extraInfo;
+                }
+
                 TolkHelper.SpeakData(announcement);
             }
             if (!string.IsNullOrEmpty(context))
-                Log.Message($"{context}: Second point at {cell}. {previewCells.Count} cells");
+                ModLogger.Dev($"{context}: Second point at {cell}. {previewCells.Count} cells");
         }
 
-        public void UpdatePreview(IntVec3 cursor)
+        /// <summary>
+        /// Grows the preview to <paramref name="cursor"/>. Returns the new extent ("3 by 4") when
+        /// the shape actually changed size, otherwise null — the caller speaks it as the lead-in to
+        /// the cell announcement so the extent and where it ends arrive as one utterance.
+        /// </summary>
+        public string UpdatePreview(IntVec3 cursor)
         {
-            if (!firstCorner.HasValue) return;
+            if (!firstCorner.HasValue) return null;
 
             secondCorner = cursor;
             previewCells = ShapeHelper.CalculateCells(currentShape, firstCorner.Value, cursor);
 
             int cellCount = previewCells.Count;
+            if (cellCount == lastCellCount)
+                return null;
 
-            if (cellCount != lastCellCount)
-            {
-                PlayDragSound();
-                lastCellCount = cellCount;
+            PlayDragSound();
+            lastCellCount = cellCount;
 
-                // During drag we use corners since we don't know actual cells yet
-                string sizeText = ShapeHelper.FormatShapeSizeFromCorners(firstCorner.Value, cursor);
-                TolkHelper.SpeakData(sizeText, SpeechPriority.Low);
-            }
+            // During drag we use corners since we don't know actual cells yet
+            return ShapeHelper.FormatShapeSizeFromCorners(firstCorner.Value, cursor);
         }
 
         public List<IntVec3> ConfirmShape(string context = "")
@@ -109,7 +117,7 @@ namespace RimWorldAccess
 
             TolkHelper.Speak("RimWorldAccess.Building.Preview.SizeConfirmed".Loc(sizeText));
             if (!string.IsNullOrEmpty(context))
-                Log.Message($"{context}: Confirmed {confirmedCells.Count} cells");
+                ModLogger.Dev($"{context}: Confirmed {confirmedCells.Count} cells");
 
             // Reset for next selection
             Reset();

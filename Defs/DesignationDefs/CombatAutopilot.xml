@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Attack mark: standing priority target for the combat autopilot. The vanilla
+       Cancel designator removes it; the overlay keeps sighted players in the loop. -->
+  <DesignationDef>
+    <defName>RWA_AttackTarget</defName>
+    <texturePath>UI/Commands/Attack</texturePath>
+    <targetType>Thing</targetType>
+  </DesignationDef>
+</Defs>

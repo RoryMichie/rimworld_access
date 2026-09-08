@@ -2,23 +2,29 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
+using RimWorldAccess.Shell;
 using Verse;
 
 namespace RimWorldAccess
 {
     public static class AnimalsMenuHelper
     {
-        // Column type enumeration matching vanilla PawnTables.xml order
+        /// <summary>
+        /// What a column DOES, derived once per <see cref="InitColumnDefs"/> from its worker's own
+        /// runtime TYPE rather than its position, so a modded subclass of a known worker inherits
+        /// the right behavior. Kept local rather than routed through
+        /// <see cref="PawnColumnHandlerRegistry"/> because Master/AllowedArea/MedicalCare open a
+        /// bespoke submenu region reusing the table's own row cursor, not the registry's
+        /// FloatMenu-opening <c>ActivateCell</c>.
+        /// </summary>
         public enum ColumnType
         {
-            // Fixed columns before training
-            Name,           // LabelWithIcon
+            Name,
             Gender,
             Age,
             LifeStage,
             Pregnant,
-            // Dynamic training columns inserted here (index 5+)
-            // Fixed columns after training (starting at fixedColumnsBeforeTraining + trainable count)
+            Trainable,
             SpecialTrainable, // Odyssey DLC - race-specific abilities (TerrorRoar, Comfort, etc.)
             FollowDrafted,
             FollowFieldwork,
@@ -31,222 +37,153 @@ namespace RimWorldAccess
             Slaughter,
             MedicalCare,
             ReleaseToWild,
-            AllowedArea
+            AllowedArea,
+            /// <summary>A modded/DLC column with no bespoke reader here: read generically through <see cref="PawnColumnHandlerRegistry"/> when its worker derives from a known vanilla base, honestly unavailable otherwise.</summary>
+            Unknown
         }
 
-        private static List<TrainableDef> cachedTrainables = null;
-        private static int fixedColumnsBeforeTraining = 5; // Name through Pregnant
+        // Column defs are the single source of truth for the column set, order and names; the
+        // per-index classification comes from each def's own worker type.
+        private static List<PawnColumnDef> columnDefs = new List<PawnColumnDef>();
+        private static List<ColumnType> columnKinds = new List<ColumnType>();
 
-        // === Column Defs (for sorting and painting via game logic) ===
-        private static List<PawnColumnDef> columnDefs;
-
-        // Mapping from ColumnType to PawnColumnDef defName
-        private static readonly Dictionary<ColumnType, string> columnTypeToDefName = new Dictionary<ColumnType, string>
-        {
-            { ColumnType.Name, "LabelWithIcon" },
-            { ColumnType.Gender, "Gender" },
-            { ColumnType.Age, "Age" },
-            { ColumnType.LifeStage, "LifeStage" },
-            { ColumnType.Pregnant, "Pregnant" },
-            { ColumnType.SpecialTrainable, "SpecialTrainable" },
-            { ColumnType.FollowDrafted, "FollowDrafted" },
-            { ColumnType.FollowFieldwork, "FollowFieldwork" },
-            { ColumnType.AnimalDig, "AnimalDig" },
-            { ColumnType.AnimalForage, "AnimalForage" },
-            { ColumnType.Master, "Master" },
-            { ColumnType.MentalState, "MentalState" },
-            { ColumnType.Bond, "Bond" },
-            { ColumnType.Sterile, "Sterile" },
-            { ColumnType.Slaughter, "Slaughter" },
-            { ColumnType.MedicalCare, "MedicalCare" },
-            { ColumnType.ReleaseToWild, "ReleaseAnimalToWild" },
-            { ColumnType.AllowedArea, "AllowedAreaWide" },
-        };
-
+        /// <summary>
+        /// The resolved column list, straight from vanilla's <see cref="PawnTableDefOf.Animals"/>
+        /// def: its order, its DLC and mod gating (an inactive DLC's columns are simply absent from
+        /// <c>PawnTableDef.columns</c> via the XML's own MayRequire), and any column a mod adds.
+        /// Spacer columns are skipped through the same <see cref="PawnColumnHandlerRegistry"/> test
+        /// the generic pawn-table tier applies.
+        /// </summary>
         public static void InitColumnDefs()
         {
             columnDefs = new List<PawnColumnDef>();
+            columnKinds = new List<ColumnType>();
 
-            // Fixed columns before training
-            ColumnType[] fixedBefore = { ColumnType.Name, ColumnType.Gender, ColumnType.Age, ColumnType.LifeStage, ColumnType.Pregnant };
-            foreach (var ct in fixedBefore)
-            {
-                columnDefs.Add(DefDatabase<PawnColumnDef>.GetNamedSilentFail(columnTypeToDefName[ct]));
-            }
+            List<PawnColumnDef> defs = PawnTableDefOf.Animals?.columns;
+            if (defs == null)
+                return;
 
-            // Dynamic training columns
-            foreach (var trainable in GetAllTrainables())
+            foreach (PawnColumnDef def in defs)
             {
-                columnDefs.Add(DefDatabase<PawnColumnDef>.GetNamedSilentFail("Trainable_" + trainable.defName));
-            }
-
-            // Fixed columns after training
-            foreach (var ct in GetColumnsAfterTraining())
-            {
-                if (columnTypeToDefName.TryGetValue(ct, out string defName))
+                if (def == null)
+                    continue;
+                try
                 {
-                    columnDefs.Add(DefDatabase<PawnColumnDef>.GetNamedSilentFail(defName));
+                    if (PawnColumnHandlerRegistry.Resolve(def).SkipColumn(def))
+                        continue;
+                    columnDefs.Add(def);
+                    columnKinds.Add(ClassifyColumn(def));
                 }
-                else
+                catch (Exception ex)
                 {
-                    columnDefs.Add(null);
+                    // A broken (typically modded) worker must not drop the whole table.
+                    Log.Warning("[RimWorld Access] Animals column '" + def.defName + "' failed to resolve and was skipped: " + ex);
                 }
             }
+        }
+
+        /// <summary>Classifies a column by its worker's own runtime type (is-checks, so a modded subclass inherits the base behavior for free).</summary>
+        private static ColumnType ClassifyColumn(PawnColumnDef def)
+        {
+            PawnColumnWorker worker = def.Worker;
+            if (worker is PawnColumnWorker_Label) return ColumnType.Name;
+            if (worker is PawnColumnWorker_Gender) return ColumnType.Gender;
+            if (worker is PawnColumnWorker_Age) return ColumnType.Age;
+            if (worker is PawnColumnWorker_LifeStage) return ColumnType.LifeStage;
+            if (worker is PawnColumnWorker_Pregnant) return ColumnType.Pregnant;
+            // Trainable_Special does not derive from Trainable, so this order is not load-bearing.
+            if (worker is PawnColumnWorker_Trainable_Special) return ColumnType.SpecialTrainable;
+            if (worker is PawnColumnWorker_Trainable) return ColumnType.Trainable;
+            if (worker is PawnColumnWorker_FollowDrafted) return ColumnType.FollowDrafted;
+            if (worker is PawnColumnWorker_FollowFieldwork) return ColumnType.FollowFieldwork;
+            if (worker is PawnColumnWorker_AnimalDig) return ColumnType.AnimalDig;
+            if (worker is PawnColumnWorker_AnimalForage) return ColumnType.AnimalForage;
+            if (worker is PawnColumnWorker_Master) return ColumnType.Master;
+            if (worker is PawnColumnWorker_MentalState) return ColumnType.MentalState;
+            if (worker is PawnColumnWorker_Bond) return ColumnType.Bond;
+            if (worker is PawnColumnWorker_Sterilize) return ColumnType.Sterile;
+            if (worker is PawnColumnWorker_Slaughter) return ColumnType.Slaughter;
+            if (worker is PawnColumnWorker_MedicalCare) return ColumnType.MedicalCare;
+            if (worker is PawnColumnWorker_ReleaseAnimalToWild) return ColumnType.ReleaseToWild;
+            if (worker is PawnColumnWorker_AllowedArea) return ColumnType.AllowedArea; // covers AllowedAreaWide too.
+            return ColumnType.Unknown;
+        }
+
+        /// <summary>Internal so the focus driver can map the scope's column index onto vanilla's own column def with it.</summary>
+        internal static PawnColumnDef GetDef(int columnIndex)
+        {
+            return columnIndex >= 0 && columnIndex < columnDefs.Count ? columnDefs[columnIndex] : null;
+        }
+
+        /// <summary>The classification for a column index (Unknown if out of range or the worker has no bespoke reader here).</summary>
+        public static ColumnType GetColumnType(int columnIndex)
+        {
+            return columnIndex >= 0 && columnIndex < columnKinds.Count ? columnKinds[columnIndex] : ColumnType.Unknown;
+        }
+
+        /// <summary>The live def currently classified as <paramref name="kind"/> (first match) — for a mutation that needs a specific fixed column's own worker independent of its index.</summary>
+        private static PawnColumnDef GetColumnDef(ColumnType kind)
+        {
+            for (int i = 0; i < columnKinds.Count; i++)
+            {
+                if (columnKinds[i] == kind)
+                    return columnDefs[i];
+            }
+            return null;
         }
 
         public static bool IsColumnSortable(int columnIndex)
             => PawnColumnSortHelper.IsColumnSortable(columnDefs, columnIndex);
 
-        // DLC detection
-        private static bool IsOdysseyActive => ModsConfig.IsActive("Ludeon.RimWorld.Odyssey");
-
-        // Get the list of column types after training, filtering out Odyssey-only columns when DLC isn't active
-        private static List<ColumnType> GetColumnsAfterTraining()
-        {
-            var columns = new List<ColumnType>();
-
-            if (IsOdysseyActive)
-                columns.Add(ColumnType.SpecialTrainable);
-
-            columns.Add(ColumnType.FollowDrafted);
-            columns.Add(ColumnType.FollowFieldwork);
-
-            if (IsOdysseyActive)
-            {
-                columns.Add(ColumnType.AnimalDig);
-                columns.Add(ColumnType.AnimalForage);
-            }
-
-            columns.Add(ColumnType.Master);
-            columns.Add(ColumnType.MentalState);
-            columns.Add(ColumnType.Bond);
-            columns.Add(ColumnType.Sterile);
-            columns.Add(ColumnType.Slaughter);
-            columns.Add(ColumnType.MedicalCare);
-            columns.Add(ColumnType.ReleaseToWild);
-            columns.Add(ColumnType.AllowedArea);
-
-            return columns;
-        }
-
-        // Check if any colony animal has learned Dig
-        private static bool AnyAnimalHasLearnedDig()
-        {
-            if (!IsOdysseyActive || Find.CurrentMap == null) return false;
-            foreach (Pawn animal in Find.CurrentMap.mapPawns.ColonyAnimals)
-            {
-                if (animal.training?.HasLearned(TrainableDefOf.Dig) == true)
-                    return true;
-            }
-            return false;
-        }
-
-        // Check if any colony animal has learned Forage
-        private static bool AnyAnimalHasLearnedForage()
-        {
-            if (!IsOdysseyActive || Find.CurrentMap == null) return false;
-            foreach (Pawn animal in Find.CurrentMap.mapPawns.ColonyAnimals)
-            {
-                if (animal.training?.HasLearned(TrainableDefOf.Forage) == true)
-                    return true;
-            }
-            return false;
-        }
-
-        // Get all trainable definitions (cached)
-        public static List<TrainableDef> GetAllTrainables()
-        {
-            if (cachedTrainables == null)
-            {
-                cachedTrainables = DefDatabase<TrainableDef>.AllDefsListForReading
-                    .Where(t => !t.specialTrainable)
-                    .OrderByDescending(t => t.listPriority)
-                    .ToList();
-            }
-            return cachedTrainables;
-        }
-
-        // Get total column count (fixed + dynamic training columns + fixed after training)
         public static int GetTotalColumnCount()
         {
-            return fixedColumnsBeforeTraining + GetAllTrainables().Count + GetColumnsAfterTraining().Count;
+            return columnDefs.Count;
         }
 
-        // Get column name by index (using RimWorld's localized strings)
+        /// <summary>
+        /// A column's name. The def's own <c>LabelCap</c> wins when present; a Trainable_ column's is
+        /// empty by design (vanilla draws only its icon), so it falls through to its headerTip,
+        /// which <see cref="PawnColumnDefGenerator"/> sets to the TrainableDef's LabelCap.
+        /// Follow and SpecialTrainable keep a short curated key rather than their paragraph-length
+        /// headerTip, which stays available through <see cref="GetColumnTooltip"/>.
+        /// Gender/Pregnant/MentalState carry neither label nor headerTip in vanilla's XML, so they
+        /// fall to a per-classification key before the bare defName.
+        /// </summary>
         public static string GetColumnName(int columnIndex)
         {
-            if (columnIndex < fixedColumnsBeforeTraining)
-            {
-                // Fixed columns before training
-                ColumnType type = (ColumnType)columnIndex;
-                switch (type)
-                {
-                    case ColumnType.Name: return "RimWorldAccess.Animals.Column.Name".Translate().ToString();
-                    case ColumnType.Gender: return "Sex".Translate().Resolve();
-                    case ColumnType.Age: return "RimWorldAccess.Animals.Column.Age".Translate().ToString();
-                    case ColumnType.LifeStage: return "RimWorldAccess.Animals.Column.LifeStage".Translate().Resolve();
-                    case ColumnType.Pregnant: return HediffDefOf.Pregnant.LabelCap.Resolve();
-                    default: return type.ToString();
-                }
-            }
-            else if (columnIndex < fixedColumnsBeforeTraining + GetAllTrainables().Count)
-            {
-                // Training columns - already localized via LabelCap
-                int trainableIndex = columnIndex - fixedColumnsBeforeTraining;
-                return GetAllTrainables()[trainableIndex].LabelCap;
-            }
-            else
-            {
-                // Fixed columns after training - use dynamic list
-                var columnsAfterTraining = GetColumnsAfterTraining();
-                int fixedIndex = columnIndex - fixedColumnsBeforeTraining - GetAllTrainables().Count;
-                if (fixedIndex < 0 || fixedIndex >= columnsAfterTraining.Count)
-                    return "RimWorldAccess.Animals.Value.Unknown".Translate().ToString();
+            PawnColumnDef def = GetDef(columnIndex);
+            if (def == null)
+                return "RimWorldAccess.Animals.Value.Unknown".Translate().ToString();
 
-                ColumnType type = columnsAfterTraining[fixedIndex];
-                return GetColumnNameForType(type);
-            }
-        }
-
-        // Helper to get column name for a ColumnType
-        private static string GetColumnNameForType(ColumnType type)
-        {
-            switch (type)
+            ColumnType kind = GetColumnType(columnIndex);
+            switch (kind)
             {
                 case ColumnType.SpecialTrainable: return "RimWorldAccess.Animals.Column.SpecialTraining".Translate().Resolve();
                 case ColumnType.FollowDrafted: return "CreatureFollowDrafted".Translate().Resolve();
                 case ColumnType.FollowFieldwork: return "CreatureFollowFieldwork".Translate().Resolve();
-                case ColumnType.AnimalDig: return "DigEnabled".Translate().Resolve();
-                case ColumnType.AnimalForage: return "ForageEnabled".Translate().Resolve();
-                case ColumnType.Master: return "Master".Translate().Resolve();
+            }
+
+            if (!def.label.NullOrEmpty())
+                return def.LabelCap.ToString();
+            if (!def.headerTip.NullOrEmpty())
+                return def.headerTip;
+
+            switch (kind)
+            {
+                case ColumnType.Gender: return "Sex".Translate().Resolve();
+                case ColumnType.Pregnant: return HediffDefOf.Pregnant.LabelCap.Resolve();
                 case ColumnType.MentalState: return "RimWorldAccess.Animals.Column.MentalState".Translate().Resolve();
-                case ColumnType.Bond: return "RimWorldAccess.Animals.Column.BondInfo".Translate().Resolve();
-                case ColumnType.Sterile: return "RimWorldAccess.Animals.Column.Sterile".Translate().Resolve();
-                case ColumnType.Slaughter: return "DesignatorSlaughter".Translate().Resolve();
-                case ColumnType.MedicalCare: return "RimWorldAccess.Animals.Column.MedicalCare".Translate().Resolve();
-                case ColumnType.ReleaseToWild: return "DesignatorReleaseAnimalToWild".Translate().Resolve();
-                case ColumnType.AllowedArea: return "AllowedArea".Translate().Resolve();
-                default: return type.ToString().Replace("_", " ");
+                default: return PawnColumnHandlerRegistry.Resolve(def).HeaderLabel(def) ?? def.defName;
             }
         }
 
-        // Get column tooltip (shown only on column navigation, not row navigation)
+        /// <summary>A column's tooltip, shown on column navigation only; an allowlist keyed by classification.</summary>
         public static string GetColumnTooltip(Pawn pawn, int columnIndex)
         {
-            // Fixed columns before training — no tooltips
-            if (columnIndex < fixedColumnsBeforeTraining)
-                return null;
-            // Training columns — no tooltips (descriptions already in column value)
-            if (columnIndex < fixedColumnsBeforeTraining + GetAllTrainables().Count)
-                return null;
-            // Fixed columns after training
-            var columnsAfterTraining = GetColumnsAfterTraining();
-            int fixedIndex = columnIndex - fixedColumnsBeforeTraining - GetAllTrainables().Count;
-            if (fixedIndex < 0 || fixedIndex >= columnsAfterTraining.Count)
+            if (GetDef(columnIndex) == null)
                 return null;
 
-            ColumnType type = columnsAfterTraining[fixedIndex];
-            switch (type)
+            switch (GetColumnType(columnIndex))
             {
                 case ColumnType.FollowDrafted:
                     return DefDatabase<PawnColumnDef>.GetNamedSilentFail("FollowDrafted")?.headerTip;
@@ -263,52 +200,30 @@ namespace RimWorldAccess
             }
         }
 
-        // Get column value for a pawn
         public static string GetColumnValue(Pawn pawn, int columnIndex)
         {
-            if (columnIndex < fixedColumnsBeforeTraining)
+            if (GetDef(columnIndex) == null)
+                return "RimWorldAccess.Animals.Value.Unknown".Translate().ToString();
+
+            switch (GetColumnType(columnIndex))
             {
-                // Fixed columns before training
-                switch ((ColumnType)columnIndex)
+                case ColumnType.Name:
+                    return GetAnimalNameWithActivity(pawn);
+                case ColumnType.Gender:
+                    return GetGender(pawn);
+                case ColumnType.Age:
+                    return GetAge(pawn);
+                case ColumnType.LifeStage:
+                    return GetLifeStage(pawn);
+                case ColumnType.Pregnant:
+                    return GetPregnancyStatus(pawn);
+                case ColumnType.Trainable:
                 {
-                    case ColumnType.Name:
-                        return GetAnimalNameWithActivity(pawn);
-                    case ColumnType.Gender:
-                        return GetGender(pawn);
-                    case ColumnType.Age:
-                        return GetAge(pawn);
-                    case ColumnType.LifeStage:
-                        return GetLifeStage(pawn);
-                    case ColumnType.Pregnant:
-                        return GetPregnancyStatus(pawn);
+                    TrainableDef trainable = GetTrainableAtColumn(columnIndex);
+                    return trainable != null
+                        ? GetTrainingStatus(pawn, trainable)
+                        : "RimWorldAccess.Animals.Value.Unknown".Translate().ToString();
                 }
-            }
-            else if (columnIndex < fixedColumnsBeforeTraining + GetAllTrainables().Count)
-            {
-                // Training columns
-                int trainableIndex = columnIndex - fixedColumnsBeforeTraining;
-                TrainableDef trainable = GetAllTrainables()[trainableIndex];
-                return GetTrainingStatus(pawn, trainable);
-            }
-            else
-            {
-                // Fixed columns after training - use dynamic list
-                var columnsAfterTraining = GetColumnsAfterTraining();
-                int fixedIndex = columnIndex - fixedColumnsBeforeTraining - GetAllTrainables().Count;
-                if (fixedIndex < 0 || fixedIndex >= columnsAfterTraining.Count)
-                    return "RimWorldAccess.Animals.Value.Unknown".Translate().ToString();
-
-                ColumnType type = columnsAfterTraining[fixedIndex];
-                return GetColumnValueForType(pawn, type);
-            }
-            return "RimWorldAccess.Animals.Value.Unknown".Translate().ToString();
-        }
-
-        // Helper to get column value for a ColumnType
-        private static string GetColumnValueForType(Pawn pawn, ColumnType type)
-        {
-            switch (type)
-            {
                 case ColumnType.SpecialTrainable:
                     return GetSpecialTrainableStatus(pawn);
                 case ColumnType.FollowDrafted:
@@ -336,75 +251,54 @@ namespace RimWorldAccess
                 case ColumnType.AllowedArea:
                     return GetAllowedArea(pawn);
                 default:
-                    return "RimWorldAccess.Animals.Value.Unknown".Translate().ToString();
+                    // Modded workers derived from a known vanilla base read generically.
+                    return PawnColumnCellReader.CellText(GetDef(columnIndex), pawn);
             }
         }
 
-        // Check if column is interactive (can be changed with Enter key)
+        /// <summary>Per-cell tip for an Unknown-classified column, via the registry; null for classified columns, whose tips are curated.</summary>
+        public static string GetUnknownCellTip(Pawn pawn, int columnIndex)
+        {
+            return GetColumnType(columnIndex) == ColumnType.Unknown
+                ? PawnColumnCellReader.CellTip(GetDef(columnIndex), pawn)
+                : null;
+        }
+
+        // Whether Enter can change the column.
         public static bool IsColumnInteractive(int columnIndex)
         {
-            if (columnIndex < fixedColumnsBeforeTraining)
+            switch (GetColumnType(columnIndex))
             {
-                // Name column is interactive (jumps to animal on map)
-                ColumnType type = (ColumnType)columnIndex;
-                return type == ColumnType.Name;
-            }
-            else if (columnIndex < fixedColumnsBeforeTraining + GetAllTrainables().Count)
-            {
-                return true; // All training columns are interactive
-            }
-            else
-            {
-                // Fixed columns after training - use dynamic list
-                var columnsAfterTraining = GetColumnsAfterTraining();
-                int fixedIndex = columnIndex - fixedColumnsBeforeTraining - GetAllTrainables().Count;
-                if (fixedIndex < 0 || fixedIndex >= columnsAfterTraining.Count)
+                case ColumnType.Name:
+                case ColumnType.Trainable:
+                case ColumnType.SpecialTrainable:
+                case ColumnType.FollowDrafted:
+                case ColumnType.FollowFieldwork:
+                case ColumnType.AnimalDig:
+                case ColumnType.AnimalForage:
+                case ColumnType.Master:
+                case ColumnType.Sterile:
+                case ColumnType.Slaughter:
+                case ColumnType.MedicalCare:
+                case ColumnType.ReleaseToWild:
+                case ColumnType.AllowedArea:
+                    return true;
+                default:
+                    // These are display-only; Unknown has no bespoke reader here.
                     return false;
-
-                ColumnType type = columnsAfterTraining[fixedIndex];
-                // Interactive columns after training
-                return type == ColumnType.SpecialTrainable ||
-                       type == ColumnType.FollowDrafted ||
-                       type == ColumnType.FollowFieldwork ||
-                       type == ColumnType.AnimalDig ||
-                       type == ColumnType.AnimalForage ||
-                       type == ColumnType.Master ||
-                       type == ColumnType.Sterile ||  // Checkbox to schedule sterilization (not interactive if already sterilized)
-                       type == ColumnType.Slaughter ||
-                       type == ColumnType.MedicalCare ||
-                       type == ColumnType.ReleaseToWild ||
-                       type == ColumnType.AllowedArea;
-                // MentalState, Bond are display-only
             }
-        }
-
-        /// <summary>
-        /// Gets the ColumnType for a column index after training columns.
-        /// Returns null if the index is not in the after-training section.
-        /// </summary>
-        public static ColumnType? GetColumnTypeAfterTraining(int columnIndex)
-        {
-            var columnsAfterTraining = GetColumnsAfterTraining();
-            int fixedIndex = columnIndex - fixedColumnsBeforeTraining - GetAllTrainables().Count;
-            if (fixedIndex < 0 || fixedIndex >= columnsAfterTraining.Count)
-                return null;
-            return columnsAfterTraining[fixedIndex];
         }
 
         // === Fixed Column Accessors ===
 
-        /// <summary>
-        /// Gets the basic animal name without activity (used for row labels).
-        /// </summary>
+        /// <summary>The bare animal name, without activity, for row labels.</summary>
         public static string GetAnimalName(Pawn pawn)
         {
             string name = pawn.Name != null ? pawn.Name.ToStringShort : pawn.def.LabelCap.ToString();
             return $"{name} ({pawn.def.LabelCap})";
         }
 
-        /// <summary>
-        /// Gets the animal name with current activity (used for Name column value).
-        /// </summary>
+        /// <summary>The animal name with its current activity, for the Name column value.</summary>
         public static string GetAnimalNameWithActivity(Pawn pawn)
         {
             string baseName = GetAnimalName(pawn);
@@ -414,14 +308,12 @@ namespace RimWorldAccess
 
         public static string GetGender(Pawn pawn)
         {
-            // Use RimWorld's localized gender labels
             return pawn.gender.GetLabel(animal: true).CapitalizeFirst();
         }
 
         public static string GetAge(Pawn pawn)
         {
             if (pawn.ageTracker == null) return "RimWorldAccess.Animals.Value.Unknown".Translate().ToString();
-            // Use RimWorld's localized age string
             return pawn.ageTracker.AgeNumberString;
         }
 
@@ -439,7 +331,6 @@ namespace RimWorldAccess
             Hediff_Pregnant pregnancy = (Hediff_Pregnant)pawn.health.hediffSet.GetFirstHediffOfDef(HediffDefOf.Pregnant);
             if (pregnancy != null)
             {
-                // Use hediff's localized label and progress
                 return $"{pregnancy.LabelCap} ({pregnancy.GestationProgress.ToStringPercent()})";
             }
             return "None".Translate().Resolve();
@@ -458,7 +349,7 @@ namespace RimWorldAccess
             if (!canTrain.Accepted)
             {
                 statusText = "RimWorldAccess.Animals.Training.CannotTrain".Translate().ToString();
-                // Add the reason why they can't train (already localized by RimWorld)
+                // The reason is already localized by RimWorld.
                 if (!string.IsNullOrEmpty(canTrain.Reason))
                 {
                     statusText += " - " + canTrain.Reason;
@@ -469,7 +360,6 @@ namespace RimWorldAccess
                 bool wanted = pawn.training.GetWanted(trainable);
                 bool hasLearned = pawn.training.HasLearned(trainable);
 
-                // Get current training steps using reflection
                 int steps = 0;
                 var getStepsMethod = typeof(Pawn_TrainingTracker).GetMethod("GetSteps",
                     System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -480,7 +370,6 @@ namespace RimWorldAccess
 
                 if (hasLearned)
                 {
-                    // Animal has completed training at some point
                     if (wanted)
                     {
                         statusText = "RimWorldAccess.Animals.Training.Maintaining".Translate(steps, trainable.steps).ToString();
@@ -492,7 +381,6 @@ namespace RimWorldAccess
                 }
                 else
                 {
-                    // Animal has never completed training
                     if (wanted)
                     {
                         if (steps > 0)
@@ -509,7 +397,6 @@ namespace RimWorldAccess
                         statusText = "RimWorldAccess.Animals.Training.WillNotTrain".Translate().ToString();
                     }
 
-                    // Add prerequisite information if not learned and has prerequisites
                     if (trainable.prerequisites != null && trainable.prerequisites.Count > 0)
                     {
                         foreach (var prereq in trainable.prerequisites)
@@ -524,7 +411,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Add training description (already localized)
             if (!string.IsNullOrEmpty(trainable.description))
             {
                 statusText += " - " + trainable.description;
@@ -533,16 +419,10 @@ namespace RimWorldAccess
             return statusText;
         }
 
+        /// <summary>The TrainableDef backing a Trainable column at this index, read straight off the column's own def (set by <see cref="PawnColumnDefGenerator"/>) — null for every other classification.</summary>
         public static TrainableDef GetTrainableAtColumn(int columnIndex)
         {
-            if (columnIndex < fixedColumnsBeforeTraining ||
-                columnIndex >= fixedColumnsBeforeTraining + GetAllTrainables().Count)
-            {
-                return null;
-            }
-
-            int trainableIndex = columnIndex - fixedColumnsBeforeTraining;
-            return GetAllTrainables()[trainableIndex];
+            return GetDef(columnIndex)?.trainable;
         }
 
         // === Follow Settings (require Obedience/Guard training) ===
@@ -551,7 +431,6 @@ namespace RimWorldAccess
         {
             if (pawn.playerSettings == null) return "RimWorldAccess.Animals.Value.NotApplicable".Translate().ToString();
 
-            // Check if animal has learned Obedience (Guard)
             if (pawn.training?.HasLearned(TrainableDefOf.Obedience) != true)
             {
                 return "Requires".Translate().Resolve() + " " + TrainableDefOf.Obedience.LabelCap;
@@ -564,7 +443,6 @@ namespace RimWorldAccess
         {
             if (pawn.playerSettings == null) return "RimWorldAccess.Animals.Value.NotApplicable".Translate().ToString();
 
-            // Check if animal has learned Obedience (Guard)
             if (pawn.training?.HasLearned(TrainableDefOf.Obedience) != true)
             {
                 return "Requires".Translate().Resolve() + " " + TrainableDefOf.Obedience.LabelCap;
@@ -573,31 +451,24 @@ namespace RimWorldAccess
             return pawn.playerSettings.followFieldwork ? "Yes".Translate().Resolve() : "No".Translate().Resolve();
         }
 
-        // === Odyssey DLC: Special Trainables (race-specific abilities) ===
+        // === Odyssey DLC: Special Trainables ===
+        // No runtime IsOdysseyActive guard is needed: the SpecialTrainable column only exists in
+        // columnDefs when Odyssey is active, so these accessors are unreachable without it.
 
-        /// <summary>
-        /// Gets the list of special trainables for an animal (e.g., TerrorRoar for alpha thrumbo).
-        /// </summary>
+        /// <summary>An animal's special trainables, such as TerrorRoar for an alpha thrumbo.</summary>
         public static List<TrainableDef> GetSpecialTrainables(Pawn pawn)
         {
-            if (!IsOdysseyActive) return new List<TrainableDef>();
             if (pawn.RaceProps?.specialTrainables == null) return new List<TrainableDef>();
             return pawn.RaceProps.specialTrainables;
         }
 
-        /// <summary>
-        /// Gets the status of special trainables for an animal.
-        /// Each animal has at most one special trainable (e.g., TerrorRoar, Comfort, Dig).
-        /// </summary>
+        /// <summary>The status of an animal's special trainable; each animal has at most one.</summary>
         public static string GetSpecialTrainableStatus(Pawn pawn)
         {
-            if (!IsOdysseyActive) return "RimWorldAccess.Animals.Training.NoSpecialAbility".Translate().ToString();
-
             var specialTrainables = GetSpecialTrainables(pawn);
             if (specialTrainables.Count == 0) return "RimWorldAccess.Animals.Training.NoSpecialAbility".Translate().ToString();
             if (pawn.training == null) return "RimWorldAccess.Animals.Training.NoSpecialAbility".Translate().ToString();
 
-            // Animals have exactly one special trainable
             var trainable = specialTrainables[0];
             string abilityName = trainable.LabelCap;
             string status;
@@ -605,7 +476,6 @@ namespace RimWorldAccess
             bool wanted = pawn.training.GetWanted(trainable);
             bool hasLearned = pawn.training.HasLearned(trainable);
 
-            // Get current training steps using reflection
             int steps = 0;
             var getStepsMethod = typeof(Pawn_TrainingTracker).GetMethod("GetSteps",
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -616,7 +486,6 @@ namespace RimWorldAccess
 
             if (hasLearned)
             {
-                // Animal has completed training at some point
                 if (wanted)
                 {
                     status = "RimWorldAccess.Animals.Training.Maintaining".Translate(steps, trainable.steps).ToString();
@@ -628,7 +497,6 @@ namespace RimWorldAccess
             }
             else
             {
-                // Animal has never completed training
                 if (wanted)
                 {
                     if (steps > 0)
@@ -646,10 +514,8 @@ namespace RimWorldAccess
                 }
             }
 
-            // Build result with ability name and status
             string result = $"{abilityName}: {status}";
 
-            // Add description if available
             if (!string.IsNullOrEmpty(trainable.description))
             {
                 result += " - " + trainable.description;
@@ -662,7 +528,6 @@ namespace RimWorldAccess
 
         public static string GetAnimalDigStatus(Pawn pawn)
         {
-            if (!IsOdysseyActive) return "RimWorldAccess.Animals.Value.NotApplicable".Translate().ToString();
             if (pawn.training?.HasLearned(TrainableDefOf.Dig) != true) return "RimWorldAccess.Animals.Value.NotApplicable".Translate().ToString();
 
             return pawn.playerSettings.animalDig
@@ -672,7 +537,6 @@ namespace RimWorldAccess
 
         public static string GetAnimalForageStatus(Pawn pawn)
         {
-            if (!IsOdysseyActive) return "RimWorldAccess.Animals.Value.NotApplicable".Translate().ToString();
             if (pawn.training?.HasLearned(TrainableDefOf.Forage) != true) return "RimWorldAccess.Animals.Value.NotApplicable".Translate().ToString();
 
             return pawn.playerSettings.animalForage
@@ -686,7 +550,6 @@ namespace RimWorldAccess
         {
             if (pawn.playerSettings == null) return "RimWorldAccess.Animals.Value.NotApplicable".Translate().ToString();
 
-            // Check if animal has learned Obedience (Guard)
             if (pawn.training?.HasLearned(TrainableDefOf.Obedience) != true)
             {
                 return "Requires".Translate().Resolve() + " " + TrainableDefOf.Obedience.LabelCap;
@@ -703,8 +566,7 @@ namespace RimWorldAccess
 
         public static string GetMentalState(Pawn pawn)
         {
-            // Vanilla shows nothing (empty cell) when not in mental state,
-            // but for screen readers we say "Normal" for clarity
+            // Vanilla leaves the cell empty outside a mental state; say "Normal" instead.
             if (pawn.MentalState == null)
                 return "RimWorldAccess.Animals.Value.Normal".Translate().ToString();
             return pawn.MentalState.def.LabelCap;
@@ -719,7 +581,7 @@ namespace RimWorldAccess
             Pawn bondedPawn = pawn.relations.GetFirstDirectRelationPawn(PawnRelationDefOf.Bond);
             if (bondedPawn != null)
             {
-                // Check if bond is "broken" (has master but master is not the bonded pawn)
+                // A bond is broken when the animal has a master other than its bonded pawn.
                 bool hasMaster = pawn.playerSettings?.Master != null;
                 bool bondBroken = hasMaster && pawn.playerSettings.Master != bondedPawn;
 
@@ -735,17 +597,13 @@ namespace RimWorldAccess
 
         // === Sterile Status ===
 
-        /// <summary>
-        /// Checks if the animal is already sterilized (has the Sterilized hediff).
-        /// </summary>
+        /// <summary>Whether the animal already carries the Sterilized hediff.</summary>
         public static bool IsAnimalSterilized(Pawn pawn)
         {
             return pawn.health?.hediffSet?.HasHediff(HediffDefOf.Sterilized) == true;
         }
 
-        /// <summary>
-        /// Checks if a sterilization operation is currently scheduled for this animal.
-        /// </summary>
+        /// <summary>Whether a sterilization operation is scheduled for this animal.</summary>
         public static bool HasSterilizationScheduled(Pawn pawn)
         {
             if (pawn.BillStack == null) return false;
@@ -754,26 +612,20 @@ namespace RimWorldAccess
 
         public static string GetSterileStatus(Pawn pawn)
         {
-            // Already sterilized
             if (IsAnimalSterilized(pawn))
             {
                 return "Yes".Translate().Resolve();
             }
 
-            // Sterilization scheduled (interactive - can cancel)
             if (HasSterilizationScheduled(pawn))
             {
                 return "RimWorldAccess.Animals.Value.Scheduled".Translate().Resolve();
             }
 
-            // Not scheduled (interactive - can schedule)
             return "No".Translate().Resolve();
         }
 
-        /// <summary>
-        /// Checks if the Sterile column is interactive for this animal.
-        /// Not interactive if already sterilized.
-        /// </summary>
+        /// <summary>Whether the Sterile column is interactive; an already-sterilized animal is not.</summary>
         public static bool IsSterileInteractive(Pawn pawn)
         {
             return !IsAnimalSterilized(pawn);
@@ -840,83 +692,49 @@ namespace RimWorldAccess
         }
 
         // === Master Assignment ===
-
-        public static List<Pawn> GetAvailableColonists()
-        {
-            if (Find.CurrentMap == null) return new List<Pawn>();
-
-            return Find.CurrentMap.mapPawns.FreeColonistsSpawned
-                .Where(p => !p.Dead && !p.Downed)
-                .OrderBy(p => p.LabelShort)
-                .ToList();
-        }
+        // The candidate list and CanBeMaster gate come from
+        // PawnColumnMutationHelper.GetMasterMenuElements, which reflects vanilla's own
+        // TrainableUtility.MasterSelectButton_GenerateMenu.
 
         // === Painting Support ===
 
         /// <summary>
-        /// Checks if a column supports painting (drag-to-apply).
-        /// Uses the unified columnDefs list for PawnColumnDef.paintable lookup.
-        /// AllowedArea and Master/MedicalCare are special cases with mod-specific painting.
+        /// Whether a column supports drag-to-apply painting. AllowedArea/Master/MedicalCare are
+        /// always paintable regardless of their def's <c>paintable</c> flag, since their paint
+        /// semantics live in AnimalsScope rather than vanilla's drag-paint code; every other
+        /// classification reads the def's own flag.
         /// </summary>
         public static bool CanPaintColumn(int columnIndex)
         {
-            // Fixed columns before training are never paintable
-            if (columnIndex < fixedColumnsBeforeTraining)
-                return false;
-
-            // Training columns are paintable (PawnColumnWorker_Trainable passes paintable: true)
-            if (IsTrainingColumn(columnIndex))
-                return true;
-
-            var columnType = GetColumnTypeAfterTraining(columnIndex);
-            if (columnType == null)
-                return false;
-
-            // AllowedArea is paintable via mod's lastAppliedArea mechanism
-            if (columnType == ColumnType.AllowedArea)
-                return true;
-
-            // Master and MedicalCare are paintable (workers pass paintable: true to Widgets.Dropdown)
-            if (columnType == ColumnType.Master || columnType == ColumnType.MedicalCare)
-                return true;
-
-            // Look up PawnColumnDef.paintable at runtime via unified column defs
-            if (columnDefs != null && columnIndex >= 0 && columnIndex < columnDefs.Count)
+            switch (GetColumnType(columnIndex))
             {
-                return columnDefs[columnIndex]?.paintable == true;
+                case ColumnType.Trainable:
+                case ColumnType.AllowedArea:
+                case ColumnType.Master:
+                case ColumnType.MedicalCare:
+                    return true;
+                case ColumnType.Name:
+                case ColumnType.Gender:
+                case ColumnType.Age:
+                case ColumnType.LifeStage:
+                case ColumnType.Pregnant:
+                    return false;
+                default:
+                    return GetDef(columnIndex)?.paintable == true;
             }
-
-            return false;
         }
 
-        /// <summary>
-        /// Returns true if the column index is in the dynamic training column range.
-        /// </summary>
-        public static bool IsTrainingColumn(int columnIndex)
-        {
-            return columnIndex >= fixedColumnsBeforeTraining
-                && columnIndex < fixedColumnsBeforeTraining + GetAllTrainables().Count;
-        }
-
-        /// <summary>
-        /// Gets the current boolean value of a paintable column for a pawn.
-        /// Used as the "brush" value when painting.
-        /// </summary>
+        /// <summary>A paintable column's current boolean value, used as the brush value.</summary>
         public static bool GetPaintableValue(Pawn pawn, int columnIndex)
         {
-            // Training columns
-            if (IsTrainingColumn(columnIndex))
+            switch (GetColumnType(columnIndex))
             {
-                if (pawn.training == null) return false;
-                var trainable = GetTrainableAtColumn(columnIndex);
-                return trainable != null && pawn.training.GetWanted(trainable);
-            }
-
-            var columnType = GetColumnTypeAfterTraining(columnIndex);
-            if (columnType == null) return false;
-
-            switch (columnType.Value)
-            {
+                case ColumnType.Trainable:
+                {
+                    if (pawn.training == null) return false;
+                    var trainable = GetTrainableAtColumn(columnIndex);
+                    return trainable != null && pawn.training.GetWanted(trainable);
+                }
                 case ColumnType.FollowDrafted:
                     return pawn.playerSettings?.followDrafted == true;
                 case ColumnType.FollowFieldwork:
@@ -939,31 +757,24 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Sets a paintable column to a specific value (not toggle).
-        /// Returns false if the animal can't accept the value or is already in the desired state.
-        /// </summary>
+        /// <summary>Sets a paintable column to a value rather than toggling; false if the animal cannot accept it or already holds it.</summary>
         public static bool SetPaintableValue(Pawn pawn, int columnIndex, bool value)
         {
-            // Training columns
-            if (IsTrainingColumn(columnIndex))
+            switch (GetColumnType(columnIndex))
             {
-                if (pawn.training == null) return false;
-                var trainable = GetTrainableAtColumn(columnIndex);
-                if (trainable == null) return false;
-                bool visible;
-                AcceptanceReport canTrain = pawn.training.CanAssignToTrain(trainable, out visible);
-                if (!visible || !canTrain.Accepted) return false;
-                if (pawn.training.HasLearned(trainable) && !value) return false; // can't un-train learned
-                pawn.training.SetWantedRecursive(trainable, value);
-                return true;
-            }
+                case ColumnType.Trainable:
+                {
+                    if (pawn.training == null) return false;
+                    var trainable = GetTrainableAtColumn(columnIndex);
+                    if (trainable == null) return false;
+                    bool visible;
+                    AcceptanceReport canTrain = pawn.training.CanAssignToTrain(trainable, out visible);
+                    if (!visible || !canTrain.Accepted) return false;
+                    if (pawn.training.HasLearned(trainable) && !value) return false; // can't un-train learned
+                    pawn.training.SetWantedRecursive(trainable, value);
+                    return true;
+                }
 
-            var columnType = GetColumnTypeAfterTraining(columnIndex);
-            if (columnType == null) return false;
-
-            switch (columnType.Value)
-            {
                 case ColumnType.FollowDrafted:
                     if (pawn.playerSettings == null || pawn.training?.HasLearned(TrainableDefOf.Obedience) != true)
                         return false;
@@ -977,51 +788,46 @@ namespace RimWorldAccess
                     return true;
 
                 case ColumnType.Slaughter:
+                {
                     if (pawn.Map == null) return false;
-                    var slaughterDes = pawn.Map.designationManager.DesignationOn(pawn, DesignationDefOf.Slaughter);
-                    if (value && slaughterDes == null)
-                    {
-                        pawn.Map.designationManager.AddDesignation(new Designation(pawn, DesignationDefOf.Slaughter));
-                        return true;
-                    }
-                    if (!value && slaughterDes != null)
-                    {
-                        pawn.Map.designationManager.RemoveDesignation(slaughterDes);
-                        return true;
-                    }
-                    return false;
+                    bool current = pawn.Map.designationManager.DesignationOn(pawn, DesignationDefOf.Slaughter) != null;
+                    if (current == value) return false;
+                    PawnColumnDef slaughterDef = GetColumnDef(ColumnType.Slaughter);
+                    // Paint applies to a whole run of animals in one gesture, and stacking one
+                    // blocking confirmation dialog per painted animal is unusable, so skip instead.
+                    // The Enter-key toggle below still raises vanilla's own per-pawn dialog.
+                    if (value && PawnColumnMutationHelper.DesignatorWouldRequireConfirm(slaughterDef, pawn))
+                        return false;
+                    PawnTable table = PawnColumnMutationHelper.CreateDetachedTable(PawnTableDefOf.Animals);
+                    PawnColumnMutationHelper.SetDesignatorValue(slaughterDef, pawn, value, table, afterward: null);
+                    return true;
+                }
 
                 case ColumnType.Sterile:
+                {
                     if (IsAnimalSterilized(pawn)) return false;
                     bool scheduled = HasSterilizationScheduled(pawn);
-                    if (value && !scheduled)
-                    {
-                        HealthCardUtility.CreateSurgeryBill(pawn, RecipeDefOf.Sterilize, null);
-                        return true;
-                    }
-                    if (!value && scheduled)
-                    {
-                        var bills = pawn.BillStack.Bills.Where(b => b.recipe == RecipeDefOf.Sterilize).ToList();
-                        foreach (var bill in bills)
-                            pawn.BillStack.Delete(bill);
-                        return true;
-                    }
-                    return false;
+                    if (value == scheduled) return false;
+                    // Same paint-vs-blocking-dialog reasoning as Slaughter above.
+                    if (value && PawnColumnMutationHelper.SterilizeWouldRequireConfirm(pawn))
+                        return false;
+                    PawnColumnMutationHelper.SetSterilizeValue(pawn, value, afterward: null);
+                    return true;
+                }
 
                 case ColumnType.ReleaseToWild:
+                {
                     if (pawn.Map == null) return false;
-                    var releaseDes = pawn.Map.designationManager.DesignationOn(pawn, DesignationDefOf.ReleaseAnimalToWild);
-                    if (value && releaseDes == null)
-                    {
-                        pawn.Map.designationManager.AddDesignation(new Designation(pawn, DesignationDefOf.ReleaseAnimalToWild));
-                        return true;
-                    }
-                    if (!value && releaseDes != null)
-                    {
-                        pawn.Map.designationManager.RemoveDesignation(releaseDes);
-                        return true;
-                    }
-                    return false;
+                    bool current = pawn.Map.designationManager.DesignationOn(pawn, DesignationDefOf.ReleaseAnimalToWild) != null;
+                    if (current == value) return false;
+                    PawnColumnDef releaseDef = GetColumnDef(ColumnType.ReleaseToWild);
+                    // Same paint-vs-blocking-dialog reasoning as Slaughter above.
+                    if (value && PawnColumnMutationHelper.DesignatorWouldRequireConfirm(releaseDef, pawn))
+                        return false;
+                    PawnTable table = PawnColumnMutationHelper.CreateDetachedTable(PawnTableDefOf.Animals);
+                    PawnColumnMutationHelper.SetDesignatorValue(releaseDef, pawn, value, table, afterward: null);
+                    return true;
+                }
 
                 case ColumnType.SpecialTrainable:
                     var specials = GetSpecialTrainables(pawn);
@@ -1047,25 +853,21 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the appropriate sound for painting a column.
-        /// </summary>
+        /// <summary>The sound for painting a column.</summary>
         public static SoundDef GetPaintSound(int columnIndex, bool value)
         {
-            var columnType = GetColumnTypeAfterTraining(columnIndex);
-            if (columnType == ColumnType.AllowedArea)
+            ColumnType kind = GetColumnType(columnIndex);
+            if (kind == ColumnType.AllowedArea)
                 return SoundDefOf.Designate_DragStandard_Changed_NoCam;
-            if (columnType == ColumnType.Master)
+            if (kind == ColumnType.Master)
                 return SoundDefOf.Click;
-            if (columnType == ColumnType.MedicalCare)
+            if (kind == ColumnType.MedicalCare)
                 return SoundDefOf.Tick_High;
-            // Training columns and all other checkbox columns use Checkbox sounds
+            // Training and every other checkbox column use Checkbox sounds.
             return value ? SoundDefOf.Checkbox_TurnedOn : SoundDefOf.Checkbox_TurnedOff;
         }
 
-        /// <summary>
-        /// Gets the display label for a paint value (e.g., "checked", "unchecked").
-        /// </summary>
+        /// <summary>The display label for a paint value, such as "checked".</summary>
         public static string GetPaintValueLabel(int columnIndex, bool value)
         {
             return value

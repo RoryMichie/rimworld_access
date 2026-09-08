@@ -12,7 +12,6 @@ The defaults are sensible, so there's nothing you have to change before playing.
 
 ## Tutorial series
 
-<!-- TODO(Aaron): swap to the playlist URL once Part 2 is up -->
 I've recorded a [tutorial series](https://www.youtube.com/watch?v=p1ldzcUre4k) walking through the game from the beginning. Part 1 is up now, and more parts are coming. If you're new to RimWorld, it's worth watching as you find your feet.
 
 ## Next steps

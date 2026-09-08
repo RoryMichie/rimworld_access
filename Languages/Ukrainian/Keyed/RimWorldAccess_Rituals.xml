@@ -35,7 +35,7 @@
   <RimWorldAccess.Rituals.Open.Warning>Попередження: {0}</RimWorldAccess.Rituals.Open.Warning>
   <RimWorldAccess.Rituals.Open.RoleCountOne>{0} роль.</RimWorldAccess.Rituals.Open.RoleCountOne>
   <RimWorldAccess.Rituals.Open.RoleCountMany>{0} ролей.</RimWorldAccess.Rituals.Open.RoleCountMany>
-  <RimWorldAccess.Rituals.Open.Instructions>Вгору або вниз для навігації, Enter для призначення персонажів, Tab для статистики якості, Alt+S для початку.</RimWorldAccess.Rituals.Open.Instructions>
+  <RimWorldAccess.Rituals.Open.Instructions>Вгору або вниз для навігації, Enter для переміщення персонажа в іншу роль, Пробіл для перемикання між роллю та глядачами, Tab для статистики якості, Alt+S для початку.</RimWorldAccess.Rituals.Open.Instructions>
 
   <!-- Expected-quality summary, used both at dialog-open and in the quality
        stats list (RitualState.GetExpectedQualitySummary,
@@ -49,11 +49,8 @@
        AssignedOfMax: {0} = assigned count, {1} = max count.
        AssignedOptional: {0} = assigned count (role has maxCount == 0).
        AssignedUnlimited: {0} = assigned count (role has maxCount == -1). -->
-  <RimWorldAccess.Rituals.Role.AssignedOfMax>призначено {0} з {1}</RimWorldAccess.Rituals.Role.AssignedOfMax>
-  <RimWorldAccess.Rituals.Role.AssignedOptional>призначено {0}, необов'язково</RimWorldAccess.Rituals.Role.AssignedOptional>
-  <RimWorldAccess.Rituals.Role.AssignedUnlimited>призначено {0}</RimWorldAccess.Rituals.Role.AssignedUnlimited>
-  <RimWorldAccess.Rituals.Role.Required>, обов'язково</RimWorldAccess.Rituals.Role.Required>
-  <RimWorldAccess.Rituals.Role.Locked>, заблоковано</RimWorldAccess.Rituals.Role.Locked>
+  <RimWorldAccess.Rituals.Role.MaxCount>До {0}</RimWorldAccess.Rituals.Role.MaxCount>
+  <RimWorldAccess.Rituals.Pawn.MovedTo>{0}: {1}.</RimWorldAccess.Rituals.Pawn.MovedTo>
 
   <!-- Gravship checkbox state words (RitualStatFormatter.FormatCheckboxAnnouncement,
        RitualState.ToggleGravshipCheckbox). The checkbox LABEL and TOOLTIP
@@ -63,14 +60,10 @@
   <RimWorldAccess.Rituals.Checkbox.Toggled>{0}: {1}.</RimWorldAccess.Rituals.Checkbox.Toggled>
 
   <!-- Pawn announcement fragments (RitualStatFormatter.FormatPawnAnnouncement). -->
-  <RimWorldAccess.Rituals.Pawn.ForcedCannotChange>примусово, не можна змінити</RimWorldAccess.Rituals.Pawn.ForcedCannotChange>
-  <RimWorldAccess.Rituals.Pawn.Selected>Вибрано</RimWorldAccess.Rituals.Pawn.Selected>
-  <RimWorldAccess.Rituals.Pawn.CannotAssignReason>неможливо призначити: {0}</RimWorldAccess.Rituals.Pawn.CannotAssignReason>
 
   <!-- Stat / skill disability marker used in suitability-info strings
        (RitualStatFormatter.FormatPawnSuitability). Spoken as
        "<StatLabel>: Disabled" when the pawn cannot use that stat/skill. -->
-  <RimWorldAccess.Rituals.Pawn.StatDisabled>Недоступно</RimWorldAccess.Rituals.Pawn.StatDisabled>
 
   <!-- Quality-factor status suffixes (RitualStatFormatter.FormatQualityFactor).
        Appended to "{Label}: {Change}." when Change doesn't already provide
@@ -101,44 +94,22 @@
   <RimWorldAccess.Rituals.Location.Outdoors>надворі</RimWorldAccess.Rituals.Location.Outdoors>
   <RimWorldAccess.Rituals.Location.Cell>Квадрат ({0}, {1})</RimWorldAccess.Rituals.Location.Cell>
 
-  <!-- Fluid-ideology development points (RitualState.AddIdeologyDevelopmentPoints).
-       Header row announcing the section. FluidIdeologyTag is the parenthetical
-       appended to the header's Change column. -->
-  <RimWorldAccess.Rituals.Quality.DevelopmentPointsLabel>Бали розвитку</RimWorldAccess.Rituals.Quality.DevelopmentPointsLabel>
-  <RimWorldAccess.Rituals.Quality.FluidIdeologyTag>(Гнучка віра)</RimWorldAccess.Rituals.Quality.FluidIdeologyTag>
-  <RimWorldAccess.Rituals.Quality.DevelopmentPointsTooltip>Бали, що нараховуються вашій гнучкій вірі залежно від результату ритуалу.</RimWorldAccess.Rituals.Quality.DevelopmentPointsTooltip>
-
   <!-- Role-list / pawn-list / quality-stats empty announcements
        (RitualState.AnnounceCurrentRole/Pawn/QualityStat). -->
-  <RimWorldAccess.Rituals.Empty.NoRoles>Немає доступних ролей.</RimWorldAccess.Rituals.Empty.NoRoles>
-  <RimWorldAccess.Rituals.Empty.NoPawns>Немає доступних персонажів.</RimWorldAccess.Rituals.Empty.NoPawns>
   <RimWorldAccess.Rituals.Empty.NoQualityFactorsAvailable>Немає доступних факторів якості.</RimWorldAccess.Rituals.Empty.NoQualityFactorsAvailable>
 
   <!-- Fallback labels used by RitualTreeBuilder when game data is missing. -->
-  <RimWorldAccess.Rituals.Fallback.Spectators>Глядачі</RimWorldAccess.Rituals.Fallback.Spectators>
-  <RimWorldAccess.Rituals.Fallback.Role>роль</RimWorldAccess.Rituals.Fallback.Role>
 
   <!-- Pawn-selection mode transitions (RitualState.EnterPawnSelection / ExitPawnSelection).
        EnterInstructions: {0} = role label, {1} = candidate-count clause below.
        CandidateCountOne/Many: {0} = count; split for English "1 candidate" vs
        "N candidates". -->
-  <RimWorldAccess.Rituals.PawnSelection.NoEligiblePawns>Немає придатних персонажів для цієї ролі.</RimWorldAccess.Rituals.PawnSelection.NoEligiblePawns>
-  <RimWorldAccess.Rituals.PawnSelection.CandidateCountOne>{0} кандидат</RimWorldAccess.Rituals.PawnSelection.CandidateCountOne>
-  <RimWorldAccess.Rituals.PawnSelection.CandidateCountMany>{0} кандидатів</RimWorldAccess.Rituals.PawnSelection.CandidateCountMany>
-  <RimWorldAccess.Rituals.PawnSelection.EnterInstructions>Вибір персонажа для ролі: {0}. {1}. Пробіл для перемикання вибору, Enter для підтвердження, Escape для скасування.</RimWorldAccess.Rituals.PawnSelection.EnterInstructions>
-  <RimWorldAccess.Rituals.PawnSelection.Cancelled>Скасовано. Повернення до списку ролей.</RimWorldAccess.Rituals.PawnSelection.Cancelled>
-  <RimWorldAccess.Rituals.PawnSelection.Confirmed>Вибір підтверджено. Повернення до списку ролей.</RimWorldAccess.Rituals.PawnSelection.Confirmed>
 
   <!-- Pawn assignment feedback (RitualState.TogglePawnAssignment).
        Forced/CannotAssign/CannotAssignReason: {0} = pawn name, {1} = reason.
        Selected / Deselected: {0} = pawn name. NowAt: {0} = pawn name (spoken
        after the list reorders so the user knows their cursor's current row). -->
   <RimWorldAccess.Rituals.Pawn.IsForced>{0} призначено для цієї ролі примусово і не можна змінити.</RimWorldAccess.Rituals.Pawn.IsForced>
-  <RimWorldAccess.Rituals.Pawn.CannotAssignWithReason>Неможливо призначити: {0}. {1}</RimWorldAccess.Rituals.Pawn.CannotAssignWithReason>
-  <RimWorldAccess.Rituals.Pawn.CannotAssign>Неможливо призначити: {0}.</RimWorldAccess.Rituals.Pawn.CannotAssign>
-  <RimWorldAccess.Rituals.Pawn.SelectedName>{0}: вибрано.</RimWorldAccess.Rituals.Pawn.SelectedName>
-  <RimWorldAccess.Rituals.Pawn.DeselectedName>{0}: вибір знято.</RimWorldAccess.Rituals.Pawn.DeselectedName>
-  <RimWorldAccess.Rituals.Pawn.NowAt>Зараз на: {0}</RimWorldAccess.Rituals.Pawn.NowAt>
 
   <!-- Quality-stats mode transitions (RitualState.ToggleQualityStatsView).
        ReturnedToRoleList / ReturnedToPawnSelection: spoken on Tab/Escape back.
@@ -146,8 +117,6 @@
        vs "N factors" (used inside the two Instructions keys below). Note: we
        keep Instructions as a whole-sentence key so translators can reorder
        subject/verb/object freely. -->
-  <RimWorldAccess.Rituals.QualityStats.ReturnedToRoleList>Повернення до списку ролей.</RimWorldAccess.Rituals.QualityStats.ReturnedToRoleList>
-  <RimWorldAccess.Rituals.QualityStats.ReturnedToPawnSelection>Повернення до вибору персонажа для ролі: {0}.</RimWorldAccess.Rituals.QualityStats.ReturnedToPawnSelection>
   <RimWorldAccess.Rituals.QualityStats.InstructionsOne>Статистика якості. {0} фактор. Вгору або вниз для навігації, Alt+I для деталізації, Tab для повернення.</RimWorldAccess.Rituals.QualityStats.InstructionsOne>
   <RimWorldAccess.Rituals.QualityStats.InstructionsMany>Статистика якості. {0} факторів. Вгору або вниз для навігації, Alt+I для деталізації, Tab для повернення.</RimWorldAccess.Rituals.QualityStats.InstructionsMany>
   <RimWorldAccess.Rituals.QualityStats.HeaderOne>Статистика якості. {0} фактор.</RimWorldAccess.Rituals.QualityStats.HeaderOne>
@@ -168,7 +137,6 @@
        RoleLocked: spoken when user tries to enter pawn selection for a locked role.
        NoDialogOpen: fallback when Alt+S is pressed but no adapter is present.
        CannotStart: {0} = blocking issues joined with ". " -->
-  <RimWorldAccess.Rituals.LordJob.RoleLocked>Роль заблоковано. Усі призначені персонажі обов'язкові.</RimWorldAccess.Rituals.LordJob.RoleLocked>
   <RimWorldAccess.Rituals.LordJob.NoDialogOpen>Жоден діалог не відкрито.</RimWorldAccess.Rituals.LordJob.NoDialogOpen>
   <RimWorldAccess.Rituals.LordJob.CannotStart>Неможливо розпочати. {0}</RimWorldAccess.Rituals.LordJob.CannotStart>
 
@@ -193,21 +161,9 @@
   <!-- Disallowed-condition readout on each role. {0} is the localized, comma-joined
        list of condition nouns the role refuses. Surfaces the assignability rules
        sighted players see only via on-hover tooltips. -->
-  <RimWorldAccess.Rituals.Psychic.Disallows>Не дозволяє: {0}.</RimWorldAccess.Rituals.Psychic.Disallows>
-  <RimWorldAccess.Rituals.Psychic.Condition.Sleeping>сплячі</RimWorldAccess.Rituals.Psychic.Condition.Sleeping>
-  <RimWorldAccess.Rituals.Psychic.Condition.Drafted>у бойовому режимі</RimWorldAccess.Rituals.Psychic.Condition.Drafted>
-  <RimWorldAccess.Rituals.Psychic.Condition.Bleeding>з кровотечею</RimWorldAccess.Rituals.Psychic.Condition.Bleeding>
-  <RimWorldAccess.Rituals.Psychic.Condition.Burning>охоплені вогнем</RimWorldAccess.Rituals.Psychic.Condition.Burning>
-  <RimWorldAccess.Rituals.Psychic.Condition.MentalState>у душевному розладі</RimWorldAccess.Rituals.Psychic.Condition.MentalState>
-  <RimWorldAccess.Rituals.Psychic.Condition.Downed>знесилені</RimWorldAccess.Rituals.Psychic.Condition.Downed>
-  <RimWorldAccess.Rituals.Psychic.Condition.Prisoner>в'язні</RimWorldAccess.Rituals.Psychic.Condition.Prisoner>
-  <RimWorldAccess.Rituals.Psychic.Condition.Slave>раби</RimWorldAccess.Rituals.Psychic.Condition.Slave>
-  <RimWorldAccess.Rituals.Psychic.Condition.Baby>немовлята</RimWorldAccess.Rituals.Psychic.Condition.Baby>
-  <RimWorldAccess.Rituals.Psychic.Condition.Child>діти</RimWorldAccess.Rituals.Psychic.Condition.Child>
   <RimWorldAccess.Rituals.DryadCaste.UnknownCaste>Невідома каста</RimWorldAccess.Rituals.DryadCaste.UnknownCaste>
   <!-- Hidden display-English sweep (returned/assigned strings localized). -->
   <RimWorldAccess.Rituals.LordJob.DialogClosed>Діалог закрито.</RimWorldAccess.Rituals.LordJob.DialogClosed>
-  <RimWorldAccess.Rituals.Quality.OutcomeChancesLabel>Шанси результату</RimWorldAccess.Rituals.Quality.OutcomeChancesLabel>
   <RimWorldAccess.Rituals.Quality.OutcomeDescriptionLabel>Опис результату</RimWorldAccess.Rituals.Quality.OutcomeDescriptionLabel>
   <RimWorldAccess.Rituals.Quality.RangeFormat>від {0} до {1}</RimWorldAccess.Rituals.Quality.RangeFormat>
 </LanguageData>

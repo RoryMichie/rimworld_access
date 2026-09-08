@@ -12,3 +12,6 @@ nvdaControllerClient64.dll
 
 # Native Prism libraries (downloaded from Prism releases)
 native/
+__pycache__/
+# Anchored: a bare docs/ also swallows docs-site/docs, silently ignoring new pages.
+/docs/

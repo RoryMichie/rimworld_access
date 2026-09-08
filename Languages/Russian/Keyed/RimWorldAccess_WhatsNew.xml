@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.WhatsNew.Header>RimWorld Access {0}. Объявление {1} из {2}.</RimWorldAccess.WhatsNew.Header>
+  <RimWorldAccess.WhatsNew.HeaderSingle>RimWorld Access {0}.</RimWorldAccess.WhatsNew.HeaderSingle>
+  <RimWorldAccess.WhatsNew.Message.2_0_0>Добро пожаловать в «Что нового»! Это сообщение появляется при каждом обновлении RimWorld Access, чтобы рассказать вам об изменениях.\n
+Теперь RimWorld Access имеет версию 2.0.0 — первый релиз под новым руководством. Спасибо, что играете и помогаете сделать RimWorld доступным для слепых и слабовидящих игроков.\n
+Чтобы прочитать полный список изменений, выберите «Открыть список изменений» — он откроется на сайте.\n
+Вы можете открыть это сообщение снова в любое время через «Что нового» в главном меню или меню паузы. Если вы не хотите, чтобы эти сообщения появлялись сами по себе, выберите «Больше не показывать»; вы всё равно услышите краткое уведомление при обновлении мода.\n
+Когда закончите, нажмите Escape или выберите «Закрыть». Ещё раз спасибо, и приятной игры!</RimWorldAccess.WhatsNew.Message.2_0_0>
+  <RimWorldAccess.WhatsNew.Message.Default>RimWorld Access обновлён. Выберите «Открыть список изменений», чтобы прочитать об изменениях на сайте.</RimWorldAccess.WhatsNew.Message.Default>
+  <RimWorldAccess.WhatsNew.Button.NextAnnouncement>Перейти к следующему объявлению (осталось {0})</RimWorldAccess.WhatsNew.Button.NextAnnouncement>
+  <RimWorldAccess.WhatsNew.Button.MarkAllRead>Отметить все {0_numCase ? объявление : объявления : объявлений} как прочитанные</RimWorldAccess.WhatsNew.Button.MarkAllRead>
+  <RimWorldAccess.WhatsNew.Button.OpenChangelog>Открыть список изменений в браузере</RimWorldAccess.WhatsNew.Button.OpenChangelog>
+  <RimWorldAccess.WhatsNew.Button.Close>Закрыть</RimWorldAccess.WhatsNew.Button.Close>
+  <RimWorldAccess.WhatsNew.Button.DontShowAgain>Больше не показывать</RimWorldAccess.WhatsNew.Button.DontShowAgain>
+  <RimWorldAccess.WhatsNew.OpeningChangelog>Открывается список изменений в браузере.</RimWorldAccess.WhatsNew.OpeningChangelog>
+  <RimWorldAccess.WhatsNew.AllMarkedRead>Все объявления отмечены как прочитанные.</RimWorldAccess.WhatsNew.AllMarkedRead>
+  <RimWorldAccess.WhatsNew.Suppressed>Хорошо. В будущем при обновлениях будет выводиться только краткое уведомление. Включить эти сообщения снова можно в Настройках, RimWorld Access.</RimWorldAccess.WhatsNew.Suppressed>
+  <RimWorldAccess.WhatsNew.Closed>«Что нового» закрыто.</RimWorldAccess.WhatsNew.Closed>
+  <RimWorldAccess.WhatsNew.UpdateWhisper>RimWorld Access обновлён до версии {0}. Откройте «Что нового» из меню, чтобы прочитать об изменениях.</RimWorldAccess.WhatsNew.UpdateWhisper>
+  <RimWorldAccess.WhatsNew.MenuItem.WhatsNew>Что нового</RimWorldAccess.WhatsNew.MenuItem.WhatsNew>
+  <RimWorldAccess.WhatsNew.MenuItem.Website>Сайт RimWorld Access</RimWorldAccess.WhatsNew.MenuItem.Website>
+</LanguageData>

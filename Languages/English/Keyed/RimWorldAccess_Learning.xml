@@ -27,15 +27,10 @@
   <!-- Menu opening / Tab-toggle announcements.
        {0} = vanilla "LearningHelper" title.
        AllLessonsCount additionally takes {1} = total concept count. -->
-  <RimWorldAccess.Learning.OpeningNoActive>{0}. No active lessons. Press Tab to browse all lessons.</RimWorldAccess.Learning.OpeningNoActive>
-  <RimWorldAccess.Learning.AllLessonsCount>{0}. All lessons, {1} total</RimWorldAccess.Learning.AllLessonsCount>
-  <RimWorldAccess.Learning.ActiveLessons>{0}. Active lessons</RimWorldAccess.Learning.ActiveLessons>
 
   <!-- Empty-list announcements. NoActive is also spoken after returning to
        an empty list when leaving detail view. -->
   <RimWorldAccess.Learning.NoLessonsAvailable>No lessons available</RimWorldAccess.Learning.NoLessonsAvailable>
-  <RimWorldAccess.Learning.NoActive>No active lessons. Press Tab to browse all lessons.</RimWorldAccess.Learning.NoActive>
-  <RimWorldAccess.Learning.NoActiveRemaining>No active lessons remaining. Press Tab to browse all lessons.</RimWorldAccess.Learning.NoActiveRemaining>
 
   <!-- Button feedback.
        MarkLearnedConfirmation is spoken immediately after the "Mark as
@@ -48,14 +43,10 @@
        {0} = the user's current search buffer. Other menus use the generic
        RimWorldAccess.Search.ContextSuffix key; Learning uses this simpler
        form because its announcement does not yet include a match position. -->
-  <RimWorldAccess.Learning.SearchSuffix> Search: '{0}'</RimWorldAccess.Learning.SearchSuffix>
 
   <!-- TwoLevelMenuHelper boundary messages (Learning-scoped).
        Passed as the endOfItemMessage / startOfItemMessage / openFirstMessage
        arguments when the helper is constructed. -->
-  <RimWorldAccess.Learning.EndOfLesson>End of lesson</RimWorldAccess.Learning.EndOfLesson>
-  <RimWorldAccess.Learning.StartOfLesson>Start of lesson</RimWorldAccess.Learning.StartOfLesson>
-  <RimWorldAccess.Learning.OpenLessonFirst>Press Enter to open lesson first</RimWorldAccess.Learning.OpenLessonFirst>
 
   <!-- Fallback when a ConceptDef has no help text (should be rare - vanilla
        concepts always ship with HelpTextAdjusted). -->

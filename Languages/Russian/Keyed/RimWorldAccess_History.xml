@@ -30,6 +30,7 @@
        the History tab opens; it orients the user to Tab switching. -->
   <RimWorldAccess.History.Intro>История. Tab переключает между вкладками «Статистика» и «Сообщения».</RimWorldAccess.History.Intro>
   <RimWorldAccess.History.Closed>История закрыта</RimWorldAccess.History.Closed>
+  <RimWorldAccess.History.Tab.Graph>График</RimWorldAccess.History.Tab.Graph>
 
   <!-- Tab names and the "now on this tab" announcement (HistoryState).
        {0} = localized tab name. -->
@@ -44,13 +45,8 @@
   <RimWorldAccess.History.Unpinned>Откреплено</RimWorldAccess.History.Unpinned>
 
   <!-- Statistics tab (HistoryStatisticsState / HistoryHelper). None is
-       spoken when no statistics are available. NameValue composes a stat
-       name with its value ({0} = name, {1} = value); TooltipSuffix appends
-       an optional tooltip ({0} = tooltip) and owns its leading separator
-       because it is glued onto the end of NameValue. -->
+       spoken when no statistics are available. -->
   <RimWorldAccess.History.Statistics.None>Статистика недоступна</RimWorldAccess.History.Statistics.None>
-  <RimWorldAccess.History.Statistics.NameValue>{0}: {1}</RimWorldAccess.History.Statistics.NameValue>
-  <RimWorldAccess.History.Statistics.TooltipSuffix>. {0}</RimWorldAccess.History.Statistics.TooltipSuffix>
 
   <!-- Archive item type nouns (HistoryHelper.TypeLabel). Spoken as part of
        each row's announcement. -->
@@ -68,15 +64,24 @@
   <RimWorldAccess.History.Target.Position>позиция {0}, {1}</RimWorldAccess.History.Target.Position>
   <RimWorldAccess.History.Target.WorldLocation>местоположение в мире</RimWorldAccess.History.Target.WorldLocation>
   <RimWorldAccess.History.Target.Generic>целевое местоположение</RimWorldAccess.History.Target.Generic>
+  <RimWorldAccess.History.Graph.None>Нет данных графика</RimWorldAccess.History.Graph.None>
+  <RimWorldAccess.History.Graph.CurrentValue>Текущее значение: {0}</RimWorldAccess.History.Graph.CurrentValue>
+  <RimWorldAccess.History.Graph.MinMax>минимум {0}, максимум {1}</RimWorldAccess.History.Graph.MinMax>
+  <RimWorldAccess.History.Graph.NoDataInRange>Нет данных в этом диапазоне</RimWorldAccess.History.Graph.NoDataInRange>
+  <RimWorldAccess.History.Graph.TrendUp>растёт</RimWorldAccess.History.Graph.TrendUp>
+  <RimWorldAccess.History.Graph.TrendDown>снижается</RimWorldAccess.History.Graph.TrendDown>
+  <RimWorldAccess.History.Graph.TrendFlat>стабильно</RimWorldAccess.History.Graph.TrendFlat>
+  <RimWorldAccess.History.Graph.GroupSelected>Группа «{0}» выбрана</RimWorldAccess.History.Graph.GroupSelected>
+  <RimWorldAccess.History.Graph.GroupSelectedNone>Группа «{0}» выбрана. Нет данных графика</RimWorldAccess.History.Graph.GroupSelectedNone>
+  <RimWorldAccess.History.Graph.DetailHeader>{0}: {1}</RimWorldAccess.History.Graph.DetailHeader>
+  <RimWorldAccess.History.Graph.DaySingle>{0} {1}</RimWorldAccess.History.Graph.DaySingle>
+  <RimWorldAccess.History.Graph.DayRange>{0} {1} - {2}</RimWorldAccess.History.Graph.DayRange>
 
   <!-- Messages/archive tab (HistoryMessagesState). -->
 
-  <!-- Detail view (two-level menu) header and boundary messages.
+  <!-- Detail view (two-level menu) header.
        DetailHeader: {0} = type label, {1} = item label. -->
   <RimWorldAccess.History.Messages.DetailHeader>{0}: {1}</RimWorldAccess.History.Messages.DetailHeader>
-  <RimWorldAccess.History.Messages.EndOfMessage>Конец сообщения</RimWorldAccess.History.Messages.EndOfMessage>
-  <RimWorldAccess.History.Messages.StartOfMessage>Начало сообщения</RimWorldAccess.History.Messages.StartOfMessage>
-  <RimWorldAccess.History.Messages.OpenFirst>Нажмите Enter, чтобы сначала открыть сообщение</RimWorldAccess.History.Messages.OpenFirst>
 
   <!-- Hotkey orientation spoken on entering the tab, and the empty-list
        message that carries it. NoneWithHint: {0} = the hotkey hint. -->
@@ -94,7 +99,7 @@
        FilterStatusOne is used when exactly one item remains ({0} = status);
        FilterStatusMany otherwise ({0} = status, {1} = count). -->
   <RimWorldAccess.History.Messages.FilterStatusOne>{0}. 1 элемент.</RimWorldAccess.History.Messages.FilterStatusOne>
-  <RimWorldAccess.History.Messages.FilterStatusMany>{0}. {1} {1_numCase ? элемент : элемента : элементов}.</RimWorldAccess.History.Messages.FilterStatusMany>
+  <RimWorldAccess.History.Messages.FilterStatusMany>{0}. {1_numCase ? элемент : элемента : элементов}.</RimWorldAccess.History.Messages.FilterStatusMany>
 
   <!-- Detail-view action button labels (spoken when arrowing through
        buttons) and the failure announcement when an action throws. -->
@@ -102,13 +107,9 @@
   <RimWorldAccess.History.Button.JumpToLocation>Перейти к местоположению</RimWorldAccess.History.Button.JumpToLocation>
   <RimWorldAccess.History.Button.Pin>Закрепить</RimWorldAccess.History.Button.Pin>
   <RimWorldAccess.History.Button.Unpin>Открепить</RimWorldAccess.History.Button.Unpin>
-  <RimWorldAccess.History.FailedToActivateButton>Не удалось активировать кнопку</RimWorldAccess.History.FailedToActivateButton>
 
 
   <!-- Keyboard-mode visual overlay (src/History/HistoryPatch.cs). -->
   <RimWorldAccess.History.Overlay.KeyboardModeTab>Режим клавиатуры активен — вкладка «{0}»</RimWorldAccess.History.Overlay.KeyboardModeTab>
   <!-- Localization guardrail (D.8) sweep — previously hardcoded English. -->
-  <RimWorldAccess.History.Duration.DaysHoursMinutes>{0} {0_numCase ? день : дня : дней}, {1} {1_numCase ? час : часа : часов}, {2} {2_numCase ? минута : минуты : минут}</RimWorldAccess.History.Duration.DaysHoursMinutes>
-  <RimWorldAccess.History.Duration.HoursMinutes>{0} {0_numCase ? час : часа : часов}, {1} {1_numCase ? минута : минуты : минут}</RimWorldAccess.History.Duration.HoursMinutes>
-  <RimWorldAccess.History.Duration.Minutes>{0} {0_numCase ? минута : минуты : минут}</RimWorldAccess.History.Duration.Minutes>
 </LanguageData>

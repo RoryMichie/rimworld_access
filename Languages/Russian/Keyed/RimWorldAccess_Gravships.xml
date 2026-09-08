@@ -25,8 +25,8 @@
        {0} = total chemfuel available, {1} = max range in tiles. Launching is
        the active-flight path that ends with Enter; ViewRange is the preview
        path used from a pilot console without actually launching. -->
-  <RimWorldAccess.Gravships.Destination.OpenLaunching>Выбор пункта назначения гравикорабля. Доступно химтоплива: {0}. Макс. дальность: {1} {1_numCase ? клетка : клетки : клеток}. Используйте сканер для просмотра пунктов назначения, Enter для подтверждения, Escape для отмены.</RimWorldAccess.Gravships.Destination.OpenLaunching>
-  <RimWorldAccess.Gravships.Destination.OpenViewRange>Просмотр дальности гравикорабля. Доступно химтоплива: {0}. Макс. дальность: {1} {1_numCase ? клетка : клетки : клеток}. Используйте сканер для просмотра пунктов назначения, Escape для закрытия.</RimWorldAccess.Gravships.Destination.OpenViewRange>
+  <RimWorldAccess.Gravships.Destination.OpenLaunching>Выбор пункта назначения гравикорабля. Доступно химтоплива: {0}. Макс. дальность: {1_numCase ? клетка : клетки : клеток}. Используйте сканер для просмотра пунктов назначения, Enter для подтверждения, Escape для отмены.</RimWorldAccess.Gravships.Destination.OpenLaunching>
+  <RimWorldAccess.Gravships.Destination.OpenViewRange>Просмотр дальности гравикорабля. Доступно химтоплива: {0}. Макс. дальность: {1_numCase ? клетка : клетки : клеток}. Используйте сканер для просмотра пунктов назначения, Escape для закрытия.</RimWorldAccess.Gravships.Destination.OpenViewRange>
 
   <!-- Destination confirmation errors (GravshipDestinationState.ConfirmCurrentDestination). -->
   <RimWorldAccess.Gravships.Destination.CannotAccessCallbacks>Нет доступа к обработчикам выбора клетки</RimWorldAccess.Gravships.Destination.CannotAccessCallbacks>
@@ -39,7 +39,7 @@
   <!-- Fuel status summary (F key, GravshipDestinationState.AnnounceFuelStatus).
        {0} = current fuel, {1} = max fuel capacity, {2} = max range in tiles,
        {3} = fuel burned per tile of travel. -->
-  <RimWorldAccess.Gravships.Destination.FuelStatus>Топливо: {0} из {1} химтоплива. Макс. дальность: {2} {2_numCase ? клетка : клетки : клеток}. Топлива за клетку: {3}.</RimWorldAccess.Gravships.Destination.FuelStatus>
+  <RimWorldAccess.Gravships.Destination.FuelStatus>Топливо: {0} из {1} химтоплива. Макс. дальность: {2_numCase ? клетка : клетки : клеток}. Топлива за клетку: {3}.</RimWorldAccess.Gravships.Destination.FuelStatus>
 
   <!-- Per-tile fuel cost announcements (GravshipDestinationState.GetFuelCostAnnouncement).
        Spoken by WorldScannerState / WorldNavigationState as the user browses
@@ -61,7 +61,7 @@
        The "Requires: ..." suffix uses the vanilla Requires key plus a
        comma-joined list of component labels from the game. -->
   <RimWorldAccess.Gravships.Engine.ComponentsConnectedOne>{0} компонент подключён</RimWorldAccess.Gravships.Engine.ComponentsConnectedOne>
-  <RimWorldAccess.Gravships.Engine.ComponentsConnectedMany>{0} {0_numCase ? компонент подключён : компонента подключено : компонентов подключено}</RimWorldAccess.Gravships.Engine.ComponentsConnectedMany>
+  <RimWorldAccess.Gravships.Engine.ComponentsConnectedMany>{0_numCase ? компонент подключён : компонента подключено : компонентов подключено}</RimWorldAccess.Gravships.Engine.ComponentsConnectedMany>
 
   <!-- Engine launch readiness (GravshipHelper.GetLaunchReadiness).
        NotReadyMissing: prepended to a comma-joined list of missing-component

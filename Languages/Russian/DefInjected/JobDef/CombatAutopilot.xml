@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RWA_GotoCover.reportString>идёт в укрытие.</RWA_GotoCover.reportString>
+  <RWA_GotoEngage.reportString>идёт на сближение с противником.</RWA_GotoEngage.reportString>
+  <RWA_Retreat.reportString>отступает.</RWA_Retreat.reportString>
+  <RWA_ReturnToPost.reportString>возвращается на пост.</RWA_ReturnToPost.reportString>
+  <RWA_Patrol.reportString>патрулирует.</RWA_Patrol.reportString>
+</LanguageData>

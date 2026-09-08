@@ -1,38 +1,34 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using RimWorld.Planet;
-using UnityEngine;
 using Verse;
 using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Handles inspection when world objects are present at a tile.
-    /// Uses tree view pattern consistent with WindowlessInspectionState on local maps.
-    /// All objects at tile are shown as root nodes with their inspection details as children.
-    /// Uses TreeNavigationHelper for all standard navigation logic.
+    /// Data/lifecycle facade for world-tile object inspection (Enter on the world map at a tile
+    /// with more than one inspectable object). Owns ONLY the tree DATA — eligibility filter, sort
+    /// order, lazy child population, activation closures; navigation, typeahead and announcement
+    /// composition live on <see cref="RimWorldAccess.Shell.WorldObjectSelectionScope"/>.
     /// </summary>
     public static class WorldObjectSelectionState
     {
         public static bool IsActive { get; private set; } = false;
 
-        private static TreeNavigationHelper treeNav = new TreeNavigationHelper("WorldObjectInspect");
         private static PlanetTile currentTile;
 
-        static WorldObjectSelectionState()
-        {
-            treeNav.FormatItemAnnouncement = FormatItemAnnouncement;
-            treeNav.OnActivate = HandleActivate;
-            treeNav.OnBeforeExpand = HandleBeforeExpand;
-            treeNav.TrackLastChild = true;
-        }
+        /// <summary>
+        /// Stashed between <see cref="Open"/> and the scope's <c>OnPush</c> on the next dispatcher
+        /// pass, which consumes it via <see cref="BuildTreeRoot"/>. A mirror push never lands
+        /// same-frame as the state flip, so the multi-object list must be held in between.
+        /// </summary>
+        private static List<WorldObject> pendingWorldObjects;
 
         /// <summary>
-        /// Opens the world object inspection for the given tile.
-        /// If only one inspectable object exists, directly opens it.
+        /// Opens world object inspection for a tile, going straight to the object when only one
+        /// is inspectable.
         /// </summary>
         public static void Open(PlanetTile tile)
         {
@@ -44,7 +40,6 @@ namespace RimWorldAccess
 
             currentTile = tile;
 
-            // Get all world objects at this tile that can be inspected
             var worldObjects = Find.WorldObjects.ObjectsAt(tile)
                 .Where(obj => IsInspectable(obj))
                 .OrderBy(obj => GetObjectSortOrder(obj))
@@ -56,29 +51,21 @@ namespace RimWorldAccess
                 return;
             }
 
-            // If only one object, directly open appropriate inspector
             if (worldObjects.Count == 1)
             {
                 ActivateWorldObject(worldObjects[0]);
                 return;
             }
 
-            // Multiple objects - open tree view
+            // The scope's own OnPush builds the tree and speaks the TabOpen sound, the
+            // ObjectsAtTile count and the first-row announcement.
+            pendingWorldObjects = worldObjects;
             IsActive = true;
-
-            var root = BuildTree(worldObjects);
-            treeNav.Initialize(root);
-
-            SoundDefOf.TabOpen.PlayOneShotOnCamera();
-
-            // Announce opening
-            string announcement = "RimWorldAccess.WorldObject.ObjectsAtTile".Translate(worldObjects.Count);
-            TolkHelper.SpeakData(announcement);
-            treeNav.ReannounceCurrentItem();
         }
 
         /// <summary>
-        /// Closes the world object selection state.
+        /// Closes the state, from the scope's Escape router or from a tree row's Enter closure
+        /// before the camera jumps.
         /// </summary>
         public static void Close()
         {
@@ -86,13 +73,42 @@ namespace RimWorldAccess
                 return;
 
             IsActive = false;
-            treeNav.Reset();
             SoundDefOf.TabClose.PlayOneShotOnCamera();
         }
 
         /// <summary>
-        /// Builds the tree structure for world objects.
+        /// Silent session-boundary reset for StateResetRegistry: clears state with no sound and
+        /// no announcement, unlike <see cref="Close"/>.
         /// </summary>
+        public static void ResetHard()
+        {
+            IsActive = false;
+            pendingWorldObjects = null;
+        }
+
+        /// <summary>
+        /// Builds the tree root for the pending multi-object open. Called exactly once by
+        /// <see cref="RimWorldAccess.Shell.WorldObjectSelectionScope.OnPush"/> per open.
+        /// </summary>
+        public static InspectionTreeItem BuildTreeRoot()
+        {
+            List<WorldObject> worldObjects = pendingWorldObjects ?? new List<WorldObject>();
+            pendingWorldObjects = null;
+            return BuildTree(worldObjects);
+        }
+
+        /// <summary>
+        /// Lazy child population for an expandable object node, from the scope's
+        /// <c>OnBeforeExpandNode</c>.
+        /// </summary>
+        public static void BuildChildrenFor(InspectionTreeItem item)
+        {
+            if (item.Data is WorldObject obj && item.Children.Count == 0)
+            {
+                BuildWorldObjectChildren(item, obj);
+            }
+        }
+
         private static InspectionTreeItem BuildTree(List<WorldObject> worldObjects)
         {
             var root = new InspectionTreeItem
@@ -111,9 +127,6 @@ namespace RimWorldAccess
             return root;
         }
 
-        /// <summary>
-        /// Adds a world object node to the tree.
-        /// </summary>
         private static void AddWorldObjectNode(InspectionTreeItem parent, WorldObject obj)
         {
             string label = GetObjectLabel(obj);
@@ -142,7 +155,6 @@ namespace RimWorldAccess
 
             if (obj is Caravan caravan && caravan.Faction == Faction.OfPlayer)
             {
-                // Use CaravanInspectState's tree building for caravans
                 CaravanInspectState.BuildCaravanCategoriesFor(objectNode, caravan);
             }
             else if (obj is Settlement settlement)
@@ -159,19 +171,14 @@ namespace RimWorldAccess
             }
             else
             {
-                // Generic world object - show description
                 BuildGenericWorldObjectChildren(objectNode, obj);
             }
         }
 
-        /// <summary>
-        /// Builds children for a settlement.
-        /// </summary>
         private static void BuildSettlementChildren(InspectionTreeItem parent, Settlement settlement)
         {
             int depth = parent.IndentLevel + 1;
 
-            // Player settlement with map - can enter
             if (settlement.Faction == Faction.OfPlayer && settlement.HasMap)
             {
                 var enterNode = new InspectionTreeItem
@@ -191,12 +198,10 @@ namespace RimWorldAccess
                 parent.Children.Add(enterNode);
             }
 
-            // Faction info
             if (settlement.Faction != null)
             {
                 AddDetailNode(parent, depth, "RimWorldAccess.WorldObject.FactionLabel".Translate(settlement.Faction.Name));
 
-                // Relation if not player
                 if (settlement.Faction != Faction.OfPlayer)
                 {
                     FactionRelationKind relation = settlement.Faction.RelationKindWith(Faction.OfPlayer);
@@ -204,7 +209,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Trade availability for non-hostile settlements
             if (settlement.Faction != Faction.OfPlayer &&
                 settlement.Faction != null &&
                 !settlement.Faction.HostileTo(Faction.OfPlayer))
@@ -213,40 +217,30 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Builds children for a site.
-        /// </summary>
         private static void BuildSiteChildren(InspectionTreeItem parent, Site site)
         {
             int depth = parent.IndentLevel + 1;
 
-            // Site description
             string desc = site.GetDescription();
             if (!string.IsNullOrEmpty(desc))
             {
                 desc = desc.StripTags();
-                // Truncate long descriptions
                 if (desc.Length > 200)
                     desc = desc.Substring(0, 200) + "...";
 
                 AddDetailNode(parent, depth, desc);
             }
 
-            // Faction if present
             if (site.Faction != null)
             {
                 AddDetailNode(parent, depth, "RimWorldAccess.WorldObject.FactionLabel".Translate(site.Faction.Name));
             }
         }
 
-        /// <summary>
-        /// Builds children for a generic map parent.
-        /// </summary>
         private static void BuildMapParentChildren(InspectionTreeItem parent, MapParent mapParent)
         {
             int depth = parent.IndentLevel + 1;
 
-            // Can enter if has map
             if (mapParent.HasMap)
             {
                 var enterNode = new InspectionTreeItem
@@ -266,7 +260,6 @@ namespace RimWorldAccess
                 parent.Children.Add(enterNode);
             }
 
-            // Description
             string desc = mapParent.GetDescription();
             if (!string.IsNullOrEmpty(desc))
             {
@@ -278,9 +271,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Builds children for a generic world object.
-        /// </summary>
         private static void BuildGenericWorldObjectChildren(InspectionTreeItem parent, WorldObject obj)
         {
             int depth = parent.IndentLevel + 1;
@@ -297,9 +287,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Helper to add a detail text node.
-        /// </summary>
         private static void AddDetailNode(InspectionTreeItem parent, int depth, string label)
         {
             var node = new InspectionTreeItem
@@ -312,27 +299,20 @@ namespace RimWorldAccess
             parent.Children.Add(node);
         }
 
-        /// <summary>
-        /// Determines if a world object can be inspected.
-        /// </summary>
         private static bool IsInspectable(WorldObject obj)
         {
             if (obj == null)
                 return false;
 
-            // Player caravans
             if (obj is Caravan caravan && caravan.Faction == Faction.OfPlayer)
                 return true;
 
-            // Player settlements with maps (can enter)
             if (obj is Settlement settlement && settlement.Faction == Faction.OfPlayer && settlement.HasMap)
                 return true;
 
-            // Other faction settlements (for info)
             if (obj is Settlement otherSettlement && otherSettlement.Faction != Faction.OfPlayer)
                 return true;
 
-            // Sites, camps, etc.
             if (obj is Site || obj is MapParent)
                 return true;
 
@@ -340,31 +320,28 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets the sort order for object types.
-        /// Lower numbers appear first.
+        /// Sort rank for an object type; lower sorts first.
         /// </summary>
         private static int GetObjectSortOrder(WorldObject obj)
         {
-            // Player caravans first
             if (obj is Caravan c && c.Faction == Faction.OfPlayer)
                 return 0;
 
-            // Player settlements second
             if (obj is Settlement s && s.Faction == Faction.OfPlayer)
                 return 1;
 
-            // Other settlements third
             if (obj is Settlement)
                 return 2;
 
-            // Everything else
             return 3;
         }
 
         /// <summary>
-        /// Gets a descriptive label for a world object.
+        /// A descriptive label for a world object, shared with
+        /// <see cref="WorldSelectionAnnouncer"/> so keyboard and click announcements share one
+        /// grammar.
         /// </summary>
-        private static string GetObjectLabel(WorldObject obj)
+        internal static string GetObjectLabel(WorldObject obj)
         {
             if (obj is Caravan caravan)
             {
@@ -387,9 +364,6 @@ namespace RimWorldAccess
             return obj.Label;
         }
 
-        /// <summary>
-        /// Activates a world object directly (when only one at tile).
-        /// </summary>
         private static void ActivateWorldObject(WorldObject obj)
         {
             if (obj is Caravan caravan && caravan.Faction == Faction.OfPlayer)
@@ -398,125 +372,34 @@ namespace RimWorldAccess
             }
             else if (obj is Settlement settlement && settlement.Faction == Faction.OfPlayer && settlement.HasMap)
             {
-                // Enter player settlement
                 CameraJumper.TryJumpAndSelect(new GlobalTargetInfo(settlement.Map.Center, settlement.Map));
                 TolkHelper.Speak("RimWorldAccess.WorldObject.Entering".Loc(settlement.Label));
             }
             else if (obj is Settlement otherSettlement)
             {
-                // For other faction settlements, announce info
-                string info = "RimWorldAccess.WorldObject.SettlementAnnounce".Translate(otherSettlement.Label, otherSettlement.Faction?.Name ?? "RimWorldAccess.WorldObject.UnknownFaction".Translate().ToString());
+                // Two whole-phrase keys rather than one key plus a raw relation concatenation.
+                string factionName = otherSettlement.Faction?.Name ?? "RimWorldAccess.WorldObject.UnknownFaction".Translate().ToString();
+                string info;
                 if (otherSettlement.Faction != null)
                 {
                     FactionRelationKind relation = otherSettlement.Faction.RelationKindWith(Faction.OfPlayer);
-                    info += " " + relation.GetLabelCap() + ".";
+                    info = "RimWorldAccess.WorldObject.SettlementAnnounceWithRelation".Translate(otherSettlement.Label, factionName, relation.GetLabelCap()).ToString();
+                }
+                else
+                {
+                    info = "RimWorldAccess.WorldObject.SettlementAnnounce".Translate(otherSettlement.Label, factionName).ToString();
                 }
                 TolkHelper.SpeakData(info);
             }
             else
             {
-                // For other objects, just announce their label and description
-                string info = obj.Label;
-                if (!string.IsNullOrEmpty(obj.GetDescription()))
-                {
-                    info += ". " + obj.GetDescription().StripTags();
-                }
+                // A whole-phrase key rather than a raw label-plus-description concatenation.
+                string desc = obj.GetDescription();
+                string info = string.IsNullOrEmpty(desc)
+                    ? obj.Label
+                    : "RimWorldAccess.WorldObject.LabelWithDescription".Translate(obj.Label, desc.StripTags()).ToString();
                 TolkHelper.SpeakData(info);
             }
         }
-
-        #region Announcement Formatters
-
-        private static string FormatItemAnnouncement(InspectionTreeItem item)
-        {
-            string label = item.Label.StripTags();
-
-            // State indicator for expandable items
-            string stateIndicator = TreeNavigationHelper.FormatExpansionSpaceSuffix(item);
-
-            // Position among siblings
-            var (position, total) = treeNav.GetSiblingPosition(item);
-            string positionPart = MenuHelper.FormatPosition(position - 1, total);
-
-            // Level suffix
-            string levelSuffix = MenuHelper.GetLevelSuffix("WorldObjectInspect", item.IndentLevel);
-
-            string announcement = $"{label}{stateIndicator}. {positionPart}{levelSuffix}";
-            return announcement;
-        }
-
-        #endregion
-
-        #region Custom Action Handlers
-
-        private static bool HandleActivate(InspectionTreeItem item)
-        {
-            // For detail text or stat items, just read again
-            if (item.Type == InspectionTreeItem.ItemType.DetailText)
-            {
-                TolkHelper.SpeakData(item.Label);
-                return true;
-            }
-
-            // Item's own OnActivate is handled by TreeNavigationHelper
-            // Categories toggle expand/collapse via default behavior
-            if (item.IsExpandable)
-                return false;
-
-            if (item.OnActivate == null)
-            {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                TolkHelper.Speak("RimWorldAccess.WorldObject.NoActionAvailable".Loc());
-                return true;
-            }
-
-            return false; // Let TreeNavigationHelper call item.OnActivate
-        }
-
-        private static void HandleBeforeExpand(InspectionTreeItem item)
-        {
-            // Lazily build children for world objects
-            if (item.Data is WorldObject obj && item.Children.Count == 0)
-            {
-                BuildWorldObjectChildren(item, obj);
-            }
-        }
-
-        #endregion
-
-        #region Input Handling
-
-        /// <summary>
-        /// Handles keyboard input.
-        /// </summary>
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!IsActive)
-                return false;
-
-            Event ev = Event.current;
-            if (ev.type == EventType.KeyDown)
-            {
-                bool handled = treeNav.HandleInput(ev);
-                if (handled)
-                {
-                    ev.Use();
-                    return true;
-                }
-
-                // TreeNavigationHelper returns false for Escape with no active search
-                if (key == KeyCode.Escape)
-                {
-                    Close();
-                    TolkHelper.Speak("RimWorldAccess.WorldObject.SelectionClosed".Loc());
-                    ev.Use();
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        #endregion
     }
 }

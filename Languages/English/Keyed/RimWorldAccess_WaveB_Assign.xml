@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Wave B, package B5: AssignScope (src/Shell/Screens/AssignScope.Game.cs),
+    the real Dialog_AssignBuildingOwner driven by keyboard. Everything else the
+    dialog needs (button words, the ideoligion-forbidden label, the Close
+    button) reuses vanilla's own existing keys; these three are the only new
+    strings this package requires.
+  -->
+  <RimWorldAccess.UI.Assign.SlotsSummary>{0}. {1} of {2} assigned.</RimWorldAccess.UI.Assign.SlotsSummary>
+  <RimWorldAccess.UI.Assign.Assigned>{0} assigned.</RimWorldAccess.UI.Assign.Assigned>
+  <RimWorldAccess.UI.Assign.Unassigned>{0} unassigned.</RimWorldAccess.UI.Assign.Unassigned>
+</LanguageData>

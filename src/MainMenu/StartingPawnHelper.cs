@@ -23,21 +23,102 @@ namespace RimWorldAccess
         IncapableOf,
         Skills,
         Health,
-        Possessions
+        Possessions,
+        Abilities
     }
 
-    /// <summary>
-    /// Holds pawn-specific tree metadata stored in InspectionTreeItem.Data.
-    /// </summary>
+    /// <summary>How a Leaf row behaves when the cursor rests on it.</summary>
+    public enum PawnLeafKind
+    {
+        /// <summary>Read-only text; Enter just re-announces.</summary>
+        PlainText,
+        /// <summary>First/Nick/Last name field; Enter opens a TextFieldEditSession.</summary>
+        NameField,
+        /// <summary>Developmental-stage selector; Enter opens the vanilla FloatMenu picker (Adult/Child/Baby).</summary>
+        DevStageCombo,
+        /// <summary>Xenotype selector; Enter opens the vanilla FloatMenu picker.</summary>
+        XenotypeCombo,
+        /// <summary>A top-stack "chip" or relation row whose Enter opens a vanilla dialog/tab (a click-vehicle, not a value change).</summary>
+        InfoAction,
+    }
+
+    public enum NameFieldKind { First, Nick, Last }
+
+    /// <summary>Pawn-specific tree metadata stored in InspectionTreeItem.Data.</summary>
     public class PawnTreeData
     {
         public PawnNodeType NodeType { get; set; }
         public int PawnIndex { get; set; } = -1;
         public PawnCategoryType? CategoryType { get; set; }
-        /// <summary>
-        /// Domain-specific data (Pawn, Trait, SkillRecord, Hediff, ThingDefCount, XenotypeDef, WorkTags, etc.)
-        /// </summary>
+        /// <summary>Domain data: Pawn, Trait, SkillRecord, Hediff, ThingDefCount, XenotypeDef, WorkTags.</summary>
         public object DomainData { get; set; }
+
+        /// <summary>Leaf shape; PlainText by default.</summary>
+        public PawnLeafKind LeafKind { get; set; } = PawnLeafKind.PlainText;
+
+        /// <summary>Which name part this leaf edits; set only for LeafKind.NameField.</summary>
+        public NameFieldKind? NameField { get; set; }
+
+        /// <summary>Enter's action for an InfoAction leaf, or null when Enter should just re-announce.</summary>
+        public Action Activate { get; set; }
+
+        /// <summary>Enter's handler for a Combo leaf: opens the vanilla FloatMenu picker.</summary>
+        public Action OpenComboPicker { get; set; }
+
+        /// <summary>The current value for a NameField/Combo leaf, spoken as the row's Value; Label is only the caption for those two kinds.</summary>
+        public string ValueText { get; set; }
+
+        /// <summary>
+        /// True for the placeholder leaf a category builder adds when its collection is empty.
+        /// CollapseIfEmpty reads this rather than comparing the label against "None".Translate(),
+        /// since a category can hold one real item whose label reads "None" in some language.
+        /// </summary>
+        public bool IsEmptyPlaceholder { get; set; }
+
+        /// <summary>Identity of a mod-contributed category (<see cref="StartingPawnHelper.RegisterCategoryExtender"/>), which has no <see cref="CategoryType"/>.</summary>
+        public string ExtensionKey { get; set; }
+
+        /// <summary>
+        /// Pawn and category rows are identified by (node type, pawn index, category) rather than by
+        /// reference, so a state-preserving rebuild still recognizes them. Their labels cannot carry
+        /// that identity: a pawn's is its live summary and a category's can carry the pawn's name or
+        /// a folded-in "None", so a randomize or rename would orphan the cursor and every expanded
+        /// branch under it. Group headers and leaves deliberately keep reference equality — they
+        /// share one tuple each, so value equality would let the preserver land on an arbitrary
+        /// sibling instead of falling back to their own stable labels.
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            var other = obj as PawnTreeData;
+            if (other == null || !HasStableIdentity || !other.HasStableIdentity)
+            {
+                return ReferenceEquals(this, obj);
+            }
+            return NodeType == other.NodeType
+                && PawnIndex == other.PawnIndex
+                && CategoryType == other.CategoryType
+                && ExtensionKey == other.ExtensionKey;
+        }
+
+        public override int GetHashCode()
+        {
+            if (!HasStableIdentity)
+            {
+                return base.GetHashCode();
+            }
+            unchecked
+            {
+                int hash = (int)NodeType;
+                hash = (hash * 397) + PawnIndex;
+                hash = (hash * 397) + (CategoryType.HasValue ? (int)CategoryType.Value + 1 : 0);
+                return (hash * 397) + (ExtensionKey != null ? ExtensionKey.GetHashCode() : 0);
+            }
+        }
+
+        private bool HasStableIdentity
+        {
+            get { return NodeType == PawnNodeType.Pawn || NodeType == PawnNodeType.Category; }
+        }
     }
 
     public struct TreePosition
@@ -58,11 +139,14 @@ namespace RimWorldAccess
 
     public static class StartingPawnHelper
     {
-        /// <summary>
-        /// Builds the pawn tree as InspectionTreeItem nodes under a hidden root.
-        /// The root is hidden (SkipRootInVisibleList = true in TreeNavigationHelper).
-        /// </summary>
-        public static InspectionTreeItem BuildTree()
+        /// <summary>Builds the pawn tree as InspectionTreeItem nodes under a hidden root.</summary>
+        /// <param name="jumpToRelatedPawn">Wired into every Relations leaf's Activate; the owning ScreenScope supplies the cursor repositioning.</param>
+        /// <param name="onMutated">
+        /// Wired into the combo leaves' picker callbacks. REFRESH-ONLY by contract: each picker
+        /// option already speaks its own confirmation, so announcing here would double-speak.
+        /// </param>
+        /// </param>
+        public static InspectionTreeItem BuildTree(Action<Pawn> jumpToRelatedPawn, Action onMutated)
         {
             var pawns = Find.GameInitData.startingAndOptionalPawns;
             int startingCount = Find.GameInitData.startingPawnCount;
@@ -81,36 +165,61 @@ namespace RimWorldAccess
             {
                 for (int i = 0; i < pawns.Count; i++)
                 {
-                    var pawnNode = BuildPawnNode(pawns[i], i, root);
+                    var pawnNode = BuildPawnNode(pawns[i], i, root, jumpToRelatedPawn, onMutated);
                     root.Children.Add(pawnNode);
                 }
                 return root;
             }
 
-            // Game-start mode: pawns tagged with section name (Selected / Left Behind).
-            // Sections are announced on crossing (like Dialog_InfoCard) rather than
-            // occupying their own navigation row.
-            string selectedSection = "StartingPawnsSelected".Translate();
-            string leftBehindSection = "StartingPawnsLeftBehind".Translate();
-
+            // Selected / Left behind mirror the two header rows
+            // Page_ConfigureStartingPawns.DrawPawnList draws: Selected always, Left behind exactly
+            // when the loop reaches startingPawnCount. The boundary is a display grouping over one
+            // flat roster, not a constraint — vanilla's reorder delegate moves pawns across it.
+            var selectedGroup = MakeGroupNode("StartingPawnsSelected".Translate(), root);
+            root.Children.Add(selectedGroup);
             for (int i = 0; i < startingCount && i < pawns.Count; i++)
             {
-                var pawnNode = BuildPawnNode(pawns[i], i, root);
-                pawnNode.Description = selectedSection;
-                root.Children.Add(pawnNode);
+                selectedGroup.Children.Add(BuildPawnNode(pawns[i], i, selectedGroup, jumpToRelatedPawn, onMutated));
             }
 
-            for (int i = startingCount; i < pawns.Count; i++)
+            if (startingCount < pawns.Count)
             {
-                var pawnNode = BuildPawnNode(pawns[i], i, root);
-                pawnNode.Description = leftBehindSection;
-                root.Children.Add(pawnNode);
+                var leftBehindGroup = MakeGroupNode("StartingPawnsLeftBehind".Translate(), root);
+                root.Children.Add(leftBehindGroup);
+                for (int i = startingCount; i < pawns.Count; i++)
+                {
+                    leftBehindGroup.Children.Add(BuildPawnNode(pawns[i], i, leftBehindGroup, jumpToRelatedPawn, onMutated));
+                }
             }
 
             return root;
         }
 
-        private static InspectionTreeItem BuildPawnNode(Pawn pawn, int index, InspectionTreeItem parent)
+        /// <summary>
+        /// A top-level Selected / Left behind group, open by default. Group identity across a
+        /// state-preserving rebuild rides the LABEL path segment rather than Data, which is safe
+        /// because both labels are fixed vanilla strings.
+        /// </summary>
+        private static InspectionTreeItem MakeGroupNode(string label, InspectionTreeItem parent)
+        {
+            return new InspectionTreeItem
+            {
+                Label = label,
+                IndentLevel = 0,
+                Type = InspectionTreeItem.ItemType.Category,
+                IsExpandable = true,
+                IsExpanded = true,
+                Parent = parent,
+                Data = new PawnTreeData
+                {
+                    NodeType = PawnNodeType.GroupHeader,
+                    PawnIndex = -1
+                }
+            };
+        }
+
+        private static InspectionTreeItem BuildPawnNode(Pawn pawn, int index, InspectionTreeItem parent,
+            Action<Pawn> jumpToRelatedPawn, Action onMutated)
         {
             string nick = pawn.Name is NameTriple nameTriple
                 ? (string.IsNullOrEmpty(nameTriple.Nick) ? nameTriple.First : nameTriple.Nick)
@@ -137,11 +246,12 @@ namespace RimWorldAccess
                 }
             };
 
-            BuildPawnCategories(pawn, index, pawnNode);
+            BuildPawnCategories(pawn, index, pawnNode, jumpToRelatedPawn, onMutated);
             return pawnNode;
         }
 
-        private static void BuildPawnCategories(Pawn pawn, int pawnIndex, InspectionTreeItem pawnNode)
+        private static void BuildPawnCategories(Pawn pawn, int pawnIndex, InspectionTreeItem pawnNode,
+            Action<Pawn> jumpToRelatedPawn, Action onMutated)
         {
             pawnNode.Children.Clear();
 
@@ -160,7 +270,7 @@ namespace RimWorldAccess
                     PawnIndex = pawnIndex
                 }
             };
-            BuildBioItems(pawn, pawnIndex, bioNode);
+            BuildBioItems(pawn, pawnIndex, bioNode, onMutated);
             pawnNode.Children.Add(bioNode);
 
             // Relations (parity with the vanilla character card's Relations panel)
@@ -178,7 +288,7 @@ namespace RimWorldAccess
                     PawnIndex = pawnIndex
                 }
             };
-            BuildRelationsItems(pawn, pawnIndex, relationsNode);
+            BuildRelationsItems(pawn, pawnIndex, relationsNode, jumpToRelatedPawn);
             CollapseIfEmpty(relationsNode);
             pawnNode.Children.Add(relationsNode);
 
@@ -275,24 +385,114 @@ namespace RimWorldAccess
             BuildPossessionItems(pawn, pawnIndex, possessionsNode);
             CollapseIfEmpty(possessionsNode);
             pawnNode.Children.Add(possessionsNode);
+
+            // Abilities (showOnCharacterCard abilities, CharacterCardUtility.cs:1249-1284)
+            var abilitiesNode = new InspectionTreeItem
+            {
+                Label = "Abilities".Translate(pawn).ToString(),
+                IndentLevel = 2,
+                Type = InspectionTreeItem.ItemType.Category,
+                IsExpandable = true,
+                Parent = pawnNode,
+                Data = new PawnTreeData
+                {
+                    NodeType = PawnNodeType.Category,
+                    CategoryType = PawnCategoryType.Abilities,
+                    PawnIndex = pawnIndex
+                }
+            };
+            BuildAbilityItems(pawn, abilitiesNode);
+            CollapseIfEmpty(abilitiesNode);
+            pawnNode.Children.Add(abilitiesNode);
+
+            for (int i = 0; i < categoryExtenders.Count; i++)
+            {
+                try
+                {
+                    categoryExtenders[i](pawn, pawnIndex, pawnNode);
+                }
+                catch (Exception ex)
+                {
+                    ModLogger.Error("Starting pawn category extender failed: " + ex.Message);
+                }
+            }
         }
 
-        /// <summary>
-        /// If a category has only a single "None" child, make it non-expandable
-        /// and fold "none" into the category label.
-        /// </summary>
+        /// <summary>A mod-compat builder appending its own category under each starting pawn, after the vanilla ones.</summary>
+        public delegate void CategoryExtender(Pawn pawn, int pawnIndex, InspectionTreeItem pawnNode);
+
+        private static readonly List<CategoryExtender> categoryExtenders = new List<CategoryExtender>();
+
+        public static void RegisterCategoryExtender(CategoryExtender extender)
+        {
+            if (extender != null && !categoryExtenders.Contains(extender))
+                categoryExtenders.Add(extender);
+        }
+
+        /// <summary>An extender's category node, identified by <paramref name="key"/> so a state-preserving rebuild recognizes it.</summary>
+        public static InspectionTreeItem AddExtensionCategory(InspectionTreeItem pawnNode, string key, string label, int pawnIndex)
+        {
+            var node = new InspectionTreeItem
+            {
+                Label = label,
+                IndentLevel = 2,
+                Type = InspectionTreeItem.ItemType.Category,
+                IsExpandable = true,
+                Parent = pawnNode,
+                Data = new PawnTreeData
+                {
+                    NodeType = PawnNodeType.Category,
+                    PawnIndex = pawnIndex,
+                    ExtensionKey = key,
+                }
+            };
+            pawnNode.Children.Add(node);
+            return node;
+        }
+
+        /// <summary>Read-only text, or a button when <paramref name="activate"/> is given; a label provider keeps it live.</summary>
+        public static InspectionTreeItem AddExtensionLeaf(InspectionTreeItem categoryNode, string label, int pawnIndex,
+            Action activate = null, Func<string> labelProvider = null, string tooltip = null)
+        {
+            var ptd = categoryNode.Data as PawnTreeData;
+            var leaf = new InspectionTreeItem
+            {
+                Label = label,
+                LabelProvider = labelProvider,
+                Tooltip = tooltip,
+                IndentLevel = categoryNode.IndentLevel + 1,
+                Type = InspectionTreeItem.ItemType.Item,
+                Parent = categoryNode,
+                Data = new PawnTreeData
+                {
+                    NodeType = PawnNodeType.Leaf,
+                    PawnIndex = pawnIndex,
+                    ExtensionKey = ptd != null ? ptd.ExtensionKey : null,
+                    LeafKind = activate != null ? PawnLeafKind.InfoAction : PawnLeafKind.PlainText,
+                    Activate = activate,
+                }
+            };
+            categoryNode.Children.Add(leaf);
+            return leaf;
+        }
+
+        /// <summary>Makes a category with only a "None" child non-expandable, folding "none" into its label.</summary>
         private static void CollapseIfEmpty(InspectionTreeItem categoryNode)
         {
             if (categoryNode.Children.Count == 1
-                && categoryNode.Children[0].Label == "None".Translate())
+                && (categoryNode.Children[0].Data as PawnTreeData)?.IsEmptyPlaceholder == true)
             {
                 categoryNode.IsExpandable = false;
-                categoryNode.Label += ": " + "None".Translate();
+                categoryNode.Label += ": " + categoryNode.Children[0].Label;
                 categoryNode.Children.Clear();
             }
         }
 
-        private static InspectionTreeItem MakeLeaf(string label, int indentLevel, PawnCategoryType category, int pawnIndex, InspectionTreeItem parent, string tooltip = null, object domainData = null)
+        private static InspectionTreeItem MakeLeaf(string label, int indentLevel, PawnCategoryType category, int pawnIndex, InspectionTreeItem parent,
+            string tooltip = null, object domainData = null,
+            PawnLeafKind leafKind = PawnLeafKind.PlainText, Action activate = null,
+            NameFieldKind? nameField = null, Action openComboPicker = null,
+            string valueText = null, bool isEmptyPlaceholder = false)
         {
             return new InspectionTreeItem
             {
@@ -306,20 +506,201 @@ namespace RimWorldAccess
                     NodeType = PawnNodeType.Leaf,
                     CategoryType = category,
                     PawnIndex = pawnIndex,
-                    DomainData = domainData
+                    DomainData = domainData,
+                    LeafKind = leafKind,
+                    Activate = activate,
+                    NameField = nameField,
+                    OpenComboPicker = openComboPicker,
+                    ValueText = valueText,
+                    IsEmptyPlaceholder = isEmptyPlaceholder,
                 }
             };
         }
 
-        private static void BuildBioItems(Pawn pawn, int pawnIndex, InspectionTreeItem bioNode)
+        private static void BuildBioItems(Pawn pawn, int pawnIndex, InspectionTreeItem bioNode, Action onMutated)
         {
             bioNode.Children.Clear();
 
-            // Gender and age
+            // Specs harvested from CharacterCardUtility: First 12, Nick 16, Last 12, ValidNameRegex
+            // "^[\p{L}0-9 '\-.]*$". Only meaningful for a NameTriple pawn; other names are covered
+            // by the read-only main-desc leaf below.
+            if (pawn.Name is NameTriple currentName)
+            {
+                bioNode.Children.Add(MakeLeaf(
+                    "RimWorldAccess.StartingPawn.FirstName".Translate(),
+                    3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                    tooltip: (string)"FirstNameDesc".Translate(),
+                    leafKind: PawnLeafKind.NameField, nameField: NameFieldKind.First,
+                    valueText: currentName.First));
+                bioNode.Children.Add(MakeLeaf(
+                    "RimWorldAccess.StartingPawn.NickName".Translate(),
+                    3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                    tooltip: (string)"ShortIdentifierDesc".Translate(),
+                    leafKind: PawnLeafKind.NameField, nameField: NameFieldKind.Nick,
+                    valueText: currentName.Nick));
+                bioNode.Children.Add(MakeLeaf(
+                    "RimWorldAccess.StartingPawn.LastName".Translate(),
+                    3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                    tooltip: (string)"LastNameDesc".Translate(),
+                    leafKind: PawnLeafKind.NameField, nameField: NameFieldKind.Last,
+                    valueText: currentName.Last));
+            }
+
+            // Gender is folded in textually by MainDesc, so the Biotech gender-icon chip carries
+            // nothing extra and gets no leaf of its own.
             string genderAge = pawn.MainDesc(writeFaction: false);
             bioNode.Children.Add(MakeLeaf(
                 genderAge.CapitalizeFirst(), 3, PawnCategoryType.Bio, pawnIndex, bioNode,
                 tooltip: pawn.ageTracker?.AgeTooltipString));
+
+            // Enter opens the same vanilla FloatMenu picker the context menu builds; Left/Right
+            // change nothing, since a combo box is a dropdown, not a slider.
+            if (ModsConfig.BiotechActive)
+            {
+                bioNode.Children.Add(MakeLeaf(
+                    "RimWorldAccess.StartingPawn.DevStageSelector".Translate(),
+                    3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                    tooltip: (string)"DevelopmentalAgeSelectionDesc".Translate(),
+                    leafKind: PawnLeafKind.DevStageCombo,
+                    openComboPicker: () => PawnContextMenuBuilder.OpenDevStagePicker(pawnIndex, onMutated),
+                    valueText: pawn.DevelopmentalStage.ToString().Translate().CapitalizeFirst()));
+
+                bioNode.Children.Add(MakeLeaf(
+                    "RimWorldAccess.StartingPawn.XenotypeSelector".Translate(),
+                    3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                    tooltip: (string)"XenotypeSelectionDesc".Translate(),
+                    leafKind: PawnLeafKind.XenotypeCombo,
+                    openComboPicker: () => PawnContextMenuBuilder.OpenXenotypePicker(pawnIndex, onMutated),
+                    valueText: pawn.genes != null ? pawn.genes.XenotypeLabelCap : (string)"Xenotype".Translate()));
+            }
+
+            // The top-stack "Xenotype" chip: click opens Dialog_ViewGenes in creation mode.
+            if (ModsConfig.BiotechActive && pawn.genes != null && pawn.genes.GenesListForReading.Any())
+            {
+                string xenotypeLabel = pawn.genes.XenotypeLabelCap;
+                string xenotypeDesc = pawn.genes.XenotypeDescShort;
+                bioNode.Children.Add(MakeLeaf(
+                    "Xenotype".Translate() + ": " + xenotypeLabel,
+                    3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                    tooltip: xenotypeDesc, domainData: pawn.genes?.Xenotype,
+                    leafKind: PawnLeafKind.InfoAction,
+                    activate: () => Find.WindowStack.Add(new Dialog_ViewGenes(pawn))));
+            }
+
+            // Faction chip: click opens Dialog_FactionDuringLanding in creation mode.
+            if (pawn.Faction != null && !pawn.Faction.Hidden)
+            {
+                bioNode.Children.Add(MakeLeaf(
+                    "Faction".Translate() + ": " + pawn.Faction.Name,
+                    3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                    leafKind: PawnLeafKind.InfoAction,
+                    activate: () => Find.WindowStack.Add(new Dialog_FactionDuringLanding())));
+            }
+
+            // Extra-faction chips: quest-part/guest-status sourced, effectively never populated
+            // pre-game, kept for parity and mod compat.
+            var extraFactions = new List<ExtraFaction>();
+            QuestUtility.GetExtraFactionsFromQuestParts(pawn, extraFactions);
+            GuestUtility.GetExtraFactionsFromGuestStatus(pawn, extraFactions);
+            foreach (var extra in extraFactions)
+            {
+                if (pawn.Faction == extra.faction) continue;
+                string label = "RimWorldAccess.StartingPawn.ExtraFactionLabel".Translate(
+                    extra.factionType.GetLabel().CapitalizeFirst(), extra.faction.Name);
+                // Vanilla's click opens the Factions main tab, which does not exist during
+                // creation: it gave the MAIN faction chip a creation-mode branch but not these, so
+                // the click is a silent no-op for sighted players too. The chip is a real button,
+                // so speak the reason rather than staying silent.
+                bioNode.Children.Add(MakeLeaf(
+                    label, 3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                    leafKind: PawnLeafKind.InfoAction,
+                    activate: () => TolkHelper.Speak("RimWorldAccess.StartingPawn.ChipFactionsTabLater".Loc())));
+            }
+
+            // Ideoligion plate (Ideology, non-classic, has ideo): informational, no click in vanilla.
+            if (ModsConfig.IdeologyActive && !Find.IdeoManager.classicMode && pawn.Ideo != null)
+            {
+                bioNode.Children.Add(MakeLeaf(
+                    pawn.Ideo.name,
+                    3, PawnCategoryType.Bio, pawnIndex, bioNode));
+
+                // Vanilla's click opens ITab_Pawn_Social, which does not exist during creation, so
+                // it is a silent no-op for sighted players too. A real button regardless, so speak
+                // the reason rather than staying silent.
+                var role = pawn.Ideo.GetRole(pawn);
+                if (role != null)
+                {
+                    bioNode.Children.Add(MakeLeaf(
+                        role.LabelForPawn(pawn),
+                        3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                        tooltip: role.GetTip(),
+                        leafKind: PawnLeafKind.InfoAction,
+                        activate: () => TolkHelper.Speak("RimWorldAccess.StartingPawn.ChipSocialTabLater".Loc())));
+                }
+            }
+
+            // Royal title chips, per title in effect: click opens Dialog_InfoCard.
+            if (pawn.royalty != null && pawn.royalty.AllTitlesInEffectForReading.Count > 0)
+            {
+                foreach (var title in pawn.royalty.AllTitlesInEffectForReading)
+                {
+                    RoyalTitle localTitle = title;
+                    int favor = pawn.royalty.GetFavor(localTitle.faction);
+                    string titleLabel = localTitle.def.GetLabelCapFor(pawn) + " (" + favor + ")";
+                    string tip = GetTitleTipString(pawn, localTitle.faction, localTitle, favor);
+                    bioNode.Children.Add(MakeLeaf(
+                        titleLabel, 3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                        tooltip: tip,
+                        leafKind: PawnLeafKind.InfoAction,
+                        activate: () => Find.WindowStack.Add(new Dialog_InfoCard(localTitle.def, localTitle.faction, pawn))));
+                }
+            }
+
+            // Favorite color
+            if (pawn.story?.favoriteColor != null)
+            {
+                string orIdeoColor = string.Empty;
+                if (pawn.Ideo != null && !pawn.Ideo.classicMode)
+                {
+                    orIdeoColor = "OrIdeoColor".Translate(pawn.Named("PAWN"));
+                }
+                string colorLabel = "FavoriteColorTooltip".Translate(
+                    pawn.Named("PAWN"),
+                    pawn.story.favoriteColor.label.Named("COLOR"),
+                    0.6f.ToStringPercent().Named("PERCENTAGE"),
+                    orIdeoColor.Named("ORIDEO")
+                ).Resolve();
+                bioNode.Children.Add(MakeLeaf(
+                    colorLabel, 3, PawnCategoryType.Bio, pawnIndex, bioNode));
+            }
+
+            // Unrecruitable icon: effectively never populated pre-game, kept for parity.
+            if (pawn.guest != null && !pawn.guest.Recruitable)
+            {
+                bioNode.Children.Add(MakeLeaf(
+                    "Unrecruitable".Translate().AsTipTitle().CapitalizeFirst(),
+                    3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                    tooltip: (string)"UnrecruitableDesc".Translate(pawn.Named("PAWN"))));
+            }
+
+            // Quest line chips: click opens the Quests tab and selects the quest. Effectively never
+            // populated pre-game, kept for parity.
+            int questCount;
+            var questLines = new List<(string Text, Quest Quest)>();
+            QuestUtility.AppendInspectStringsFromQuestParts(
+                (text, quest) => questLines.Add((text, quest)), pawn, out questCount);
+            foreach (var (text, quest) in questLines)
+            {
+                Quest localQuest = quest;
+                bioNode.Children.Add(MakeLeaf(
+                    text, 3, PawnCategoryType.Bio, pawnIndex, bioNode,
+                    leafKind: PawnLeafKind.InfoAction,
+                    activate: () =>
+                    {
+                        Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Quests);
+                        (MainButtonDefOf.Quests.TabWindow as MainTabWindow_Quests)?.Select(localQuest);
+                    }));
+            }
 
             // Childhood backstory
             if (pawn.story != null)
@@ -351,102 +732,68 @@ namespace RimWorldAccess
                         3, PawnCategoryType.Bio, pawnIndex, bioNode));
                 }
             }
+        }
 
-            // Xenotype (Biotech)
-            if (ModsConfig.BiotechActive && pawn.genes != null && pawn.genes.GenesListForReading.Any())
+        /// <summary>Reflects CharacterCardUtility's private GetTitleTipString — a pure read, no mutation-doctrine concern.</summary>
+        private static string GetTitleTipString(Pawn pawn, Faction faction, RoyalTitle title, int favor)
+        {
+            try
             {
-                string xenotypeLabel = pawn.genes.XenotypeLabelCap;
-                string xenotypeDesc = pawn.genes.XenotypeDescShort;
-                bioNode.Children.Add(MakeLeaf(
-                    "Xenotype".Translate() + ": " + xenotypeLabel,
-                    3, PawnCategoryType.Bio, pawnIndex, bioNode,
-                    tooltip: xenotypeDesc, domainData: pawn.genes?.Xenotype));
+                var method = HarmonyLib.AccessTools.Method(typeof(CharacterCardUtility), "GetTitleTipString");
+                return (string)method.Invoke(null, new object[] { pawn, faction, title, favor });
             }
-
-            // Faction
-            if (pawn.Faction != null && !pawn.Faction.Hidden)
+            catch
             {
-                bioNode.Children.Add(MakeLeaf(
-                    "Faction".Translate() + ": " + pawn.Faction.Name,
-                    3, PawnCategoryType.Bio, pawnIndex, bioNode));
-            }
-
-            // Ideology
-            if (ModsConfig.IdeologyActive && !Find.IdeoManager.classicMode && pawn.Ideo != null)
-            {
-                bioNode.Children.Add(MakeLeaf(
-                    pawn.Ideo.name,
-                    3, PawnCategoryType.Bio, pawnIndex, bioNode));
-
-                // Role
-                var role = pawn.Ideo.GetRole(pawn);
-                if (role != null)
-                {
-                    bioNode.Children.Add(MakeLeaf(
-                        role.LabelForPawn(pawn),
-                        3, PawnCategoryType.Bio, pawnIndex, bioNode,
-                        tooltip: role.GetTip()));
-                }
-            }
-
-            // Favorite color
-            if (pawn.story?.favoriteColor != null)
-            {
-                string orIdeoColor = string.Empty;
-                if (pawn.Ideo != null && !pawn.Ideo.classicMode)
-                {
-                    orIdeoColor = "OrIdeoColor".Translate(pawn.Named("PAWN"));
-                }
-                string colorLabel = "FavoriteColorTooltip".Translate(
-                    pawn.Named("PAWN"),
-                    pawn.story.favoriteColor.label.Named("COLOR"),
-                    0.6f.ToStringPercent().Named("PERCENTAGE"),
-                    orIdeoColor.Named("ORIDEO")
-                ).Resolve();
-                bioNode.Children.Add(MakeLeaf(
-                    colorLabel, 3, PawnCategoryType.Bio, pawnIndex, bioNode));
+                return title.def.GetLabelCapFor(pawn);
             }
         }
 
         /// <summary>
-        /// Builds the per-pawn Relations items, mirroring the vanilla character card's Relations
-        /// panel. A relation is shown only if the other pawn has been "seen by player"
-        /// (everSeenByPlayer) and neither pawn hides relations — exactly the game's
-        /// SocialCardUtility.ShouldShowPawnRelations rule. During character creation every starting
-        /// and optional pawn is flagged everSeenByPlayer, so this resolves to relations between
-        /// pawns in the current roster. Each leaf stores the related pawn so Enter can jump to it.
+        /// The per-pawn Relations items, mirroring the vanilla character card's Relations panel. A
+        /// relation shows only when the other pawn is everSeenByPlayer and neither pawn hides
+        /// relations, exactly SocialCardUtility.ShouldShowPawnRelations' rule; during creation every
+        /// starting and optional pawn is flagged, so this resolves to the current roster.
         /// </summary>
-        private static void BuildRelationsItems(Pawn pawn, int pawnIndex, InspectionTreeItem relationsNode)
+        private static void BuildRelationsItems(Pawn pawn, int pawnIndex, InspectionTreeItem relationsNode, Action<Pawn> jumpToRelatedPawn)
         {
             relationsNode.Children.Clear();
 
+            // Ordering mirrors SocialCardUtility's private CachedSocialTabEntryComparer, which
+            // cannot be invoked directly: related first, then PawnRelationDef.importance
+            // descending, then opinion of the other pawn descending.
             var relations = SocialTabHelper.GetRelations(pawn)
                 .Where(r => r.OtherPawn?.relations != null
                             && r.OtherPawn.relations.everSeenByPlayer
                             && !r.OtherPawn.relations.hidePawnRelations
                             && !pawn.relations.hidePawnRelations)
-                // Defined family/love relations first, then most-liked first — approximates the
-                // vanilla social card's ordering.
-                .OrderByDescending(r => pawn.GetRelations(r.OtherPawn).Any())
-                .ThenByDescending(r => r.MyOpinion)
+                .Select(r => new { Relation = r, RelationDefs = pawn.GetRelations(r.OtherPawn).ToList() })
+                .OrderByDescending(x => x.RelationDefs.Count > 0)
+                .ThenByDescending(x => x.RelationDefs.Count > 0 ? x.RelationDefs.Max(d => d.importance) : float.MinValue)
+                .ThenByDescending(x => x.Relation.MyOpinion)
+                .Select(x => x.Relation)
                 .ToList();
 
             if (relations.Count == 0)
             {
                 relationsNode.Children.Add(MakeLeaf(
-                    "None".Translate(), 3, PawnCategoryType.Relations, pawnIndex, relationsNode));
+                    "None".Translate(), 3, PawnCategoryType.Relations, pawnIndex, relationsNode,
+                    isEmptyPlaceholder: true));
                 return;
             }
 
             foreach (var r in relations)
             {
                 string label = $"{r.OtherPawnName}, {string.Join(", ", r.Relations)}";
-                // Opinions live in the tooltip so the collapsed category summary stays concise;
-                // they are read aloud when the cursor lands on the relation (faithful parity).
-                string tooltip = $"My opinion {r.MyOpinion:+0;-0;0}, their opinion {r.TheirOpinion:+0;-0;0}";
+                // Opinions live in the tooltip so the collapsed summary stays concise, and are read
+                // when the cursor lands on the relation. Reuses SocialTabHelper's own opinion keys.
+                string tooltip = "RimWorldAccess.Pawns.Social.Relation.MyOpinion".Translate(r.MyOpinion.ToString("+0;-0;0"))
+                    + ". " + "RimWorldAccess.Pawns.Social.Relation.TheirOpinion".Translate(r.TheirOpinion.ToString("+0;-0;0"));
+                Pawn other = r.OtherPawn;
                 relationsNode.Children.Add(MakeLeaf(
                     label, 3, PawnCategoryType.Relations, pawnIndex, relationsNode,
-                    tooltip: tooltip, domainData: r.OtherPawn));
+                    tooltip: tooltip, domainData: other,
+                    leafKind: PawnLeafKind.InfoAction,
+                    activate: jumpToRelatedPawn == null ? (Action)null : () => jumpToRelatedPawn(other)));
             }
         }
 
@@ -461,7 +808,8 @@ namespace RimWorldAccess
                     ? "TraitsDevelopLaterBaby".Translate()
                     : "None".Translate();
                 traitsNode.Children.Add(MakeLeaf(
-                    noTraitsLabel, 3, PawnCategoryType.Traits, ptd.PawnIndex, traitsNode));
+                    noTraitsLabel, 3, PawnCategoryType.Traits, ptd.PawnIndex, traitsNode,
+                    isEmptyPlaceholder: true));
                 return;
             }
 
@@ -486,7 +834,8 @@ namespace RimWorldAccess
             if (disabledTags == WorkTags.None)
             {
                 incapableNode.Children.Add(MakeLeaf(
-                    "None".Translate(), 3, PawnCategoryType.IncapableOf, ptd.PawnIndex, incapableNode));
+                    "None".Translate(), 3, PawnCategoryType.IncapableOf, ptd.PawnIndex, incapableNode,
+                    isEmptyPlaceholder: true));
                 return;
             }
 
@@ -515,85 +864,86 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Returns a short single-line cause for why a work tag is disabled,
-        /// e.g. "Childhood: Pacifist" or "Trait: Bloodlust".
+        /// Reflects CharacterCardUtility's private GetWorkTypeDisableCauses — the cause list the
+        /// character card's IncapableOf tooltip reads — and formats each cause as vanilla's own
+        /// GetWorkTypeDisabledCausedBy does, reusing its Translate keys, so the DLC-only royal
+        /// title, quest, ideoligion role and mutant causes a hand-rolled subset would drop are
+        /// covered. Falls back to the Backstory/Trait/Hediff/Gene subset only if the private method
+        /// cannot be found.
         /// </summary>
-        private static string GetFirstDisableCause(Pawn pawn, WorkTags workTag)
-        {
-            if (pawn.story?.Childhood != null && (pawn.story.Childhood.workDisables & workTag) != WorkTags.None)
-                return "Childhood".Translate() + ": " + pawn.story.Childhood.TitleFor(pawn.gender).CapitalizeFirst();
-            if (pawn.story?.Adulthood != null && (pawn.story.Adulthood.workDisables & workTag) != WorkTags.None)
-                return "Adulthood".Translate() + ": " + pawn.story.Adulthood.TitleFor(pawn.gender).CapitalizeFirst();
-            if (pawn.story?.traits != null)
-            {
-                foreach (var trait in pawn.story.traits.allTraits)
-                {
-                    if (!trait.Suppressed && (trait.def.disabledWorkTags & workTag) != WorkTags.None)
-                        return "Trait".Translate() + ": " + trait.LabelCap;
-                }
-            }
-            if (pawn.health?.hediffSet != null)
-            {
-                foreach (var hediff in pawn.health.hediffSet.hediffs)
-                {
-                    var stage = hediff.CurStage;
-                    if (stage != null && (stage.disabledWorkTags & workTag) != WorkTags.None)
-                        return hediff.LabelCap;
-                }
-            }
-            if (ModsConfig.BiotechActive && pawn.genes != null)
-            {
-                foreach (var gene in pawn.genes.GenesListForReading)
-                {
-                    if (gene.Active && (gene.def.disabledWorkTags & workTag) != WorkTags.None)
-                        return gene.LabelCap;
-                }
-            }
-            return null;
-        }
-
         private static string GetWorkTypeDisabledCausedBy(Pawn pawn, WorkTags workTag)
         {
             var sb = new StringBuilder();
-
-            // Check backstories
-            if (pawn.story?.Childhood != null && (pawn.story.Childhood.workDisables & workTag) != WorkTags.None)
-                sb.AppendLine("IncapableOfTooltipBackstory".Translate() + ": " + pawn.story.Childhood.TitleFor(pawn.gender).CapitalizeFirst());
-            if (pawn.story?.Adulthood != null && (pawn.story.Adulthood.workDisables & workTag) != WorkTags.None)
-                sb.AppendLine("IncapableOfTooltipBackstory".Translate() + ": " + pawn.story.Adulthood.TitleFor(pawn.gender).CapitalizeFirst());
-
-            // Check traits
-            if (pawn.story?.traits != null)
+            List<object> causes = null;
+            try
             {
-                foreach (var trait in pawn.story.traits.allTraits)
+                var method = HarmonyLib.AccessTools.Method(typeof(CharacterCardUtility), "GetWorkTypeDisableCauses");
+                causes = method?.Invoke(null, new object[] { pawn, workTag }) as List<object>;
+            }
+            catch
+            {
+                causes = null;
+            }
+
+            if (causes != null)
+            {
+                foreach (var item in causes)
                 {
-                    if (!trait.Suppressed && (trait.def.disabledWorkTags & workTag) != WorkTags.None)
+                    if (item is BackstoryDef backstoryDef)
+                        sb.AppendLine("IncapableOfTooltipBackstory".Translate() + ": " + backstoryDef.TitleFor(pawn.gender).CapitalizeFirst());
+                    else if (item is Trait trait)
                         sb.AppendLine("IncapableOfTooltipTrait".Translate() + ": " + trait.LabelCap);
-                }
-            }
-
-            // Check hediffs
-            if (pawn.health?.hediffSet != null)
-            {
-                foreach (var hediff in pawn.health.hediffSet.hediffs)
-                {
-                    var stage = hediff.CurStage;
-                    if (stage != null && (stage.disabledWorkTags & workTag) != WorkTags.None)
+                    else if (item is Hediff hediff)
                         sb.AppendLine("IncapableOfTooltipHediff".Translate() + ": " + hediff.LabelCap);
-                }
-            }
-
-            // Check genes (Biotech)
-            if (ModsConfig.BiotechActive && pawn.genes != null)
-            {
-                foreach (var gene in pawn.genes.GenesListForReading)
-                {
-                    if (gene.Active && (gene.def.disabledWorkTags & workTag) != WorkTags.None)
+                    else if (item is RoyalTitle royalTitle)
+                        sb.AppendLine("IncapableOfTooltipTitle".Translate() + ": " + royalTitle.def.GetLabelFor(pawn));
+                    else if (item is Quest quest)
+                        sb.AppendLine("IncapableOfTooltipQuest".Translate() + ": " + quest.name);
+                    else if (item is Precept_Role preceptRole)
+                        sb.AppendLine("IncapableOfTooltipRole".Translate() + ": " + preceptRole.LabelForPawn(pawn));
+                    else if (item is Gene gene)
                         sb.AppendLine("IncapableOfTooltipGene".Translate() + ": " + gene.LabelCap);
+                    else if (item is MutantDef mutantDef)
+                        sb.AppendLine("IncapableOfTooltipMutant".Translate() + ": " + mutantDef.LabelCap);
+                }
+            }
+            else
+            {
+                // Fallback subset if the private method is missing.
+                if (pawn.story?.Childhood != null && (pawn.story.Childhood.workDisables & workTag) != WorkTags.None)
+                    sb.AppendLine("IncapableOfTooltipBackstory".Translate() + ": " + pawn.story.Childhood.TitleFor(pawn.gender).CapitalizeFirst());
+                if (pawn.story?.Adulthood != null && (pawn.story.Adulthood.workDisables & workTag) != WorkTags.None)
+                    sb.AppendLine("IncapableOfTooltipBackstory".Translate() + ": " + pawn.story.Adulthood.TitleFor(pawn.gender).CapitalizeFirst());
+
+                if (pawn.story?.traits != null)
+                {
+                    foreach (var trait in pawn.story.traits.allTraits)
+                    {
+                        if (!trait.Suppressed && (trait.def.disabledWorkTags & workTag) != WorkTags.None)
+                            sb.AppendLine("IncapableOfTooltipTrait".Translate() + ": " + trait.LabelCap);
+                    }
+                }
+
+                if (pawn.health?.hediffSet != null)
+                {
+                    foreach (var hediff in pawn.health.hediffSet.hediffs)
+                    {
+                        var stage = hediff.CurStage;
+                        if (stage != null && (stage.disabledWorkTags & workTag) != WorkTags.None)
+                            sb.AppendLine("IncapableOfTooltipHediff".Translate() + ": " + hediff.LabelCap);
+                    }
+                }
+
+                if (ModsConfig.BiotechActive && pawn.genes != null)
+                {
+                    foreach (var gene in pawn.genes.GenesListForReading)
+                    {
+                        if (gene.Active && (gene.def.disabledWorkTags & workTag) != WorkTags.None)
+                            sb.AppendLine("IncapableOfTooltipGene".Translate() + ": " + gene.LabelCap);
+                    }
                 }
             }
 
-            // Add affected work types
             sb.AppendLine();
             sb.AppendLine("IncapableOfTooltipWorkTypes".Translate());
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefs)
@@ -617,7 +967,7 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Use game's fixed display order (listOrder descending)
+            // The game's own display order (listOrder descending).
             var skills = pawn.skills?.skills?
                 .OrderByDescending(s => s.def.listOrder)
                 .ToList();
@@ -642,7 +992,169 @@ namespace RimWorldAccess
             }
         }
 
-        private static string GetPassionLabel(Passion passion)
+        private static void BuildHealthItems(Pawn pawn, InspectionTreeItem healthNode)
+        {
+            healthNode.Children.Clear();
+            var ptd = (PawnTreeData)healthNode.Data;
+
+            if (pawn.health?.hediffSet == null)
+                return;
+
+            var hediffs = pawn.health.hediffSet.hediffs;
+            if (hediffs == null || hediffs.Count == 0)
+            {
+                healthNode.Children.Add(MakeLeaf(
+                    "None".Translate(), 3, PawnCategoryType.Health, ptd.PawnIndex, healthNode,
+                    isEmptyPlaceholder: true));
+                return;
+            }
+
+            foreach (var hediff in hediffs)
+            {
+                string label = hediff.LabelCap;
+                if (hediff.Part != null)
+                    label += " (" + hediff.Part.Label + ")";
+
+                // Inline the full hediff info so no info card is needed.
+                string mechanical = null;
+                string tipExtra = hediff.TipStringExtra;
+                if (!string.IsNullOrWhiteSpace(tipExtra))
+                {
+                    // Collapse newlines to ", " so the text reads as one sentence rather than
+                    // reaching the screen reader with stray line breaks.
+                    mechanical = tipExtra
+                        .Replace("\r\n", "\n")
+                        .Replace("\r", "\n")
+                        .Trim()
+                        .Replace("\n", ", ");
+                    if (string.IsNullOrWhiteSpace(mechanical)) mechanical = null;
+                }
+
+                string description = hediff.def?.description?.Trim();
+
+                string tooltip;
+                if (!string.IsNullOrEmpty(mechanical) && !string.IsNullOrEmpty(description))
+                {
+                    char last = mechanical[mechanical.Length - 1];
+                    string sep = (last == '.' || last == '!' || last == '?') ? " " : ". ";
+                    tooltip = mechanical + sep + description;
+                }
+                else
+                    tooltip = mechanical ?? description;
+
+                healthNode.Children.Add(MakeLeaf(
+                    label, 3, PawnCategoryType.Health, ptd.PawnIndex, healthNode,
+                    tooltip: tooltip, domainData: hediff));
+            }
+
+            // Bleeding-rate footer, mirroring HealthCardUtility.DrawHediffListing.
+            float bleedRate = pawn.health.hediffSet.BleedRateTotal;
+            if (bleedRate > 0.01f)
+            {
+                string footer = "BleedingRate".Translate() + ": " + bleedRate.ToStringPercent() + "/" + "LetterDay".Translate();
+                int ticksUntilDeath = HealthUtility.TicksUntilDeathDueToBloodLoss(pawn);
+                if (ModsConfig.BiotechActive && pawn.genes != null && pawn.genes.HasActiveGene(GeneDefOf.Deathless))
+                {
+                    footer += " (" + "Deathless".Translate() + ")";
+                }
+                else if (ticksUntilDeath >= 60000)
+                {
+                    footer += " (" + "WontBleedOutSoon".Translate() + ")";
+                }
+                else
+                {
+                    footer += " (" + "TimeToDeath".Translate(ticksUntilDeath.ToStringTicksToPeriod()) + ")";
+                }
+                healthNode.Children.Add(MakeLeaf(
+                    footer, 3, PawnCategoryType.Health, ptd.PawnIndex, healthNode));
+            }
+        }
+
+        private static void BuildPossessionItems(Pawn pawn, int pawnIndex, InspectionTreeItem possessionsNode)
+        {
+            possessionsNode.Children.Clear();
+
+            var possessions = Find.GameInitData?.startingPossessions;
+            if (possessions == null || !possessions.TryGetValue(pawn, out var items) || items.Count == 0)
+            {
+                possessionsNode.Children.Add(MakeLeaf(
+                    "None".Translate(), 3, PawnCategoryType.Possessions, pawnIndex, possessionsNode,
+                    isEmptyPlaceholder: true));
+                return;
+            }
+
+            foreach (var item in items)
+            {
+                // Vanilla's own row label, not a hand-built "name xN": DrawPossessions draws
+                // ThingDefCount.LabelCap, which runs the count through GenLabel.ThingLabel and so
+                // localizes and pluralizes it.
+                string label = item.LabelCap;
+
+                string tooltip = item.ThingDef.LabelCap + "\n" + item.ThingDef.description;
+
+                possessionsNode.Children.Add(MakeLeaf(
+                    label, 3, PawnCategoryType.Possessions, pawnIndex, possessionsNode,
+                    tooltip: tooltip, domainData: item));
+            }
+        }
+
+        /// <summary>Abilities category (CharacterCardUtility.cs:1249-1284).</summary>
+        private static void BuildAbilityItems(Pawn pawn, InspectionTreeItem abilitiesNode)
+        {
+            abilitiesNode.Children.Clear();
+            var ptd = (PawnTreeData)abilitiesNode.Data;
+
+            var abilities = pawn.abilities?.abilities?
+                .Where(a => a.def.showOnCharacterCard)
+                .ToList();
+
+            if (abilities == null || abilities.Count == 0)
+            {
+                abilitiesNode.Children.Add(MakeLeaf(
+                    "None".Translate(), 3, PawnCategoryType.Abilities, ptd.PawnIndex, abilitiesNode,
+                    isEmptyPlaceholder: true));
+                return;
+            }
+
+            foreach (var ability in abilities)
+            {
+                string tooltip = ability.Tooltip;
+                abilitiesNode.Children.Add(MakeLeaf(
+                    ability.def.LabelCap, 3, PawnCategoryType.Abilities, ptd.PawnIndex, abilitiesNode,
+                    tooltip: tooltip, domainData: ability.def));
+            }
+        }
+
+        public static Pawn GetPawnAtIndex(int pawnIndex)
+        {
+            var pawns = Find.GameInitData?.startingAndOptionalPawns;
+            if (pawns == null || pawnIndex < 0 || pawnIndex >= pawns.Count)
+                return null;
+            return pawns[pawnIndex];
+        }
+
+        public static int GetPawnCount()
+        {
+            return Find.GameInitData?.startingAndOptionalPawns?.Count ?? 0;
+        }
+
+        public static int GetStartingPawnCount()
+        {
+            return Find.GameInitData?.startingPawnCount ?? 0;
+        }
+
+        /// <summary>The PawnTreeData on an item, or null.</summary>
+        public static PawnTreeData GetPawnData(InspectionTreeItem item)
+        {
+            return item?.Data as PawnTreeData;
+        }
+
+        // ------------------------------------------------------------------
+        // Label formatting: pure string builders, consumed by the tree construction above and by
+        // StartingPawnScreenScope's collapsed-row Extras fragment.
+        // ------------------------------------------------------------------
+
+        public static string GetPassionLabel(Passion passion)
         {
             switch (passion)
             {
@@ -656,16 +1168,15 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Builds the verbose collapsed-state label for a pawn node: name/title, age,
-        /// gender, traits, and top 5 non-disabled skills with passion levels.
-        /// Read aloud whenever the cursor lands on a collapsed pawn (including
-        /// after a reroll rebuilds the tree); the short form is used when expanded.
+        /// The collapsed-state SUPPLEMENT for a pawn node: age, gender, traits, and the top five
+        /// non-disabled skills with passions — everything BEYOND the short name/title label, which
+        /// the row speaks separately and this never repeats.
         /// </summary>
         public static string BuildCollapsedPawnLabel(Pawn pawn, string shortLabel)
         {
-            if (pawn == null) return shortLabel ?? "";
+            if (pawn == null) return "";
 
-            var parts = new List<string> { shortLabel };
+            var parts = new List<string>();
 
             parts.Add($"{"Stat_Age_Label".Translate()}: {pawn.ageTracker.AgeBiologicalYears}");
 
@@ -706,7 +1217,7 @@ namespace RimWorldAccess
             return string.Join(". ", parts);
         }
 
-        private static string BuildSkillTooltip(Pawn pawn, SkillRecord skill)
+        public static string BuildSkillTooltip(Pawn pawn, SkillRecord skill)
         {
             var sb = new StringBuilder();
             sb.Append(skill.def.description);
@@ -719,275 +1230,7 @@ namespace RimWorldAccess
             return sb.ToString().TrimEnd();
         }
 
-        private static void BuildHealthItems(Pawn pawn, InspectionTreeItem healthNode)
-        {
-            healthNode.Children.Clear();
-            var ptd = (PawnTreeData)healthNode.Data;
-
-            if (pawn.health?.hediffSet == null)
-                return;
-
-            var hediffs = pawn.health.hediffSet.hediffs;
-            if (hediffs == null || hediffs.Count == 0)
-            {
-                healthNode.Children.Add(MakeLeaf(
-                    "None".Translate(), 3, PawnCategoryType.Health, ptd.PawnIndex, healthNode));
-                return;
-            }
-
-            foreach (var hediff in hediffs)
-            {
-                string label = hediff.LabelCap;
-                if (hediff.Part != null)
-                    label += " (" + hediff.Part.Label + ")";
-
-                // Inline the full hediff info: mechanical effects + def description
-                // (so screen-reader users don't need to open an info card)
-                string mechanical = null;
-                string tipExtra = hediff.TipStringExtra;
-                if (!string.IsNullOrWhiteSpace(tipExtra))
-                {
-                    // Normalize line endings, trim outer whitespace, then collapse
-                    // remaining newlines to ", " separators so the text reads as
-                    // one sentence without stray line breaks reaching the screen reader.
-                    mechanical = tipExtra
-                        .Replace("\r\n", "\n")
-                        .Replace("\r", "\n")
-                        .Trim()
-                        .Replace("\n", ", ");
-                    if (string.IsNullOrWhiteSpace(mechanical)) mechanical = null;
-                }
-
-                string description = hediff.def?.description?.Trim();
-
-                string tooltip;
-                if (!string.IsNullOrEmpty(mechanical) && !string.IsNullOrEmpty(description))
-                {
-                    char last = mechanical[mechanical.Length - 1];
-                    string sep = (last == '.' || last == '!' || last == '?') ? " " : ". ";
-                    tooltip = mechanical + sep + description;
-                }
-                else
-                    tooltip = mechanical ?? description;
-
-                healthNode.Children.Add(MakeLeaf(
-                    label, 3, PawnCategoryType.Health, ptd.PawnIndex, healthNode,
-                    tooltip: tooltip, domainData: hediff));
-            }
-        }
-
-        private static void BuildPossessionItems(Pawn pawn, int pawnIndex, InspectionTreeItem possessionsNode)
-        {
-            possessionsNode.Children.Clear();
-
-            var possessions = Find.GameInitData?.startingPossessions;
-            if (possessions == null || !possessions.TryGetValue(pawn, out var items) || items.Count == 0)
-            {
-                possessionsNode.Children.Add(MakeLeaf(
-                    "None".Translate(), 3, PawnCategoryType.Possessions, pawnIndex, possessionsNode));
-                return;
-            }
-
-            foreach (var item in items)
-            {
-                string label = item.Count > 1
-                    ? $"{item.ThingDef.LabelCap} x{item.Count}"
-                    : (string)item.ThingDef.LabelCap;
-
-                string tooltip = item.ThingDef.LabelCap + "\n" + item.ThingDef.description;
-
-                possessionsNode.Children.Add(MakeLeaf(
-                    label, 3, PawnCategoryType.Possessions, pawnIndex, possessionsNode,
-                    tooltip: tooltip, domainData: item));
-            }
-        }
-
-        public static List<FloatMenuOption> GetContextMenuOptions(int pawnIndex, Action rebuildCallback)
-        {
-            var options = new List<FloatMenuOption>();
-            var pawns = Find.GameInitData.startingAndOptionalPawns;
-            if (pawnIndex < 0 || pawnIndex >= pawns.Count) return options;
-
-            var pawn = pawns[pawnIndex];
-
-            // Randomize (Alt+R)
-            var randomizeOption = new FloatMenuOption("Randomize".Translate(), () =>
-            {
-                StartingPawnState.RandomizePawnAt(pawnIndex);
-            });
-            randomizeOption.tooltip = new TipSignal("Alt+R");
-            options.Add(randomizeOption);
-
-            // Rename (Alt+N)
-            var renameOption = new FloatMenuOption("Rename".Translate(), () =>
-            {
-                StartingPawnState.RenamePawnAt(pawnIndex);
-            });
-            renameOption.tooltip = new TipSignal("Alt+N");
-            options.Add(renameOption);
-
-            // Edit pawn filter (Alt+F)
-            var filterOption = new FloatMenuOption("RimWorldAccess.StartingPawn.EditPawnFilter".Translate().ToString(), () =>
-            {
-                PawnFilterState.Open();
-            });
-            filterOption.tooltip = new TipSignal("Alt+F");
-            options.Add(filterOption);
-
-            // Wanderer mode: Add/Remove pawn options
-            if (StartingPawnState.Context == PawnEditorContext.Wanderer)
-            {
-                if (pawns.Count < 6)
-                {
-                    var addOption = new FloatMenuOption("RimWorldAccess.StartingPawn.AddPawn".Translate().ToString(), () =>
-                    {
-                        WandererPatch.AddPawn();
-                        rebuildCallback?.Invoke();
-                    });
-                    addOption.tooltip = new TipSignal("Alt+A");
-                    options.Add(addOption);
-                }
-                if (pawns.Count > 1)
-                {
-                    var removeOption = new FloatMenuOption("RimWorldAccess.StartingPawn.RemovePawn".Translate().ToString(), () =>
-                    {
-                        WandererPatch.RemovePawn(pawnIndex);
-                        rebuildCallback?.Invoke();
-                    });
-                    removeOption.tooltip = new TipSignal("Delete");
-                    options.Add(removeOption);
-                }
-            }
-
-            // Biotech: Developmental stage and xenotype selectors
-            if (ModsConfig.BiotechActive)
-            {
-                string devStageLabel = pawn.DevelopmentalStage.ToString().Translate().CapitalizeFirst();
-                var devStageOption = new FloatMenuOption(devStageLabel + "...", () =>
-                {
-                    var stageOptions = BuildDevStageOptions(pawnIndex, rebuildCallback);
-                    WindowlessFloatMenuState.Open(stageOptions, colonistOrders: false);
-                });
-                devStageOption.tooltip = new TipSignal("DevelopmentalAgeSelectionDesc".Translate());
-                options.Add(devStageOption);
-
-                string xenoLabel = pawn.genes != null ? pawn.genes.XenotypeLabelCap : (string)"Xenotype".Translate();
-                var xenoOption = new FloatMenuOption("Xenotype".Translate() + ": " + xenoLabel + "...", () =>
-                {
-                    var xenoOptions = BuildXenotypeOptions(pawnIndex, rebuildCallback, out var xenoDefs);
-                    WindowlessFloatMenuState.Open(xenoOptions, colonistOrders: false, infoCardDefs: xenoDefs);
-                });
-                xenoOption.tooltip = new TipSignal("XenotypeSelectionDesc".Translate());
-                options.Add(xenoOption);
-            }
-
-            return options;
-        }
-
-        private static List<FloatMenuOption> BuildDevStageOptions(int pawnIndex, Action rebuildCallback)
-        {
-            var options = new List<FloatMenuOption>();
-            var request = StartingPawnUtility.GetGenerationRequest(pawnIndex);
-
-            var stages = new[]
-            {
-                DevelopmentalStage.Adult,
-                DevelopmentalStage.Child,
-                DevelopmentalStage.Baby
-            };
-
-            string selectedSuffix = " (" + "StartingPawnsSelected".Translate().ToLower() + ")";
-
-            foreach (var stage in stages)
-            {
-                var localStage = stage;
-                bool isCurrent = request.AllowedDevelopmentalStages.Has(localStage);
-                string label = localStage.ToString().Translate().CapitalizeFirst();
-
-                if (isCurrent)
-                {
-                    label += selectedSuffix;
-                    options.Add(new FloatMenuOption(label, () => { }));
-                }
-                else
-                {
-                    options.Add(new FloatMenuOption(label, () =>
-                    {
-                        var req = StartingPawnUtility.GetGenerationRequest(pawnIndex);
-                        req.AllowedDevelopmentalStages = localStage;
-                        StartingPawnUtility.SetGenerationRequest(pawnIndex, req);
-                        StartingPawnUtility.RandomizePawn(pawnIndex);
-                        TolkHelper.Speak("RimWorldAccess.StartingPawn.LabelRandomize".Loc(localStage.ToString().Translate().CapitalizeFirst(), "Randomize".Translate()));
-                        rebuildCallback?.Invoke();
-                    }));
-                }
-            }
-
-            return options;
-        }
-
-        private static List<FloatMenuOption> BuildXenotypeOptions(int pawnIndex, Action rebuildCallback, out List<Def> infoCardDefs)
-        {
-            var options = new List<FloatMenuOption>();
-            infoCardDefs = new List<Def>();
-
-            // "Any (non-archite)" -- no info card
-            options.Add(new FloatMenuOption("AnyNonArchite".Translate(), () =>
-            {
-                var req = StartingPawnUtility.GetGenerationRequest(pawnIndex);
-                req.ForcedXenotype = null;
-                req.ForcedCustomXenotype = null;
-                req.AllowedXenotypes = null;
-                req.ForceBaselinerChance = 0.5f;
-                StartingPawnUtility.SetGenerationRequest(pawnIndex, req);
-                StartingPawnUtility.RandomizePawn(pawnIndex);
-                TolkHelper.Speak("RimWorldAccess.StartingPawn.LabelRandomize".Loc("AnyNonArchite".Translate(), "Randomize".Translate()));
-                rebuildCallback?.Invoke();
-            }));
-            infoCardDefs.Add(null);
-
-            // Xenotype editor option (opens Dialog_CreateXenotype for full gene editing)
-            options.Add(new FloatMenuOption("XenotypeEditor".Translate() + "...", () =>
-            {
-                Find.WindowStack.Add(new Dialog_CreateXenotype(pawnIndex, () =>
-                {
-                    CharacterCardUtility.cachedCustomXenotypes = null;
-                    StartingPawnUtility.RandomizePawn(pawnIndex);
-                    rebuildCallback?.Invoke();
-                }));
-            }));
-            infoCardDefs.Add(null);
-
-            // Standard xenotypes
-            foreach (var xenotype in DefDatabase<XenotypeDef>.AllDefs.OrderBy(x => x.displayPriority))
-            {
-                var localXeno = xenotype;
-                var xenoOption = new FloatMenuOption(localXeno.LabelCap, () =>
-                {
-                    var req = StartingPawnUtility.GetGenerationRequest(pawnIndex);
-                    req.ForcedXenotype = localXeno;
-                    req.ForcedCustomXenotype = null;
-                    req.AllowedXenotypes = null;
-                    req.ForceBaselinerChance = 0f;
-                    StartingPawnUtility.SetGenerationRequest(pawnIndex, req);
-                    StartingPawnUtility.RandomizePawn(pawnIndex);
-                    TolkHelper.Speak("RimWorldAccess.StartingPawn.LabelRandomize".Loc(localXeno.LabelCap, "Randomize".Translate()));
-                    rebuildCallback?.Invoke();
-                });
-                string desc = localXeno.descriptionShort ?? localXeno.description;
-                if (!string.IsNullOrEmpty(desc))
-                    xenoOption.tooltip = new TipSignal(desc);
-                options.Add(xenoOption);
-                infoCardDefs.Add(localXeno);
-            }
-
-            return options;
-        }
-
-        /// <summary>
-        /// Builds a summary string for a category node when collapsed.
-        /// Returns null if no summary is appropriate (e.g. Skills).
-        /// </summary>
+        /// <summary>A collapsed category node's summary, or null where none is appropriate (Skills).</summary>
         public static string GetCategorySummary(InspectionTreeItem categoryNode)
         {
             var ptd = categoryNode.Data as PawnTreeData;
@@ -997,46 +1240,15 @@ namespace RimWorldAccess
             switch (ptd.CategoryType.Value)
             {
                 case PawnCategoryType.Bio:
-                    // Summarize key bio fields: first child is gender/age, then backstories
-                    var bioParts = new List<string>();
-                    for (int i = 0; i < categoryNode.Children.Count; i++)
-                    {
-                        string childLabel = categoryNode.Children[i].Label;
-                        // Strip chronological age parenthetical from gender/age (first child)
-                        // "Male, age 47 (117)" -> "Male, age 47"
-                        if (i == 0)
-                        {
-                            int parenIdx = childLabel.LastIndexOf(" (");
-                            if (parenIdx > 0 && childLabel.EndsWith(")"))
-                                childLabel = childLabel.Substring(0, parenIdx);
-                        }
-                        bioParts.Add(childLabel);
-                    }
-                    return string.Join(", ", bioParts);
+                    return BuildBioSummary(categoryNode);
 
+                // These all summarize identically: join every child's label with ", ".
                 case PawnCategoryType.Relations:
-                    var relNames = new List<string>();
-                    foreach (var child in categoryNode.Children)
-                        relNames.Add(child.Label);
-                    return string.Join(", ", relNames);
-
                 case PawnCategoryType.Traits:
-                    var traitNames = new List<string>();
-                    foreach (var child in categoryNode.Children)
-                        traitNames.Add(child.Label);
-                    return string.Join(", ", traitNames);
-
                 case PawnCategoryType.IncapableOf:
-                    var tagNames = new List<string>();
-                    foreach (var child in categoryNode.Children)
-                        tagNames.Add(child.Label);
-                    return string.Join(", ", tagNames);
-
                 case PawnCategoryType.Health:
-                    var healthNames = new List<string>();
-                    foreach (var child in categoryNode.Children)
-                        healthNames.Add(child.Label);
-                    return string.Join(", ", healthNames);
+                case PawnCategoryType.Abilities:
+                    return JoinChildLabels(categoryNode);
 
                 case PawnCategoryType.Skills:
                     return null; // Too many to summarize
@@ -1049,101 +1261,31 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Builds the Team Skills summary rows shown on the second tab — one row per skill that
-        /// is visible in the pawn-creator summary, naming the best starting pawn for that skill.
-        /// Mirrors StartingPawnUtility.DrawSkillSummaries / FindBestSkillOwner exactly.
-        /// </summary>
-        public static List<string> BuildTeamSkillSummary()
+        private static string BuildBioSummary(InspectionTreeItem categoryNode)
         {
-            var rows = new List<string>();
-            var gid = Find.GameInitData;
-            if (gid?.startingAndOptionalPawns == null || gid.startingPawnCount <= 0)
-                return rows;
-
-            foreach (var skillDef in DefDatabase<SkillDef>.AllDefsListForReading)
+            // Skip name-field and combo rows, reachable as their own leaves; join the plain
+            // descriptive leaves only.
+            var bioParts = new List<string>();
+            foreach (var child in categoryNode.Children)
             {
-                if (!skillDef.pawnCreatorSummaryVisible)
+                var ptd = child.Data as PawnTreeData;
+                if (ptd != null && (ptd.LeafKind == PawnLeafKind.NameField
+                    || ptd.LeafKind == PawnLeafKind.DevStageCombo
+                    || ptd.LeafKind == PawnLeafKind.XenotypeCombo))
+                {
                     continue;
-
-                Pawn best = FindBestSkillOwner(skillDef);
-                if (best?.skills == null)
-                    continue;
-
-                SkillRecord rec = best.skills.GetSkill(skillDef);
-                string skillLabel = skillDef.skillLabel.CapitalizeFirst();
-                string name = best.Name?.ToStringShort ?? (string)best.LabelShort;
-
-                string row;
-                if (rec.TotallyDisabled)
-                {
-                    row = $"{skillLabel}: {name}, {"DisabledLower".Translate()}";
                 }
-                else
-                {
-                    row = $"{skillLabel}: {name}, {rec.Level}";
-                    string passion = GetPassionLabel(rec.passion);
-                    if (!string.IsNullOrEmpty(passion))
-                        row += $", {passion}";
-                }
-                rows.Add(row);
+                bioParts.Add(child.Label);
             }
-            return rows;
+            return string.Join(", ", bioParts);
         }
 
-        /// <summary>
-        /// Returns the starting pawn best at the given skill, mirroring
-        /// StartingPawnUtility.FindBestSkillOwner (highest level, passion breaks ties, skips
-        /// disabled). Considers only the selected starting pawns, not optional/left-behind ones.
-        /// </summary>
-        private static Pawn FindBestSkillOwner(SkillDef skill)
+        private static string JoinChildLabels(InspectionTreeItem categoryNode)
         {
-            var pawns = Find.GameInitData.startingAndOptionalPawns;
-            int count = Find.GameInitData.startingPawnCount;
-            if (pawns == null || pawns.Count == 0 || count <= 0)
-                return null;
-
-            Pawn best = pawns[0];
-            SkillRecord bestRec = best.skills.GetSkill(skill);
-            for (int i = 1; i < count && i < pawns.Count; i++)
-            {
-                SkillRecord rec = pawns[i].skills.GetSkill(skill);
-                if (!rec.TotallyDisabled
-                    && (bestRec.TotallyDisabled
-                        || rec.Level > bestRec.Level
-                        || (rec.Level == bestRec.Level && (int)rec.passion > (int)bestRec.passion)))
-                {
-                    best = pawns[i];
-                    bestRec = rec;
-                }
-            }
-            return best;
-        }
-
-        public static Pawn GetPawnAtIndex(int pawnIndex)
-        {
-            var pawns = Find.GameInitData?.startingAndOptionalPawns;
-            if (pawns == null || pawnIndex < 0 || pawnIndex >= pawns.Count)
-                return null;
-            return pawns[pawnIndex];
-        }
-
-        public static int GetPawnCount()
-        {
-            return Find.GameInitData?.startingAndOptionalPawns?.Count ?? 0;
-        }
-
-        public static int GetStartingPawnCount()
-        {
-            return Find.GameInitData?.startingPawnCount ?? 0;
-        }
-
-        /// <summary>
-        /// Gets the PawnTreeData from an InspectionTreeItem, or null if not present.
-        /// </summary>
-        public static PawnTreeData GetPawnData(InspectionTreeItem item)
-        {
-            return item?.Data as PawnTreeData;
+            var names = new List<string>();
+            foreach (var child in categoryNode.Children)
+                names.Add(child.Label);
+            return string.Join(", ", names);
         }
     }
 }

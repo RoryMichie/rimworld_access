@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    What's New module strings (src/Shell/Screens/WhatsNewState.cs + WhatsNewCatalog.cs). The mod keeps a
+    record of announcements, one per released version (see WhatsNewCatalog, newest first). When
+    the player has unread announcements (e.g. after an update) they are surfaced on the main menu,
+    shown one at a time as a buffer the player arrows through line by line.
+
+    Per-version messages are keyed by version with dots replaced by underscores, e.g.
+    RimWorldAccess.WhatsNew.Message.2_0_0 for version 2.0.0. When a version has no message of its
+    own, RimWorldAccess.WhatsNew.Message.Default is shown instead. Paragraphs are separated by
+    "\n"; each becomes one line the player arrows to.
+
+    When cutting a release, add a new Message.<version> block here (and translate it in the other
+    language folders) and add the version to WhatsNewCatalog. The message is player-facing prose,
+    not a raw changelog dump — the full changelog lives on the website, one button-press away.
+  -->
+
+  <!-- Header (the first line of each announcement). Header is used when there is more than one
+       announcement: {0} = version, {1} = this announcement's number, {2} = total. HeaderSingle is
+       used for a lone announcement (the normal case): {0} = version. -->
+  <RimWorldAccess.WhatsNew.Header>RimWorld Access {0}. Оголошення {1} з {2}.</RimWorldAccess.WhatsNew.Header>
+  <RimWorldAccess.WhatsNew.HeaderSingle>RimWorld Access {0}.</RimWorldAccess.WhatsNew.HeaderSingle>
+
+  <!-- Per-version messages. Paragraphs separated by "\n".
+       DRAFT: this 2.0.0 welcome is a working draft; rewrite it in your own words before release,
+       then it (and any future announcements) get translated into the other languages. -->
+  <RimWorldAccess.WhatsNew.Message.2_0_0>Ласкаво просимо до розділу «Що нового»! Це повідомлення з'являється щоразу, коли RimWorld Access оновлюється, щоб розповісти, що змінилося.\n
+RimWorld Access тепер має версію 2.0.0 — перший випуск під новим керівництвом. Дякуємо, що граєте, і за те, що допомагаєте зробити RimWorld доступним для незрячих і слабозорих гравців.\n
+Щоб прочитати повний і детальний список змін, виберіть «Відкрити список змін», щоб переглянути його на сайті.\n
+Ви можете відкрити це знову будь-коли з розділу «Що нового» в головному меню або меню паузи. Якщо ви не хочете, щоб вони з'являлися самі, виберіть «Більше не показувати»; ви все одно почуєте коротке сповіщення про оновлення мода.\n
+Натисніть Escape або виберіть «Закрити», коли завершите. Ще раз дякуємо, і насолоджуйтесь грою!</RimWorldAccess.WhatsNew.Message.2_0_0>
+
+  <!-- Fallback message when a version has no message of its own. -->
+  <RimWorldAccess.WhatsNew.Message.Default>RimWorld Access оновлено. Виберіть «Відкрити список змін», щоб прочитати, що змінилося, на сайті.</RimWorldAccess.WhatsNew.Message.Default>
+
+  <!-- Buttons reached by arrowing past the last line of the message. -->
+  <!-- {0} = number of announcements still unread. -->
+  <RimWorldAccess.WhatsNew.Button.NextAnnouncement>Перейти до наступного оголошення (залишилось {0})</RimWorldAccess.WhatsNew.Button.NextAnnouncement>
+  <!-- {0} = total number of announcements in the record (always 2 or more when this button shows). -->
+  <RimWorldAccess.WhatsNew.Button.MarkAllRead>Позначити всі оголошення ({0}) як прочитані</RimWorldAccess.WhatsNew.Button.MarkAllRead>
+  <RimWorldAccess.WhatsNew.Button.OpenChangelog>Відкрити список змін у браузері</RimWorldAccess.WhatsNew.Button.OpenChangelog>
+  <RimWorldAccess.WhatsNew.Button.Close>Закрити</RimWorldAccess.WhatsNew.Button.Close>
+  <RimWorldAccess.WhatsNew.Button.DontShowAgain>Більше не показувати</RimWorldAccess.WhatsNew.Button.DontShowAgain>
+
+  <!-- Spoken feedback. -->
+  <RimWorldAccess.WhatsNew.OpeningChangelog>Відкривається список змін у вашому браузері.</RimWorldAccess.WhatsNew.OpeningChangelog>
+  <RimWorldAccess.WhatsNew.AllMarkedRead>Усі оголошення позначено як прочитані.</RimWorldAccess.WhatsNew.AllMarkedRead>
+  <RimWorldAccess.WhatsNew.Suppressed>Гаразд. Надалі оновлення даватимуть лише коротке сповіщення. Ви можете знову увімкнути ці повідомлення в Налаштуваннях, RimWorld Access.</RimWorldAccess.WhatsNew.Suppressed>
+  <RimWorldAccess.WhatsNew.Closed>Розділ «Що нового» закрито.</RimWorldAccess.WhatsNew.Closed>
+
+  <!-- Brief notice spoken instead of the full reader when the player has turned auto-popups off.
+       {0} is the newest version. -->
+  <RimWorldAccess.WhatsNew.UpdateWhisper>RimWorld Access оновлено до версії {0}. Відкрийте «Що нового» з меню, щоб прочитати, що змінилося.</RimWorldAccess.WhatsNew.UpdateWhisper>
+
+  <!-- Menu items (main menu and in-game pause menu). -->
+  <RimWorldAccess.WhatsNew.MenuItem.WhatsNew>Що нового</RimWorldAccess.WhatsNew.MenuItem.WhatsNew>
+  <RimWorldAccess.WhatsNew.MenuItem.Website>Вебсайт RimWorld Access</RimWorldAccess.WhatsNew.MenuItem.Website>
+
+</LanguageData>

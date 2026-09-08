@@ -7,10 +7,7 @@ using UnityEngine;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Enum representing available shape types for building placement.
-    /// Maps to RimWorld's DrawStyle system for cell calculation.
-    /// </summary>
+    /// <summary>Shape types for building placement, mapped onto RimWorld's DrawStyle system.</summary>
     public enum ShapeType
     {
         /// <summary>Single-cell placement (no shape, place one tile at a time)</summary>
@@ -30,13 +27,49 @@ namespace RimWorldAccess
     }
 
     /// <summary>
-    /// Helper class for shape-based building placement.
-    /// Wraps RimWorld's native DrawStyle classes and provides utilities for
-    /// calculating cells, detecting obstacles, and managing shape selection.
+    /// The disjoint top-level kind a designator falls into for placement/viewing-mode dispatch,
+    /// computed once by <see cref="ShapeHelper.ClassifyDesignator"/>. "Other" covers anything
+    /// outside the named kinds, such as a plain Designator_Cells or a non-Build Designator_Place.
+    /// </summary>
+    public enum DesignatorKind
+    {
+        Other,
+        Build,
+        Order,
+        Zone,
+        Area,
+        BuiltInArea
+    }
+
+    /// <summary>
+    /// One designator's classification. <see cref="IsDelete"/> applies only when
+    /// <see cref="Kind"/> is <see cref="DesignatorKind.Zone"/>: Designator_ZoneDelete extends
+    /// Designator_Zone, so delete is a sub-kind rather than a disjoint kind of its own.
+    /// </summary>
+    public readonly struct DesignatorClassification
+    {
+        public DesignatorKind Kind { get; }
+        public bool IsDelete { get; }
+
+        public DesignatorClassification(DesignatorKind kind, bool isDelete)
+        {
+            Kind = kind;
+            IsDelete = isDelete;
+        }
+
+        public bool IsBuild => Kind == DesignatorKind.Build;
+        public bool IsOrder => Kind == DesignatorKind.Order;
+        public bool IsZone => Kind == DesignatorKind.Zone;
+        public bool IsArea => Kind == DesignatorKind.Area;
+        public bool IsBuiltInArea => Kind == DesignatorKind.BuiltInArea;
+    }
+
+    /// <summary>
+    /// Shape-based building placement over RimWorld's own DrawStyle classes: cell calculation,
+    /// obstacle detection and shape selection.
     /// </summary>
     public static class ShapeHelper
     {
-        // Cached DrawStyle instances for each shape type
         private static readonly DrawStyle_Line lineStyle = new DrawStyle_Line();
         private static readonly DrawStyle_AngledLine angledLineStyle = new DrawStyle_AngledLine();
         private static readonly DrawStyle_FilledRectangle filledRectangleStyle = new DrawStyle_FilledRectangle();
@@ -44,13 +77,10 @@ namespace RimWorldAccess
         private static readonly DrawStyle_FilledOval filledOvalStyle = new DrawStyle_FilledOval();
         private static readonly DrawStyle_EmptyOval emptyOvalStyle = new DrawStyle_EmptyOval();
 
-        // Reusable buffer to avoid allocation during cell calculation
+        // Reused across calls; CalculateShapeCells returns a copy.
         private static readonly List<IntVec3> cellBuffer = new List<IntVec3>();
 
-        /// <summary>
-        /// Mapping from DrawStyle type names to ShapeType enum values.
-        /// Used when reading from designator.DrawStyleCategory.styles.
-        /// </summary>
+        /// <summary>DrawStyle type names to ShapeType, for reading designator.DrawStyleCategory.styles.</summary>
         private static readonly Dictionary<Type, ShapeType> drawStyleTypeToShapeType = new Dictionary<Type, ShapeType>
         {
             { typeof(DrawStyle_Line), ShapeType.Line },
@@ -61,14 +91,7 @@ namespace RimWorldAccess
             { typeof(DrawStyle_EmptyOval), ShapeType.EmptyOval }
         };
 
-        /// <summary>
-        /// Calculates the cells for a shape between two points.
-        /// Delegates to RimWorld's native DrawStyle classes.
-        /// </summary>
-        /// <param name="shape">The shape type to calculate</param>
-        /// <param name="origin">The starting corner/point</param>
-        /// <param name="target">The ending corner/point</param>
-        /// <returns>List of cells that make up the shape</returns>
+        /// <summary>The cells of a shape between two points, via RimWorld's own DrawStyle classes.</summary>
         public static List<IntVec3> CalculateCells(ShapeType shape, IntVec3 origin, IntVec3 target)
         {
             cellBuffer.Clear();
@@ -76,7 +99,6 @@ namespace RimWorldAccess
             switch (shape)
             {
                 case ShapeType.Manual:
-                    // Manual mode returns just the target cell
                     cellBuffer.Add(target);
                     break;
 
@@ -109,29 +131,23 @@ namespace RimWorldAccess
                     break;
             }
 
-            // Return a copy to prevent external modification of the buffer
+            // A copy: the buffer is reused.
             return new List<IntVec3>(cellBuffer);
         }
 
         /// <summary>
-        /// Gets the available shapes for a designator by reading from its DrawStyleCategory.
-        /// Works with any designator that has DrawStyleCategory defined - buildings, orders, zones, etc.
-        /// Always includes Manual as the first option, then adds game-defined shapes.
+        /// The shapes a designator offers, read from its DrawStyleCategory. Manual is always
+        /// included: single-cell placement is valid for every designator.
         /// </summary>
-        /// <param name="designator">The designator to get shapes for</param>
-        /// <returns>List of available shape types - game shapes first, Manual last</returns>
         public static List<ShapeType> GetAvailableShapes(Designator designator)
         {
             var shapes = new List<ShapeType>();
 
             if (designator != null)
             {
-                // Get the DrawStyleCategory from the designator
-                // This works for all designator types: Designator_Build, Designator_Hunt, Designator_Mine, Designator_Zone, etc.
                 DrawStyleCategoryDef category = designator.DrawStyleCategory;
                 if (category != null && category.styles != null && category.styles.Count > 0)
                 {
-                    // Map each DrawStyleDef to our ShapeType enum
                     foreach (DrawStyleDef styleDef in category.styles)
                     {
                         if (styleDef?.drawStyleType == null)
@@ -148,18 +164,12 @@ namespace RimWorldAccess
                 }
             }
 
-            // Always include Manual as the last option - single-cell placement is always valid
             shapes.Add(ShapeType.Manual);
 
             return shapes;
         }
 
-        /// <summary>
-        /// Checks if a designator supports shape-based multi-cell selection.
-        /// Returns true for designators that have DrawStyleCategory defined and support DesignateMultiCell or DesignateSingleCell.
-        /// </summary>
-        /// <param name="designator">The designator to check</param>
-        /// <returns>True if the designator supports shapes</returns>
+        /// <summary>Whether a designator has a DrawStyleCategory and designates single or multiple cells.</summary>
         public static bool SupportsShapes(Designator designator)
         {
             if (designator == null)
@@ -169,157 +179,145 @@ namespace RimWorldAccess
             return shapes.Count > 1; // More than just Manual
         }
 
-        /// <summary>
-        /// Checks if a designator is a Build designator (places blueprints).
-        /// </summary>
+        /// <summary>Whether the designator places blueprints.</summary>
         public static bool IsBuildDesignator(Designator designator)
         {
             return designator is Designator_Build;
         }
 
-        /// <summary>
-        /// Checks if a designator is a Place designator (Build or Install).
-        /// </summary>
+        /// <summary>Whether the designator is a Place designator (Build or Install).</summary>
         public static bool IsPlaceDesignator(Designator designator)
         {
             return designator is Designator_Place;
         }
 
-        /// <summary>
-        /// Checks if a designator inherits from a type with the given name.
-        /// Walks the type hierarchy checking type names.
-        /// </summary>
-        /// <param name="designator">The designator to check</param>
-        /// <param name="typeName">The type name to search for in the hierarchy</param>
-        /// <returns>True if the designator's type hierarchy includes the specified type name</returns>
-        private static bool InheritsFromTypeName(Designator designator, string typeName)
-        {
-            if (designator == null)
-                return false;
-
-            Type type = designator.GetType();
-            while (type != null)
-            {
-                if (type.Name == typeName)
-                    return true;
-                type = type.BaseType;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Checks if a designator is a Zone designator.
-        /// </summary>
+        /// <summary>Whether the designator is a Zone designator.</summary>
         public static bool IsZoneDesignator(Designator designator)
         {
-            return InheritsFromTypeName(designator, "Designator_Zone");
+            return designator is Designator_Zone;
         }
 
         /// <summary>
-        /// Checks if a designator is a delete/shrink designator (removes cells rather than adding them).
-        /// Examples: Designator_ZoneDelete, Designator_ZoneDelete_Shrink
-        /// These designators should skip obstacle detection since removing cells can't have obstacles.
+        /// Whether the designator removes cells rather than adding them (Designator_ZoneDelete and
+        /// its shrink variant). Removal cannot hit obstacles, so callers skip obstacle detection.
         /// </summary>
         public static bool IsDeleteDesignator(Designator designator)
         {
-            return InheritsFromTypeName(designator, "Designator_ZoneDelete");
+            return designator is Designator_ZoneDelete;
         }
 
         /// <summary>
-        /// Checks if a designator is an Area designator (expand or clear allowed areas).
-        /// These require an area to be selected before placement can begin.
-        /// Examples: Designator_AreaAllowedExpand, Designator_AreaAllowedClear
+        /// Whether the designator expands or clears an allowed area. These need an area selected
+        /// before placement can begin.
         /// </summary>
         public static bool IsAreaDesignator(Designator designator)
         {
-            return InheritsFromTypeName(designator, "Designator_AreaAllowed");
+            return designator is Designator_AreaAllowed;
         }
 
-        /// <summary>
-        /// Checks if a designator is a built-in area designator (Snow/Sand, Roof, Home).
-        /// These operate on fixed Area objects from the map's AreaManager.
-        /// Examples: Designator_AreaSnowClear, Designator_AreaBuildRoof, Designator_AreaHome
-        /// </summary>
+        /// <summary>Whether the designator operates on a fixed Area from the map's AreaManager (Snow/Sand, Roof, Home).</summary>
         public static bool IsBuiltInAreaDesignator(Designator designator)
         {
             if (designator == null)
                 return false;
 
-            // Check for each built-in area type
-            return InheritsFromTypeName(designator, "Designator_AreaSnowClear") ||
-                   InheritsFromTypeName(designator, "Designator_AreaHome") ||
-                   InheritsFromTypeName(designator, "Designator_AreaBuildRoof") ||
-                   InheritsFromTypeName(designator, "Designator_AreaNoRoof") ||
-                   InheritsFromTypeName(designator, "Designator_AreaIgnoreRoof") ||
-                   InheritsFromTypeName(designator, "Designator_AreaPollutionClear");
+            return designator is Designator_AreaSnowClear ||
+                   designator is Designator_AreaHome ||
+                   designator is Designator_AreaBuildRoof ||
+                   designator is Designator_AreaNoRoof ||
+                   designator is Designator_AreaIgnoreRoof ||
+                   designator is Designator_AreaPollutionClear;
         }
 
-        /// <summary>
-        /// Checks if a designator is any type of area designator (Allowed OR Built-in).
-        /// </summary>
+        /// <summary>Whether the designator is an area designator of either kind.</summary>
         public static bool IsAnyAreaDesignator(Designator designator)
         {
             return IsAreaDesignator(designator) || IsBuiltInAreaDesignator(designator);
         }
 
         /// <summary>
-        /// Checks if a built-in area designator is in "expand" mode (adds cells) vs "clear" mode (removes cells).
+        /// Whether a built-in area designator adds cells rather than removing them. Classified by
+        /// concrete vanilla type, never by substring: an area family name like "SnowClear" carries
+        /// "Clear" in both its Expand and its Clear variant.
         /// </summary>
         public static bool IsBuiltInAreaExpanding(Designator designator)
         {
             if (designator == null)
                 return true;
 
-            string typeName = designator.GetType().Name;
-            // "Clear" designators remove cells, others add cells
-            // Special case: Designator_AreaIgnoreRoof is a "clear" operation (removes from both BuildRoof and NoRoof)
-            return !typeName.Contains("Clear") && !typeName.Contains("IgnoreRoof");
+            // Designator_AreaBuildRoof and Designator_AreaNoRoof have no Expand/Clear subclasses;
+            // each always adds.
+            if (designator is Designator_AreaSnowClearExpand ||
+                designator is Designator_AreaHomeExpand ||
+                designator is Designator_AreaPollutionClearExpand ||
+                designator is Designator_AreaBuildRoof ||
+                designator is Designator_AreaNoRoof)
+                return true;
+
+            // Everything else removes cells, Designator_AreaIgnoreRoof included (it clears both
+            // the BuildRoof and NoRoof grids).
+            return false;
         }
 
-        /// <summary>
-        /// Gets the Area object for a built-in area designator from the map's AreaManager.
-        /// Returns null if not a built-in area designator or no map available.
-        /// </summary>
+        /// <summary>The designator's Area from the map's AreaManager, or null if it has none or there is no map.</summary>
         public static Area GetBuiltInAreaForDesignator(Designator designator, Map map)
         {
             if (designator == null || map?.areaManager == null)
                 return null;
 
-            string typeName = designator.GetType().Name;
-
-            if (typeName.Contains("SnowClear") || typeName.Contains("SandClear"))
+            if (designator is Designator_AreaSnowClear)
                 return map.areaManager.SnowOrSandClear;
-            if (typeName.Contains("AreaHome"))
+            if (designator is Designator_AreaHome)
                 return map.areaManager.Home;
-            if (typeName.Contains("BuildRoof"))
+            if (designator is Designator_AreaBuildRoof)
                 return map.areaManager.BuildRoof;
-            if (typeName.Contains("NoRoof") || typeName.Contains("IgnoreRoof"))
+            if (designator is Designator_AreaNoRoof || designator is Designator_AreaIgnoreRoof)
                 return map.areaManager.NoRoof;
-            if (typeName.Contains("PollutionClear"))
+            if (designator is Designator_AreaPollutionClear)
                 return map.areaManager.PollutionClear; // Returns null if Biotech DLC not active
 
             return null;
         }
 
         /// <summary>
-        /// Checks if a designator is a Cells designator (multi-cell selection like Mine).
+        /// Every built-in Area a designator writes to. Designator_AreaIgnoreRoof clears both the
+        /// BuildRoof and NoRoof grids; every other built-in area designator touches exactly one.
         /// </summary>
-        public static bool IsCellsDesignator(Designator designator)
+        public static List<Area> GetBuiltInAreasForDesignator(Designator designator, Map map)
         {
-            return InheritsFromTypeName(designator, "Designator_Cells");
+            var areas = new List<Area>();
+
+            if (designator == null || map?.areaManager == null)
+                return areas;
+
+            if (designator is Designator_AreaIgnoreRoof)
+            {
+                if (map.areaManager.BuildRoof != null)
+                    areas.Add(map.areaManager.BuildRoof);
+                if (map.areaManager.NoRoof != null)
+                    areas.Add(map.areaManager.NoRoof);
+                return areas;
+            }
+
+            Area area = GetBuiltInAreaForDesignator(designator, map);
+            if (area != null)
+                areas.Add(area);
+
+            return areas;
         }
 
-        /// <summary>
-        /// Checks if a designator is an Order designator (Hunt, Haul, etc. - thing-based).
-        /// These designate things at cells rather than cells themselves.
-        /// </summary>
+        /// <summary>Whether the designator is a Cells designator (multi-cell selection like Mine).</summary>
+        public static bool IsCellsDesignator(Designator designator)
+        {
+            return designator is Designator_Cells;
+        }
+
+        /// <summary>Whether the designator targets Things at cells rather than the cells themselves (Hunt, Haul, Tame).</summary>
         public static bool IsOrderDesignator(Designator designator)
         {
             if (designator == null)
                 return false;
 
-            // Orders are designators that have DrawStyleCategory but are not Build, Place, Zone, Cells, or Areas
-            // They designate Things at cells (like Hunt, Haul, Tame, etc.)
             if (designator is Designator_Place)
                 return false;
             if (IsCellsDesignator(designator))
@@ -331,16 +329,49 @@ namespace RimWorldAccess
             if (IsBuiltInAreaDesignator(designator))
                 return false;
 
-            // If it has a DrawStyleCategory, it's an order-type designator
             return designator.DrawStyleCategory != null;
         }
 
         /// <summary>
-        /// Gets the default shape for a designator based on its DrawStyleCategory.
-        /// Returns Manual if no DrawStyleCategory is defined.
+        /// Classifies a designator in one pass. Delete folds into
+        /// <see cref="DesignatorClassification.IsDelete"/> rather than becoming a kind of its own,
+        /// since Designator_ZoneDelete extends Designator_Zone. Priority order matches
+        /// IsOrderDesignator's own exclusions: Build, Zone, Area, BuiltInArea and Cells/Place are
+        /// all checked before falling through to Order.
         /// </summary>
-        /// <param name="designator">The designator to get the default shape for</param>
-        /// <returns>The default shape type for this designator</returns>
+        public static DesignatorClassification ClassifyDesignator(Designator designator)
+        {
+            if (designator == null)
+                return new DesignatorClassification(DesignatorKind.Other, false);
+
+            if (designator is Designator_Build)
+                return new DesignatorClassification(DesignatorKind.Build, false);
+
+            if (designator is Designator_Zone)
+            {
+                bool isDelete = designator is Designator_ZoneDelete;
+                return new DesignatorClassification(DesignatorKind.Zone, isDelete);
+            }
+
+            if (designator is Designator_AreaAllowed)
+                return new DesignatorClassification(DesignatorKind.Area, false);
+
+            if (IsBuiltInAreaDesignator(designator))
+                return new DesignatorClassification(DesignatorKind.BuiltInArea, false);
+
+            if (designator is Designator_Place)
+                return new DesignatorClassification(DesignatorKind.Other, false);
+
+            if (IsCellsDesignator(designator))
+                return new DesignatorClassification(DesignatorKind.Other, false);
+
+            if (designator.DrawStyleCategory != null)
+                return new DesignatorClassification(DesignatorKind.Order, false);
+
+            return new DesignatorClassification(DesignatorKind.Other, false);
+        }
+
+        /// <summary>The designator's default shape, or Manual when it defines no DrawStyleCategory.</summary>
         public static ShapeType GetDefaultShape(Designator designator)
         {
             if (designator == null)
@@ -350,7 +381,6 @@ namespace RimWorldAccess
             if (category == null || category.styles == null || category.styles.Count == 0)
                 return ShapeType.Manual;
 
-            // Get the first style from the category as the default
             DrawStyleDef firstStyle = category.styles[0];
             if (firstStyle?.drawStyleType == null)
                 return ShapeType.Manual;
@@ -363,13 +393,7 @@ namespace RimWorldAccess
             return ShapeType.Manual;
         }
 
-        /// <summary>
-        /// Gets the DrawStyleDef that corresponds to a ShapeType for a given designator.
-        /// Used to set the game's SelectedStyle when the user picks a shape.
-        /// </summary>
-        /// <param name="designator">The designator to search</param>
-        /// <param name="shape">The shape type to find</param>
-        /// <returns>The corresponding DrawStyleDef, or null if not found</returns>
+        /// <summary>The DrawStyleDef for a ShapeType, used to set the game's SelectedStyle on a pick.</summary>
         public static DrawStyleDef GetDrawStyleDef(Designator designator, ShapeType shape)
         {
             if (designator == null || shape == ShapeType.Manual)
@@ -379,7 +403,6 @@ namespace RimWorldAccess
             if (category == null || category.styles == null)
                 return null;
 
-            // Find the type that corresponds to the shape
             Type targetType = null;
             foreach (var kvp in drawStyleTypeToShapeType)
             {
@@ -393,15 +416,10 @@ namespace RimWorldAccess
             if (targetType == null)
                 return null;
 
-            // Find the DrawStyleDef with matching type
             return category.styles.FirstOrDefault(s => s?.drawStyleType == targetType);
         }
 
-        /// <summary>
-        /// Gets a human-readable name for a shape type for screen reader announcements.
-        /// </summary>
-        /// <param name="shape">The shape type</param>
-        /// <returns>Human-readable name</returns>
+        /// <summary>A spoken name for a shape type.</summary>
         public static string GetShapeName(ShapeType shape)
         {
             switch (shape)
@@ -417,11 +435,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets a description explaining how a shape works for screen reader announcements.
-        /// </summary>
-        /// <param name="shape">The shape type</param>
-        /// <returns>Description of how the shape works</returns>
+        /// <summary>A spoken description of how a shape works.</summary>
         public static string GetShapeDescription(ShapeType shape)
         {
             switch (shape)
@@ -437,22 +451,15 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the shape name from a DrawStyleDef's label if available,
-        /// otherwise falls back to the shape type name.
-        /// </summary>
-        /// <param name="styleDef">The DrawStyleDef to get the name from</param>
-        /// <returns>Human-readable name</returns>
+        /// <summary>The DrawStyleDef's own localized label, falling back to the shape type name.</summary>
         public static string GetShapeName(DrawStyleDef styleDef)
         {
             if (styleDef == null)
                 return "RimWorldAccess.Building.Shape.Name.Manual".Translate();
 
-            // Use the game's localized label if available
             if (!string.IsNullOrEmpty(styleDef.label))
                 return styleDef.LabelCap;
 
-            // Fall back to our shape type name
             if (styleDef.drawStyleType != null &&
                 drawStyleTypeToShapeType.TryGetValue(styleDef.drawStyleType, out ShapeType shapeType))
             {
@@ -462,11 +469,7 @@ namespace RimWorldAccess
             return styleDef.defName ?? (string)"RimWorldAccess.Building.Shape.Name.Unknown".Translate();
         }
 
-        /// <summary>
-        /// Converts a DrawStyleDef to a ShapeType.
-        /// </summary>
-        /// <param name="styleDef">The DrawStyleDef to convert</param>
-        /// <returns>The corresponding ShapeType, or Manual if not found</returns>
+        /// <summary>The ShapeType for a DrawStyleDef, or Manual when it maps to none.</summary>
         public static ShapeType DrawStyleDefToShapeType(DrawStyleDef styleDef)
         {
             if (styleDef?.drawStyleType == null)
@@ -481,43 +484,32 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Finds the next obstacle (wall, blueprint, or impassable terrain) in a given direction.
-        /// Returns the cell one tile BEFORE the obstacle so the user lands on an interior tile.
+        /// The cell one tile BEFORE the next obstacle in a direction, so the cursor lands inside;
+        /// null when the obstacle is adjacent.
         /// </summary>
-        /// <param name="start">The starting position</param>
-        /// <param name="direction">The direction to search (North, East, South, West)</param>
-        /// <param name="map">The map to search on</param>
-        /// <returns>The cell before the obstacle, or null if no obstacle found before map edge</returns>
         public static IntVec3? FindNextObstacle(IntVec3 start, Rot4 direction, Map map)
         {
             if (map == null)
                 return null;
 
-            // Get the direction offset
             IntVec3 offset = direction.FacingCell;
 
             IntVec3 current = start;
             IntVec3? lastValidCell = null;
 
-            // Maximum distance to search (map diagonal)
             int maxDistance = Mathf.Max(map.Size.x, map.Size.z);
 
             for (int i = 1; i <= maxDistance; i++)
             {
                 IntVec3 nextCell = start + (offset * i);
 
-                // Check if we've reached the map edge
                 if (!nextCell.InBounds(map))
                 {
-                    // Return the last valid cell (one before map edge)
                     return lastValidCell;
                 }
 
-                // Check for obstacles
                 if (IsObstacle(nextCell, map))
                 {
-                    // Return the cell before the obstacle
-                    // If we're at distance 1 and it's an obstacle, return null (can't move)
                     if (i == 1)
                         return null;
 
@@ -527,26 +519,18 @@ namespace RimWorldAccess
                 lastValidCell = nextCell;
             }
 
-            // No obstacle found, return the last valid cell
             return lastValidCell;
         }
 
-        /// <summary>
-        /// Checks if a cell contains an obstacle (wall, blueprint, or impassable terrain/thing).
-        /// </summary>
-        /// <param name="cell">The cell to check</param>
-        /// <param name="map">The map the cell is on</param>
-        /// <returns>True if the cell contains an obstacle</returns>
+        /// <summary>Whether a cell holds a wall, blueprint, frame, or impassable terrain.</summary>
         public static bool IsObstacle(IntVec3 cell, Map map)
         {
             if (map == null || !cell.InBounds(map))
                 return true;
 
-            // Check for impassable things (walls, buildings, etc.)
             if (cell.Impassable(map))
                 return true;
 
-            // Check for blueprints
             List<Thing> things = map.thingGrid.ThingsListAtFast(cell);
             for (int i = 0; i < things.Count; i++)
             {
@@ -554,16 +538,13 @@ namespace RimWorldAccess
                 if (thing == null)
                     continue;
 
-                // Check for blueprints
                 if (thing.def.IsBlueprint)
                     return true;
 
-                // Check for frames (construction in progress)
                 if (thing.def.IsFrame)
                     return true;
             }
 
-            // Check for impassable terrain
             TerrainDef terrain = cell.GetTerrain(map);
             if (terrain != null && terrain.passability == Traversability.Impassable)
                 return true;
@@ -571,35 +552,21 @@ namespace RimWorldAccess
             return false;
         }
 
-        /// <summary>
-        /// Gets the dimensions of a shape between two points.
-        /// </summary>
-        /// <param name="origin">The first corner</param>
-        /// <param name="target">The second corner</param>
-        /// <returns>Tuple of (width, height)</returns>
+        /// <summary>The (width, height) of the box between two points.</summary>
         public static (int width, int height) GetDimensions(IntVec3 origin, IntVec3 target)
         {
             CellRect rect = CellRect.FromLimits(origin, target);
             return (rect.Width, rect.Height);
         }
 
-        /// <summary>
-        /// Formats the dimensions as a string for announcement.
-        /// Always returns dimensions in "W by H" format.
-        /// </summary>
-        /// <param name="origin">The first corner</param>
-        /// <param name="target">The second corner</param>
-        /// <returns>Formatted string like "8 by 8"</returns>
+        /// <summary>The dimensions between two points as "W by H".</summary>
         public static string FormatDimensions(IntVec3 origin, IntVec3 target)
         {
             var (width, height) = GetDimensions(origin, target);
             return $"{width} by {height}";
         }
 
-        /// <summary>
-        /// Checks if the cells form a regular rectangle (no holes or gaps).
-        /// A regular rectangle has cell count equal to bounding box area.
-        /// </summary>
+        /// <summary>Whether the cells fill their bounding box exactly, with no holes or gaps.</summary>
         public static bool IsRegularRectangle(IEnumerable<IntVec3> cells)
         {
             if (cells == null || !cells.Any())
@@ -618,10 +585,7 @@ namespace RimWorldAccess
             return actualCount == expectedCount;
         }
 
-        /// <summary>
-        /// Formats shape size for announcements.
-        /// Uses "W by H" for regular rectangles, "N cells" for irregular shapes.
-        /// </summary>
+        /// <summary>Shape size as "W by H" for a regular rectangle, "N cells" otherwise.</summary>
         public static string FormatShapeSize(IEnumerable<IntVec3> cells)
         {
             if (cells == null || !cells.Any())
@@ -648,53 +612,32 @@ namespace RimWorldAccess
             return "RimWorldAccess.Building.Shape.SizeMany".Translate(count);
         }
 
-        /// <summary>
-        /// Formats shape size from two corner points.
-        /// Always uses dimensions since we don't know actual cells yet during drag.
-        /// </summary>
+        /// <summary>Shape size from two corners; always dimensions, since the cells are not known mid-drag.</summary>
         public static string FormatShapeSizeFromCorners(IntVec3 corner1, IntVec3 corner2)
         {
             var (width, height) = GetDimensions(corner1, corner2);
             return "RimWorldAccess.Building.Shape.SizeWxH".Translate(width, height);
         }
 
-        /// <summary>
-        /// Checks if a shape type requires two points to define (vs. single point placement).
-        /// </summary>
-        /// <param name="shape">The shape type to check</param>
-        /// <returns>True if the shape needs two points (origin and target)</returns>
+        /// <summary>Whether the shape needs an origin and a target rather than a single point.</summary>
         public static bool RequiresTwoPoints(ShapeType shape)
         {
             return shape != ShapeType.Manual;
         }
 
-        /// <summary>
-        /// Checks if a shape is a border-only shape (empty rectangle, empty oval).
-        /// These shapes place elements only on the perimeter.
-        /// </summary>
-        /// <param name="shape">The shape type to check</param>
-        /// <returns>True if the shape places only border cells</returns>
+        /// <summary>Whether the shape places cells on its perimeter only.</summary>
         public static bool IsBorderShape(ShapeType shape)
         {
             return shape == ShapeType.EmptyRectangle || shape == ShapeType.EmptyOval;
         }
 
-        /// <summary>
-        /// Checks if a shape is a filled shape (filled rectangle, filled oval).
-        /// These shapes place elements on all interior cells.
-        /// </summary>
-        /// <param name="shape">The shape type to check</param>
-        /// <returns>True if the shape fills all interior cells</returns>
+        /// <summary>Whether the shape fills all its interior cells.</summary>
         public static bool IsFilledShape(ShapeType shape)
         {
             return shape == ShapeType.FilledRectangle || shape == ShapeType.FilledOval;
         }
 
-        /// <summary>
-        /// Checks if a shape is a line shape (line, angled line).
-        /// </summary>
-        /// <param name="shape">The shape type to check</param>
-        /// <returns>True if the shape is a line type</returns>
+        /// <summary>Whether the shape is a line type.</summary>
         public static bool IsLineShape(ShapeType shape)
         {
             return shape == ShapeType.Line || shape == ShapeType.AngledLine;

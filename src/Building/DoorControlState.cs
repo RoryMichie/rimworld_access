@@ -1,6 +1,5 @@
 using Verse;
 using RimWorld;
-using Verse.Sound;
 
 namespace RimWorldAccess
 {
@@ -14,6 +13,9 @@ namespace RimWorldAccess
         private static bool isActive = false;
 
         public static bool IsActive => isActive;
+
+        /// <summary>Live hold-open flag for DoorControlScope's checkbox row (read fresh each announce, never cached).</summary>
+        public static bool HoldOpen => door != null && door.HoldOpen;
 
         public static void Open(Building targetBuilding)
         {
@@ -40,10 +42,15 @@ namespace RimWorldAccess
             MapNavigationState.SuppressMapNavigation = false;
         }
 
-        public static void ToggleHoldOpen()
+        /// <summary>
+        /// Flips the hold-open flag only (map-controls migration: the sound cue and re-announce now
+        /// live in DoorControlScope, which speaks the toggle-doctrine state-change fragment for its
+        /// checkbox row instead of this method's old full-status re-announce).
+        /// </summary>
+        public static bool ToggleHoldOpen()
         {
             if (door == null)
-                return;
+                return false;
 
             var holdOpenField = typeof(Building_Door).GetField("holdOpenInt",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -51,18 +58,18 @@ namespace RimWorldAccess
             if (holdOpenField != null)
             {
                 bool currentValue = (bool)holdOpenField.GetValue(door);
+                // MUTATION-C: mirrors Building_Door.GetGizmos' hold-open
+                // Command_Toggle verbatim (toggleAction is a raw
+                // `holdOpenInt = !holdOpenInt`; no gated setter exists).
                 holdOpenField.SetValue(door, !currentValue);
+                return true;
+            }
 
-                SoundDefOf.Checkbox_TurnedOn.PlayOneShotOnCamera();
-                AnnounceCurrentStatus();
-            }
-            else
-            {
-                TolkHelper.Speak("RimWorldAccess.Building.Door.HoldOpenAccessError".Loc(), SpeechPriority.High);
-            }
+            TolkHelper.Speak("RimWorldAccess.Building.Door.HoldOpenAccessError".Loc(), SpeechPriority.High);
+            return false;
         }
 
-        private static void AnnounceCurrentStatus()
+        public static void AnnounceCurrentStatus()
         {
             if (door == null)
                 return;

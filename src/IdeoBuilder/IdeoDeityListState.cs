@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 using System.Text;
 using HarmonyLib;
 using RimWorld;
@@ -10,11 +10,15 @@ using DeityType = RimWorld.IdeoFoundation_Deity.Deity;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Windowless overlay for managing a deity-foundation ideoligion's deities. Opened from the
-    /// builder hub's Deities section. Lists current deities (name, title, gender), with an
-    /// "Add deity" node and a "Randomize deities" node. Enter on a deity opens a float menu of
-    /// per-deity actions (edit name, edit title, set gender, regenerate, remove). Name/title use
-    /// the modal TextInputController; gender uses the windowless float menu.
+    /// Data/mutation layer for a deity-foundation ideoligion's deities. Trimmed down from
+    /// its own TreeNavigationHelper-driven overlay (kept every vanilla mutation
+    /// vehicle: the reflection-invoked <c>GenerateNewDeity</c>/<c>FillDeity</c>, the
+    /// <c>DeityCountRange</c> gates, <c>RandomizeAll</c>) to a pure
+    /// data/mutation surface consumed by <see cref="RimWorldAccess.Shell.IdeoDeityScreenScope"/>,
+    /// which now owns rows, announcements, and input (see that class's remarks for the ScreenScope
+    /// shape). <see cref="IsActive"/>/<see cref="Open"/>/<see cref="Close"/> keep their exact
+    /// external contract — <c>IdeoBuilderOverlays.CloseAllOverlayEditors</c> and
+    /// <c>StateResetRegistry</c> call these unchanged.
     /// </summary>
     public static class IdeoDeityListState
     {
@@ -22,14 +26,23 @@ namespace RimWorldAccess
 
         private static Ideo ideo;
         private static IdeoFoundation_Deity foundation;
-        private static TreeNavigationHelper treeNav = new TreeNavigationHelper("IdeoDeityList");
-        private static bool configured;
-        private static readonly TextInputController controller = new TextInputController();
 
         private static readonly System.Reflection.MethodInfo GenerateNewDeityMethod =
             AccessTools.Method(typeof(IdeoFoundation_Deity), "GenerateNewDeity");
         private static readonly System.Reflection.MethodInfo FillDeityMethod =
             AccessTools.Method(typeof(IdeoFoundation_Deity), "FillDeity");
+
+        public static Ideo Ideo
+        {
+            get { return ideo; }
+        }
+
+        /// <summary>The live deity list, or null while inactive. Same list reference vanilla's own
+        /// dialog mutates — callers must not cache it across a rebuild.</summary>
+        public static IReadOnlyList<DeityType> Deities
+        {
+            get { return foundation != null ? foundation.DeitiesListForReading : null; }
+        }
 
         public static void Open(Ideo targetIdeo)
         {
@@ -38,9 +51,6 @@ namespace RimWorldAccess
                 ideo = targetIdeo;
                 foundation = f;
                 IsActive = true;
-                EnsureConfigured();
-                RebuildTree();
-                AnnounceOpening();
             }
         }
 
@@ -49,87 +59,11 @@ namespace RimWorldAccess
             IsActive = false;
             ideo = null;
             foundation = null;
-            treeNav.Reset();
         }
 
-        private static void EnsureConfigured()
-        {
-            if (configured) return;
-            configured = true;
-            treeNav.AnnounceChildCounts = false;
-            treeNav.FormatItemAnnouncement = FormatItem;
-            treeNav.FormatStateChangeAnnouncement = i => (i.IsExpanded ? "RimWorldAccess.Tree.StateExpanded" : "RimWorldAccess.Tree.StateCollapsed").Translate().ToString().CapitalizeFirst() + ". " + i.Label;
-            treeNav.FormatSearchAnnouncement = (i, t) => $"{i.Label}, {t.CurrentMatchPosition} of {t.MatchCount} matches for '{t.SearchBuffer}'";
-            treeNav.OnActivate = HandleActivate;
-            treeNav.OnDelete = HandleDelete;
-        }
-
-        public static void RebuildTree()
-        {
-            if (foundation == null) return;
-
-            var root = new InspectionTreeItem
-            {
-                Label = "Root",
-                IndentLevel = -1,
-                IsExpandable = true,
-                IsExpanded = true,
-                Type = InspectionTreeItem.ItemType.Category,
-            };
-
-            // Randomize-all and Add nodes.
-            root.Children.Add(new InspectionTreeItem
-            {
-                Label = "RandomizeDeities".Translate().ToString(),
-                IndentLevel = 0,
-                Type = InspectionTreeItem.ItemType.Item,
-                Data = "RANDOMIZE",
-                Parent = root,
-            });
-
-            if (foundation.DeitiesListForReading.Count < ideo.DeityCountRange.max)
-            {
-                root.Children.Add(new InspectionTreeItem
-                {
-                    Label = "AddDeity".Translate().ToString(),
-                    IndentLevel = 0,
-                    Type = InspectionTreeItem.ItemType.Item,
-                    Data = "ADD",
-                    Parent = root,
-                });
-            }
-
-            foreach (var deity in foundation.DeitiesListForReading)
-            {
-                var node = new InspectionTreeItem
-                {
-                    Label = BuildDeityLabel(deity),
-                    IndentLevel = 0,
-                    IsExpandable = deity.relatedMeme != null,
-                    IsExpanded = false,
-                    Type = InspectionTreeItem.ItemType.SubCategory,
-                    Data = deity,
-                    Parent = root,
-                };
-                if (deity.relatedMeme != null)
-                {
-                    node.Children.Add(new InspectionTreeItem
-                    {
-                        Label = "RelatedToMeme".Translate() + ": " + deity.relatedMeme.LabelCap.Resolve(),
-                        IndentLevel = 1,
-                        Type = InspectionTreeItem.ItemType.DetailText,
-                        Data = deity.relatedMeme,
-                        LinkedDef = deity.relatedMeme,
-                        Parent = node,
-                    });
-                }
-                root.Children.Add(node);
-            }
-
-            treeNav.Initialize(root);
-        }
-
-        private static string BuildDeityLabel(DeityType deity)
+        /// <summary>"{name}, {type}, {gender}" — the label every deity row (and the per-deity float
+        /// menu's title) uses.</summary>
+        public static string BuildDeityLabel(DeityType deity)
         {
             var sb = new StringBuilder();
             sb.Append(deity.name);
@@ -139,53 +73,38 @@ namespace RimWorldAccess
             return sb.ToString();
         }
 
-        #region Activation / delete
-
-        private static bool HandleActivate(InspectionTreeItem item)
-        {
-            if (item?.Data is string s)
-            {
-                if (s == "ADD") { AddDeity(); return true; }
-                if (s == "RANDOMIZE") { RandomizeAll(); return true; }
-            }
-            if (item?.Data is DeityType deity)
-            {
-                OpenDeityActions(deity);
-                return true;
-            }
-            return false;
-        }
-
-        private static bool HandleDelete(InspectionTreeItem item)
-        {
-            if (item?.Data is DeityType deity)
-            {
-                RemoveDeity(deity);
-                return true;
-            }
-            return false;
-        }
-
-        #endregion
-
         #region Operations
 
-        private static void AddDeity()
+        public static bool CanAddDeity()
         {
-            if (foundation.DeitiesListForReading.Count >= ideo.DeityCountRange.max)
+            return foundation != null && foundation.DeitiesListForReading.Count < ideo.DeityCountRange.max;
+        }
+
+        public static void AddDeity()
+        {
+            if (!CanAddDeity())
             {
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
                 return;
             }
+            // MUTATION-C: mirrors IdeoFoundation_Deity.DoInfo's own "AddDeity" button body;
+            // GenerateNewDeity is private, no public vehicle.
             var newDeity = (DeityType)GenerateNewDeityMethod.Invoke(foundation, null);
             foundation.DeitiesListForReading.Add(newDeity);
             ideo.RegenerateAllPreceptNames();
             ideo.RegenerateDescription();
             SoundDefOf.Tick_High.PlayOneShotOnCamera();
-            RebuildAndAnnounce();
         }
 
-        private static void RemoveDeity(DeityType deity)
+        /// <summary>
+        /// Removes a deity, honoring the <see cref="Ideo.DeityCountRange"/> minimum. Speaks its
+        /// own confirmation on success (or rejection reason at the floor) so the caller never
+        /// double-announces — mirrors the old tree's single shared <c>RemoveDeity</c> body, used by
+        /// both the Delete hotkey and the float menu's "Remove" option. Arms
+        /// <see cref="SuppressNextReturnReannounce"/> on success since the float-menu path's return
+        /// focus would otherwise re-announce on top of this method's own spoken line.
+        /// </summary>
+        public static bool RemoveDeity(DeityType deity)
         {
             int min = ideo.DeityCountRange.min;
             if (foundation.DeitiesListForReading.Count <= min)
@@ -193,150 +112,57 @@ namespace RimWorldAccess
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
                 string noun = (min <= 1) ? "Deity".Translate().ToString() : Find.ActiveLanguageWorker.Pluralize("Deity".Translate(), min);
                 TolkHelper.Speak("DeitiesRequired".Loc(min, noun.Named("DEITYNOUN")), SpeechPriority.High);
-                return;
+                return false;
             }
             foundation.DeitiesListForReading.Remove(deity);
             ideo.RegenerateDescription();
             SoundDefOf.Tick_Low.PlayOneShotOnCamera();
             TolkHelper.SpeakData($"{deity.name}, {(string)"RimWorldAccess.Ideology.Builder.Status.Removed".Translate()}");
-            RebuildTree();
+            SuppressNextReturnReannounce();
+            return true;
         }
 
-        private static void RandomizeAll()
+        public static void RandomizeAll()
         {
             foundation.GenerateDeities();
             ideo.RegenerateAllPreceptNames();
             ideo.RegenerateDescription();
             SoundDefOf.Tick_High.PlayOneShotOnCamera();
-            RebuildAndAnnounce();
         }
 
-        private static void OpenDeityActions(DeityType deity)
+        /// <summary>Regenerates one deity's name/title/gender/related meme from scratch.</summary>
+        public static void RegenerateDeity(DeityType deity)
         {
-            var options = new System.Collections.Generic.List<FloatMenuOption>
-            {
-                new FloatMenuOption("DeityName".Translate() + "...", () => EditDeityName(deity)),
-                new FloatMenuOption("DeityTitle".Translate() + "...", () => EditDeityTitle(deity)),
-                new FloatMenuOption("DeityGender".Translate() + "...", () => OpenGenderPicker(deity)),
-                new FloatMenuOption("Regenerate".Translate().CapitalizeFirst(), () =>
-                {
-                    FillDeityMethod.Invoke(foundation, new object[] { deity });
-                    ideo.RegenerateDescription();
-                    NotifyReturnedFromPicker();
-                }),
-            };
-
-            if (foundation.DeitiesListForReading.Count > ideo.DeityCountRange.min)
-                options.Add(new FloatMenuOption("Remove".Translate().CapitalizeFirst(), () => RemoveDeity(deity)));
-
-            TolkHelper.SpeakData(deity.name);
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        private static void EditDeityName(DeityType deity)
-        {
-            controller.Begin(deity.name, TextFieldSpec.Unrestricted("DeityName"),
-                text =>
-                {
-                    deity.name = text.Trim();
-                    ideo.RegenerateAllPreceptNames();
-                    ideo.RegenerateDescription();
-                    RebuildAndAnnounce();
-                });
-        }
-
-        private static void EditDeityTitle(DeityType deity)
-        {
-            controller.Begin(deity.type, TextFieldSpec.Unrestricted("DeityTitle"),
-                text =>
-                {
-                    deity.type = text.Trim();
-                    ideo.RegenerateDescription();
-                    RebuildAndAnnounce();
-                });
-        }
-
-        private static void OpenGenderPicker(DeityType deity)
-        {
-            var options = new System.Collections.Generic.List<FloatMenuOption>();
-            foreach (Gender g in (Gender[])Enum.GetValues(typeof(Gender)))
-            {
-                var captured = g;
-                options.Add(new FloatMenuOption(g.GetLabel().CapitalizeFirst(), () =>
-                {
-                    deity.gender = captured;
-                    ideo.RegenerateDescription();
-                    NotifyReturnedFromPicker();
-                }));
-            }
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
+            // MUTATION-C: mirrors IdeoFoundation_Deity.DoInfo's own "Regenerate" float-menu body;
+            // FillDeity is private, no public vehicle.
+            FillDeityMethod.Invoke(foundation, new object[] { deity });
+            ideo.RegenerateDescription();
         }
 
         #endregion
 
-        #region Refresh / input
+        #region Return-from-picker suppression
 
-        /// <summary>Refresh the tree after returning from a float-menu action that mutated deities.</summary>
-        public static void NotifyReturnedFromPicker()
+        // Frame on which an edit last spoke its own concise confirmation (RemoveDeity) — the same
+        // shape as IdeoTypedPreceptState's identical
+        // mechanism (see that class for the full rationale). When the sub-picker float menu closes
+        // and the scope regains focus, it consults ShouldReannounceOnReturn so it doesn't
+        // re-announce on top of whatever already spoke this frame.
+        private static int suppressReturnReannounceFrame = -1;
+
+        public static void SuppressNextReturnReannounce()
         {
-            if (!IsActive) return;
-            RebuildAndAnnounce();
+            suppressReturnReannounceFrame = Time.frameCount;
         }
 
-        private static void RebuildAndAnnounce()
+        public static bool ShouldReannounceOnReturn()
         {
-            RebuildTree();
-            treeNav.ReannounceCurrentItem();
-        }
-
-        public static bool HandleInput(Event ev)
-        {
-            if (ev.type != EventType.KeyDown) return false;
-
-            KeyCode key = ev.keyCode;
-            bool alt = KeyboardHelper.IsAltHeld;
-            bool ctrl = ev.control;
-
-            if (key == KeyCode.Escape && !alt && !ctrl)
-            {
-                if (treeNav.HasActiveSearch)
-                {
-                    treeNav.Typeahead.ClearSearchAndAnnounce();
-                    treeNav.ReannounceCurrentItem();
-                    return true;
-                }
-                Close();
-                SoundDefOf.TabClose.PlayOneShotOnCamera();
-                TolkHelper.Speak("CustomizeIdeoligion".Loc());
-                return true;
-            }
-
-            return treeNav.HandleInput(ev);
+            bool suppress = suppressReturnReannounceFrame >= 0
+                && Time.frameCount - suppressReturnReannounceFrame <= 1;
+            suppressReturnReannounceFrame = -1;
+            return !suppress;
         }
 
         #endregion
-
-        private static string FormatItem(InspectionTreeItem item)
-        {
-            var sb = new StringBuilder();
-            sb.Append(item.Label);
-            if (item.IsExpandable)
-                sb.Append(item.IsExpanded ? ", " + (string)"RimWorldAccess.Tree.StateExpanded".Translate() : ", " + (string)"RimWorldAccess.Tree.StateCollapsed".Translate());
-            var (pos, total) = treeNav.GetSiblingPosition(item);
-            string position = MenuHelper.FormatPosition(pos - 1, total);
-            if (!string.IsNullOrEmpty(position))
-                sb.Append(". ").Append(position);
-            return sb.ToString();
-        }
-
-        private static void AnnounceOpening()
-        {
-            var sb = new StringBuilder();
-            sb.Append("Deities".Translate());
-            sb.Append(". ").Append(foundation.DeitiesListForReading.Count);
-            if (treeNav.Count > 0)
-                sb.Append(". ").Append(treeNav.VisibleItems[0].Label);
-            TolkHelper.SpeakData(sb.ToString(), SpeechPriority.High);
-        }
     }
 }

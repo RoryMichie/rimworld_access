@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.TransportPods.Loading.CaravanMass>{0}: {1} из {2} кг</RimWorldAccess.TransportPods.Loading.CaravanMass>
+  <RimWorldAccess.TransportPods.Loading.CaravanMassOverloaded>{0}: {1} из {2} кг — ПЕРЕГРУЗКА</RimWorldAccess.TransportPods.Loading.CaravanMassOverloaded>
+  <RimWorldAccess.Work.Table.CopyPasteUnavailable>{0}: приоритеты работы нельзя скопировать или вставить.</RimWorldAccess.Work.Table.CopyPasteUnavailable>
+</LanguageData>

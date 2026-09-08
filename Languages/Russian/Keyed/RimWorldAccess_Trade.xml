@@ -47,7 +47,6 @@
   <RimWorldAccess.Trade.Open.NoSession>Нет активной сессии торговли</RimWorldAccess.Trade.Open.NoSession>
   <RimWorldAccess.Trade.Open.SessionNotInitialized>Сессия торговли не инициализирована</RimWorldAccess.Trade.Open.SessionNotInitialized>
   <RimWorldAccess.Trade.Cancelled>Торговля отменена</RimWorldAccess.Trade.Cancelled>
-  <RimWorldAccess.Trade.NoItemsInCategory>В этой категории нет предметов</RimWorldAccess.Trade.NoItemsInCategory>
 
   <!-- =================================================================
        Tab / category names.
@@ -57,17 +56,9 @@
        suffix: {0} = category name, {1} = currency phrase
        (Trade.Currency.YouHave / TraderHas).
        ================================================================= -->
-  <RimWorldAccess.Trade.Tab.YourItems>Ваши товары</RimWorldAccess.Trade.Tab.YourItems>
-  <RimWorldAccess.Trade.Tab.TraderItems>Товары: {0}</RimWorldAccess.Trade.Tab.TraderItems>
-  <RimWorldAccess.Trade.Tab.TradeSummary>Итог торговли</RimWorldAccess.Trade.Tab.TradeSummary>
-  <RimWorldAccess.Trade.Tab.Unknown>Неизвестно</RimWorldAccess.Trade.Tab.Unknown>
-  <RimWorldAccess.Trade.Tab.Empty>{0}: нет предметов</RimWorldAccess.Trade.Tab.Empty>
-  <RimWorldAccess.Trade.Tab.SwitchedReturning>Итог торговли пуст. Возврат к: {0}</RimWorldAccess.Trade.Tab.SwitchedReturning>
 
   <!-- Currency holdings phrasing (Alt+B and tab-switch suffix).
        YouHave / TraderHas: {0} = formatted currency string. -->
-  <RimWorldAccess.Trade.Currency.YouHave>У вас: {0}</RimWorldAccess.Trade.Currency.YouHave>
-  <RimWorldAccess.Trade.Currency.TraderHas>У торговца: {0}</RimWorldAccess.Trade.Currency.TraderHas>
   <RimWorldAccess.Trade.Currency.Both>У вас: {0}. У торговца: {1}</RimWorldAccess.Trade.Currency.Both>
   <RimWorldAccess.Trade.Currency.None>Валюта недоступна</RimWorldAccess.Trade.Currency.None>
   <!-- Bare nouns used inside larger sentences ("X silver", "X favor"). -->
@@ -80,7 +71,6 @@
 
   <!-- Price formatting (FormatPrice). Silver matches ToStringMoney's
        "$N" prefix; Favor: "{0} favor". {0} = formatted number. -->
-  <RimWorldAccess.Trade.Price.Silver>${0}</RimWorldAccess.Trade.Price.Silver>
   <RimWorldAccess.Trade.Price.Favor>{0} ед. чести</RimWorldAccess.Trade.Price.Favor>
 
   <!-- =================================================================
@@ -100,15 +90,9 @@
        Reset: {0} = item label.
        Buying/Selling/Gifting: {0} = count, {1} = item label,
                                 {2} = formatted price. -->
-  <RimWorldAccess.Trade.Max.Reset>Сброс {0} до нуля</RimWorldAccess.Trade.Max.Reset>
-  <RimWorldAccess.Trade.Max.Buying>Покупка всего: {0} {1}, {2}</RimWorldAccess.Trade.Max.Buying>
-  <RimWorldAccess.Trade.Max.Selling>Продажа всего: {0} {1}, {2}</RimWorldAccess.Trade.Max.Selling>
-  <RimWorldAccess.Trade.Max.Gifting>Подарок целиком: {0} {1}, {2}</RimWorldAccess.Trade.Max.Gifting>
 
   <!-- Reset action (Alt+R). {0} = item label. -->
-  <RimWorldAccess.Trade.Reset.SingleItem>Сброс: {0}</RimWorldAccess.Trade.Reset.SingleItem>
   <RimWorldAccess.Trade.Reset.AllTrades>Все сделки сброшены</RimWorldAccess.Trade.Reset.AllTrades>
-  <RimWorldAccess.Trade.Reset.CannotResetBalance>Нельзя сбросить запись баланса</RimWorldAccess.Trade.Reset.CannotResetBalance>
 
   <!-- =================================================================
        Pending-trade announcement on the list view.
@@ -137,16 +121,6 @@
        *.YoursOnly / TheirsOnly: shared but trader won't trade;
                               {0} = count.
        ================================================================= -->
-  <RimWorldAccess.Trade.Item.SoloAvailable>Доступно: {0}</RimWorldAccess.Trade.Item.SoloAvailable>
-  <RimWorldAccess.Trade.Item.SoloPrice>{0}</RimWorldAccess.Trade.Item.SoloPrice>
-  <RimWorldAccess.Trade.Item.SoloPriceWithQuality>{0}, {1}</RimWorldAccess.Trade.Item.SoloPriceWithQuality>
-  <RimWorldAccess.Trade.Item.NotTradeable>Не продаётся</RimWorldAccess.Trade.Item.NotTradeable>
-  <RimWorldAccess.Trade.Item.YoursAt>У вас: {0} по {1}</RimWorldAccess.Trade.Item.YoursAt>
-  <RimWorldAccess.Trade.Item.TheirsAt>У торговца: {0} по {1}</RimWorldAccess.Trade.Item.TheirsAt>
-  <RimWorldAccess.Trade.Item.YoursAtWithQuality>У вас: {0} по {1} ({2})</RimWorldAccess.Trade.Item.YoursAtWithQuality>
-  <RimWorldAccess.Trade.Item.TheirsAtWithQuality>У торговца: {0} по {1} ({2})</RimWorldAccess.Trade.Item.TheirsAtWithQuality>
-  <RimWorldAccess.Trade.Item.YoursOnly>У вас: {0}</RimWorldAccess.Trade.Item.YoursOnly>
-  <RimWorldAccess.Trade.Item.TheirsOnly>У торговца: {0}</RimWorldAccess.Trade.Item.TheirsOnly>
 
   <!-- Price quality words (GetPriceQuality). Buying = lower=better,
        Selling = higher=better; the four PriceType buckets get separate
@@ -165,23 +139,12 @@
        Mode.Adjusting is the constant marker word; {0} = upper bound.
        Each context (gift, shared, sell-only, buy-only) is a separate
        sentence so word order can vary. -->
-  <RimWorldAccess.Trade.Mode.Adjusting>Настройка количества</RimWorldAccess.Trade.Mode.Adjusting>
-  <RimWorldAccess.Trade.Mode.GiftUpTo>Подарить до {0}</RimWorldAccess.Trade.Mode.GiftUpTo>
-  <RimWorldAccess.Trade.Mode.SellUpTo>Продать до {0}</RimWorldAccess.Trade.Mode.SellUpTo>
-  <RimWorldAccess.Trade.Mode.BuyUpTo>Купить до {0}</RimWorldAccess.Trade.Mode.BuyUpTo>
-  <RimWorldAccess.Trade.Mode.SellAndBuy>Продать до {0}, купить до {1}</RimWorldAccess.Trade.Mode.SellAndBuy>
-  <RimWorldAccess.Trade.Mode.ExitFirst>Сначала выйдите из режима количества</RimWorldAccess.Trade.Mode.ExitFirst>
-  <RimWorldAccess.Trade.Mode.ExitFirstHint>Сначала выйдите из режима количества (нажмите Enter или Escape)</RimWorldAccess.Trade.Mode.ExitFirstHint>
 
   <!-- =================================================================
        Reject / error paths.
        ================================================================= -->
-  <RimWorldAccess.Trade.Reject.CannotAdjustItem>Нельзя изменить количество этого предмета</RimWorldAccess.Trade.Reject.CannotAdjustItem>
   <RimWorldAccess.Trade.Reject.WillNotTrade>Торговец не будет торговать этим предметом</RimWorldAccess.Trade.Reject.WillNotTrade>
   <RimWorldAccess.Trade.Reject.CannotAdjustAmount>Нельзя задать такое количество</RimWorldAccess.Trade.Reject.CannotAdjustAmount>
-  <RimWorldAccess.Trade.Reject.CannotAdjustMax>Нельзя задать максимум</RimWorldAccess.Trade.Reject.CannotAdjustMax>
-  <RimWorldAccess.Trade.Reject.CannotAdjustMin>Нельзя задать минимум</RimWorldAccess.Trade.Reject.CannotAdjustMin>
-  <RimWorldAccess.Trade.Reject.CannotInspect>Нельзя осмотреть этот предмет</RimWorldAccess.Trade.Reject.CannotInspect>
 
   <!-- =================================================================
        Numeric input mode (digit/sign keys in quantity mode).
@@ -189,12 +152,6 @@
        user presses a sign key with an empty buffer.
        Numeric.Typing: {0} = current numeric buffer string.
        Numeric.Cleared / Numeric.Invalid mark transitional states. -->
-  <RimWorldAccess.Trade.Numeric.PromptSelling>Продажа. Введите количество.</RimWorldAccess.Trade.Numeric.PromptSelling>
-  <RimWorldAccess.Trade.Numeric.PromptBuying>Покупка. Введите количество.</RimWorldAccess.Trade.Numeric.PromptBuying>
-  <RimWorldAccess.Trade.Numeric.PromptGifting>Подарок. Введите количество.</RimWorldAccess.Trade.Numeric.PromptGifting>
-  <RimWorldAccess.Trade.Numeric.Typing>Ввод: {0}</RimWorldAccess.Trade.Numeric.Typing>
-  <RimWorldAccess.Trade.Numeric.Cleared>Очищено</RimWorldAccess.Trade.Numeric.Cleared>
-  <RimWorldAccess.Trade.Numeric.Invalid>Недопустимо: {0}</RimWorldAccess.Trade.Numeric.Invalid>
   <!-- After a numeric edit, the announcement is composed from one of
        the *.Body keys plus the *.Suffix key.
        NoTradeBody: {0} = item label.
@@ -202,10 +159,6 @@
        {1} = count, {2} = item label.
        BuyingBodyWithPrice / SellingBodyWithPrice: same plus
        {3} = formatted price. Suffix: {0} = current buffer. -->
-  <RimWorldAccess.Trade.Numeric.NoTradeBody>{0}: без обмена</RimWorldAccess.Trade.Numeric.NoTradeBody>
-  <RimWorldAccess.Trade.Numeric.GiftingBody>{0}: {1} {2}</RimWorldAccess.Trade.Numeric.GiftingBody>
-  <RimWorldAccess.Trade.Numeric.BuyingSellingBody>{0}: {1} {2} за {3}</RimWorldAccess.Trade.Numeric.BuyingSellingBody>
-  <RimWorldAccess.Trade.Numeric.Suffix>. Ввод: {0}</RimWorldAccess.Trade.Numeric.Suffix>
 
   <!-- =================================================================
        Gift mode toggle and gift confirmation paths.
@@ -216,10 +169,7 @@
   <RimWorldAccess.Trade.Gift.ModeGift>режим подарка</RimWorldAccess.Trade.Gift.ModeGift>
   <RimWorldAccess.Trade.Gift.ModeTrade>режим торговли</RimWorldAccess.Trade.Gift.ModeTrade>
   <RimWorldAccess.Trade.Gift.SwitchedTo>Переключено на: {0}</RimWorldAccess.Trade.Gift.SwitchedTo>
-  <RimWorldAccess.Trade.Gift.NoSession>Сессия подарков не активна</RimWorldAccess.Trade.Gift.NoSession>
   <RimWorldAccess.Trade.Gift.NoGifts>Нечего дарить</RimWorldAccess.Trade.Gift.NoGifts>
-  <RimWorldAccess.Trade.Gift.ErrorCalculating>Ошибка расчёта стоимости подарка</RimWorldAccess.Trade.Gift.ErrorCalculating>
-  <RimWorldAccess.Trade.Gift.ErrorOffering>Ошибка при дарении</RimWorldAccess.Trade.Gift.ErrorOffering>
   <!-- Gift completion: {0} = goodwill change (positive integer). -->
   <RimWorldAccess.Trade.Gift.Offered>Подарок предложен, репутация +{0}</RimWorldAccess.Trade.Gift.Offered>
 
@@ -240,27 +190,16 @@
        In gift mode the row is the goodwill delta; if no faction info
        is available, GiftBalanceFallback is spoken.
        Position suffix is appended in C# via PositionSuffix. -->
-  <RimWorldAccess.Trade.Balance.Spending>Итог баланса: расход {0} {1}</RimWorldAccess.Trade.Balance.Spending>
-  <RimWorldAccess.Trade.Balance.Receiving>Итог баланса: доход {0} {1}</RimWorldAccess.Trade.Balance.Receiving>
-  <RimWorldAccess.Trade.Balance.Balanced>Итог баланса: равноценный обмен</RimWorldAccess.Trade.Balance.Balanced>
-  <RimWorldAccess.Trade.Balance.Goodwill>Репутация +{0}</RimWorldAccess.Trade.Balance.Goodwill>
-  <RimWorldAccess.Trade.Balance.GiftFallback>Баланс режима подарка</RimWorldAccess.Trade.Balance.GiftFallback>
   <!-- Position suffix appended after the balance text; {0} = body,
        {1} = position phrase. -->
-  <RimWorldAccess.Trade.Balance.WithPosition>{0}. {1}</RimWorldAccess.Trade.Balance.WithPosition>
 
   <!-- =================================================================
        Detailed announcement (Tab key for full inventory + price).
        Each line is a separate key so commas/colons can localize.
        *.PriceLine: {0} = price (caller pre-formats with one decimal),
                     {1} = currency noun. -->
-  <RimWorldAccess.Trade.Detail.YouHave>У вас: {0}</RimWorldAccess.Trade.Detail.YouHave>
-  <RimWorldAccess.Trade.Detail.TraderHas>У торговца: {0}</RimWorldAccess.Trade.Detail.TraderHas>
-  <RimWorldAccess.Trade.Detail.SellPrice>Цена продажи: {0} {1} за штуку</RimWorldAccess.Trade.Detail.SellPrice>
-  <RimWorldAccess.Trade.Detail.BuyPrice>Цена покупки: {0} {1} за штуку</RimWorldAccess.Trade.Detail.BuyPrice>
   <!-- {0} = action word ("Buying"/"Selling"), {1} = count,
        {2} = total cost (caller F0-formatted), {3} = currency noun. -->
-  <RimWorldAccess.Trade.Detail.CurrentTrade>Текущая сделка: {0} {1} за {2} {3}</RimWorldAccess.Trade.Detail.CurrentTrade>
 
   <!-- Price-breakdown popup (Tab in trader/colony list).
        PriceTitleBuy / Sell: {0} = clean item label. -->
@@ -275,7 +214,7 @@
        ================================================================= -->
   <RimWorldAccess.Sellable.Open.NoDialog>Нет окна</RimWorldAccess.Sellable.Open.NoDialog>
   <RimWorldAccess.Sellable.Open.Closed>Закрыто</RimWorldAccess.Sellable.Open.Closed>
-  <RimWorldAccess.Sellable.Open.Controls>Смена вкладок: влево, вправо. Навигация: вверх, вниз.</RimWorldAccess.Sellable.Open.Controls>
+  <RimWorldAccess.Sellable.Open.Controls>Переключение категорий: Tab. Навигация: стрелки вверх и вниз.</RimWorldAccess.Sellable.Open.Controls>
   <RimWorldAccess.Sellable.Open.TraderFallback>Торговец</RimWorldAccess.Sellable.Open.TraderFallback>
   <!-- {0} = trader name, {1} = restock phrase (may be empty),
        {2} = "{count} categories" phrase, {3} = controls phrase. -->
@@ -292,11 +231,6 @@
   <!-- Tab switch + selection.
        TabSwitch: {0} = tab name, {1} = item count.
        The empty case ("No items") shares the global key. -->
-  <RimWorldAccess.Sellable.Tab.SwitchOne>{0}. 1 предмет.</RimWorldAccess.Sellable.Tab.SwitchOne>
-  <RimWorldAccess.Sellable.Tab.SwitchMany>{0}. {1_numCase ? предмет : предмета : предметов}.</RimWorldAccess.Sellable.Tab.SwitchMany>
-  <RimWorldAccess.Sellable.Tab.NoItems>Нет предметов</RimWorldAccess.Sellable.Tab.NoItems>
-  <RimWorldAccess.Sellable.Tab.UnknownTab>Неизвестно</RimWorldAccess.Sellable.Tab.UnknownTab>
-  <RimWorldAccess.Sellable.Item.Unknown>Неизвестный предмет</RimWorldAccess.Sellable.Item.Unknown>
 
   <!-- Item announcement composition.
        Bare: {0} = name.
@@ -305,15 +239,52 @@
        Description and position concatenate on top of bare via the
        *.WithDescription / *.WithDescriptionPosition / *.WithPosition
        variants so we don't glue strings. -->
-  <RimWorldAccess.Sellable.Item.Bare>{0}.</RimWorldAccess.Sellable.Item.Bare>
-  <RimWorldAccess.Sellable.Item.WithDescription>{0}. {1}.</RimWorldAccess.Sellable.Item.WithDescription>
-  <RimWorldAccess.Sellable.Item.WithPosition>{0}. {1}</RimWorldAccess.Sellable.Item.WithPosition>
-  <RimWorldAccess.Sellable.Item.WithDescriptionPosition>{0}. {1}. {2}</RimWorldAccess.Sellable.Item.WithDescriptionPosition>
 
   <!-- Typeahead context (active search prefix on item announcement).
        Prefix: {0} = current search buffer, {1} = item announcement.
        NoMatchesPrefix: {0} = buffer, {1} = item announcement. -->
-  <RimWorldAccess.Sellable.Search.Prefix>Поиск «{0}»: {1}</RimWorldAccess.Sellable.Search.Prefix>
-  <RimWorldAccess.Sellable.Search.NoMatchesPrefix>Нет совпадений для «{0}». {1}</RimWorldAccess.Sellable.Search.NoMatchesPrefix>
 
+  <RimWorldAccess.Trade.Column.Yours>У вас</RimWorldAccess.Trade.Column.Yours>
+  <RimWorldAccess.Trade.Column.Theirs>У торговца</RimWorldAccess.Trade.Column.Theirs>
+  <RimWorldAccess.Trade.Column.SellPrice>Цена продажи</RimWorldAccess.Trade.Column.SellPrice>
+  <RimWorldAccess.Trade.Column.BuyPrice>Цена покупки</RimWorldAccess.Trade.Column.BuyPrice>
+  <RimWorldAccess.Trade.Column.TradeAmount>Объём сделки</RimWorldAccess.Trade.Column.TradeAmount>
+
+  <!-- Trade classic view (TradeClassicScope, TradeViewOpener). -->
+  <RimWorldAccess.Trade.Tab.YourItems>Ваши товары</RimWorldAccess.Trade.Tab.YourItems>
+  <RimWorldAccess.Trade.Tab.TraderItems>Товары: {0}</RimWorldAccess.Trade.Tab.TraderItems>
+  <RimWorldAccess.Trade.Tab.TradeSummary>Итог торговли</RimWorldAccess.Trade.Tab.TradeSummary>
+  <RimWorldAccess.Trade.Currency.YouHave>У вас: {0}</RimWorldAccess.Trade.Currency.YouHave>
+  <RimWorldAccess.Trade.Currency.TraderHas>У торговца: {0}</RimWorldAccess.Trade.Currency.TraderHas>
+  <RimWorldAccess.Trade.Max.Reset>{0}: сброшено в ноль</RimWorldAccess.Trade.Max.Reset>
+  <RimWorldAccess.Trade.Max.Buying>Покупка всего: {0} {1}, {2}</RimWorldAccess.Trade.Max.Buying>
+  <RimWorldAccess.Trade.Max.Selling>Продажа всего: {0} {1}, {2}</RimWorldAccess.Trade.Max.Selling>
+  <RimWorldAccess.Trade.Max.Gifting>Дарение всего: {0} {1}, {2}</RimWorldAccess.Trade.Max.Gifting>
+  <RimWorldAccess.Trade.Reset.SingleItem>Сброс: {0}</RimWorldAccess.Trade.Reset.SingleItem>
+  <RimWorldAccess.Trade.Reset.CannotResetBalance>Нельзя сбросить запись баланса</RimWorldAccess.Trade.Reset.CannotResetBalance>
+  <RimWorldAccess.Trade.Item.SoloAvailable>Доступно: {0}</RimWorldAccess.Trade.Item.SoloAvailable>
+  <RimWorldAccess.Trade.Item.SoloPriceWithQuality>{0}, {1}</RimWorldAccess.Trade.Item.SoloPriceWithQuality>
+  <RimWorldAccess.Trade.Item.NotTradeable>Не продаётся</RimWorldAccess.Trade.Item.NotTradeable>
+  <RimWorldAccess.Trade.Item.YoursAt>У вас: {0} по {1}</RimWorldAccess.Trade.Item.YoursAt>
+  <RimWorldAccess.Trade.Item.TheirsAt>У торговца: {0} по {1}</RimWorldAccess.Trade.Item.TheirsAt>
+  <RimWorldAccess.Trade.Item.YoursAtWithQuality>У вас: {0} по {1} ({2})</RimWorldAccess.Trade.Item.YoursAtWithQuality>
+  <RimWorldAccess.Trade.Item.TheirsAtWithQuality>У торговца: {0} по {1} ({2})</RimWorldAccess.Trade.Item.TheirsAtWithQuality>
+  <RimWorldAccess.Trade.Item.YoursOnly>У вас: {0}</RimWorldAccess.Trade.Item.YoursOnly>
+  <RimWorldAccess.Trade.Item.TheirsOnly>У торговца: {0}</RimWorldAccess.Trade.Item.TheirsOnly>
+  <RimWorldAccess.Trade.Reject.CannotAdjustMax>Нельзя задать максимум</RimWorldAccess.Trade.Reject.CannotAdjustMax>
+  <RimWorldAccess.Trade.Reject.CannotAdjustMin>Нельзя задать минимум</RimWorldAccess.Trade.Reject.CannotAdjustMin>
+  <RimWorldAccess.Trade.Balance.Spending>Итог баланса: расход {0} {1}</RimWorldAccess.Trade.Balance.Spending>
+  <RimWorldAccess.Trade.Balance.Receiving>Итог баланса: доход {0} {1}</RimWorldAccess.Trade.Balance.Receiving>
+  <RimWorldAccess.Trade.Balance.Balanced>Итог баланса: равноценный обмен</RimWorldAccess.Trade.Balance.Balanced>
+  <RimWorldAccess.Trade.Balance.Goodwill>Репутация {0}</RimWorldAccess.Trade.Balance.Goodwill>
+  <RimWorldAccess.Trade.Balance.GiftFallback>Баланс режима подарка</RimWorldAccess.Trade.Balance.GiftFallback>
+  <RimWorldAccess.Trade.View.Classic>Классический вид</RimWorldAccess.Trade.View.Classic>
+  <RimWorldAccess.Trade.View.Table>Табличный вид</RimWorldAccess.Trade.View.Table>
+  <RimWorldAccess.Trade.View.SwitchToClassic>Переключиться на классический вид</RimWorldAccess.Trade.View.SwitchToClassic>
+  <RimWorldAccess.Trade.View.SwitchToTable>Переключиться на табличный вид</RimWorldAccess.Trade.View.SwitchToTable>
+  <RimWorldAccess.Trade.Sort.By>Сортировка: {0}</RimWorldAccess.Trade.Sort.By>
+  <RimWorldAccess.Trade.Sort.ThenBy>Затем по: {0}</RimWorldAccess.Trade.Sort.ThenBy>
+  <RimWorldAccess.Trade.Numeric.PromptSelling>Продажа. Введите количество.</RimWorldAccess.Trade.Numeric.PromptSelling>
+  <RimWorldAccess.Trade.Numeric.PromptBuying>Покупка. Введите количество.</RimWorldAccess.Trade.Numeric.PromptBuying>
+  <RimWorldAccess.Trade.Numeric.PromptGifting>Подарок. Введите количество.</RimWorldAccess.Trade.Numeric.PromptGifting>
 </LanguageData>

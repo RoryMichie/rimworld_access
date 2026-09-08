@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Autopilot.Engage.Label>Hedefe saldır</RimWorldAccess.Autopilot.Engage.Label>
+  <RimWorldAccess.Autopilot.Engage.Desc>{0} karakterine seçilen bir hedefe saldırmasını emreder. {0}, atanmış savaş kuralına göre hedefe ilerler ve saldırır; yolda saldıran düşmanları da savuşturur.</RimWorldAccess.Autopilot.Engage.Desc>
+  <RimWorldAccess.Autopilot.Engage.CurrentOrders>Geçerli emirler: {0}.</RimWorldAccess.Autopilot.Engage.CurrentOrders>
+  <RimWorldAccess.Autopilot.Patrol.Label>Devriye: {0}</RimWorldAccess.Autopilot.Patrol.Label>
+  <RimWorldAccess.Autopilot.Patrol.Desc>{0} karakterine, menzile giren her düşmanla savaşmak için durarak seçilen bölgede devriye gezmesini emreder.</RimWorldAccess.Autopilot.Patrol.Desc>
+  <RimWorldAccess.Autopilot.Patrol.NoneOption>Devriye yok</RimWorldAccess.Autopilot.Patrol.NoneOption>
+  <RimWorldAccess.Autopilot.PatrolAssigned>{0}: {1} bölgesinde devriyede.</RimWorldAccess.Autopilot.PatrolAssigned>
+  <RimWorldAccess.Autopilot.PatrolCleared>{0}: devriye iptal edildi.</RimWorldAccess.Autopilot.PatrolCleared>
+  <RimWorldAccess.Autopilot.SeekDestroy.Label>Bul ve yok et</RimWorldAccess.Autopilot.SeekDestroy.Label>
+  <RimWorldAccess.Autopilot.SeekDestroy.Desc>{0}, konum korumak yerine düşmanları kovalar. İşaretli ve emredilen hedefler önce gelir.</RimWorldAccess.Autopilot.SeekDestroy.Desc>
+  <RimWorldAccess.Autopilot.PickerLabel>Savaş kuralı: {0}</RimWorldAccess.Autopilot.PickerLabel>
+  <RimWorldAccess.Autopilot.PickerDesc>{0} tarafından uygulanan savaş kuralı.</RimWorldAccess.Autopilot.PickerDesc>
+  <RimWorldAccess.Autopilot.HuntAnimals.Label>Hayvanları avla</RimWorldAccess.Autopilot.HuntAnimals.Label>
+  <RimWorldAccess.Autopilot.HuntAnimals.Desc>{0}, askere alınmışken yabani hayvanları avlar. Düşmanlar her zaman önce gelir. {0} karakterinin av kuralı hangi hayvanların avlanabileceğini belirler.</RimWorldAccess.Autopilot.HuntAnimals.Desc>
+  <RimWorldAccess.Autopilot.AutocastAll.Label>Tüm yetenekleri otomatik kullan</RimWorldAccess.Autopilot.AutocastAll.Label>
+  <RimWorldAccess.Autopilot.AutocastAll.Desc>{0} karakterinin tüm yeteneklerini askere alınmışken otomatik kullanım için işaretler. Her yetenek kendi menüsünden tek tek işaretlenebilir veya işareti kaldırılabilir.</RimWorldAccess.Autopilot.AutocastAll.Desc>
+  <RimWorldAccess.Autopilot.Pause.Label>Savaş otopilotunu duraklat</RimWorldAccess.Autopilot.Pause.Label>
+  <RimWorldAccess.Autopilot.Pause.Desc>{0} karakterinin tüm otomatik savaş davranışını durdurur ve tam denetimi geri verir. Kurallar ve emirler korunur ama bu kutunun işareti kaldırılana kadar hiçbiri uygulanmaz. Yeni bir hedefe saldırma veya devriye emri vermek de otomatiği yeniden başlatır.</RimWorldAccess.Autopilot.Pause.Desc>
+
+  <RimWorldAccess.Autopilot.TakeCover.Label>Siper al</RimWorldAccess.Autopilot.TakeCover.Label>
+  <RimWorldAccess.Autopilot.TakeCover.Desc>Nişancılar siperli atış konumlarına geçer. Yakın dövüşçüler bunu yok sayar.</RimWorldAccess.Autopilot.TakeCover.Desc>
+  <RimWorldAccess.Autopilot.MeleeCharge.Label>Yakın dövüş hücumu</RimWorldAccess.Autopilot.MeleeCharge.Label>
+  <RimWorldAccess.Autopilot.MeleeCharge.Desc>Yakın dövüşçüler uzaktaki hedeflere hücum eder. Kapalıyken yalnızca yaklaşan düşmanlara saldırırlar.</RimWorldAccess.Autopilot.MeleeCharge.Desc>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Label>Her yerde kovala</RimWorldAccess.Autopilot.PursueAnywhere.Label>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Desc>Bul ve yok et hedeflerini tüm haritadan seçer ve nereye kaçarlarsa kaçsınlar kovalar. Kapalıyken yalnızca yakındaki görünür düşmanlar seçilir. Bul ve yok et kapalıyken hiçbir şey yapmaz.</RimWorldAccess.Autopilot.PursueAnywhere.Desc>
+  <RimWorldAccess.Autopilot.FightAsSquad.Label>Manga halinde savaş</RimWorldAccess.Autopilot.FightAsSquad.Label>
+  <RimWorldAccess.Autopilot.FightAsSquad.Desc>Politikası da manga halinde savaşan yakındaki silah altındaki karakterlerle koordine olur: tek bir hedefe yığılmak yerine ateşi düşman grubuna dağıtır ve serseri mermilerle patlamalar tek bir karakteri vursun diye aralarında bir karo mesafe bırakır.</RimWorldAccess.Autopilot.FightAsSquad.Desc>
+  <RimWorldAccess.Autopilot.BashDoors.Label>Kapıları kır</RimWorldAccess.Autopilot.BashDoors.Label>
+  <RimWorldAccess.Autopilot.BashDoors.Desc>Hedefe giden yolu kapatan kilitli veya düşman kapılarını kırar.</RimWorldAccess.Autopilot.BashDoors.Desc>
+  <RimWorldAccess.Autopilot.KeepDistance.Label>Mesafeyi koru</RimWorldAccess.Autopilot.KeepDistance.Label>
+  <RimWorldAccess.Autopilot.KeepDistance.Desc>Nişancılar, fazla yaklaşan yakın dövüşçülerden geri çekilir.</RimWorldAccess.Autopilot.KeepDistance.Desc>
+  <RimWorldAccess.Autopilot.FallBackInjured.Label>Yaralanınca geri çekil</RimWorldAccess.Autopilot.FallBackInjured.Label>
+  <RimWorldAccess.Autopilot.FallBackInjured.Desc>Ağır yaralandığında üstüne gelen düşmanlardan geri çekilir, sonra saldırıya kalkmak yerine siperden ve menzilden temkinli şekilde savaşmaya devam eder.</RimWorldAccess.Autopilot.FallBackInjured.Desc>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Label>Patlamalardan kaçın</RimWorldAccess.Autopilot.AvoidBlasts.Label>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Desc>Fitili ateşlenmiş patlayıcılardan ve yaklaşan patlamalardan uzak durur.</RimWorldAccess.Autopilot.AvoidBlasts.Desc>
+  <RimWorldAccess.Autopilot.AutocastMarked.Label>İşaretli yetenekleri otomatik kullan</RimWorldAccess.Autopilot.AutocastMarked.Label>
+  <RimWorldAccess.Autopilot.AutocastMarked.Desc>Karakterin otomatik kullanım için işaretlediği yetenekleri kullanır. İşaretler hangilerini, bu kutu kullanılıp kullanılmayacağını belirler. Kapalıyken işaretler korunur ama yok sayılır.</RimWorldAccess.Autopilot.AutocastMarked.Desc>
+
+  <RimWorldAccess.Autopilot.AutocastOption>Otomatik kullanım</RimWorldAccess.Autopilot.AutocastOption>
+  <RimWorldAccess.Autopilot.AutocastOn>otomatik kullanım açık</RimWorldAccess.Autopilot.AutocastOn>
+
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>Savaş otopilotunu etkinleştir</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>Askere alınan karakterlerin kendi başına savaşmasına izin verir. Askere alınan karakterlere savaş ve av kuralları ile yeni düğmeler ekler. Kapatınca düğmeler kaldırılır ve otomasyon durur.</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>Normal moda geçiş Bul ve yok et ile Hayvanları avla'yı kapatır</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>Bir karakter normal moda alındığında Bul ve yok et ve Hayvanları avla kutularının işaretini kaldırır.</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>
+
+  <RimWorldAccess.Autopilot.PolicyTitle>Savaş kuralları</RimWorldAccess.Autopilot.PolicyTitle>
+  <RimWorldAccess.Autopilot.PolicyTip>Askere alınan karakterlerin kendi başına nasıl savaştığını belirleyen şablonlar oluştur ve yönet. Kuralları Ata, Hayvanlar veya Mekanoidler sekmelerinden ata; araçlarda savaş kuralı düğmesi kalır.</RimWorldAccess.Autopilot.PolicyTip>
+  <RimWorldAccess.Autopilot.PolicyName>Savaş kuralı</RimWorldAccess.Autopilot.PolicyName>
+  <RimWorldAccess.Autopilot.ManagePolicies>Savaş kurallarını yönet</RimWorldAccess.Autopilot.ManagePolicies>
+  <RimWorldAccess.Autopilot.Policy.None>Yok</RimWorldAccess.Autopilot.Policy.None>
+  <RimWorldAccess.Autopilot.Policy.None.Tip>Savaş kuralı yok. Bu karakter için savaş otomatiği tamamen kapalıdır: bul ve yok et, saldırı emirleri ve otomatik yetenek kullanımı çalışmaz. Hayvan avlama ve devriye ayrıdır ve çalışmaya devam eder.</RimWorldAccess.Autopilot.Policy.None.Tip>
+  <RimWorldAccess.Autopilot.PolicyInUse>Savaş kuralı {0} tarafından kullanılıyor.</RimWorldAccess.Autopilot.PolicyInUse>
+  <RimWorldAccess.Autopilot.Policy.FullControl>Tam denetim</RimWorldAccess.Autopilot.Policy.FullControl>
+  <RimWorldAccess.Autopilot.Policy.FightNearby>Yakında savaş</RimWorldAccess.Autopilot.Policy.FightNearby>
+  <RimWorldAccess.Autopilot.Policy.StaySafe>Güvende kal</RimWorldAccess.Autopilot.Policy.StaySafe>
+
+  <RimWorldAccess.Autopilot.HuntPolicyTitle>Av kuralları</RimWorldAccess.Autopilot.HuntPolicyTitle>
+  <RimWorldAccess.Autopilot.HuntPolicyTip>Askere alınan karakterlerin hangi hayvanları avlayabileceğini belirleyen şablonlar oluştur ve yönet: izin verilen tür listesi, intikam olasılığı aralığı ve kutsal hayvan koruması. Avlanmanın kendisi her karakterde Hayvanları avla düğmesiyle açılır. Karakter askere alınmışken bu kurallar av işaretlerinden önce gelir.</RimWorldAccess.Autopilot.HuntPolicyTip>
+  <RimWorldAccess.Autopilot.HuntPolicyName>Av kuralı</RimWorldAccess.Autopilot.HuntPolicyName>
+  <RimWorldAccess.Autopilot.ManageHuntPolicies>Av kurallarını yönet</RimWorldAccess.Autopilot.ManageHuntPolicies>
+  <RimWorldAccess.Autopilot.HuntPolicyInUse>Av kuralı {0} tarafından kullanılıyor.</RimWorldAccess.Autopilot.HuntPolicyInUse>
+  <RimWorldAccess.Autopilot.HuntPolicyIsDefault>Varsayılan av kuralı silinemez.</RimWorldAccess.Autopilot.HuntPolicyIsDefault>
+  <RimWorldAccess.Autopilot.HuntPolicy.SafeGame>Güvenli av</RimWorldAccess.Autopilot.HuntPolicy.SafeGame>
+  <RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>Herhangi bir hayvan</RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>
+  <RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>İzin verilen hayvanlar</RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.Desc>Yalnızca zarar görünce intikam alma olasılığı bu aralıkta olan hayvanlar avlanabilir.</RimWorldAccess.Autopilot.HuntRevengeRange.Desc>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>Zarar görünce intikam olasılığı: {0}</RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Label>Kutsal hayvanları esirge</RimWorldAccess.Autopilot.HuntSpareVenerated.Label>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>Karakterin inancının kutsal saydığı hayvanları asla avlamaz.</RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>
+
+  <RimWorldAccess.Autopilot.SummaryPrefix>Etkinleştirir: {0}.</RimWorldAccess.Autopilot.SummaryPrefix>
+  <RimWorldAccess.Autopilot.SummarySeparator>, </RimWorldAccess.Autopilot.SummarySeparator>
+  <RimWorldAccess.Autopilot.SummaryNothing>Hiçbir şeyi etkinleştirmez. Karakter konumunu korur ve serbest atış yapar.</RimWorldAccess.Autopilot.SummaryNothing>
+
+  <RimWorldAccess.Autopilot.Report.MovingToCover>{0}, {1} konumundaki sipere gidiyor.</RimWorldAccess.Autopilot.Report.MovingToCover>
+  <RimWorldAccess.Autopilot.Report.MovingToCoverBehind>{1}, {2} konumunda {0} arkasına siperleniyor.</RimWorldAccess.Autopilot.Report.MovingToCoverBehind>
+  <RimWorldAccess.Autopilot.Report.MovingToEngage>{0} üzerine ilerliyor.</RimWorldAccess.Autopilot.Report.MovingToEngage>
+  <RimWorldAccess.Autopilot.Report.FallingBack>ağır yaralı, {0}, {1} konumuna geri çekiliyor.</RimWorldAccess.Autopilot.Report.FallingBack>
+  <RimWorldAccess.Autopilot.Report.FleeingBlast>{0} kaynaklı patlamadan uzaklaşıyor.</RimWorldAccess.Autopilot.Report.FleeingBlast>
+  <RimWorldAccess.Autopilot.Report.BackingAway>{0} karşısında geriliyor.</RimWorldAccess.Autopilot.Report.BackingAway>
+  <RimWorldAccess.Autopilot.Report.Casting>{0} kullanıyor.</RimWorldAccess.Autopilot.Report.Casting>
+  <RimWorldAccess.Autopilot.Report.CastingOn>{1} üzerinde {0} kullanıyor.</RimWorldAccess.Autopilot.Report.CastingOn>
+  <RimWorldAccess.Autopilot.Report.VehicleAdvance>en yakın düşmana doğru sürüyor.</RimWorldAccess.Autopilot.Report.VehicleAdvance>
+  <RimWorldAccess.Autopilot.Report.VehicleFiringPosition>atış konumuna sürüyor.</RimWorldAccess.Autopilot.Report.VehicleFiringPosition>
+  <RimWorldAccess.Autopilot.Report.VehicleHolding>atış konumunu koruyor.</RimWorldAccess.Autopilot.Report.VehicleHolding>
+  <RimWorldAccess.Autopilot.Report.EngagingOrdered>emirle {0} hedefine saldırıyor.</RimWorldAccess.Autopilot.Report.EngagingOrdered>
+  <RimWorldAccess.Autopilot.Report.EngagingMarked>işaretli hedef {0} üzerine saldırıyor.</RimWorldAccess.Autopilot.Report.EngagingMarked>
+  <RimWorldAccess.Autopilot.Report.ReturningToPost>{0}, {1} konumundaki görev noktasına dönüyor.</RimWorldAccess.Autopilot.Report.ReturningToPost>
+  <RimWorldAccess.Autopilot.Report.Patrolling>{0} bölgesinde devriye geziyor.</RimWorldAccess.Autopilot.Report.Patrolling>
+  <RimWorldAccess.Autopilot.Report.FightingOff>{0} saldırganını püskürtüyor.</RimWorldAccess.Autopilot.Report.FightingOff>
+  <RimWorldAccess.Autopilot.Report.HoldingFiring>konumunu koruyor ve ateş ediyor.</RimWorldAccess.Autopilot.Report.HoldingFiring>
+  <RimWorldAccess.Autopilot.Report.SpreadingFire>ateşi {0} hedefine kaydırıyor.</RimWorldAccess.Autopilot.Report.SpreadingFire>
+  <RimWorldAccess.Autopilot.Report.WoundedHolding>yaralı, konumunu koruyor.</RimWorldAccess.Autopilot.Report.WoundedHolding>
+
+  <RimWorldAccess.Autopilot.EngageOption>{0} hedefine saldır</RimWorldAccess.Autopilot.EngageOption>
+  <RimWorldAccess.Autopilot.EngageOption.Tip>Bu hedefe, düşene kadar saldırır. Yolda saldıran düşmanlar önce savuşturulur.</RimWorldAccess.Autopilot.EngageOption.Tip>
+  <RimWorldAccess.Autopilot.EngagePawnCount>{0} karakter</RimWorldAccess.Autopilot.EngagePawnCount>
+  <RimWorldAccess.Autopilot.EngageOrdered>{0}: hedef {1}.</RimWorldAccess.Autopilot.EngageOrdered>
+  <RimWorldAccess.Autopilot.EngageQueued>{0}: {1} sıraya eklendi.</RimWorldAccess.Autopilot.EngageQueued>
+  <RimWorldAccess.Autopilot.ClearOrders>Saldırı emirlerini iptal et</RimWorldAccess.Autopilot.ClearOrders>
+  <RimWorldAccess.Autopilot.OrdersCleared>Saldırı emirleri iptal edildi.</RimWorldAccess.Autopilot.OrdersCleared>
+
+  <RimWorldAccess.Autopilot.AttackDesignator.Label>saldırı için işaretle</RimWorldAccess.Autopilot.AttackDesignator.Label>
+  <RimWorldAccess.Autopilot.AttackDesignator.Desc>Bul ve yok et modundaki karakterlerin önce saldıracağı hedefleri işaretler. Alan taramaları yalnızca düşmanları işaretler; Shift hizipsiz yaratıkları, Ctrl ve Shift herkesi ekler.</RimWorldAccess.Autopilot.AttackDesignator.Desc>
+  <RimWorldAccess.Autopilot.AttackDesignator.MustTarget>Saldırılabilir bir karakter işaretlenmeli.</RimWorldAccess.Autopilot.AttackDesignator.MustTarget>
+</LanguageData>

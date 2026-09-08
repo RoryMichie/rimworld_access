@@ -1,23 +1,24 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
+using RimWorldAccess.Shell;
 using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Keyboard navigation for Dialog_AnomalySettings — the popup opened from the
-    /// "AnomalySettings..." button on Page_SelectStoryteller during character creation.
+    /// Keyboard navigation for Dialog_AnomalySettings, the popup opened from the
+    /// "AnomalySettings..." button on Page_SelectStoryteller.
     ///
-    /// Mirrors vanilla's actual UI structure: a single scrolling list. Top row is the
-    /// playstyle selector (Left/Right cycles options); below are the conditional
-    /// anomaly sliders (override / inactive / active / study, only the relevant ones
-    /// shown). Up/Down navigates rows; Enter toggles. Edits are stored in local copies
-    /// and only committed to the underlying Difficulty on Accept (Alt+S).
+    /// Mirrors vanilla's structure: a single scrolling list, presented by
+    /// <see cref="RimWorldAccess.Shell.AnomalySettingsScope"/> as its one content region. Row 0 is
+    /// the playstyle combo box; below are the conditional anomaly sliders for that playstyle. Edits
+    /// go straight into the dialog's own working fields — the same fields vanilla's widgets write —
+    /// so the drawn UI tracks them; they reach the underlying Difficulty only on Accept (Alt+S),
+    /// vanilla's own commit point.
     /// </summary>
     public static class AnomalySettingsDialogState
     {
@@ -38,40 +39,77 @@ namespace RimWorldAccess
         private static Dialog_AnomalySettings currentDialog;
 
         /// <summary>
-        /// Frame number when we last handled Escape to close the dialog. Mirrors the
-        /// FactionLandingState pattern — used by AnomalySettingsDialogPatch's Page prefix to
-        /// block Page_SelectStoryteller from also receiving the Cancel keystroke this frame
-        /// (Event.current.Use() does not stop HandleEventsHighPriority from firing).
+        /// Frame number when Escape last closed the dialog. AnomalySettingsDialogPatch's Page
+        /// prefix reads it to block Page_SelectStoryteller from also receiving that Cancel
+        /// keystroke: Event.current.Use() does not stop HandleEventsHighPriority from firing.
         /// </summary>
         internal static int escapeHandledOnFrame = -1;
 
         /// <summary>
-        /// True when the close was triggered by Accept (Alt+S). Read by the PostClose patch
-        /// to pick the right announcement ("saved" vs "closed") and to decide whether to
-        /// reset the parent page's tab cursor to the Storyteller row (so Enter advances
-        /// naturally to the next page).
+        /// True when the close came from Accept (Alt+S). The PostClose patch reads it to pick the
+        /// announcement ("saved" vs "closed") and to reset the parent page's tab cursor to the
+        /// Storyteller row.
         /// </summary>
         internal static bool wasAcceptClose;
 
-        // Single flat list of items, just like the Anomaly section in custom difficulty:
-        //   index 0          → AnomalyPlaystyleSetting (Left/Right cycles playstyles)
-        //   index 1..n-1     → conditional sliders (only the visible ones for the current playstyle)
-        // Rebuilt whenever the playstyle changes.
+        // Flat list: index 0 is the playstyle combo box, 1..n-1 the sliders visible for that
+        // playstyle. Rebuilt whenever the playstyle changes.
         private static List<DifficultySetting> items = new List<DifficultySetting>();
-        private static int selectedIndex;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
 
-        // Local copies of the dialog's private fields. We mutate these freely; they only get
-        // committed back to the underlying Difficulty when the user activates Accept (Alt+S).
-        private static AnomalyPlaystyleDef localPlaystyle;
-        private static float localInactive;
-        private static float localActive;
-        private static float localStudy;
-        private static float localOverride;
-        private static Difficulty localDifficulty;
+        // The dialog's own working fields are vanilla's edit model: its widgets write them every
+        // frame and only its Accept button pushes them into the Difficulty, so reading and writing
+        // them directly keeps the drawn UI in step. Its constructor has already seeded them; the
+        // null-dialog fallbacks below only keep an out-of-order read from throwing.
+        private static AnomalyPlaystyleDef Playstyle
+        {
+            get => currentDialog == null ? null : PlaystyleField?.GetValue(currentDialog) as AnomalyPlaystyleDef;
+            set => WriteField(PlaystyleField, value);
+        }
+
+        private static float Inactive
+        {
+            get => currentDialog == null ? 0f : (float)(InactiveField?.GetValue(currentDialog) ?? 0f);
+            set => WriteField(InactiveField, value);
+        }
+
+        private static float Active
+        {
+            get => currentDialog == null ? 0f : (float)(ActiveField?.GetValue(currentDialog) ?? 0f);
+            set => WriteField(ActiveField, value);
+        }
+
+        private static float Study
+        {
+            get => currentDialog == null ? 1f : (float)(StudyField?.GetValue(currentDialog) ?? 1f);
+            set => WriteField(StudyField, value);
+        }
+
+        private static float Override
+        {
+            get => currentDialog == null ? 0.15f : (float)(OverrideField?.GetValue(currentDialog) ?? 0.15f);
+            set => WriteField(OverrideField, value);
+        }
+
+        // MUTATION-C: mirrors the writes Dialog_AnomalySettings' own widgets perform inline
+        // (DrawPlaystyles :135-139, DrawExtraSettings :161-175); no A or B vehicle exists.
+        private static void WriteField(FieldInfo field, object value)
+        {
+            if (currentDialog != null) field?.SetValue(currentDialog, value);
+        }
+
+        private static Difficulty Difficulty =>
+            currentDialog == null ? null : DifficultyField?.GetValue(currentDialog) as Difficulty;
 
         public static bool IsActive => isActive;
-        public static bool HasActiveSearch => typeahead.HasActiveSearch;
+
+        /// <summary>The settings rows, in vanilla's own draw order — the scope's one content region.</summary>
+        internal static int RowCount => items.Count;
+
+        /// <summary>One settings row, or null when the index is out of range.</summary>
+        internal static DifficultySetting RowAt(int index)
+        {
+            return index >= 0 && index < items.Count ? items[index] : null;
+        }
 
         public static void Open(Dialog_AnomalySettings dialog)
         {
@@ -80,31 +118,18 @@ namespace RimWorldAccess
             {
                 currentDialog = dialog;
 
-                // Critical setup — mirrors FactionLandingState pattern. Without these, Unity
-                // IMGUI focus stalls keyboard events when this absorbInputAroundWindow modal opens.
-                //   - closeOnAccept/closeOnCancel: stop the WindowStack from auto-closing on
-                //     Enter/Escape; we drive close ourselves via TryRemove.
-                //   - focusWhenOpened: stop Unity from grabbing keyboard focus into the GUI.Window,
-                //     which would block UnifiedKeyboardPatch from ever seeing our keys.
+                // Without these, Unity IMGUI focus stalls keyboard events when this
+                // absorbInputAroundWindow modal opens. closeOnAccept/closeOnCancel stop the
+                // WindowStack auto-closing on Enter/Escape (close is driven via TryRemove);
+                // focusWhenOpened stops Unity grabbing focus into the GUI.Window, which would blind
+                // the shell dispatcher.
                 dialog.closeOnAccept = false;
                 dialog.closeOnCancel = false;
                 dialog.focusWhenOpened = false;
 
-                localDifficulty = DifficultyField?.GetValue(dialog) as Difficulty;
-                localInactive = (float)(InactiveField?.GetValue(dialog) ?? 0f);
-                localActive = (float)(ActiveField?.GetValue(dialog) ?? 0f);
-                localStudy = (float)(StudyField?.GetValue(dialog) ?? 1f);
-                localOverride = (float)(OverrideField?.GetValue(dialog) ?? 0.15f);
-                localPlaystyle = PlaystyleField?.GetValue(dialog) as AnomalyPlaystyleDef;
-
-                selectedIndex = 0;
-                typeahead.ClearSearch();
                 RebuildItems();
                 wasAcceptClose = false;
                 isActive = true;
-
-                TolkHelper.Speak("AnomalySettings".Loc());
-                AnnounceCurrent();
             }
             catch (Exception ex)
             {
@@ -117,176 +142,44 @@ namespace RimWorldAccess
         {
             isActive = false;
             currentDialog = null;
-            localDifficulty = null;
-            localPlaystyle = null;
             items.Clear();
-            typeahead.ClearSearch();
         }
 
-        // ===== KEYBOARD HANDLER =====
+        // ===== SCOPE ROUTERS =====
+        // The keys are AnomalySettingsScope's claims, delegating to the routers below; cursor,
+        // typeahead and list navigation are the shared chassis grammar. What stays here is the row
+        // data, the mutations and the two texts the scope asks for.
 
-        public static bool HandleInput(Event evt)
+        /// <summary>Alt+S: commit the dialog's edits to the Difficulty and close (accept).</summary>
+        public static void AcceptSettings()
         {
-            if (!isActive || currentDialog == null) return false;
-            if (evt.type != EventType.KeyDown) return false;
+            if (!isActive || currentDialog == null) return;
+            Accept();
+        }
 
-            var key = evt.keyCode;
-            bool alt = KeyboardHelper.IsAltHeld;
-            bool shift = evt.shift;
-            bool ctrl = evt.control;
+        /// <summary>Alt+R: open the set-to-standard-playstyle preset picker; <paramref name="onPicked"/> re-reads the focused row once a pick lands.</summary>
+        public static void OpenStandardPlaystylePicker(Action onPicked)
+        {
+            if (!isActive) return;
+            OpenStandardPlaystyleMenu(onPicked);
+        }
 
-            // Alt+S = Accept (commit + close).
-            if (alt && key == KeyCode.S)
-            {
-                Accept();
-                return true;
-            }
-
-            // Alt+R = Set to Standard Playstyle preset menu.
-            if (alt && key == KeyCode.R)
-            {
-                OpenStandardPlaystyleMenu();
-                return true;
-            }
-
-            switch (key)
-            {
-                case KeyCode.Escape:
-                    if (typeahead.HasActiveSearch)
-                    {
-                        typeahead.ClearSearchAndAnnounce();
-                        AnnounceCurrent();
-                        return true;
-                    }
-                    CloseDialog();
-                    return true;
-
-                case KeyCode.UpArrow:
-                    NavigatePrevious();
-                    return true;
-
-                case KeyCode.DownArrow:
-                    NavigateNext();
-                    return true;
-
-                case KeyCode.Home:
-                    NavigateHome();
-                    return true;
-
-                case KeyCode.End:
-                    NavigateEnd();
-                    return true;
-
-                case KeyCode.LeftArrow:
-                    AdjustCurrent(-1, shift);
-                    return true;
-
-                case KeyCode.RightArrow:
-                    AdjustCurrent(1, shift);
-                    return true;
-
-                case KeyCode.Return:
-                case KeyCode.KeypadEnter:
-                case KeyCode.Space:
-                    ToggleCurrent();
-                    return true;
-
-                case KeyCode.Backspace:
-                    if (typeahead.HasActiveSearch)
-                    {
-                        var labels = items.Select(s => s.Label).ToList();
-                        if (typeahead.ProcessBackspace(labels, out int newIndex) && newIndex >= 0)
-                        {
-                            selectedIndex = newIndex;
-                            AnnounceCurrent();
-                        }
-                    }
-                    return true;
-
-                default:
-                    // Modal: consume all unhandled keys; typeahead routed via TypeaheadDispatcher.
-                    return true;
-            }
+        /// <summary>Escape: discard and close the dialog (the chassis handles the search-clear Escape).</summary>
+        public static void HandleCancel()
+        {
+            if (!isActive || currentDialog == null) return;
+            CloseDialog();
         }
 
         /// <summary>
-        /// Layout-aware typeahead character entry; called by <see cref="TypeaheadDispatcher"/>.
+        /// Left/Right on one row: adjust its value; <paramref name="large"/> (Shift) steps a slider
+        /// by a tenth of its positions. The playstyle combo box never reaches here.
         /// </summary>
-        public static void HandleTypeahead(char c)
+        internal static void AdjustRow(int index, int direction, bool large)
         {
-            if (!isActive) return;
-
-            var labels = items.Select(s => s.Label).ToList();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIdx) && newIdx >= 0)
-            {
-                selectedIndex = newIdx;
-                AnnounceCurrent();
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
-        }
-
-        // ===== NAVIGATION =====
-
-        private static void NavigateNext()
-        {
-            if (items.Count == 0) return;
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                selectedIndex = typeahead.GetNextMatch(selectedIndex);
-            else
-            {
-                typeahead.ClearSearch();
-                selectedIndex = MenuHelper.SelectNext(selectedIndex, items.Count);
-            }
-            AnnounceCurrent();
-        }
-
-        private static void NavigatePrevious()
-        {
-            if (items.Count == 0) return;
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                selectedIndex = typeahead.GetPreviousMatch(selectedIndex);
-            else
-            {
-                typeahead.ClearSearch();
-                selectedIndex = MenuHelper.SelectPrevious(selectedIndex, items.Count);
-            }
-            AnnounceCurrent();
-        }
-
-        private static void NavigateHome()
-        {
-            if (items.Count == 0) return;
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                selectedIndex = typeahead.GetFirstMatch();
-            else
-            {
-                typeahead.ClearSearch();
-                selectedIndex = 0;
-            }
-            AnnounceCurrent();
-        }
-
-        private static void NavigateEnd()
-        {
-            if (items.Count == 0) return;
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                selectedIndex = typeahead.GetLastMatch();
-            else
-            {
-                typeahead.ClearSearch();
-                selectedIndex = items.Count - 1;
-            }
-            AnnounceCurrent();
-        }
-
-        private static void AdjustCurrent(int direction, bool shift)
-        {
-            if (items.Count == 0 || selectedIndex < 0 || selectedIndex >= items.Count) return;
-            var setting = items[selectedIndex];
-            if (shift && setting is DifficultySliderSetting slider)
+            DifficultySetting setting = RowAt(index);
+            if (setting == null) return;
+            if (large && setting is DifficultySliderSetting slider)
             {
                 slider.AdjustByPercentOfPositions(0.1f * direction);
             }
@@ -294,21 +187,34 @@ namespace RimWorldAccess
             {
                 setting.Adjust(direction);
             }
-            // The playstyle row's onChanged rebuilds items in place; the playstyle row is
-            // always at index 0, so selectedIndex stays valid. Re-fetch from items in case
-            // the rebuild swapped instances.
-            if (selectedIndex < items.Count)
-                TolkHelper.SpeakData(items[selectedIndex].GetAdjustmentAnnouncement());
-            else
-                TolkHelper.SpeakData(setting.GetAdjustmentAnnouncement());
+            SpeakRowChange(index, setting);
         }
 
-        private static void ToggleCurrent()
+        /// <summary>
+        /// Enter/Space on one row: the playstyle combo box opens its picker (the new state is
+        /// spoken only once a pick lands); everything else toggles in place.
+        /// </summary>
+        internal static void ToggleRow(int index, Action onPicked)
         {
-            if (items.Count == 0 || selectedIndex < 0 || selectedIndex >= items.Count) return;
-            items[selectedIndex].Toggle();
-            if (selectedIndex < items.Count)
-                TolkHelper.SpeakData(items[selectedIndex].GetAdjustmentAnnouncement());
+            DifficultySetting setting = RowAt(index);
+            if (setting == null) return;
+            if (setting is AnomalyPlaystyleSetting playstyle)
+            {
+                playstyle.OpenPicker(onPicked);
+                return;
+            }
+            setting.Toggle();
+            SpeakRowChange(index, setting);
+        }
+
+        /// <summary>
+        /// The playstyle row's onChanged rebuilds <see cref="items"/> in place. Index 0 stays
+        /// valid, but re-fetch from the list in case the rebuild swapped instances.
+        /// </summary>
+        private static void SpeakRowChange(int index, DifficultySetting fallback)
+        {
+            DifficultySetting fresh = RowAt(index);
+            TolkHelper.SpeakData((fresh ?? fallback).GetAdjustmentAnnouncement());
         }
 
         // ===== ITEM LIST =====
@@ -316,88 +222,172 @@ namespace RimWorldAccess
         private static void RebuildItems()
         {
             items.Clear();
-            if (localPlaystyle == null) return;
+            if (Playstyle == null) return;
 
-            // Playstyle row at the top (Left/Right cycles).
+            // Playstyle row at the top (a combo box; Enter opens its picker).
             items.Add(new AnomalyPlaystyleSetting(
-                getter: () => localPlaystyle,
-                setter: v => localPlaystyle = v,
+                getter: () => Playstyle,
+                setter: v =>
+                {
+                    // MUTATION-C: mirrors Dialog_AnomalySettings.DrawPlaystyles' scenario gate
+                    // (:125-144); the gate is inline in vanilla's radio branch with no
+                    // extractable Can* twin. Vanilla posts a RejectInput message here; we speak
+                    // the same refusal instead.
+                    if (Find.Scenario != null && Find.Scenario.standardAnomalyPlaystyleOnly
+                        && v != AnomalyPlaystyleDefOf.Standard)
+                    {
+                        TolkHelper.SpeakData($"{(string)"DisabledByScenario".Translate()}: {Find.Scenario.name}");
+                        return;
+                    }
+                    Playstyle = v;
+                },
                 onTransitionToOverride: () =>
                 {
-                    // Mirror vanilla DrawPlaystyles: when entering an override-style playstyle,
-                    // seed the override fraction so the slider has a sensible starting value.
-                    localOverride = 0.15f;
+                    // Mirror vanilla DrawPlaystyles: entering an override-style playstyle seeds the
+                    // override fraction so the slider starts somewhere sensible.
+                    Override = 0.15f;
                 },
                 onChanged: RebuildItems));
 
-            // Conditional sliders. useEnabledConditions=false → only return the sliders relevant
-            // to the current playstyle (rather than always-show + per-row enable conditions).
+            // useEnabledConditions=false returns only the sliders relevant to the current
+            // playstyle, rather than always-show plus per-row enable conditions.
             items.AddRange(DifficultySettingsHelper.BuildAnomalySliders(
-                playstyleGetter: () => localPlaystyle,
-                overrideGetter: () => localOverride, overrideSetter: v => localOverride = v,
-                inactiveGetter: () => localInactive, inactiveSetter: v => localInactive = v,
-                activeGetter: () => localActive, activeSetter: v => localActive = v,
-                studyGetter: () => localStudy, studySetter: v => localStudy = v,
+                playstyleGetter: () => Playstyle,
+                overrideGetter: () => Override, overrideSetter: v => Override = v,
+                inactiveGetter: () => Inactive, inactiveSetter: v => Inactive = v,
+                activeGetter: () => Active, activeSetter: v => Active = v,
+                // MUTATION-C: mirrors Dialog_AnomalySettings.cs:164's own popup floor
+                // (0f), distinct from StorytellerUI.cs:247's DrawCustomLeft floor
+                // (0.1f) used by the custom-difficulty section -- this dialog IS
+                // Dialog_AnomalySettings, so 0f is the correct floor here.
+                activeFractionFloor: 0f,
+                studyGetter: () => Study, studySetter: v => Study = v,
                 useEnabledConditions: false));
+        }
+
+        // ===== FOCUS RING =====
+
+        /// <summary>
+        /// Which row of vanilla's own dialog the focused item corresponds to. The playstyle row
+        /// rings the CURRENT playstyle's radio, which is what a sighted player sees selected. A
+        /// slider vanilla is not drawing this pass names a row nobody drew and rings nothing.
+        /// </summary>
+        internal static ListingRingFocus CurrentListingFocus(int index)
+        {
+            DifficultySetting setting = isActive ? RowAt(index) : null;
+            if (setting == null)
+                return ListingRingFocus.None;
+
+            if (setting is AnomalyPlaystyleSetting)
+            {
+                var playstyle = Playstyle;
+                return playstyle == null
+                    ? ListingRingFocus.None
+                    : new ListingRingFocus { RowObject = playstyle };
+            }
+
+            // The Difficulty field each slider edits is the row's identity: BuildAnomalySliders
+            // stamps it on the setting, and vanilla draws one caption per field.
+            switch (setting.CoveredField)
+            {
+                case "anomalyThreatsInactiveFraction":
+                    return new ListingRingFocus
+                    {
+                        RowKey = AnomalyRowKeys.ThreatsInactive,
+                        LabelTripwire = FrequencyCaption("Difficulty_AnomalyThreatsInactive_Label", Inactive),
+                    };
+                case "anomalyThreatsActiveFraction":
+                    return new ListingRingFocus
+                    {
+                        RowKey = AnomalyRowKeys.ThreatsActive,
+                        LabelTripwire = FrequencyCaption("Difficulty_AnomalyThreatsActive_Label", Active),
+                    };
+                case "overrideAnomalyThreatsFraction":
+                    return new ListingRingFocus
+                    {
+                        RowKey = AnomalyRowKeys.ThreatsOverride,
+                        LabelTripwire = FrequencyCaption("Difficulty_AnomalyThreats_Label", Override),
+                    };
+                case "studyEfficiencyFactor":
+                    // No frequency tail on this one (Dialog_AnomalySettings.cs:174).
+                    return new ListingRingFocus
+                    {
+                        RowKey = AnomalyRowKeys.StudyEfficiency,
+                        LabelTripwire = ("Difficulty_StudyEfficiency_Label".Translate() + ": " + Study.ToStringPercent()).Resolve(),
+                    };
+                default:
+                    return ListingRingFocus.None;
+            }
+        }
+
+        /// <summary>
+        /// Mirrors the caption vanilla builds at Dialog_AnomalySettings.cs:160, :163 and :169,
+        /// frequency word included, read through its own <c>GetFrequencyLabel</c>.
+        /// </summary>
+        private static string FrequencyCaption(string labelKey, float value)
+        {
+            return (labelKey.Translate() + ": " + value.ToStringPercent()
+                + " - " + Dialog_AnomalySettings.GetFrequencyLabel(value)).Resolve();
         }
 
         // ===== ANNOUNCEMENTS =====
 
-        private static void AnnounceCurrent()
+        /// <summary>
+        /// Builds one row's ElementDescription via the shared DifficultySettingAdapter, so this
+        /// popup speaks the same role words as the persistent custom-difficulty screen. Position is
+        /// the chassis's to fill. The DisabledByScenario notice is substantive content, so it goes
+        /// on the end of Extras rather than Hint — Hint is silenced by the interaction-hints
+        /// setting and this must always speak.
+        /// </summary>
+        internal static ElementDescription DescribeRow(int index)
         {
-            if (items.Count == 0)
-            {
-                TolkHelper.Speak("None".Loc());
-                return;
-            }
-            if (selectedIndex < 0 || selectedIndex >= items.Count) return;
-            var setting = items[selectedIndex];
-            string position = MenuHelper.FormatPosition(selectedIndex, items.Count);
-            string suffix = string.IsNullOrEmpty(position) ? "" : $" ({position})";
+            var d = new ElementDescription();
+            DifficultySetting setting = RowAt(index);
+            if (setting == null) return d;
+            DifficultySettingAdapter.FillRow(d, setting);
 
-            // For the playstyle row, append the scenario-block hint if applicable.
-            if (setting is AnomalyPlaystyleSetting && localPlaystyle != null
+            // For the playstyle row, append the scenario-block notice if applicable.
+            if (setting is AnomalyPlaystyleSetting && Playstyle != null
                 && Find.Scenario != null && Find.Scenario.standardAnomalyPlaystyleOnly
-                && localPlaystyle != AnomalyPlaystyleDefOf.Standard)
+                && Playstyle != AnomalyPlaystyleDefOf.Standard)
             {
-                TolkHelper.SpeakData($"{setting.GetAnnouncement()}. {(string)"DisabledByScenario".Translate()}: {Find.Scenario.name}{suffix}");
-                return;
+                d.Extras = $"{d.Extras}. {(string)"DisabledByScenario".Translate()}: {Find.Scenario.name}";
             }
-
-            TolkHelper.SpeakData($"{setting.GetAnnouncement()}{suffix}");
+            return d;
         }
 
         // ===== ACCEPT / RESET =====
 
         private static void Accept()
         {
-            if (Find.Scenario != null && Find.Scenario.standardAnomalyPlaystyleOnly
-                && localPlaystyle != null && localPlaystyle != AnomalyPlaystyleDefOf.Standard)
-            {
-                TolkHelper.SpeakData($"{(string)"DisabledByScenario".Translate()}: {Find.Scenario.name}");
-                return;
-            }
-
             try
             {
-                if (localDifficulty == null)
+                var difficulty = Difficulty;
+                if (difficulty == null)
                 {
                     TolkHelper.Speak("RimWorldAccess.AnomalySettings.CannotAcceptDifficultyNotLoaded".Loc());
                     return;
                 }
 
-                if (localPlaystyle != null && localPlaystyle.overrideThreatFraction)
-                    localDifficulty.overrideAnomalyThreatsFraction = localOverride;
+                var playstyle = Playstyle;
+
+                // MUTATION-C: mirrors Dialog_AnomalySettings.DoWindowContents'
+                // Accept-button branch verbatim (overrideAnomalyThreatsFraction,
+                // anomalyThreatsInactiveFraction/ActiveFraction, studyEfficiencyFactor,
+                // AnomalyPlaystyleDef); vanilla writes these Difficulty fields
+                // bare from the same button, no gated setter exists.
+                if (playstyle != null && playstyle.overrideThreatFraction)
+                    difficulty.overrideAnomalyThreatsFraction = Override;
                 else
-                    localDifficulty.overrideAnomalyThreatsFraction = null;
+                    difficulty.overrideAnomalyThreatsFraction = null;
 
-                localDifficulty.anomalyThreatsInactiveFraction = localInactive;
-                localDifficulty.anomalyThreatsActiveFraction = localActive;
-                localDifficulty.studyEfficiencyFactor = localStudy;
-                if (localPlaystyle != null) localDifficulty.AnomalyPlaystyleDef = localPlaystyle;
+                difficulty.anomalyThreatsInactiveFraction = Inactive;
+                difficulty.anomalyThreatsActiveFraction = Active;
+                difficulty.studyEfficiencyFactor = Study;
+                if (playstyle != null) difficulty.AnomalyPlaystyleDef = playstyle;
 
-                // Mark as Accept-close so PostClose announces "saved" (not "closed") and
-                // bumps the parent page's tab cursor back to Storyteller.
+                // Accept-close: PostClose announces "saved" and bumps the parent page's tab cursor
+                // back to Storyteller.
                 wasAcceptClose = true;
                 CloseDialog();
             }
@@ -408,21 +398,21 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Closes the dialog via WindowStack.TryRemove (mirrors FactionLandingState pattern).
-        /// Sets escapeHandledOnFrame so AnomalySettingsDialogPatch can block the underlying
-        /// Page_SelectStoryteller from also processing the same Cancel key this frame.
+        /// Closes the dialog via WindowStack.TryRemove and sets escapeHandledOnFrame, so
+        /// AnomalySettingsDialogPatch can block the underlying Page_SelectStoryteller from also
+        /// processing the same Cancel key this frame.
         /// </summary>
         private static void CloseDialog()
         {
             escapeHandledOnFrame = Time.frameCount;
             if (currentDialog != null)
             {
-                Find.WindowStack.TryRemove(currentDialog, doCloseSound: false);
+                Find.WindowStack.TryRemove(currentDialog);
             }
             Close();
         }
 
-        private static void OpenStandardPlaystyleMenu()
+        private static void OpenStandardPlaystyleMenu(Action onPicked)
         {
             var options = new List<FloatMenuOption>();
             foreach (DifficultyDef d in DefDatabase<DifficultyDef>.AllDefs)
@@ -431,14 +421,13 @@ namespace RimWorldAccess
                 var captured = d;
                 options.Add(new FloatMenuOption(captured.LabelCap, () =>
                 {
-                    localInactive = captured.anomalyThreatsInactiveFraction;
-                    localActive = captured.anomalyThreatsActiveFraction;
-                    localStudy = captured.studyEfficiencyFactor;
-                    localPlaystyle = AnomalyPlaystyleDefOf.Standard;
-                    selectedIndex = 0;
+                    Inactive = captured.anomalyThreatsInactiveFraction;
+                    Active = captured.anomalyThreatsActiveFraction;
+                    Study = captured.studyEfficiencyFactor;
+                    Playstyle = AnomalyPlaystyleDefOf.Standard;
                     RebuildItems();
                     TolkHelper.SpeakData($"{captured.LabelCap}");
-                    AnnounceCurrent();
+                    if (onPicked != null) onPicked();
                 }));
             }
             if (options.Count == 0) return;

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Autopilot movement jobs: vanilla Goto with a tactical report string, so the
+       existing pawn-activity readers (colonist cycling, the map cursor, the inspect
+       pane) say what the move is for. Opportunistic hauling is off: a combat
+       reposition must never detour to pick up loot. -->
+  <JobDef>
+    <defName>RWA_GotoCover</defName>
+    <driverClass>JobDriver_Goto</driverClass>
+    <reportString>moving to cover.</reportString>
+    <allowOpportunisticPrefix>false</allowOpportunisticPrefix>
+    <carryThingAfterJob>true</carryThingAfterJob>
+    <dropThingBeforeJob>false</dropThingBeforeJob>
+  </JobDef>
+
+  <JobDef>
+    <defName>RWA_GotoEngage</defName>
+    <driverClass>JobDriver_Goto</driverClass>
+    <reportString>moving to engage.</reportString>
+    <allowOpportunisticPrefix>false</allowOpportunisticPrefix>
+    <carryThingAfterJob>true</carryThingAfterJob>
+    <dropThingBeforeJob>false</dropThingBeforeJob>
+  </JobDef>
+
+  <JobDef>
+    <defName>RWA_Retreat</defName>
+    <driverClass>JobDriver_Goto</driverClass>
+    <reportString>falling back.</reportString>
+    <allowOpportunisticPrefix>false</allowOpportunisticPrefix>
+    <carryThingAfterJob>true</carryThingAfterJob>
+    <dropThingBeforeJob>false</dropThingBeforeJob>
+  </JobDef>
+
+  <JobDef>
+    <defName>RWA_Patrol</defName>
+    <driverClass>JobDriver_Goto</driverClass>
+    <reportString>patrolling.</reportString>
+    <allowOpportunisticPrefix>false</allowOpportunisticPrefix>
+    <carryThingAfterJob>true</carryThingAfterJob>
+    <dropThingBeforeJob>false</dropThingBeforeJob>
+  </JobDef>
+
+  <JobDef>
+    <defName>RWA_ReturnToPost</defName>
+    <driverClass>JobDriver_Goto</driverClass>
+    <reportString>returning to post.</reportString>
+    <allowOpportunisticPrefix>false</allowOpportunisticPrefix>
+    <carryThingAfterJob>true</carryThingAfterJob>
+    <dropThingBeforeJob>false</dropThingBeforeJob>
+  </JobDef>
+</Defs>

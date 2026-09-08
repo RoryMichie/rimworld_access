@@ -27,15 +27,10 @@
   <!-- Menu opening / Tab-toggle announcements.
        {0} = vanilla "LearningHelper" title.
        AllLessonsCount additionally takes {1} = total concept count. -->
-  <RimWorldAccess.Learning.OpeningNoActive>{0}. Немає активних уроків. Натисніть Tab, щоб переглянути всі уроки.</RimWorldAccess.Learning.OpeningNoActive>
-  <RimWorldAccess.Learning.AllLessonsCount>{0}. Усі уроки, {1} загалом</RimWorldAccess.Learning.AllLessonsCount>
-  <RimWorldAccess.Learning.ActiveLessons>{0}. Активні уроки</RimWorldAccess.Learning.ActiveLessons>
 
   <!-- Empty-list announcements. NoActive is also spoken after returning to
        an empty list when leaving detail view. -->
   <RimWorldAccess.Learning.NoLessonsAvailable>Немає доступних уроків</RimWorldAccess.Learning.NoLessonsAvailable>
-  <RimWorldAccess.Learning.NoActive>Немає активних уроків. Натисніть Tab, щоб переглянути всі уроки.</RimWorldAccess.Learning.NoActive>
-  <RimWorldAccess.Learning.NoActiveRemaining>Активних уроків не залишилося. Натисніть Tab, щоб переглянути всі уроки.</RimWorldAccess.Learning.NoActiveRemaining>
 
   <!-- Button feedback.
        MarkLearnedConfirmation is spoken immediately after the "Mark as
@@ -48,14 +43,10 @@
        {0} = the user's current search buffer. Other menus use the generic
        RimWorldAccess.Search.ContextSuffix key; Learning uses this simpler
        form because its announcement does not yet include a match position. -->
-  <RimWorldAccess.Learning.SearchSuffix> Пошук: «{0}»</RimWorldAccess.Learning.SearchSuffix>
 
   <!-- TwoLevelMenuHelper boundary messages (Learning-scoped).
        Passed as the endOfItemMessage / startOfItemMessage / openFirstMessage
        arguments when the helper is constructed. -->
-  <RimWorldAccess.Learning.EndOfLesson>Кінець уроку</RimWorldAccess.Learning.EndOfLesson>
-  <RimWorldAccess.Learning.StartOfLesson>Початок уроку</RimWorldAccess.Learning.StartOfLesson>
-  <RimWorldAccess.Learning.OpenLessonFirst>Натисніть Enter, щоб спершу відкрити урок</RimWorldAccess.Learning.OpenLessonFirst>
 
   <!-- Fallback when a ConceptDef has no help text (should be rare - vanilla
        concepts always ship with HelpTextAdjusted). -->

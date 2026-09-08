@@ -47,7 +47,6 @@
   <RimWorldAccess.Trade.Open.NoSession>No active trade session</RimWorldAccess.Trade.Open.NoSession>
   <RimWorldAccess.Trade.Open.SessionNotInitialized>Trade session not properly initialized</RimWorldAccess.Trade.Open.SessionNotInitialized>
   <RimWorldAccess.Trade.Cancelled>Trade cancelled</RimWorldAccess.Trade.Cancelled>
-  <RimWorldAccess.Trade.NoItemsInCategory>No items in this category</RimWorldAccess.Trade.NoItemsInCategory>
 
   <!-- =================================================================
        Tab / category names.
@@ -60,16 +59,13 @@
   <RimWorldAccess.Trade.Tab.YourItems>Your Items</RimWorldAccess.Trade.Tab.YourItems>
   <RimWorldAccess.Trade.Tab.TraderItems>{0}'s Items</RimWorldAccess.Trade.Tab.TraderItems>
   <RimWorldAccess.Trade.Tab.TradeSummary>Trade Summary</RimWorldAccess.Trade.Tab.TradeSummary>
-  <RimWorldAccess.Trade.Tab.Unknown>Unknown</RimWorldAccess.Trade.Tab.Unknown>
-  <RimWorldAccess.Trade.Tab.Empty>{0} - No items</RimWorldAccess.Trade.Tab.Empty>
-  <RimWorldAccess.Trade.Tab.SwitchedReturning>Trade Summary empty. Returning to {0}</RimWorldAccess.Trade.Tab.SwitchedReturning>
 
   <!-- Currency holdings phrasing (Alt+B and tab-switch suffix).
        YouHave / TraderHas: {0} = formatted currency string. -->
-  <RimWorldAccess.Trade.Currency.YouHave>You have {0}</RimWorldAccess.Trade.Currency.YouHave>
-  <RimWorldAccess.Trade.Currency.TraderHas>Trader has {0}</RimWorldAccess.Trade.Currency.TraderHas>
   <RimWorldAccess.Trade.Currency.Both>You have {0}. Trader has {1}</RimWorldAccess.Trade.Currency.Both>
   <RimWorldAccess.Trade.Currency.None>No currency available</RimWorldAccess.Trade.Currency.None>
+  <RimWorldAccess.Trade.Currency.YouHave>You have {0}</RimWorldAccess.Trade.Currency.YouHave>
+  <RimWorldAccess.Trade.Currency.TraderHas>Trader has {0}</RimWorldAccess.Trade.Currency.TraderHas>
   <!-- Bare nouns used inside larger sentences ("X silver", "X favor"). -->
   <RimWorldAccess.Trade.Currency.SilverNoun>silver</RimWorldAccess.Trade.Currency.SilverNoun>
   <RimWorldAccess.Trade.Currency.FavorNoun>favor</RimWorldAccess.Trade.Currency.FavorNoun>
@@ -80,7 +76,6 @@
 
   <!-- Price formatting (FormatPrice). Silver matches ToStringMoney's
        "$N" prefix; Favor: "{0} favor". {0} = formatted number. -->
-  <RimWorldAccess.Trade.Price.Silver>${0}</RimWorldAccess.Trade.Price.Silver>
   <RimWorldAccess.Trade.Price.Favor>{0} favor</RimWorldAccess.Trade.Price.Favor>
 
   <!-- =================================================================
@@ -106,8 +101,8 @@
   <RimWorldAccess.Trade.Max.Gifting>Gifting all {0} {1}, {2}</RimWorldAccess.Trade.Max.Gifting>
 
   <!-- Reset action (Alt+R). {0} = item label. -->
-  <RimWorldAccess.Trade.Reset.SingleItem>Reset {0}</RimWorldAccess.Trade.Reset.SingleItem>
   <RimWorldAccess.Trade.Reset.AllTrades>All trades reset</RimWorldAccess.Trade.Reset.AllTrades>
+  <RimWorldAccess.Trade.Reset.SingleItem>Reset {0}</RimWorldAccess.Trade.Reset.SingleItem>
   <RimWorldAccess.Trade.Reset.CannotResetBalance>Cannot reset balance entry</RimWorldAccess.Trade.Reset.CannotResetBalance>
 
   <!-- =================================================================
@@ -138,7 +133,6 @@
                               {0} = count.
        ================================================================= -->
   <RimWorldAccess.Trade.Item.SoloAvailable>{0} available</RimWorldAccess.Trade.Item.SoloAvailable>
-  <RimWorldAccess.Trade.Item.SoloPrice>{0}</RimWorldAccess.Trade.Item.SoloPrice>
   <RimWorldAccess.Trade.Item.SoloPriceWithQuality>{0}, {1}</RimWorldAccess.Trade.Item.SoloPriceWithQuality>
   <RimWorldAccess.Trade.Item.NotTradeable>Not tradeable</RimWorldAccess.Trade.Item.NotTradeable>
   <RimWorldAccess.Trade.Item.YoursAt>Yours: {0} at {1}</RimWorldAccess.Trade.Item.YoursAt>
@@ -165,23 +159,14 @@
        Mode.Adjusting is the constant marker word; {0} = upper bound.
        Each context (gift, shared, sell-only, buy-only) is a separate
        sentence so word order can vary. -->
-  <RimWorldAccess.Trade.Mode.Adjusting>Adjusting</RimWorldAccess.Trade.Mode.Adjusting>
-  <RimWorldAccess.Trade.Mode.GiftUpTo>Gift up to {0}</RimWorldAccess.Trade.Mode.GiftUpTo>
-  <RimWorldAccess.Trade.Mode.SellUpTo>Sell up to {0}</RimWorldAccess.Trade.Mode.SellUpTo>
-  <RimWorldAccess.Trade.Mode.BuyUpTo>Buy up to {0}</RimWorldAccess.Trade.Mode.BuyUpTo>
-  <RimWorldAccess.Trade.Mode.SellAndBuy>Sell up to {0}, buy up to {1}</RimWorldAccess.Trade.Mode.SellAndBuy>
-  <RimWorldAccess.Trade.Mode.ExitFirst>Exit quantity mode first</RimWorldAccess.Trade.Mode.ExitFirst>
-  <RimWorldAccess.Trade.Mode.ExitFirstHint>Exit quantity mode first (press Enter or Escape)</RimWorldAccess.Trade.Mode.ExitFirstHint>
 
   <!-- =================================================================
        Reject / error paths.
        ================================================================= -->
-  <RimWorldAccess.Trade.Reject.CannotAdjustItem>Cannot adjust quantity for this item</RimWorldAccess.Trade.Reject.CannotAdjustItem>
   <RimWorldAccess.Trade.Reject.WillNotTrade>Trader will not trade this item</RimWorldAccess.Trade.Reject.WillNotTrade>
   <RimWorldAccess.Trade.Reject.CannotAdjustAmount>Cannot adjust to this amount</RimWorldAccess.Trade.Reject.CannotAdjustAmount>
   <RimWorldAccess.Trade.Reject.CannotAdjustMax>Cannot adjust to maximum</RimWorldAccess.Trade.Reject.CannotAdjustMax>
   <RimWorldAccess.Trade.Reject.CannotAdjustMin>Cannot adjust to minimum</RimWorldAccess.Trade.Reject.CannotAdjustMin>
-  <RimWorldAccess.Trade.Reject.CannotInspect>Cannot inspect this item</RimWorldAccess.Trade.Reject.CannotInspect>
 
   <!-- =================================================================
        Numeric input mode (digit/sign keys in quantity mode).
@@ -192,9 +177,6 @@
   <RimWorldAccess.Trade.Numeric.PromptSelling>Selling. Type quantity.</RimWorldAccess.Trade.Numeric.PromptSelling>
   <RimWorldAccess.Trade.Numeric.PromptBuying>Buying. Type quantity.</RimWorldAccess.Trade.Numeric.PromptBuying>
   <RimWorldAccess.Trade.Numeric.PromptGifting>Gifting. Type quantity.</RimWorldAccess.Trade.Numeric.PromptGifting>
-  <RimWorldAccess.Trade.Numeric.Typing>Typing: {0}</RimWorldAccess.Trade.Numeric.Typing>
-  <RimWorldAccess.Trade.Numeric.Cleared>Cleared</RimWorldAccess.Trade.Numeric.Cleared>
-  <RimWorldAccess.Trade.Numeric.Invalid>Invalid: {0}</RimWorldAccess.Trade.Numeric.Invalid>
   <!-- After a numeric edit, the announcement is composed from one of
        the *.Body keys plus the *.Suffix key.
        NoTradeBody: {0} = item label.
@@ -202,10 +184,6 @@
        {1} = count, {2} = item label.
        BuyingBodyWithPrice / SellingBodyWithPrice: same plus
        {3} = formatted price. Suffix: {0} = current buffer. -->
-  <RimWorldAccess.Trade.Numeric.NoTradeBody>{0}: No trade</RimWorldAccess.Trade.Numeric.NoTradeBody>
-  <RimWorldAccess.Trade.Numeric.GiftingBody>{0} {1} {2}</RimWorldAccess.Trade.Numeric.GiftingBody>
-  <RimWorldAccess.Trade.Numeric.BuyingSellingBody>{0} {1} {2} for {3}</RimWorldAccess.Trade.Numeric.BuyingSellingBody>
-  <RimWorldAccess.Trade.Numeric.Suffix>. Typing: {0}</RimWorldAccess.Trade.Numeric.Suffix>
 
   <!-- =================================================================
        Gift mode toggle and gift confirmation paths.
@@ -216,10 +194,7 @@
   <RimWorldAccess.Trade.Gift.ModeGift>gift mode</RimWorldAccess.Trade.Gift.ModeGift>
   <RimWorldAccess.Trade.Gift.ModeTrade>trade mode</RimWorldAccess.Trade.Gift.ModeTrade>
   <RimWorldAccess.Trade.Gift.SwitchedTo>Switched to {0}</RimWorldAccess.Trade.Gift.SwitchedTo>
-  <RimWorldAccess.Trade.Gift.NoSession>No gift session active</RimWorldAccess.Trade.Gift.NoSession>
   <RimWorldAccess.Trade.Gift.NoGifts>No gifts to offer</RimWorldAccess.Trade.Gift.NoGifts>
-  <RimWorldAccess.Trade.Gift.ErrorCalculating>Error calculating gift value</RimWorldAccess.Trade.Gift.ErrorCalculating>
-  <RimWorldAccess.Trade.Gift.ErrorOffering>Error offering gifts</RimWorldAccess.Trade.Gift.ErrorOffering>
   <!-- Gift completion: {0} = goodwill change (positive integer). -->
   <RimWorldAccess.Trade.Gift.Offered>Gifts offered, goodwill +{0}</RimWorldAccess.Trade.Gift.Offered>
 
@@ -243,24 +218,19 @@
   <RimWorldAccess.Trade.Balance.Spending>Net balance: Spending {0} {1}</RimWorldAccess.Trade.Balance.Spending>
   <RimWorldAccess.Trade.Balance.Receiving>Net balance: Receiving {0} {1}</RimWorldAccess.Trade.Balance.Receiving>
   <RimWorldAccess.Trade.Balance.Balanced>Net balance: Balanced trade</RimWorldAccess.Trade.Balance.Balanced>
-  <RimWorldAccess.Trade.Balance.Goodwill>Goodwill +{0}</RimWorldAccess.Trade.Balance.Goodwill>
+  <!-- {0} = signed goodwill change ("+15"). -->
+  <RimWorldAccess.Trade.Balance.Goodwill>Goodwill {0}</RimWorldAccess.Trade.Balance.Goodwill>
   <RimWorldAccess.Trade.Balance.GiftFallback>Gift mode balance</RimWorldAccess.Trade.Balance.GiftFallback>
   <!-- Position suffix appended after the balance text; {0} = body,
        {1} = position phrase. -->
-  <RimWorldAccess.Trade.Balance.WithPosition>{0}. {1}</RimWorldAccess.Trade.Balance.WithPosition>
 
   <!-- =================================================================
        Detailed announcement (Tab key for full inventory + price).
        Each line is a separate key so commas/colons can localize.
        *.PriceLine: {0} = price (caller pre-formats with one decimal),
                     {1} = currency noun. -->
-  <RimWorldAccess.Trade.Detail.YouHave>You have: {0}</RimWorldAccess.Trade.Detail.YouHave>
-  <RimWorldAccess.Trade.Detail.TraderHas>Trader has: {0}</RimWorldAccess.Trade.Detail.TraderHas>
-  <RimWorldAccess.Trade.Detail.SellPrice>Sell price: {0} {1} each</RimWorldAccess.Trade.Detail.SellPrice>
-  <RimWorldAccess.Trade.Detail.BuyPrice>Buy price: {0} {1} each</RimWorldAccess.Trade.Detail.BuyPrice>
   <!-- {0} = action word ("Buying"/"Selling"), {1} = count,
        {2} = total cost (caller F0-formatted), {3} = currency noun. -->
-  <RimWorldAccess.Trade.Detail.CurrentTrade>Current trade: {0} {1} for {2} {3}</RimWorldAccess.Trade.Detail.CurrentTrade>
 
   <!-- Price-breakdown popup (Tab in trader/colony list).
        PriceTitleBuy / Sell: {0} = clean item label. -->
@@ -275,7 +245,7 @@
        ================================================================= -->
   <RimWorldAccess.Sellable.Open.NoDialog>No dialog</RimWorldAccess.Sellable.Open.NoDialog>
   <RimWorldAccess.Sellable.Open.Closed>Closed</RimWorldAccess.Sellable.Open.Closed>
-  <RimWorldAccess.Sellable.Open.Controls>Switch tabs: Left, Right. Navigate: Up, Down.</RimWorldAccess.Sellable.Open.Controls>
+  <RimWorldAccess.Sellable.Open.Controls>Switch categories: Tab. Navigate: Up, Down.</RimWorldAccess.Sellable.Open.Controls>
   <RimWorldAccess.Sellable.Open.TraderFallback>Trader</RimWorldAccess.Sellable.Open.TraderFallback>
   <!-- {0} = trader name, {1} = restock phrase (may be empty),
        {2} = "{count} categories" phrase, {3} = controls phrase. -->
@@ -292,11 +262,6 @@
   <!-- Tab switch + selection.
        TabSwitch: {0} = tab name, {1} = item count.
        The empty case ("No items") shares the global key. -->
-  <RimWorldAccess.Sellable.Tab.SwitchOne>{0}. 1 item.</RimWorldAccess.Sellable.Tab.SwitchOne>
-  <RimWorldAccess.Sellable.Tab.SwitchMany>{0}. {1} items.</RimWorldAccess.Sellable.Tab.SwitchMany>
-  <RimWorldAccess.Sellable.Tab.NoItems>No items</RimWorldAccess.Sellable.Tab.NoItems>
-  <RimWorldAccess.Sellable.Tab.UnknownTab>Unknown</RimWorldAccess.Sellable.Tab.UnknownTab>
-  <RimWorldAccess.Sellable.Item.Unknown>Unknown item</RimWorldAccess.Sellable.Item.Unknown>
 
   <!-- Item announcement composition.
        Bare: {0} = name.
@@ -305,15 +270,23 @@
        Description and position concatenate on top of bare via the
        *.WithDescription / *.WithDescriptionPosition / *.WithPosition
        variants so we don't glue strings. -->
-  <RimWorldAccess.Sellable.Item.Bare>{0}.</RimWorldAccess.Sellable.Item.Bare>
-  <RimWorldAccess.Sellable.Item.WithDescription>{0}. {1}.</RimWorldAccess.Sellable.Item.WithDescription>
-  <RimWorldAccess.Sellable.Item.WithPosition>{0}. {1}</RimWorldAccess.Sellable.Item.WithPosition>
-  <RimWorldAccess.Sellable.Item.WithDescriptionPosition>{0}. {1}. {2}</RimWorldAccess.Sellable.Item.WithDescriptionPosition>
 
   <!-- Typeahead context (active search prefix on item announcement).
        Prefix: {0} = current search buffer, {1} = item announcement.
        NoMatchesPrefix: {0} = buffer, {1} = item announcement. -->
-  <RimWorldAccess.Sellable.Search.Prefix>Search '{0}': {1}</RimWorldAccess.Sellable.Search.Prefix>
-  <RimWorldAccess.Sellable.Search.NoMatchesPrefix>No matches for '{0}'. {1}</RimWorldAccess.Sellable.Search.NoMatchesPrefix>
 
+  <RimWorldAccess.Trade.Column.Yours>Yours</RimWorldAccess.Trade.Column.Yours>
+  <RimWorldAccess.Trade.Column.Theirs>Theirs</RimWorldAccess.Trade.Column.Theirs>
+  <RimWorldAccess.Trade.Column.SellPrice>Sell price</RimWorldAccess.Trade.Column.SellPrice>
+  <RimWorldAccess.Trade.Column.BuyPrice>Buy price</RimWorldAccess.Trade.Column.BuyPrice>
+  <RimWorldAccess.Trade.Column.TradeAmount>Trade amount</RimWorldAccess.Trade.Column.TradeAmount>
+
+  <!-- The two trade views and the Ctrl+Tab swap between them (TradeViewOpener). -->
+  <RimWorldAccess.Trade.View.Classic>Classic view</RimWorldAccess.Trade.View.Classic>
+  <RimWorldAccess.Trade.View.Table>Table view</RimWorldAccess.Trade.View.Table>
+  <RimWorldAccess.Trade.View.SwitchToClassic>Switch to classic view</RimWorldAccess.Trade.View.SwitchToClassic>
+  <RimWorldAccess.Trade.View.SwitchToTable>Switch to table view</RimWorldAccess.Trade.View.SwitchToTable>
+  <!-- Vanilla's two sort dropdowns as toolbar rows; {0} = the sorter's own label. -->
+  <RimWorldAccess.Trade.Sort.By>Sort by: {0}</RimWorldAccess.Trade.Sort.By>
+  <RimWorldAccess.Trade.Sort.ThenBy>Then by: {0}</RimWorldAccess.Trade.Sort.ThenBy>
 </LanguageData>

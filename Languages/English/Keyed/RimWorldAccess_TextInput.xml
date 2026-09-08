@@ -17,6 +17,8 @@
 
   <RimWorldAccess.TextInput.EditingField>Editing {0}: {1}. Type new value, Enter to confirm, Escape to cancel.</RimWorldAccess.TextInput.EditingField>
   <RimWorldAccess.TextInput.EditingMultiLineField>Editing multi-line field {0}: {1}. Type, Shift+Enter for new line, Up/Down for line navigation, Enter to confirm, Escape to cancel.</RimWorldAccess.TextInput.EditingMultiLineField>
+  <RimWorldAccess.TextInput.BrowsingField>Browsing {0}, read only: {1}.</RimWorldAccess.TextInput.BrowsingField>
+  <RimWorldAccess.TextInput.ReadOnlyField>This text is read only</RimWorldAccess.TextInput.ReadOnlyField>
   <RimWorldAccess.TextInput.Empty>empty</RimWorldAccess.TextInput.Empty>
   <RimWorldAccess.TextInput.Deleted>Deleted {0}</RimWorldAccess.TextInput.Deleted>
   <RimWorldAccess.TextInput.FieldSet>{0} set to {1}</RimWorldAccess.TextInput.FieldSet>

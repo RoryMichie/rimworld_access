@@ -61,23 +61,6 @@
        Toggles CompFlickable. Power consumption suffixes use {0} = wattage.
        LabelPowerSwitch: {0} = building label, {1} = vanilla "On"/"Off". -->
 
-  <!-- Uninstall designation (src/Building/UninstallControlState.cs).
-       Toggles DesignationDefOf.Uninstall on minifiable buildings. Vanilla
-       "DesignatorUninstall" / "DesignatorUninstallDesc" supply the verb;
-       these keys are the announcement-shaped wrappers. -->
-  <RimWorldAccess.Building.Uninstall.NotMinifiable>建筑无法卸载</RimWorldAccess.Building.Uninstall.NotMinifiable>
-  <RimWorldAccess.Building.Uninstall.DesignationRemoved>{0} - 已移除卸载标记</RimWorldAccess.Building.Uninstall.DesignationRemoved>
-  <RimWorldAccess.Building.Uninstall.InstantlyUninstalled>{0} - 已立即卸载</RimWorldAccess.Building.Uninstall.InstantlyUninstalled>
-  <RimWorldAccess.Building.Uninstall.DesignatedForUninstall>{0} - 已标记卸载</RimWorldAccess.Building.Uninstall.DesignatedForUninstall>
-  <RimWorldAccess.Building.Uninstall.LabelStatusDesignated>{0} - 状态: 已标记卸载</RimWorldAccess.Building.Uninstall.LabelStatusDesignated>
-  <RimWorldAccess.Building.Uninstall.LabelStatusNotDesignated>{0} - 状态: 未标记</RimWorldAccess.Building.Uninstall.LabelStatusNotDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailDesignated>状态: 已标记卸载</RimWorldAccess.Building.Uninstall.DetailDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailDisassemblerTip>有建造技能的殖民者将拆解它</RimWorldAccess.Building.Uninstall.DetailDisassemblerTip>
-  <RimWorldAccess.Building.Uninstall.DetailMinifiedTip>该建筑将转换为可移动的小型物品</RimWorldAccess.Building.Uninstall.DetailMinifiedTip>
-  <RimWorldAccess.Building.Uninstall.DetailNotDesignated>状态: 未标记卸载</RimWorldAccess.Building.Uninstall.DetailNotDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailCanUninstallTip>此建筑可以卸载为便携物品</RimWorldAccess.Building.Uninstall.DetailCanUninstallTip>
-  <RimWorldAccess.Building.Uninstall.DetailHotkeyTip>按空格键或回车键以标记卸载</RimWorldAccess.Building.Uninstall.DetailHotkeyTip>
-
   <!-- Temperature control (src/Building/TempControlMenuState.cs).
        Adjusts CompTempControl.TargetTemperature. Vanilla "PowerConsumptionOff",
        "PowerConsumptionHigh", "PowerConsumptionLow" supply the power-mode
@@ -106,10 +89,7 @@
   <RimWorldAccess.Building.Refuel.OptionViewStatus>查看详细燃料状态</RimWorldAccess.Building.Refuel.OptionViewStatus>
   <RimWorldAccess.Building.Refuel.AutoRefuelOn>自动补充燃料: 开</RimWorldAccess.Building.Refuel.AutoRefuelOn>
   <RimWorldAccess.Building.Refuel.AutoRefuelOff>自动补充燃料: 关</RimWorldAccess.Building.Refuel.AutoRefuelOff>
-  <RimWorldAccess.Building.Refuel.ToggleValueOn>开</RimWorldAccess.Building.Refuel.ToggleValueOn>
-  <RimWorldAccess.Building.Refuel.ToggleValueOff>关</RimWorldAccess.Building.Refuel.ToggleValueOff>
   <RimWorldAccess.Building.Refuel.TargetFuelLevelLabel>目标燃料量: {0} / {1}</RimWorldAccess.Building.Refuel.TargetFuelLevelLabel>
-  <RimWorldAccess.Building.Refuel.AdjustHint>使用左右方向键调整。当前: {0} / {1}</RimWorldAccess.Building.Refuel.AdjustHint>
   <RimWorldAccess.Building.Refuel.ClassicMortarStatus>经典迫击炮模式，无炮管磨损</RimWorldAccess.Building.Refuel.ClassicMortarStatus>
   <RimWorldAccess.Building.Refuel.FuelStatusLine>{0}: {1} / {2}</RimWorldAccess.Building.Refuel.FuelStatusLine>
   <RimWorldAccess.Building.Refuel.RemainingTimeSuffix> ({0})</RimWorldAccess.Building.Refuel.RemainingTimeSuffix>
@@ -138,16 +118,15 @@
        Replaces the vanilla FloatMenu shown when an area designator is
        chosen from the architect tree. Delegates "No map" to Common.
        Open: {0} = the designator's own label (e.g. "Allowed area").
-       AreaWithCells: {0} = area label, {1} = cell count.
-       Position keys come from RimWorldAccess.Menu.Position. -->
+       CellCount: {0} = cell count, spoken as the composer's Extras fragment.
+       Position is now composed from ElementDescription.PositionIndex/Count. -->
   <RimWorldAccess.Building.AreaSelect.NoAreasAvailable>没有可用区域。请先使用「管理区域」选项创建一个区域。</RimWorldAccess.Building.AreaSelect.NoAreasAvailable>
   <RimWorldAccess.Building.AreaSelect.OpenPrompt>{0}. 选择一个区域。</RimWorldAccess.Building.AreaSelect.OpenPrompt>
   <RimWorldAccess.Building.AreaSelect.Selected>已选择: {0}</RimWorldAccess.Building.AreaSelect.Selected>
   <RimWorldAccess.Building.AreaSelect.Cancelled>区域选择已取消</RimWorldAccess.Building.AreaSelect.Cancelled>
   <RimWorldAccess.Building.AreaSelect.ManageAreas>管理区域</RimWorldAccess.Building.AreaSelect.ManageAreas>
-  <RimWorldAccess.Building.AreaSelect.AreaWithCells>{0}, {1} 格</RimWorldAccess.Building.AreaSelect.AreaWithCells>
+  <RimWorldAccess.Building.AreaSelect.CellCount>{0} 格</RimWorldAccess.Building.AreaSelect.CellCount>
   <RimWorldAccess.Building.AreaSelect.OpenFallbackName>区域</RimWorldAccess.Building.AreaSelect.OpenFallbackName>
-  <RimWorldAccess.Building.AreaSelect.ItemWithPosition>{0}, {1}</RimWorldAccess.Building.AreaSelect.ItemWithPosition>
 
   <!-- Shape selection menu (src/Building/ShapeSelectionMenuState.cs).
        Picks a placement shape (Line / Rectangle / Oval) from the architect
@@ -156,8 +135,6 @@
        ShapeWithPosition: {0} = shape name, {1} = position, {2} = description.
        ShapeNoPosition: {0} = shape name, {1} = description. -->
   <RimWorldAccess.Building.ShapeSelect.MenuOpened>形状菜单</RimWorldAccess.Building.ShapeSelect.MenuOpened>
-  <RimWorldAccess.Building.ShapeSelect.ShapeWithPosition>{0}, {1}. {2}</RimWorldAccess.Building.ShapeSelect.ShapeWithPosition>
-  <RimWorldAccess.Building.ShapeSelect.ShapeNoPosition>{0}. {1}</RimWorldAccess.Building.ShapeSelect.ShapeNoPosition>
   <RimWorldAccess.Building.ShapeSelect.ShapeSelected>已选择 {0}</RimWorldAccess.Building.ShapeSelect.ShapeSelected>
   <RimWorldAccess.Building.ShapeSelect.Cancelled>形状选择已取消</RimWorldAccess.Building.ShapeSelect.Cancelled>
 
@@ -178,20 +155,8 @@
        count, {2} = staged total (Regular only adds the dimension info). -->
   <RimWorldAccess.Building.Paint.ModeBox>框选模式</RimWorldAccess.Building.Paint.ModeBox>
   <RimWorldAccess.Building.Paint.ModeSingle>单格选择模式</RimWorldAccess.Building.Paint.ModeSingle>
-  <RimWorldAccess.Building.Paint.ShapeChanged>形状: {0}</RimWorldAccess.Building.Paint.ShapeChanged>
-  <RimWorldAccess.Building.Paint.ShapeUnavailable>此区域类型不可用此形状</RimWorldAccess.Building.Paint.ShapeUnavailable>
-  <RimWorldAccess.Building.Paint.PromptHint>按 Tab 切换模式。按回车键确认，按 Escape 取消</RimWorldAccess.Building.Paint.PromptHint>
-  <RimWorldAccess.Building.Paint.EnterExpand>扩展区域: {0}. {1}. {2}</RimWorldAccess.Building.Paint.EnterExpand>
-  <RimWorldAccess.Building.Paint.EnterShrink>缩小区域: {0}. {1}. {2}</RimWorldAccess.Building.Paint.EnterShrink>
   <RimWorldAccess.Building.Paint.NoShapeToConfirm>没有可确认的形状</RimWorldAccess.Building.Paint.NoShapeToConfirm>
-  <RimWorldAccess.Building.Paint.PositionOutOfBounds>位置超出边界</RimWorldAccess.Building.Paint.PositionOutOfBounds>
   <RimWorldAccess.Building.Paint.Deselected>已取消选择, {0}, {1}</RimWorldAccess.Building.Paint.Deselected>
-  <RimWorldAccess.Building.Paint.NoCellsSelected>未选择任何格。区域未更改。</RimWorldAccess.Building.Paint.NoCellsSelected>
-  <RimWorldAccess.Building.Paint.AddedTo>已向 {1} 添加 {0} 格。总格数: {2}</RimWorldAccess.Building.Paint.AddedTo>
-  <RimWorldAccess.Building.Paint.RemovedFrom>已从 {1} 移除 {0} 格。总格数: {2}</RimWorldAccess.Building.Paint.RemovedFrom>
-  <RimWorldAccess.Building.Paint.Cancelled>区域编辑已取消</RimWorldAccess.Building.Paint.Cancelled>
-  <RimWorldAccess.Building.Paint.ConfirmShapeRegular>{0}, 已添加 {1} 格。总计: {2}</RimWorldAccess.Building.Paint.ConfirmShapeRegular>
-  <RimWorldAccess.Building.Paint.ConfirmShapeIrregular>已添加 {0} 格。总计: {1}</RimWorldAccess.Building.Paint.ConfirmShapeIrregular>
 
   <!-- Zone editing (src/Building/ZoneEditingHelper.cs + GizmoZoneEditState.cs).
        Returned in ZoneEditResult.Message and announced when a cell is
@@ -203,6 +168,8 @@
   <RimWorldAccess.Building.Zone.NoZoneSelectedForEditing>未选择要编辑的区域</RimWorldAccess.Building.Zone.NoZoneSelectedForEditing>
   <RimWorldAccess.Building.Zone.NoZoneAtLocation>此位置没有可编辑的区域</RimWorldAccess.Building.Zone.NoZoneAtLocation>
   <RimWorldAccess.Building.Zone.CannotRemoveOriginalCell>扩展期间无法移除原始区域格</RimWorldAccess.Building.Zone.CannotRemoveOriginalCell>
+  <RimWorldAccess.Building.Zone.NowExpanding>正在扩展 {0}</RimWorldAccess.Building.Zone.NowExpanding>
+  <RimWorldAccess.Building.Zone.AdjacentZonesAmbiguous>相邻有多个区域。请在要扩展的区域的格上按空格键</RimWorldAccess.Building.Zone.AdjacentZonesAmbiguous>
   <RimWorldAccess.Building.Zone.WouldDisconnect>无法移除该格，会断开区域</RimWorldAccess.Building.Zone.WouldDisconnect>
   <RimWorldAccess.Building.Zone.CellAlreadyInThisZone>该格已在此区域内</RimWorldAccess.Building.Zone.CellAlreadyInThisZone>
   <RimWorldAccess.Building.Zone.CellInOtherZone>该格在 {0} 内</RimWorldAccess.Building.Zone.CellInOtherZone>
@@ -226,7 +193,6 @@
        CavePlantExposed: {0} = plant LabelCap. -->
   <RimWorldAccess.Building.PlantSelect.OpenPrompt>植物选择。当前作物: {0}</RimWorldAccess.Building.PlantSelect.OpenPrompt>
   <RimWorldAccess.Building.PlantSelect.Selected>已选择: {0}</RimWorldAccess.Building.PlantSelect.Selected>
-  <RimWorldAccess.Building.PlantSelect.SelectionWithDetail>{0}. {1}</RimWorldAccess.Building.PlantSelect.SelectionWithDetail>
   <RimWorldAccess.Building.PlantSelect.NoColonistCanPlant>警告: 没有殖民者能种植 {0} (需要种植技能 {1})</RimWorldAccess.Building.PlantSelect.NoColonistCanPlant>
   <RimWorldAccess.Building.PlantSelect.CavePlantExposed>警告: {0} 是洞穴植物，但区域内有暴露于光照的格</RimWorldAccess.Building.PlantSelect.CavePlantExposed>
 
@@ -238,26 +204,13 @@
        AreaWithCellsAndPosition: {0} = label, {1} = cell count, {2} = position.
        AreaWithCellsNoPosition: {0} = label, {1} = cell count.
        Action.* keys are the per-action menu rows. -->
-  <RimWorldAccess.Building.AreaMgr.Closed>区域管理器已关闭</RimWorldAccess.Building.AreaMgr.Closed>
   <RimWorldAccess.Building.AreaMgr.MaxAreasReached>无法创建区域。已达到 10 个区域上限。</RimWorldAccess.Building.AreaMgr.MaxAreasReached>
-  <RimWorldAccess.Building.AreaMgr.MaxAreasReachedCopy>无法复制区域。已达到 10 个区域上限。</RimWorldAccess.Building.AreaMgr.MaxAreasReachedCopy>
   <RimWorldAccess.Building.AreaMgr.CreatedNewArea>已创建新区域: {0}</RimWorldAccess.Building.AreaMgr.CreatedNewArea>
   <RimWorldAccess.Building.AreaMgr.RenamePrompt>重命名区域: {0}. 输入新名称并按回车键。</RimWorldAccess.Building.AreaMgr.RenamePrompt>
-  <RimWorldAccess.Building.AreaMgr.Inverted>已反转区域: {0}. 所有格已切换。</RimWorldAccess.Building.AreaMgr.Inverted>
+  <RimWorldAccess.Building.AreaMgr.Inverted>已反转区域: {0}. 当前 {1} / {2} 格。</RimWorldAccess.Building.AreaMgr.Inverted>
   <RimWorldAccess.Building.AreaMgr.CopiedTo>已将区域复制到: {0}</RimWorldAccess.Building.AreaMgr.CopiedTo>
   <RimWorldAccess.Building.AreaMgr.Deleted>已删除区域: {0}</RimWorldAccess.Building.AreaMgr.Deleted>
-  <RimWorldAccess.Building.AreaMgr.AreaWithCellsAndPosition>{0} ({1} 格), {2}. 按右方括号键查看操作。</RimWorldAccess.Building.AreaMgr.AreaWithCellsAndPosition>
-  <RimWorldAccess.Building.AreaMgr.AreaWithCellsNoPosition>{0} ({1} 格). 按右方括号键查看操作。</RimWorldAccess.Building.AreaMgr.AreaWithCellsNoPosition>
-  <RimWorldAccess.Building.AreaMgr.NoAreasAvailable>没有可用区域。按右方括号键创建一个。</RimWorldAccess.Building.AreaMgr.NoAreasAvailable>
-  <RimWorldAccess.Building.AreaMgr.ActionWithPosition>{0}, {1}</RimWorldAccess.Building.AreaMgr.ActionWithPosition>
-  <RimWorldAccess.Building.AreaMgr.Action.NewArea>新建区域</RimWorldAccess.Building.AreaMgr.Action.NewArea>
-  <RimWorldAccess.Building.AreaMgr.Action.RenameArea>重命名区域</RimWorldAccess.Building.AreaMgr.Action.RenameArea>
-  <RimWorldAccess.Building.AreaMgr.Action.ExpandArea>扩展区域</RimWorldAccess.Building.AreaMgr.Action.ExpandArea>
-  <RimWorldAccess.Building.AreaMgr.Action.ShrinkArea>缩小区域</RimWorldAccess.Building.AreaMgr.Action.ShrinkArea>
-  <RimWorldAccess.Building.AreaMgr.Action.InvertArea>反转区域</RimWorldAccess.Building.AreaMgr.Action.InvertArea>
-  <RimWorldAccess.Building.AreaMgr.Action.CopyArea>复制区域</RimWorldAccess.Building.AreaMgr.Action.CopyArea>
-  <RimWorldAccess.Building.AreaMgr.Action.DeleteArea>删除区域</RimWorldAccess.Building.AreaMgr.Action.DeleteArea>
-  <RimWorldAccess.Building.AreaMgr.Action.Close>关闭</RimWorldAccess.Building.AreaMgr.Action.Close>
+  <RimWorldAccess.Building.AreaMgr.ColorFixed>此区域的颜色无法更改。</RimWorldAccess.Building.AreaMgr.ColorFixed>
 
   <!-- Shape names + descriptions (src/Building/ShapeHelper.cs).
        Spoken by every menu that lets the user pick a placement shape
@@ -337,12 +290,31 @@
   <RimWorldAccess.Building.Place.PlacingDesignator>正在放置 {0}</RimWorldAccess.Building.Place.PlacingDesignator>
   <RimWorldAccess.Building.Place.SizeOneTile>尺寸: 1 格</RimWorldAccess.Building.Place.SizeOneTile>
   <RimWorldAccess.Building.Place.SizeWxH>尺寸: {0}x{1}</RimWorldAccess.Building.Place.SizeWxH>
+  <RimWorldAccess.Building.Place.SpotScannerCategory>{0}放置点</RimWorldAccess.Building.Place.SpotScannerCategory>
+  <RimWorldAccess.Building.Place.SpotScannerItemLabel>位置</RimWorldAccess.Building.Place.SpotScannerItemLabel>
+  <RimWorldAccess.Building.Place.SpotFacing>朝向 {0}</RimWorldAccess.Building.Place.SpotFacing>
+  <RimWorldAccess.Building.Place.SpacingInRange>相距 {0} 格，间距正确</RimWorldAccess.Building.Place.SpacingInRange>
+  <RimWorldAccess.Building.Place.SpacingOutOfRange>相距 {0} 格，间距错误</RimWorldAccess.Building.Place.SpacingOutOfRange>
+  <RimWorldAccess.Building.Place.OutlineOkAt>所需区域，{0} 乘 {1}，{3} {2} 格，合适</RimWorldAccess.Building.Place.OutlineOkAt>
+  <RimWorldAccess.Building.Place.OutlineOkHere>所需区域，{0} 乘 {1}，光标处，合适</RimWorldAccess.Building.Place.OutlineOkHere>
+  <RimWorldAccess.Building.Place.OutlineBadAt>所需区域，{0} 乘 {1}，{3} {2} 格，不合适</RimWorldAccess.Building.Place.OutlineBadAt>
+  <RimWorldAccess.Building.Place.OutlineBadHere>所需区域，{0} 乘 {1}，光标处，不合适</RimWorldAccess.Building.Place.OutlineBadHere>
+  <RimWorldAccess.Building.Place.WatermillWheelOkAt>水车，{0} 乘 {1}，{3} {2} 格，在流水上</RimWorldAccess.Building.Place.WatermillWheelOkAt>
+  <RimWorldAccess.Building.Place.WatermillWheelOkHere>水车，{0} 乘 {1}，光标处，在流水上</RimWorldAccess.Building.Place.WatermillWheelOkHere>
+  <RimWorldAccess.Building.Place.WatermillWheelBadAt>水车，{0} 乘 {1}，{3} {2} 格，不在流水上</RimWorldAccess.Building.Place.WatermillWheelBadAt>
+  <RimWorldAccess.Building.Place.WatermillWheelBadHere>水车，{0} 乘 {1}，光标处，不在流水上</RimWorldAccess.Building.Place.WatermillWheelBadHere>
+  <RimWorldAccess.Building.Place.WatermillFlowOkAt>水流区域，{0} 乘 {1}，{3} {2} 格，未共用</RimWorldAccess.Building.Place.WatermillFlowOkAt>
+  <RimWorldAccess.Building.Place.WatermillFlowOkHere>水流区域，{0} 乘 {1}，光标处，未共用</RimWorldAccess.Building.Place.WatermillFlowOkHere>
+  <RimWorldAccess.Building.Place.WatermillFlowSharedAt>水流区域，{0} 乘 {1}，{3} {2} 格，与另一台水车共用</RimWorldAccess.Building.Place.WatermillFlowSharedAt>
+  <RimWorldAccess.Building.Place.WatermillFlowSharedHere>水流区域，{0} 乘 {1}，光标处，与另一台水车共用</RimWorldAccess.Building.Place.WatermillFlowSharedHere>
   <RimWorldAccess.Building.Place.HintManualOrder>移动到目标，按空格键选择，按回车键确认，按 Tab 选择形状，按 Escape 取消</RimWorldAccess.Building.Place.HintManualOrder>
   <RimWorldAccess.Building.Place.HintManualBuildRotatable>移动到位置并按空格键放置，按 R 旋转，按 Escape 取消</RimWorldAccess.Building.Place.HintManualBuildRotatable>
   <RimWorldAccess.Building.Place.HintManualBuildFixed>移动到位置并按空格键放置，按 Escape 取消</RimWorldAccess.Building.Place.HintManualBuildFixed>
   <RimWorldAccess.Building.Place.HintShape>移动到第一点并按空格键</RimWorldAccess.Building.Place.HintShape>
   <RimWorldAccess.Building.Place.PlacedBuild>已放置 {0} {1}{2}</RimWorldAccess.Building.Place.PlacedBuild>
   <RimWorldAccess.Building.Place.PlacedCostSuffix> ({0} {1})</RimWorldAccess.Building.Place.PlacedCostSuffix>
+  <RimWorldAccess.Building.Place.PlacedCostItem>{0} {1}</RimWorldAccess.Building.Place.PlacedCostItem>
+  <RimWorldAccess.Building.Place.PlacedCostSuffixMulti> ({0})</RimWorldAccess.Building.Place.PlacedCostSuffixMulti>
   <RimWorldAccess.Building.Place.DesignatedFor>已标记 {0} 用于 {1}</RimWorldAccess.Building.Place.DesignatedFor>
   <RimWorldAccess.Building.Place.NoBlueprintsPlaced>未放置蓝图</RimWorldAccess.Building.Place.NoBlueprintsPlaced>
   <RimWorldAccess.Building.Place.NoDesignationsPlaced>未放置标记</RimWorldAccess.Building.Place.NoDesignationsPlaced>
@@ -350,6 +322,9 @@
   <RimWorldAccess.Building.Place.MeditationDisableHint>在树形菜单中禁用警告开关以在此建造</RimWorldAccess.Building.Place.MeditationDisableHint>
   <!-- {0} = comma-joined protecting thing labels, {1} = MeditationDisableHint. -->
   <RimWorldAccess.Building.Place.MeditationProtectedBy>受 {0} 保护。{1}。</RimWorldAccess.Building.Place.MeditationProtectedBy>
+  <RimWorldAccess.Building.Place.WillReplaceSuffix>将替换 {0}</RimWorldAccess.Building.Place.WillReplaceSuffix>
+  <RimWorldAccess.Building.Place.WillReplaceItem>{0} x{1}</RimWorldAccess.Building.Place.WillReplaceItem>
+  <RimWorldAccess.Building.Place.WillReplaceConfirm>将替换 {0}。再次按空格键放置</RimWorldAccess.Building.Place.WillReplaceConfirm>
   <RimWorldAccess.Building.Place.Action.haul>搬运</RimWorldAccess.Building.Place.Action.haul>
   <RimWorldAccess.Building.Place.Action.hunt>狩猎</RimWorldAccess.Building.Place.Action.hunt>
   <RimWorldAccess.Building.Place.Action.mine>开采</RimWorldAccess.Building.Place.Action.mine>
@@ -381,51 +356,9 @@
        "zone" fallback (this is a different fallback than
        Building.Zone.FallbackName, which is for zone.label being null). -->
   <RimWorldAccess.Building.Create.CannotRemoveDisconnect>无法移除，会断开选择区</RimWorldAccess.Building.Create.CannotRemoveDisconnect>
-  <RimWorldAccess.Building.Create.Deselected>已取消选择, {0}, {1}. 总计: {2}</RimWorldAccess.Building.Create.Deselected>
-  <RimWorldAccess.Building.Create.SelectedWithTotal>{0}. 总计: {1}</RimWorldAccess.Building.Create.SelectedWithTotal>
-  <RimWorldAccess.Building.Create.CellOutOfBounds>该格超出边界</RimWorldAccess.Building.Create.CellOutOfBounds>
   <RimWorldAccess.Building.Create.CellAlreadyInZone>该格已在 {0} 内</RimWorldAccess.Building.Create.CellAlreadyInZone>
-  <RimWorldAccess.Building.Create.CannotPlaceZoneHere>无法在此处放置区域</RimWorldAccess.Building.Create.CannotPlaceZoneHere>
   <RimWorldAccess.Building.Create.MustBeAdjacentToSelection>该格必须与选择区相邻</RimWorldAccess.Building.Create.MustBeAdjacentToSelection>
-  <RimWorldAccess.Building.Create.ShapeUnavailable>此区域类型不可用此形状</RimWorldAccess.Building.Create.ShapeUnavailable>
-  <RimWorldAccess.Building.Create.ShapeInstructions>{0}: 按空格键设置角点。按 Tab 切换模式。按回车键创建，按 Escape 取消。</RimWorldAccess.Building.Create.ShapeInstructions>
-  <RimWorldAccess.Building.Create.ExpandShrinkInstructions>{0}: 按空格键设置角点，按回车键确认，按 Escape 取消。</RimWorldAccess.Building.Create.ExpandShrinkInstructions>
-  <RimWorldAccess.Building.Create.OpenCreating>正在创建 {0}. {1}</RimWorldAccess.Building.Create.OpenCreating>
-  <RimWorldAccess.Building.Create.OpenExpanding>正在扩展 {0}. 当前已选择 {1} 格。{2}</RimWorldAccess.Building.Create.OpenExpanding>
-  <RimWorldAccess.Building.Create.OpenShrinking>正在缩小 {0}. 选择要移除的格。{1}</RimWorldAccess.Building.Create.OpenShrinking>
-  <RimWorldAccess.Building.Create.NoZoneProvidedExpand>无法扩展: 未提供区域</RimWorldAccess.Building.Create.NoZoneProvidedExpand>
-  <RimWorldAccess.Building.Create.NoZoneProvidedShrink>无法缩小: 未提供区域</RimWorldAccess.Building.Create.NoZoneProvidedShrink>
-  <RimWorldAccess.Building.Create.NoCellsZoneNotCreated>未选择任何格。区域未创建。</RimWorldAccess.Building.Create.NoCellsZoneNotCreated>
-  <RimWorldAccess.Building.Create.NoCellsZoneUnchanged>未选择任何格。区域未更改。</RimWorldAccess.Building.Create.NoCellsZoneUnchanged>
-  <RimWorldAccess.Building.Create.MaxAllowedAreasReached>无法创建更多活动区。已达到 10 个上限。</RimWorldAccess.Building.Create.MaxAllowedAreasReached>
-  <RimWorldAccess.Building.Create.HomeAreaNotFound>错误: 找不到居住区</RimWorldAccess.Building.Create.HomeAreaNotFound>
-  <RimWorldAccess.Building.Create.NoZoneToModify>错误: 没有可修改的区域</RimWorldAccess.Building.Create.NoZoneToModify>
-  <RimWorldAccess.Building.Create.AllCellsRemovedZoneDeleted>所有格已移除。区域已删除。</RimWorldAccess.Building.Create.AllCellsRemovedZoneDeleted>
-  <RimWorldAccess.Building.Create.AllCellsRemovedNamedDeleted>所有格已移除。{0} 已删除。</RimWorldAccess.Building.Create.AllCellsRemovedNamedDeleted>
-  <RimWorldAccess.Building.Create.ZoneCreated>{0} 已创建，含 {1} 格。{2}</RimWorldAccess.Building.Create.ZoneCreated>
-  <RimWorldAccess.Building.Create.ObstaclesFoundSuffix> 发现 {0} 个障碍物。</RimWorldAccess.Building.Create.ObstaclesFoundSuffix>
-  <RimWorldAccess.Building.Create.ObstaclesInNewAreaSuffix>. 新区域中有 {0} 个障碍物。</RimWorldAccess.Building.Create.ObstaclesInNewAreaSuffix>
-  <RimWorldAccess.Building.Create.RemovedCellsFromZone>已从 {1} 移除 {0} 格。剩余 {2} 格。</RimWorldAccess.Building.Create.RemovedCellsFromZone>
-  <RimWorldAccess.Building.Create.UpdatePrefix>已更新 {0}: </RimWorldAccess.Building.Create.UpdatePrefix>
-  <RimWorldAccess.Building.Create.UpdateAddedAndRemoved>添加 {0} 格，移除 {1} 格</RimWorldAccess.Building.Create.UpdateAddedAndRemoved>
-  <RimWorldAccess.Building.Create.UpdateAddedOnly>添加 {0} 格</RimWorldAccess.Building.Create.UpdateAddedOnly>
-  <RimWorldAccess.Building.Create.UpdateRemovedOnly>移除 {0} 格</RimWorldAccess.Building.Create.UpdateRemovedOnly>
-  <RimWorldAccess.Building.Create.UpdateNoChanges>无更改</RimWorldAccess.Building.Create.UpdateNoChanges>
-  <RimWorldAccess.Building.Create.AllowedAreaName>活动区「{0}」</RimWorldAccess.Building.Create.AllowedAreaName>
   <RimWorldAccess.Building.Create.ErrorCreatingZone>创建区域时出错: {0}</RimWorldAccess.Building.Create.ErrorCreatingZone>
-  <RimWorldAccess.Building.Create.ErrorExpandingZone>扩展区域时出错: {0}</RimWorldAccess.Building.Create.ErrorExpandingZone>
-  <RimWorldAccess.Building.Create.ErrorShrinkingZone>缩小区域时出错: {0}</RimWorldAccess.Building.Create.ErrorShrinkingZone>
-  <RimWorldAccess.Building.Create.Cancelled>区域创建已取消</RimWorldAccess.Building.Create.Cancelled>
-  <RimWorldAccess.Building.Create.ZoneTypeName.Stockpile>储存区</RimWorldAccess.Building.Create.ZoneTypeName.Stockpile>
-  <RimWorldAccess.Building.Create.ZoneTypeName.DumpingStockpile>垃圾储存区</RimWorldAccess.Building.Create.ZoneTypeName.DumpingStockpile>
-  <RimWorldAccess.Building.Create.ZoneTypeName.GrowingZone>种植区</RimWorldAccess.Building.Create.ZoneTypeName.GrowingZone>
-  <RimWorldAccess.Building.Create.ZoneTypeName.AllowedArea>活动区</RimWorldAccess.Building.Create.ZoneTypeName.AllowedArea>
-  <RimWorldAccess.Building.Create.ZoneTypeName.HomeZone>居住区</RimWorldAccess.Building.Create.ZoneTypeName.HomeZone>
-  <RimWorldAccess.Building.Create.ZoneTypeName.Default>区域</RimWorldAccess.Building.Create.ZoneTypeName.Default>
-  <RimWorldAccess.Building.Create.ZoneCapped.Stockpile>储存区</RimWorldAccess.Building.Create.ZoneCapped.Stockpile>
-  <RimWorldAccess.Building.Create.ZoneCapped.DumpingStockpile>垃圾储存区</RimWorldAccess.Building.Create.ZoneCapped.DumpingStockpile>
-  <RimWorldAccess.Building.Create.ZoneCapped.GrowingZone>种植区</RimWorldAccess.Building.Create.ZoneCapped.GrowingZone>
-  <RimWorldAccess.Building.Create.ZoneCapped.HomeZone>居住区</RimWorldAccess.Building.Create.ZoneCapped.HomeZone>
 
   <!-- Viewing mode (src/Building/ViewingModeState.cs).
        Post-placement preview. Shape-name-and-description data still flows
@@ -454,6 +387,10 @@
   <RimWorldAccess.Building.View.CancelledBlueprint>已取消 {0}</RimWorldAccess.Building.View.CancelledBlueprint>
   <RimWorldAccess.Building.View.ActionRestored>已恢复</RimWorldAccess.Building.View.ActionRestored>
   <RimWorldAccess.Building.View.ActionRemoved>已移除</RimWorldAccess.Building.View.ActionRemoved>
+  <RimWorldAccess.Building.View.RemovedZoneSizeZero>0 个区域格</RimWorldAccess.Building.View.RemovedZoneSizeZero>
+  <RimWorldAccess.Building.View.RemovedZoneSizeOne>1 个区域格</RimWorldAccess.Building.View.RemovedZoneSizeOne>
+  <RimWorldAccess.Building.View.RemovedZoneSizeMany>{0} 个区域格</RimWorldAccess.Building.View.RemovedZoneSizeMany>
+  <RimWorldAccess.Building.View.RemovedZoneSizeWxH>{0} 乘 {1} 区域</RimWorldAccess.Building.View.RemovedZoneSizeWxH>
   <RimWorldAccess.Building.View.SegmentRemovedSomeRemain>{0} {1} ({2}). 剩余 {3}{4}.</RimWorldAccess.Building.View.SegmentRemovedSomeRemain>
   <RimWorldAccess.Building.View.SegmentRemovedNoneRemain>{0} {1} ({2}). 无剩余段。</RimWorldAccess.Building.View.SegmentRemovedNoneRemain>
   <RimWorldAccess.Building.View.RemainingInShapeSuffix> 于 {0}</RimWorldAccess.Building.View.RemainingInShapeSuffix>
@@ -745,6 +682,7 @@
   <RimWorldAccess.Building.Architect.CategorySelected>已选择 {0} 类别。选择一个工具</RimWorldAccess.Building.Architect.CategorySelected>
   <RimWorldAccess.Building.Architect.SelectMaterialFor>为 {0} 选择材料</RimWorldAccess.Building.Architect.SelectMaterialFor>
   <RimWorldAccess.Building.Architect.Facing>朝向 {0}</RimWorldAccess.Building.Architect.Facing>
+  <RimWorldAccess.Building.Architect.NowFacing>现在朝向 {0}</RimWorldAccess.Building.Architect.NowFacing>
   <RimWorldAccess.Building.Architect.SizeWxH>尺寸: {0} 乘 {1}</RimWorldAccess.Building.Architect.SizeWxH>
   <RimWorldAccess.Building.Architect.ExtendDirection>{0} {1}</RimWorldAccess.Building.Architect.ExtendDirection>
   <RimWorldAccess.Building.Architect.Extends>向 {0} 延伸</RimWorldAccess.Building.Architect.Extends>
@@ -826,18 +764,19 @@
   <RimWorldAccess.Building.ArchitectPlace.GravshipFacing>逆重飞船朝向 {0}。</RimWorldAccess.Building.ArchitectPlace.GravshipFacing>
   <RimWorldAccess.Building.ArchitectPlace.ErrorPlacing>放置时出错: {0}</RimWorldAccess.Building.ArchitectPlace.ErrorPlacing>
   <RimWorldAccess.Building.ArchitectPlace.InvalidReason>无效: {0}</RimWorldAccess.Building.ArchitectPlace.InvalidReason>
+  <RimWorldAccess.Building.ArchitectPlace.CanPlaceHere>可以放置</RimWorldAccess.Building.ArchitectPlace.CanPlaceHere>
   <RimWorldAccess.Building.ArchitectPlace.GravshipPositioned>逆重飞船已定位于 {0}, {1}。选择着陆标记并使用命令确认着陆。</RimWorldAccess.Building.ArchitectPlace.GravshipPositioned>
   <!-- {0} = footprint width, {1} = footprint height (cells). -->
   <RimWorldAccess.Building.ArchitectPlace.GravshipLandingPrompt>定位逆重飞船着陆区。占地: {0} 乘 {1} 格。用方向键移动，按 R 旋转，按空格键放置。</RimWorldAccess.Building.ArchitectPlace.GravshipLandingPrompt>
   <RimWorldAccess.Building.ArchitectPlace.NoZoneCellsTryAgain>选择区中没有区域格。请重试。</RimWorldAccess.Building.ArchitectPlace.NoZoneCellsTryAgain>
   <RimWorldAccess.Building.ArchitectPlace.NoValidCellsTryAgain>选择区中没有有效的格。请重试。</RimWorldAccess.Building.ArchitectPlace.NoValidCellsTryAgain>
   <RimWorldAccess.Building.ArchitectPlace.PlacementFailedClearing>放置失败。正在清除选择。</RimWorldAccess.Building.ArchitectPlace.PlacementFailedClearing>
-  <RimWorldAccess.Building.ArchitectPlace.PlaceFirstPoint>按空格键放置第一点</RimWorldAccess.Building.ArchitectPlace.PlaceFirstPoint>
   <RimWorldAccess.Building.ArchitectPlace.PlaceSecondPoint>按空格键放置第二点</RimWorldAccess.Building.ArchitectPlace.PlaceSecondPoint>
   <RimWorldAccess.Building.ArchitectPlace.PlacementCompleted>放置已完成</RimWorldAccess.Building.ArchitectPlace.PlacementCompleted>
   <RimWorldAccess.Building.ArchitectPlace.ZoneEditingCompleted>区域编辑已完成</RimWorldAccess.Building.ArchitectPlace.ZoneEditingCompleted>
   <RimWorldAccess.Building.ArchitectPlace.SelectionCleared>选择已清除</RimWorldAccess.Building.ArchitectPlace.SelectionCleared>
-  <RimWorldAccess.Building.ArchitectPlace.PlacementCancelled>放置已取消</RimWorldAccess.Building.ArchitectPlace.PlacementCancelled>
+  <RimWorldAccess.Building.ArchitectPlace.ExitedPlacement>已退出放置模式。</RimWorldAccess.Building.ArchitectPlace.ExitedPlacement>
+  <RimWorldAccess.Building.ArchitectPlace.ExitedZoneEditing>已退出区域编辑。</RimWorldAccess.Building.ArchitectPlace.ExitedZoneEditing>
   <RimWorldAccess.Building.ArchitectPlace.InvalidTargetPosition>无效的目标位置</RimWorldAccess.Building.ArchitectPlace.InvalidTargetPosition>
   <RimWorldAccess.Building.ArchitectPlace.CannotLandHere>无法在此处着陆: {0}</RimWorldAccess.Building.ArchitectPlace.CannotLandHere>
   <RimWorldAccess.Building.ArchitectPlace.LandingConfirmed>着陆已确认于 {0}, {1}</RimWorldAccess.Building.ArchitectPlace.LandingConfirmed>
@@ -877,6 +816,7 @@
   -->
   <RimWorldAccess.Building.ArchitectTree.MenuOpened>建造菜单</RimWorldAccess.Building.ArchitectTree.MenuOpened>
   <RimWorldAccess.Building.ArchitectTree.NoCategories>没有可用的建造类别</RimWorldAccess.Building.ArchitectTree.NoCategories>
+  <RimWorldAccess.Building.ArchitectTree.RegionName>建造</RimWorldAccess.Building.ArchitectTree.RegionName>
 
   <!-- =================================================================
        Facility link info (FacilityLinkHelper). Spoken on placement of
@@ -943,6 +883,9 @@
   <RimWorldAccess.Building.View.ItemTypeZoneCellMany>区域格</RimWorldAccess.Building.View.ItemTypeZoneCellMany>
   <RimWorldAccess.Building.View.ItemTypeDesignationOne>标记</RimWorldAccess.Building.View.ItemTypeDesignationOne>
   <RimWorldAccess.Building.View.ItemTypeDesignationMany>标记</RimWorldAccess.Building.View.ItemTypeDesignationMany>
+
+  <!-- Area undo description (src/Building/AreaUndoTracker.cs). {0} = area labels joined by vanilla ToCommaList. -->
+  <RimWorldAccess.Building.AreaUndo.MultipleAreas>{0}区域</RimWorldAccess.Building.AreaUndo.MultipleAreas>
 
   <!-- Ctrl+A / Ctrl+Shift+A select-all and undo-scope announcements
        (src/Building/ArchitectPlacementPatch.cs).

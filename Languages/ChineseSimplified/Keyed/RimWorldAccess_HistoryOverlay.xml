@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    New keys added for the History tab's ArchivedDialog parity fix and
+    keyboard-mode overlay localization (src/History/HistoryHelper.cs,
+    src/History/HistoryPatch.cs). Kept in a separate file rather than
+    folded into RimWorldAccess_History.xml per that file's existing
+    "archive item type nouns" and "keyboard-mode visual overlay" sections,
+    which this one extends.
+  -->
+
+  <!-- Archive item type noun for RimWorld.ArchivedDialog rows (quest
+       dialogs, caravan meetings/demands, game start/end narrative), which
+       gate on the same letters filter as Letter rows but are a distinct
+       IArchivable type. Sibling of RimWorldAccess.History.Type.Letter/
+       Message/Item in RimWorldAccess_History.xml. -->
+  <RimWorldAccess.History.Type.Dialog>对话</RimWorldAccess.History.Type.Dialog>
+
+  <!-- Keyboard-mode visual overlay instruction lines (HistoryPatch.
+       DrawKeyboardModeIndicator). BaseInstructions is shown on every tab;
+       exactly one of the per-tab variants is appended after it. -->
+  <RimWorldAccess.History.Overlay.BaseInstructions>Tab/Shift+Tab: 切换选项卡 | 上下: 导航 | 回车: 详情</RimWorldAccess.History.Overlay.BaseInstructions>
+  <RimWorldAccess.History.Overlay.MessagesInstructions>Alt+L: 切换信件 | Alt+M: 切换消息 | Alt+P: 固定 | Alt+J: 跳转</RimWorldAccess.History.Overlay.MessagesInstructions>
+  <RimWorldAccess.History.Overlay.GraphInstructions>Alt+G: 选择图表 | Alt+D: 切换日期范围 | 输入以搜索 | Home/End: 首项/末项</RimWorldAccess.History.Overlay.GraphInstructions>
+  <RimWorldAccess.History.Overlay.StatisticsInstructions>输入以搜索 | Home/End: 首项/末项</RimWorldAccess.History.Overlay.StatisticsInstructions>
+</LanguageData>

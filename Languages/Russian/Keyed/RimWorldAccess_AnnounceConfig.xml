@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Configure Spoken Announcements screen (src/Shell/Screens/AnnouncementConfigDialog.Game.cs
+    — Dialog_ConfigureAnnouncements / AnnouncementConfigScope). Opened from a button in both
+    RimWorld Access settings surfaces (see RimWorldAccess_Core.xml's
+    RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button).
+
+    The seven part names/examples are read top-to-bottom in the canonical order; the example
+    fragments show a translator exactly what that part sounds like in an announcement so they
+    can adapt the sample text to their own language's phrasing.
+  -->
+
+  <RimWorldAccess.AnnounceConfig.Title>Настроить озвучиваемые объявления</RimWorldAccess.AnnounceConfig.Title>
+  <RimWorldAccess.AnnounceConfig.Intro>Выберите, какие части объявления озвучиваются и в каком порядке они звучат. Изменения применяются немедленно, поэтому вы можете услышать результат, просматривая этот список. Нажмите Пробел или Enter, чтобы переключить часть, и Ctrl со стрелками вверх и вниз, чтобы переместить её.</RimWorldAccess.AnnounceConfig.Intro>
+  <RimWorldAccess.AnnounceConfig.PartsRegion>Части объявления</RimWorldAccess.AnnounceConfig.PartsRegion>
+
+  <!-- The Name part's row is always drawn checked and disabled; see
+       RimWorldAccess.AnnounceConfig.NameAlwaysOn below. -->
+  <RimWorldAccess.AnnounceConfig.Part.Label>Имя</RimWorldAccess.AnnounceConfig.Part.Label>
+  <RimWorldAccess.AnnounceConfig.Part.Hotkey>Горячая клавиша</RimWorldAccess.AnnounceConfig.Part.Hotkey>
+  <RimWorldAccess.AnnounceConfig.Part.RoleAndState>Тип элемента и состояние</RimWorldAccess.AnnounceConfig.Part.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Part.Level>Уровень вложенности</RimWorldAccess.AnnounceConfig.Part.Level>
+  <RimWorldAccess.AnnounceConfig.Part.Position>Позиция в списке</RimWorldAccess.AnnounceConfig.Part.Position>
+  <RimWorldAccess.AnnounceConfig.Part.Extras>Описание и подробности</RimWorldAccess.AnnounceConfig.Part.Extras>
+  <RimWorldAccess.AnnounceConfig.Part.Hint>Подсказки по взаимодействию</RimWorldAccess.AnnounceConfig.Part.Hint>
+
+  <RimWorldAccess.AnnounceConfig.Example.Label>например: Разрешить свежие трупы</RimWorldAccess.AnnounceConfig.Example.Label>
+  <RimWorldAccess.AnnounceConfig.Example.Hotkey>например: Alt+C</RimWorldAccess.AnnounceConfig.Example.Hotkey>
+  <RimWorldAccess.AnnounceConfig.Example.RoleAndState>например: флажок, отмечен</RimWorldAccess.AnnounceConfig.Example.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Example.Level>например: уровень 2</RimWorldAccess.AnnounceConfig.Example.Level>
+  <RimWorldAccess.AnnounceConfig.Example.Position>например: 4 из 13</RimWorldAccess.AnnounceConfig.Example.Position>
+  <RimWorldAccess.AnnounceConfig.Example.Extras>например: Включая гнилые</RimWorldAccess.AnnounceConfig.Example.Extras>
+  <RimWorldAccess.AnnounceConfig.Example.Hint>например: Нажмите Enter, чтобы выбрать</RimWorldAccess.AnnounceConfig.Example.Hint>
+
+  <!-- Spoken (as Extras, after the example fragment) and appended in place of the toggle
+       when the player tries to act on the Name part's row; it can be reordered but never
+       turned off, since silencing it would leave the player unable to tell what is focused. -->
+  <RimWorldAccess.AnnounceConfig.NameAlwaysOn>Имя элемента озвучивается всегда.</RimWorldAccess.AnnounceConfig.NameAlwaysOn>
+
+  <RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition>Позиция строки и столбца в таблицах</RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition>
+  <RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition.Example>например: строка 3 из 8, столбец 2 из 5</RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition.Example>
+  <RimWorldAccess.AnnounceConfig.Extra.TableDimensions>Размер таблицы при входе в таблицу</RimWorldAccess.AnnounceConfig.Extra.TableDimensions>
+  <RimWorldAccess.AnnounceConfig.Extra.TableDimensions.Example>например: таблица, 5 столбцов, 8 строк</RimWorldAccess.AnnounceConfig.Extra.TableDimensions.Example>
+  <RimWorldAccess.AnnounceConfig.Extra.SectionCount>Сколько разделов на экране и в каком вы находитесь</RimWorldAccess.AnnounceConfig.Extra.SectionCount>
+  <RimWorldAccess.AnnounceConfig.Extra.SectionCount.Example>например: разделов: 2, или раздел 2 из 3</RimWorldAccess.AnnounceConfig.Extra.SectionCount.Example>
+
+  <!-- The Preview button's canned demo item, composed live through the same ComposeFocus
+       path as every real announcement, so it always reflects the current working toggles/order. -->
+  <RimWorldAccess.AnnounceConfig.Preview.Button>Прослушать объявление</RimWorldAccess.AnnounceConfig.Preview.Button>
+  <RimWorldAccess.AnnounceConfig.Preview.Label>Пример элемента</RimWorldAccess.AnnounceConfig.Preview.Label>
+  <RimWorldAccess.AnnounceConfig.Preview.Hotkey>Alt+P</RimWorldAccess.AnnounceConfig.Preview.Hotkey>
+  <RimWorldAccess.AnnounceConfig.Preview.Extras>Это пример описания, показывающий, какие подробности предоставляет собственный текст элемента.</RimWorldAccess.AnnounceConfig.Preview.Extras>
+  <RimWorldAccess.AnnounceConfig.Preview.Hint>Нажмите Enter, чтобы выбрать.</RimWorldAccess.AnnounceConfig.Preview.Hint>
+
+  <!-- Spoken once when the Restore defaults button or its chord runs. The button's own caption
+       reuses Core's RestoreToDefaultSettings, the same way Save and Cancel reuse Core's. -->
+  <RimWorldAccess.AnnounceConfig.ResetToDefaults.Done>Настройки объявлений восстановлены по умолчанию.</RimWorldAccess.AnnounceConfig.ResetToDefaults.Done>
+</LanguageData>

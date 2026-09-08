@@ -121,10 +121,7 @@
        ========================================================= -->
 
   <!-- Open guards. -->
-  <RimWorldAccess.TransportPods.Loading.NoDialog>Діалог завантаження недоступний</RimWorldAccess.TransportPods.Loading.NoDialog>
   <RimWorldAccess.TransportPods.Loading.ReflectionFailed>Доступність завантаження транспортних капсул недоступна через оновлення гри. Будь ласка, перевірте наявність оновлень мода.</RimWorldAccess.TransportPods.Loading.ReflectionFailed>
-  <RimWorldAccess.TransportPods.Loading.NoPortalDialog>Діалог порталу недоступний</RimWorldAccess.TransportPods.Loading.NoPortalDialog>
-  <RimWorldAccess.TransportPods.Loading.PortalReflectionFailed>Доступність завантаження порталу недоступна через оновлення гри. Будь ласка, перевірте наявність оновлень мода.</RimWorldAccess.TransportPods.Loading.PortalReflectionFailed>
 
   <!-- Entry announcement. One/Many split so translators control pod/pods
        agreement; the pod-noun key is inlined into the sentence so word order
@@ -134,12 +131,8 @@
   <RimWorldAccess.TransportPods.Loading.OpenAnnouncementMany>Завантаження транспортних капсул. {0} капсул, місткість {1} кг. Вліво/Вправо для вкладок, Enter для зміни.</RimWorldAccess.TransportPods.Loading.OpenAnnouncementMany>
 
   <!-- Tab navigation. -->
-  <RimWorldAccess.TransportPods.Loading.TabPawns>Персонажі</RimWorldAccess.TransportPods.Loading.TabPawns>
-  <RimWorldAccess.TransportPods.Loading.TabItems>Предмети</RimWorldAccess.TransportPods.Loading.TabItems>
-  <RimWorldAccess.TransportPods.Loading.ReturnedToTab>Повернення до вкладки {0}</RimWorldAccess.TransportPods.Loading.ReturnedToTab>
 
   <!-- Shared empty-tab feedback (spoken in multiple navigation paths). -->
-  <RimWorldAccess.TransportPods.Loading.NoItemsInTab>У цій вкладці немає предметів</RimWorldAccess.TransportPods.Loading.NoItemsInTab>
 
   <!-- Activation and quantity actions. {0} = item label. -->
   <RimWorldAccess.TransportPods.Loading.ItemChecked>{0}: позначено</RimWorldAccess.TransportPods.Loading.ItemChecked>
@@ -148,7 +141,6 @@
 
   <!-- Inspect results. -->
   <RimWorldAccess.TransportPods.Loading.NoItemToInspect>Немає предмета для огляду</RimWorldAccess.TransportPods.Loading.NoItemToInspect>
-  <RimWorldAccess.TransportPods.Loading.CannotInspectItem>Неможливо оглянути цей предмет</RimWorldAccess.TransportPods.Loading.CannotInspectItem>
 
   <!-- Delete/remove guard. -->
   <RimWorldAccess.TransportPods.Loading.AlreadyAtZero>Вже на нулі</RimWorldAccess.TransportPods.Loading.AlreadyAtZero>
@@ -159,20 +151,12 @@
   <!-- Mass summary (Tab key / AnnounceMassSummary).
        Composed from MassLine + one of OverloadedStatus/RemainingStatus.
        {0} = current usage, {1} = capacity, {2} = status clause. -->
-  <RimWorldAccess.TransportPods.Loading.MassSummary>Вага: {0} з {1} кг. {2}</RimWorldAccess.TransportPods.Loading.MassSummary>
-  <RimWorldAccess.TransportPods.Loading.MassOverloaded>ПЕРЕВАНТАЖЕНО на {0} кг</RimWorldAccess.TransportPods.Loading.MassOverloaded>
-  <RimWorldAccess.TransportPods.Loading.MassRemaining>залишилося {0} кг</RimWorldAccess.TransportPods.Loading.MassRemaining>
 
   <!-- Summary view (Tab toggle). Empty/error states come next. -->
-  <RimWorldAccess.TransportPods.Loading.NoSummaryForDialog>Підсумок для цього діалогу недоступний</RimWorldAccess.TransportPods.Loading.NoSummaryForDialog>
-  <RimWorldAccess.TransportPods.Loading.SummaryEntry>Перегляд підсумку. Вгору/Вниз для навігації статистикою. Tab для повернення.</RimWorldAccess.TransportPods.Loading.SummaryEntry>
-  <RimWorldAccess.TransportPods.Loading.SummaryNoData>Дані недоступні</RimWorldAccess.TransportPods.Loading.SummaryNoData>
   <RimWorldAccess.TransportPods.Loading.SummaryNoTransporters>Немає транспортів</RimWorldAccess.TransportPods.Loading.SummaryNoTransporters>
   <RimWorldAccess.TransportPods.Loading.SummaryStatsUnavailable>Статистика недоступна</RimWorldAccess.TransportPods.Loading.SummaryStatsUnavailable>
-  <RimWorldAccess.TransportPods.Loading.SummaryNoSummary>Немає даних підсумку</RimWorldAccess.TransportPods.Loading.SummaryNoSummary>
 
   <!-- Summary item format ({item}. {position}). {0} = stat line, {1} = position. -->
-  <RimWorldAccess.TransportPods.Loading.SummaryItemAnnouncement>{0}. {1}</RimWorldAccess.TransportPods.Loading.SummaryItemAnnouncement>
 
   <!-- Stat-breakdown view (Alt+I in summary mode). NoBreakdown is spoken when
        the selected stat has no cached explanation (e.g. Food).
@@ -216,5 +200,8 @@
   <RimWorldAccess.TransportPods.Portal.FallbackEnter>Завантажити портал</RimWorldAccess.TransportPods.Portal.FallbackEnter>
   <RimWorldAccess.TransportPods.Portal.FallbackLoading>Завантаження</RimWorldAccess.TransportPods.Portal.FallbackLoading>
   <!-- Localization guardrail (D.8) sweep — previously hardcoded English. -->
-  <RimWorldAccess.TransportPods.Loading.TabSummary>Вкладка {0}, предметів: {1}</RimWorldAccess.TransportPods.Loading.TabSummary>
+
+  <!-- Region name for the stats section (screen-model refactor: the old
+       Tab-key Summary view is now a region cycled with Tab/Shift+Tab). -->
+  <RimWorldAccess.TransportPods.Loading.SummaryTab>Зведення</RimWorldAccess.TransportPods.Loading.SummaryTab>
 </LanguageData>

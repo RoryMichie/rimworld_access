@@ -30,17 +30,25 @@ Press **Ctrl+G** to open the coordinate-jump dialog. Type an X coordinate, press
 
 ## Jump modes: covering ground fast
 
-Tile-by-tile movement is fine for close work, but crossing the map one step at a time is slow. Jump modes let a single keypress leap to the next thing in a given direction. Two jump modes are available:
+Tile-by-tile movement is fine for close work, but crossing the map one step at a time is slow. Jump modes let a single keypress leap to the next thing in a given direction. Four jump modes are available:
 
 - **Preset distance:** jumps a fixed number of tiles in the direction you choose.
-- **Adjacent to wall:** jumps to the next tile adjacent to a wall in the chosen direction.
+- **Impassable:** jumps to the last tile a colonist could walk to that way, stopping before a wall, a rock face, deep water, or anything else that would block a pawn.
+- **Terrain:** jumps to the next tile whose ground is different, so a stretch of sand or a paved floor crosses in one press.
+- **Structure:** jumps to the next tile whose building is different, so a run of marble wall crosses in one press and lands where that wall changes or ends. Standing on open ground, it finds the next building instead.
+
+Blueprints and frames count as the thing they will become, so a colony under construction navigates like the one being built.
 
 Controls:
 
 - **Ctrl+arrow** jumps in that direction using the active mode.
-- **Shift+Up / Shift+Down** cycle to the next or previous jump mode. The cursor does not move; the mod announces the new mode.
+- **Shift+Up / Shift+Down** cycle to the next or previous jump mode. The cursor does not move; the mod announces the new mode. In the three scanning modes, where there is no distance to adjust, Shift+Left and Shift+Right repeat the mode name.
 - **Shift+Left / Shift+Right** adjust the preset distance by 1.
 - **Shift+Ctrl+Left / Shift+Ctrl+Right** adjust the preset distance by 10.
+
+The scanning modes cover an unpredictable number of tiles, so they announce the distance before describing where the cursor landed, for example "7 tiles. Marble wall." When there is nothing to jump to, the mod says so and stays put: "blocked", "no terrain change that way", "no structure change that way", or "map boundary".
+
+No jump crosses into unexplored ground. A scan stops at the fog line, so a jump never tells you what is hiding in the dark.
 
 Jump modes are also used when sizing a wall or zone during building placement. See the [Architect menu page](../building/architect.md) for that flow.
 

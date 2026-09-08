@@ -1,48 +1,41 @@
 using HarmonyLib;
 using RimWorld;
 using RimWorld.Planet;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patch to intercept the Animals tab opening and replace it with our windowless version
+    /// Opens the accessible screen for the Animals tab while the real vanilla window keeps drawing.
+    /// This no longer replaces the window, it just makes sure the windowless state is active while it
+    /// is open. The IsActive guard is load-bearing: this prefix now runs EVERY FRAME the window is
+    /// open, not just once.
     /// </summary>
     [HarmonyPatch(typeof(MainTabWindow_Animals), nameof(MainTabWindow_Animals.DoWindowContents))]
     public static class AnimalsMenuPatch
     {
-        private static bool hasIntercepted = false;
-
         [HarmonyPrefix]
-        public static bool Prefix()
+        public static void Prefix()
         {
-            // Only intercept once per window opening
-            if (!hasIntercepted)
+            if (AnimalsMenuState.IsActive)
             {
-                hasIntercepted = true;
-
-                // If on the world map, switch to colony map first
-                if (Find.World?.renderer?.wantedMode == WorldRenderMode.Planet)
-                {
-                    CameraJumper.TryHideWorld();
-                    MapNavigationState.RestoreCursorForCurrentMap();
-                }
-
-                // Open our windowless version instead
-                AnimalsMenuState.Open();
-
-                // Close the window that was just opened
-                Find.WindowStack.TryRemove(typeof(MainTabWindow_Animals), doCloseSound: false);
-
-                // Reset flag after a brief delay to allow for future opens
-                hasIntercepted = false;
-
-                // Return false to prevent the original DoWindowContents from executing
-                return false;
+                return;
             }
 
-            return true;
+            // If on the world map, switch to colony map first
+            if (Find.World?.renderer?.wantedMode == WorldRenderMode.Planet)
+            {
+                CameraJumper.TryHideWorld();
+                MapNavigationState.RestoreCursorForCurrentMap();
+            }
+
+            AnimalsMenuState.Open();
+
+            // Open refuses (and announces) for an empty roster — take the window with it.
+            if (!AnimalsMenuState.IsActive)
+            {
+                Shell.MainTabWindowLink.CloseTab(Shell.MainTabWindowLink.Animals);
+            }
         }
     }
 }

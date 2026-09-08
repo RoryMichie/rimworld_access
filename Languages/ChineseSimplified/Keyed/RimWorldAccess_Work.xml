@@ -36,16 +36,20 @@
        mostly defensive for null-check paths. -->
   <RimWorldAccess.Work.UnknownPawn>未知</RimWorldAccess.Work.UnknownPawn>
 
+  <!-- Work-priority copy/paste (Ctrl+C / Ctrl+V), sharing vanilla's own
+       clipboard. CopyPasteAnnouncement: {0} = the game's own Copy/Paste word,
+       {1} = pawn name. NoPrioritiesCopied is the refusal when nothing has been
+       copied yet. -->
+  <RimWorldAccess.Work.CopyPasteAnnouncement>{0}: {1}</RimWorldAccess.Work.CopyPasteAnnouncement>
+  <RimWorldAccess.Work.NoPrioritiesCopied>未复制工作优先级</RimWorldAccess.Work.NoPrioritiesCopied>
+
   <!-- Mode names. Toggle (Alt+M) announces just the new mode; the overlay
        shows the same strings in the header row. -->
   <RimWorldAccess.Work.Mode.Manual>自定义优先级模式</RimWorldAccess.Work.Mode.Manual>
   <RimWorldAccess.Work.Mode.Basic>基础模式</RimWorldAccess.Work.Mode.Basic>
-  <RimWorldAccess.Work.Mode.ManualOverlay>自定义优先级模式</RimWorldAccess.Work.Mode.ManualOverlay>
-  <RimWorldAccess.Work.Mode.BasicOverlay>基础模式</RimWorldAccess.Work.Mode.BasicOverlay>
 
   <!-- Spoken when Up/Down is pressed in Basic Mode (navigation is
        Left/Right only there). -->
-  <RimWorldAccess.Work.UpDownOnlyManual>上下导航仅在自定义模式下可用。按 Alt+M 切换。</RimWorldAccess.Work.UpDownOnlyManual>
 
   <!-- Column names for the 5-column priority grid. Used in the spoken
        announcements, the overlay's position readout, and composed into
@@ -75,11 +79,7 @@
        NoTaskSelected: BuildTaskAnnouncement fallback.
        CursorNowEmpty: {0} = column name. Spoken after SetPriority moved
        the only item out of the current column. -->
-  <RimWorldAccess.Work.ColumnEmpty>{0}: 空</RimWorldAccess.Work.ColumnEmpty>
-  <RimWorldAccess.Work.NoWorkTypesAvailable>没有可用的工作类型</RimWorldAccess.Work.NoWorkTypesAvailable>
   <RimWorldAccess.Work.NoWorkTypeSelected>未选择工作类型</RimWorldAccess.Work.NoWorkTypeSelected>
-  <RimWorldAccess.Work.NoTaskSelected>未选择任务</RimWorldAccess.Work.NoTaskSelected>
-  <RimWorldAccess.Work.CursorNowEmpty>光标现在位于{0}，此处为空</RimWorldAccess.Work.CursorNowEmpty>
 
   <!-- Single-pawn SetPriority feedback.
        AlreadyAtPriority: {0} = work labelShort, {1} = priority word
@@ -129,17 +129,14 @@
   <!-- Passion suffixes appended at the end of the task announcement. -->
 
   <!-- Placement context announced after a SetPriority move, describing
-       where the item landed inside the destination column. C# strips the
-       "placed " prefix (StripPlacedPrefix) when composing the final
-       announcement with MovedToPriorityWithContext; that prefix is kept
-       as a key so languages that don't use it can leave it empty.
+       where the item landed inside the destination column. Consumed bare
+       by MovedToPriorityWithContext.
        {0} = neighbour (or left neighbour), {1} = right neighbour. -->
-  <RimWorldAccess.Work.Placement.PlacedPrefix>放置于</RimWorldAccess.Work.Placement.PlacedPrefix>
-  <RimWorldAccess.Work.Placement.LeftOf>放置于{0}左侧</RimWorldAccess.Work.Placement.LeftOf>
-  <RimWorldAccess.Work.Placement.RightOf>放置于{0}右侧</RimWorldAccess.Work.Placement.RightOf>
-  <RimWorldAccess.Work.Placement.FirstLeftOf>放置于首位，{0}左侧</RimWorldAccess.Work.Placement.FirstLeftOf>
-  <RimWorldAccess.Work.Placement.LastRightOf>放置于末位，{0}右侧</RimWorldAccess.Work.Placement.LastRightOf>
-  <RimWorldAccess.Work.Placement.Between>放置于{0}与{1}之间</RimWorldAccess.Work.Placement.Between>
+  <RimWorldAccess.Work.PlacementContext.LeftOf>{0}左侧</RimWorldAccess.Work.PlacementContext.LeftOf>
+  <RimWorldAccess.Work.PlacementContext.RightOf>{0}右侧</RimWorldAccess.Work.PlacementContext.RightOf>
+  <RimWorldAccess.Work.PlacementContext.FirstLeftOf>首位，{0}左侧</RimWorldAccess.Work.PlacementContext.FirstLeftOf>
+  <RimWorldAccess.Work.PlacementContext.LastRightOf>末位，{0}右侧</RimWorldAccess.Work.PlacementContext.LastRightOf>
+  <RimWorldAccess.Work.PlacementContext.Between>{0}与{1}之间</RimWorldAccess.Work.PlacementContext.Between>
 
   <!-- Bulk-set announcement (Shift+0-4: apply priority to all pawns).
        {0} = work type labelShort, {1} = priority label (e.g. "Priority 2"
@@ -168,7 +165,6 @@
        {0} = task announcement, {1} = column name, {2} = current match 1-
        based, {3} = total matches. Pattern mirrors the feature's other
        position announcements. -->
-  <RimWorldAccess.Work.Search.JumpPrompt>{0}, {1}, 第 {2} 项，共 {3} 个匹配，按回车跳转到此任务</RimWorldAccess.Work.Search.JumpPrompt>
 
   <!-- Pawn-switch brief announcement composition (no entry case).
        {0} = pawn name, {1} = position suffix "{i} of {n}". -->
@@ -189,8 +185,6 @@
        WithColumn: {0} = column name, {1} = task announcement, {2} = pos.
        WithoutColumn: {0} = task announcement, {1} = pos.
        BasicModeItem: {0} = task announcement, {1} = status, {2} = pos. -->
-  <RimWorldAccess.Work.Position.WithColumn>{0}, {1} {2}</RimWorldAccess.Work.Position.WithColumn>
-  <RimWorldAccess.Work.Position.WithoutColumn>{0} {1}</RimWorldAccess.Work.Position.WithoutColumn>
 
   <!-- WorkTableState lifecycle and mode announcements.
        OpeningAnnouncement: {0} = colonist count, {1} = work type count, {2} = mode string.
@@ -201,8 +195,6 @@
   <!-- Table view: sort announcements.
        CannotSort: {0} = column name.
        SortedBy: {0} = column name, {1} = direction word. -->
-  <RimWorldAccess.Work.Table.CannotSort>{0}无法排序</RimWorldAccess.Work.Table.CannotSort>
-  <RimWorldAccess.Work.Table.SortedBy>按{0}排序（{1}）</RimWorldAccess.Work.Table.SortedBy>
 
   <!-- Table view: priority-change feedback.
        AlreadyState: {0} = pawn LabelShort, {1} = work labelShort, {2} = state label.
@@ -244,36 +236,6 @@
        NoChangeFor: {0} = work labelShort. Used when no pawn changed.
        RaisedForList / LoweredForList reused from Work.Table above. -->
   <RimWorldAccess.Work.Menu.NoChangeFor>{0}无变化</RimWorldAccess.Work.Menu.NoChangeFor>
-
-  <!-- Visual overlay (WorkMenuPatch.DrawMenuOverlay). Screen-reader users
-       navigate by spoken announcements; these keys are the on-screen
-       labels for sighted users and mod testers.
-       Title: {0} = pawn name, {1} = 1-based pawn index, {2} = total,
-         {3} = mode-overlay label.
-       PositionInfoManual: {0} = column name, {1} = row 1-based,
-         {2} = column count, {3} = labelShort.
-       PositionInfoBasic: {0} = status word ("Enabled"/"Disabled"),
-         {1} = labelShort.
-       SearchInfo: {0} = search buffer, {1} = current match 1-based,
-         {2} = total matches. -->
-  <RimWorldAccess.Work.Overlay.Title>工作菜单 - {0} ({1}/{2}) - {3}</RimWorldAccess.Work.Overlay.Title>
-  <RimWorldAccess.Work.Overlay.PositionInfoManual>[{0}: {1}/{2}] {3}</RimWorldAccess.Work.Overlay.PositionInfoManual>
-  <RimWorldAccess.Work.Overlay.PositionInfoBasic>[{0}] {1}</RimWorldAccess.Work.Overlay.PositionInfoBasic>
-  <RimWorldAccess.Work.Overlay.SearchInfo>搜索: '{0}' - {1}/{2} 个匹配</RimWorldAccess.Work.Overlay.SearchInfo>
-  <RimWorldAccess.Work.Overlay.StatusEnabled>启用</RimWorldAccess.Work.Overlay.StatusEnabled>
-  <RimWorldAccess.Work.Overlay.StatusDisabled>禁用</RimWorldAccess.Work.Overlay.StatusDisabled>
-
-  <!-- Overlay instruction lines (three rows of help text below the title). -->
-  <RimWorldAccess.Work.Overlay.ManualInstructions1>上/下: 切换优先级 | 左/右: 导航任务</RimWorldAccess.Work.Overlay.ManualInstructions1>
-  <RimWorldAccess.Work.Overlay.ManualInstructions2>0-4: 设置优先级 | Shift+0-4: 为所有人设置 | Tab/Shift+Tab: 切换角色</RimWorldAccess.Work.Overlay.ManualInstructions2>
-  <RimWorldAccess.Work.Overlay.ManualInstructions3>回车/Esc: 保存并关闭 | Alt+M: 切换至基础模式</RimWorldAccess.Work.Overlay.ManualInstructions3>
-  <RimWorldAccess.Work.Overlay.BasicInstructions1>左/右: 导航任务 | 空格: 切换</RimWorldAccess.Work.Overlay.BasicInstructions1>
-  <RimWorldAccess.Work.Overlay.BasicInstructions2>Tab/Shift+Tab: 切换角色</RimWorldAccess.Work.Overlay.BasicInstructions2>
-  <RimWorldAccess.Work.Overlay.BasicInstructions3>回车/Esc: 保存并关闭 | Alt+M: 切换至自定义模式</RimWorldAccess.Work.Overlay.BasicInstructions3>
-  <RimWorldAccess.Work.Overlay.TableTitle>工作 (表格视图) - {0} ({1}/{2}) - 列: {3}</RimWorldAccess.Work.Overlay.TableTitle>
-  <RimWorldAccess.Work.Overlay.TableInstructions1>上/下: 切换殖民者 | 左/右: 切换工作类型 | 0-4: 设置优先级 | [ ]: 循环切换优先级</RimWorldAccess.Work.Overlay.TableInstructions1>
-  <RimWorldAccess.Work.Overlay.TableInstructions2>Shift+[ ]: 为所有殖民者循环切换 | Shift+方向键: 涂刷 | Alt+S: 排序 | Alt+M: 切换模式</RimWorldAccess.Work.Overlay.TableInstructions2>
-  <RimWorldAccess.Work.Overlay.TableInstructions3>{0}+Tab: 切换到焦点视图 | Enter/Escape: 保存并关闭</RimWorldAccess.Work.Overlay.TableInstructions3>
 
   <!-- Task detail composition pieces restored/added after the merge.
        IncludesPrefix leads the comma-joined work-giver list; leading

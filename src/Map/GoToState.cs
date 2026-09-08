@@ -10,83 +10,61 @@ namespace RimWorldAccess
     /// </summary>
     public static class GoToState
     {
-        // Core state
         private static bool isActive = false;
 
-        // Input buffers - one for each coordinate field
         private static string xBuffer = "";
         private static string zBuffer = "";
 
-        // Track which field we're currently editing (false = X, true = Z)
+        // false = editing X, true = editing Z.
         private static bool isInZField = false;
 
-        /// <summary>
-        /// Returns true if coordinate input mode is active (user is typing).
-        /// </summary>
+        /// <summary>Whether coordinate input mode is active.</summary>
         public static bool IsActive => isActive;
 
-        /// <summary>
-        /// Activates coordinate input mode (Ctrl+G pressed).
-        /// </summary>
+        /// <summary>Opens coordinate input mode and announces the current position.</summary>
         public static void Activate()
         {
-            // Clear any previous state
             xBuffer = "";
             zBuffer = "";
             isInZField = false;
             isActive = true;
 
-            // Announce with current position for context
             IntVec3 current = MapNavigationState.CurrentCursorPosition;
             TolkHelper.Speak("RimWorldAccess.Map.GoTo.Open".Loc(current.x, current.z), SpeechPriority.Normal);
         }
 
         /// <summary>
-        /// Returns true if a menu UI is currently showing that should receive Enter/Escape.
-        /// Go To yields to actual menu UI (tree menus, float menus), but NOT to placement mode.
+        /// Whether an overlay menu is showing that should receive Enter/Escape instead.
+        /// Go To yields to menu UI, never to placement mode — placement and Go To coexist.
         /// </summary>
         public static bool ShouldYieldToOverlayMenu()
         {
             if (!isActive) return false;
 
-            // Only yield to actual menu UI, not placement mode
-            // ArchitectTreeState = category/tool selection tree menu
-            // WindowlessFloatMenuState = material selection menu (or other float menus)
-            // ShapeSelectionMenuState = shape selection menu (Rectangle, Line, Oval, etc.)
+            // The float-menu term is redundant with FloatMenuOverlayScope's modal masking; kept
+            // so this predicate reads standalone.
             if (ArchitectTreeState.IsActive || WindowlessFloatMenuState.IsActive || ShapeSelectionMenuState.IsActive)
                 return true;
-
-            // Note: We deliberately do NOT yield to:
-            // - ArchitectState.IsActive alone (includes placement mode where Go To should work)
-            // - ShapePlacementState.IsActive (placement should coexist with Go To)
-            // - ArchitectState.IsInPlacementMode (user wants Go To during placement)
 
             return false;
         }
 
-        /// <summary>
-        /// Handles a character input (0-9, +, -).
-        /// </summary>
-        /// <param name="c">The character to add to current field buffer</param>
+        /// <summary>Appends a digit to the current field; +/- only at the start of a buffer.</summary>
         public static void HandleCharacter(char c)
         {
-            // Validate: only allow 0-9, +, -
-            // + and - only valid at the start of the buffer
             if (c == '+' || c == '-')
             {
                 string currentBuffer = isInZField ? zBuffer : xBuffer;
                 if (!string.IsNullOrEmpty(currentBuffer))
                 {
-                    // +/- not at start - ignore silently
                     return;
                 }
             }
             else if (c < '0' || c > '9')
             {
-                return; // Invalid character
+                return;
             }
 
-            // Add to appropriate buffer
             if (isInZField)
             {
                 zBuffer += c;
@@ -100,8 +78,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles field separator (comma or space pressed).
-        /// Switches from X field to Z field.
+        /// Comma or space: moves from the X field to the Z field.
         /// </summary>
         public static void HandleFieldSeparator()
         {
@@ -110,7 +87,6 @@ namespace RimWorldAccess
                 isInZField = true;
                 TolkHelper.Speak("RimWorldAccess.Map.GoTo.FieldZ".Loc(), SpeechPriority.Normal);
             }
-            // If already in Z field, ignore
         }
 
         /// <summary>
@@ -123,7 +99,6 @@ namespace RimWorldAccess
             {
                 if (string.IsNullOrEmpty(zBuffer))
                 {
-                    // Z buffer empty, go back to X field
                     isInZField = false;
                     TolkHelper.Speak("RimWorldAccess.Map.GoTo.FieldX".Loc(), SpeechPriority.Normal);
                 }
@@ -138,7 +113,6 @@ namespace RimWorldAccess
             {
                 if (string.IsNullOrEmpty(xBuffer))
                 {
-                    // X buffer already empty, cancel the input
                     Cancel();
                 }
                 else
@@ -151,7 +125,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Confirms the input and moves cursor to the target coordinates.
+        /// Moves the cursor to the parsed coordinates, clamped to the map. Stays open on a
+        /// parse failure so the player can fix the input.
         /// </summary>
         public static void ConfirmGoTo()
         {
@@ -166,62 +141,37 @@ namespace RimWorldAccess
 
             IntVec3 current = MapNavigationState.CurrentCursorPosition;
 
-            // Parse X coordinate
             if (!ParseCoordinate(xBuffer, current.x, out int targetX))
             {
                 TolkHelper.Speak("RimWorldAccess.Map.GoTo.InvalidX".Loc(), SpeechPriority.Normal);
-                return; // Don't close - let user fix it
+                return;
             }
 
-            // Parse Z coordinate
             if (!ParseCoordinate(zBuffer, current.z, out int targetZ))
             {
                 TolkHelper.Speak("RimWorldAccess.Map.GoTo.InvalidZ".Loc(), SpeechPriority.Normal);
                 return;
             }
 
-            // Clamp to map bounds
             targetX = Mathf.Clamp(targetX, 0, map.Size.x - 1);
             targetZ = Mathf.Clamp(targetZ, 0, map.Size.z - 1);
 
             IntVec3 targetPos = new IntVec3(targetX, 0, targetZ);
 
-            // Move cursor
             MapNavigationState.CurrentCursorPosition = targetPos;
-
-            // Update zone/area previews if applicable
-            if (ZoneCreationState.IsInCreationMode && ZoneCreationState.HasRectangleStart)
-            {
-                ZoneCreationState.UpdatePreview(targetPos);
-            }
-            if (AreaPaintingState.IsActive && AreaPaintingState.HasRectangleStart)
-            {
-                AreaPaintingState.UpdatePreview(targetPos);
-            }
-
-            // Move camera to center on new cursor position
             Find.CameraDriver.JumpToCurrentMapLoc(targetPos);
 
-            // Switch to Cursor mode - camera follows cursor, blocks pawn following
+            // Cursor mode: the camera follows the cursor and stops following a pawn.
             MapNavigationState.CurrentCameraMode = CameraFollowMode.Cursor;
-
-            // Clear pawn selection context flag
             GizmoNavigationState.PawnJustSelected = false;
 
-            // Play audio feedback for the cell (wall sound over walls, else terrain)
             TerrainAudioHelper.PlayCellAudio(targetPos, map, 0.5f);
-
-            // Announce position with all contextual prefixes (deep ore, "in area", shape dimensions, etc.)
-            // This uses the same announcement path as arrow key movement
             MapArrowKeyHandler.AnnouncePosition(targetPos, map);
 
-            // Close state
             Close();
         }
 
-        /// <summary>
-        /// Cancels coordinate input mode (Escape pressed).
-        /// </summary>
+        /// <summary>Cancels coordinate input mode and says so.</summary>
         public static void Cancel()
         {
             Close();
@@ -229,9 +179,10 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Closes the coordinate input mode silently.
+        /// Closes the coordinate input mode silently. Internal so
+        /// <see cref="StateResetRegistry"/> can run it at session boundaries.
         /// </summary>
-        private static void Close()
+        internal static void Close()
         {
             xBuffer = "";
             zBuffer = "";
@@ -240,25 +191,20 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Parses a coordinate buffer into an integer value.
-        /// Supports absolute values, empty (returns current), and relative (+/-offset).
+        /// Parses one coordinate field: absolute, empty (keeps <paramref name="currentValue"/>),
+        /// or relative (+/-offset). Returns false on a malformed buffer.
         /// </summary>
-        /// <param name="buffer">The input buffer to parse</param>
-        /// <param name="currentValue">The current coordinate value for empty/relative</param>
-        /// <param name="result">The parsed result</param>
-        /// <returns>True if parsing succeeded, false otherwise</returns>
         private static bool ParseCoordinate(string buffer, int currentValue, out int result)
         {
-            result = currentValue; // Default to current if empty
+            result = currentValue;
 
             if (string.IsNullOrEmpty(buffer) || string.IsNullOrWhiteSpace(buffer))
             {
-                return true; // Empty = use current value
+                return true;
             }
 
             buffer = buffer.Trim();
 
-            // Check for relative (starts with + or -)
             if (buffer.StartsWith("+") || buffer.StartsWith("-"))
             {
                 if (int.TryParse(buffer, out int offset))
@@ -266,17 +212,16 @@ namespace RimWorldAccess
                     result = currentValue + offset;
                     return true;
                 }
-                return false; // Invalid relative format
+                return false;
             }
 
-            // Absolute value
             if (int.TryParse(buffer, out int absolute))
             {
                 result = absolute;
                 return true;
             }
 
-            return false; // Invalid format
+            return false;
         }
     }
 }

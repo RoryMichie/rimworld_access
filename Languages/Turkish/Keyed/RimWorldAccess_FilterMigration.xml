@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    ScreenScope migration: ThingFilter unification (
+    RangeEdit migration; src/Shell/Screens/ThingFilterMenuScope.Game.cs,
+    ThingFilterScope.Game.cs, RangeEditScope.Game.cs, and the MentalBreakChance range-row
+    addition to FilterTreeScopeBase.Game.cs). The four keys below are the genuinely NEW
+    spoken strings this packet introduces.
+  -->
+  <RimWorldAccess.Shell.FilterTree.PolicyRegionName>Eşya filtresi</RimWorldAccess.Shell.FilterTree.PolicyRegionName>
+  <RimWorldAccess.Shell.RangeEdit.RegionName>Aralık</RimWorldAccess.Shell.RangeEdit.RegionName>
+  <RimWorldAccess.Inspection.RangeEdit.MentalBreakChanceLine>{1} {0}: {2}. Aralık: {3} ile {4} arası</RimWorldAccess.Inspection.RangeEdit.MentalBreakChanceLine>
+  <RimWorldAccess.Inspection.RangeEdit.PercentLine>{1} {0}: {2}. Aralık: {3} ile {4} arası</RimWorldAccess.Inspection.RangeEdit.PercentLine>
+</LanguageData>

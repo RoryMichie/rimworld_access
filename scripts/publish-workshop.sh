@@ -105,7 +105,11 @@ gen_vdf() {
 import os, xml.etree.ElementTree as ET
 
 def vdf_escape(s, keep_newlines=False):
-    s = s.replace('\\', '\\\\').replace('"', '\\"')
+    # steamcmd's VDF/KeyValues parser does NOT honor backslash escapes, so a
+    # literal \" ends the string early ("got } in key" parse error). Convert any
+    # embedded double-quotes to typographic curly quotes -- renders identically
+    # on the Workshop page and can never break parsing.
+    s = s.replace('\\', '\\\\').replace('"', '”')
     # Steam stores the description verbatim and renders real newlines as line
     # breaks; it does NOT interpret a literal "\n", so keep newline characters.
     s = s.replace('\r\n', '\n') if keep_newlines else s.replace('\r\n', ' ').replace('\n', ' ')
@@ -117,7 +121,7 @@ lines = ['"workshopitem"', "{",
          f'\t"appid"           "{os.environ["APPID"]}"',
          f'\t"publishedfileid" "{pfid}"',
          f'\t"contentfolder"   "{os.environ["CONTENT_DIR"]}"',
-         f'\t"changenote"      "{vdf_escape(os.environ["NOTE"])}"']
+         f'\t"changenote"      "{vdf_escape(os.environ["NOTE"], keep_newlines=True)}"']
 
 # Workshop tags. RimWorld's own uploader (Verse.Steam.Workshop) sets "Mod" (or
 # "Translation" for a translation mod) plus one "Major.Minor" tag per supported

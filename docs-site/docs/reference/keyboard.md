@@ -44,7 +44,7 @@ These act on the tile under the cursor, or on the selected pawn.
 | **Shift+Ctrl+Left / Shift+Ctrl+Right** | Adjust the preset jump distance by 10 |
 | **Ctrl+G** | Open the coordinate jump dialog. Type X, then press comma or Space, then type Z. Blank field keeps the current coordinate. Prefix with `+` or `-` for a relative offset |
 
-Two jump modes are documented here: **Preset Distance** (the default) and **Adjacent to Wall**. Cycle between them with **Shift+Up / Shift+Down**.
+Four jump modes are available: **Preset Distance** (the default), **Impassable**, **Terrain**, and **Structure**. Cycle between them with **Shift+Up / Shift+Down**. See [the map page](../concepts/the-map.md) for what each one lands on.
 
 ### Tile info (number keys)
 
@@ -77,7 +77,7 @@ For the full walkthrough, see [Selecting pawns](../concepts/selecting-pawns.md).
 | **Ctrl+Shift+F1-F4** | Save the current selection as a combat group |
 | **Ctrl+F1-F4** | Recall a saved combat group |
 | **/** | Focus the cursor pawn on the colonist or mech bar |
-| **Alt+C** | Jump the camera to the selected pawn (or open a chooser if several are selected) |
+| **Alt+C** | Jump the cursor to the selected pawn and keep it riding along (or open a chooser if several are selected) |
 
 ### Pawns at a glance
 
@@ -243,21 +243,26 @@ Biome is announced when you arrow onto a tile, not via a number key.
 
 ## Trade window
 
-When trading with a visiting trader, a settlement, or an orbital trader, the [trade screen](../world/trading.md) uses these. Negative quantities sell; positive quantities buy.
+When trading with a visiting trader, a settlement, or an orbital trader, the [trade screen](../world/trading.md) uses these. The classic view (the default) is three sections you Tab between; the table view is one sortable list with a column cursor.
 
 | Key | What it does |
 |-----|--------------|
-| **Up / Down** | Move through the goods, or adjust the quantity by 1 in quantity mode |
+| **Up / Down** | Move through the goods, or adjust the quantity by 1 in the quantity chooser |
+| **Left / Right** | Switch sections in the classic view (the trader's items, the trade summary, your items); move between columns in the table view; walk the toolbar |
+| **Tab / Shift+Tab** | Hop between the goods and the toolbar, returning to the section and row you left |
+| **+ / -** | Adjust the quantity by 1 |
 | **Shift+Up / Shift+Down** | Adjust the quantity by 10 |
 | **Ctrl+Up / Ctrl+Down** | Adjust the quantity by 100 |
-| **Left / Right** | Switch tabs |
-| **Enter** | Enter or leave quantity mode for the current item |
-| **Home / End** | Max sell or max buy in quantity mode, or jump to the first or last item |
-| **Type a number** | Set a quantity (lead with `-` to sell); `+` and `-` nudge by one |
+| **Shift+Home / Shift+End** | Max sell or max buy; plain **Home / End** do the same inside the quantity chooser |
+| **Home / End** | Jump to the first or last item |
+| **Enter** | Open or leave the quantity chooser for the current item; on the balance line, read both sides' silver |
+| **Type a number** | In the quantity chooser, set a quantity (lead with `-` to sell, `+` to buy) |
+| **Ctrl+Tab** | Switch between the classic and table views |
 | **Alt+A** | Accept the trade |
 | **Alt+B** | Announce the silver (or favor) on each side |
-| **Tab** | Price breakdown for the current item |
+| **Alt+P** | Price breakdown for the current item |
 | **Alt+I** | Info card for the current item |
+| **Alt+L** | Open the trader's sellable-items list |
 | **Alt+G** | Toggle gift mode (give goods for goodwill) |
 | **Delete or Alt+R** | Reset the current item; **Shift+Alt+R** resets everything |
 | **Escape** | Close the trade |

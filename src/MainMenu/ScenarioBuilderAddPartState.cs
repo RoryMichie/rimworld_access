@@ -2,14 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// State for the Add Part menu in the Scenario Builder.
-    /// Shows a searchable list of all available scenario parts.
+    /// Data/mutation source for the Add Part picker in the Scenario Builder — every
+    /// addable <see cref="ScenPartDef"/> for the current scenario. Follows the
+    /// StartingPawnState pattern: lifecycle (<see cref="Open"/>/
+    /// <see cref="Confirm"/>/<see cref="Cancel"/>) plus the row source
+    /// (<see cref="AvailableParts"/>) only. The old <see cref="FlatListCursor"/>-driven
+    /// nav/typeahead/announce surface (NavigatePrevious/Next/JumpToStart/End/
+    /// AnnounceCurrentPart/HandleTypeaheadChar/…) is gone — it is now
+    /// <see cref="RimWorldAccess.Shell.ScenarioAddPartScreenScope"/>'s own
+    /// <see cref="RimWorldAccess.Shell.ScreenScope"/> row model and shared typeahead.
     /// </summary>
     public static class ScenarioBuilderAddPartState
     {
@@ -18,9 +24,10 @@ namespace RimWorldAccess
         private static Scenario currentScenario;
         private static Action<ScenPartDef> onPartSelected;
 
-        private static List<ScenPartDef> availableParts = new List<ScenPartDef>();
-        private static int selectedIndex = 0;
-        private static TypeaheadSearchHelper typeaheadHelper = new TypeaheadSearchHelper();
+        private static readonly List<ScenPartDef> availableParts = new List<ScenPartDef>();
+
+        /// <summary>Every addable part for the current scenario, in the shown order (label-ordered, PlayerAddRemovable).</summary>
+        public static IReadOnlyList<ScenPartDef> AvailableParts => availableParts;
 
         /// <summary>
         /// Opens the add part menu.
@@ -29,9 +36,7 @@ namespace RimWorldAccess
         {
             currentScenario = scenario;
             onPartSelected = onSelected;
-            typeaheadHelper.ClearSearch();
 
-            // Build list of addable parts
             BuildPartsList();
 
             if (availableParts.Count == 0)
@@ -40,32 +45,30 @@ namespace RimWorldAccess
                 return;
             }
 
-            selectedIndex = 0;
             IsActive = true;
-
-            TolkHelper.Speak("RimWorldAccess.ScenarioBuilder.AddPart.OpenInstructions".Loc(availableParts.Count));
-            AnnounceCurrentPart();
         }
 
-        /// <summary>
-        /// Closes the add part menu.
-        /// </summary>
-        public static void Close(bool selectPart)
+        /// <summary>Enter on a part row: confirm it and hand it to the builder's callback.</summary>
+        public static void Confirm(ScenPartDef selected)
+        {
+            if (!IsActive) return;
+            Close();
+            onPartSelected?.Invoke(selected);
+        }
+
+        /// <summary>Escape: cancel the picker with no selection.</summary>
+        public static void Cancel()
+        {
+            if (!IsActive) return;
+            Close();
+            onPartSelected?.Invoke(null);
+        }
+
+        private static void Close()
         {
             IsActive = false;
-
-            if (selectPart && selectedIndex >= 0 && selectedIndex < availableParts.Count)
-            {
-                onPartSelected?.Invoke(availableParts[selectedIndex]);
-            }
-            else
-            {
-                onPartSelected?.Invoke(null);
-            }
-
             currentScenario = null;
             availableParts.Clear();
-            typeaheadHelper.ClearSearch();
         }
 
         /// <summary>
@@ -85,246 +88,5 @@ namespace RimWorldAccess
 
             availableParts.AddRange(addable);
         }
-
-        /// <summary>
-        /// Announces the currently selected part.
-        /// </summary>
-        private static void AnnounceCurrentPart()
-        {
-            if (availableParts.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.ScenarioBuilder.AddPart.NoneAvailable".Loc());
-                return;
-            }
-
-            var part = availableParts[selectedIndex];
-            string positionPart = MenuHelper.FormatPosition(selectedIndex, availableParts.Count);
-
-            // Build the text with label and description (tooltip)
-            // Format: "Label: description" or just "Label" if no description
-            string text = part.LabelCap;
-            if (!string.IsNullOrEmpty(part.description))
-            {
-                text = "RimWorldAccess.ScenarioBuilder.AddPart.LabelDescription".Translate(text, part.description);
-            }
-
-            // Add position or search info
-            if (typeaheadHelper.HasActiveSearch)
-            {
-                text += typeaheadHelper.BuildSearchContextSuffix();
-            }
-            else if (!string.IsNullOrEmpty(positionPart))
-            {
-                text += "RimWorldAccess.ScenarioBuilder.AddPart.WithPositionSuffix".Translate(positionPart);
-            }
-
-            TolkHelper.SpeakData(text);
-        }
-
-        #region Navigation
-
-        private static void SelectNext()
-        {
-            if (availableParts.Count == 0) return;
-
-            typeaheadHelper.ClearSearch();
-            selectedIndex = MenuHelper.SelectNext(selectedIndex, availableParts.Count);
-            AnnounceCurrentPart();
-        }
-
-        private static void SelectPrevious()
-        {
-            if (availableParts.Count == 0) return;
-
-            typeaheadHelper.ClearSearch();
-            selectedIndex = MenuHelper.SelectPrevious(selectedIndex, availableParts.Count);
-            AnnounceCurrentPart();
-        }
-
-        private static void JumpToFirst()
-        {
-            if (availableParts.Count == 0) return;
-
-            typeaheadHelper.ClearSearch();
-            selectedIndex = 0;
-            AnnounceCurrentPart();
-        }
-
-        private static void JumpToLast()
-        {
-            if (availableParts.Count == 0) return;
-
-            typeaheadHelper.ClearSearch();
-            selectedIndex = availableParts.Count - 1;
-            AnnounceCurrentPart();
-        }
-
-        private static void SelectNextMatch()
-        {
-            if (!typeaheadHelper.HasActiveSearch) return;
-
-            int next = typeaheadHelper.GetNextMatch(selectedIndex);
-            if (next >= 0)
-            {
-                selectedIndex = next;
-                AnnounceCurrentPart();
-            }
-        }
-
-        private static void SelectPreviousMatch()
-        {
-            if (!typeaheadHelper.HasActiveSearch) return;
-
-            int prev = typeaheadHelper.GetPreviousMatch(selectedIndex);
-            if (prev >= 0)
-            {
-                selectedIndex = prev;
-                AnnounceCurrentPart();
-            }
-        }
-
-        #endregion
-
-        #region Typeahead
-
-        private static bool HandleTypeahead(char character)
-        {
-            if (availableParts.Count == 0) return false;
-
-            var labels = availableParts.Select(p => p.LabelCap.ToString()).ToList();
-
-            if (typeaheadHelper.ProcessCharacterInput(character, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    AnnounceCurrentPart();
-                }
-            }
-            else
-            {
-                typeaheadHelper.SpeakNoMatches();
-            }
-
-            return true;
-        }
-
-        private static bool HandleTypeaheadBackspace()
-        {
-            if (!typeaheadHelper.HasActiveSearch) return false;
-
-            var labels = availableParts.Select(p => p.LabelCap.ToString()).ToList();
-
-            if (typeaheadHelper.ProcessBackspace(labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    AnnounceCurrentPart();
-                }
-            }
-
-            return true;
-        }
-
-        private static bool ClearTypeahead()
-        {
-            if (typeaheadHelper.ClearSearchAndAnnounce())
-            {
-                AnnounceCurrentPart();
-                return true;
-            }
-            return false;
-        }
-
-        #endregion
-
-        #region Input Handling
-
-        /// <summary>
-        /// Handles keyboard input for the add part menu.
-        /// Returns true if the input was handled.
-        /// </summary>
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!IsActive) return false;
-
-            switch (key)
-            {
-                case KeyCode.UpArrow:
-                    if (typeaheadHelper.HasActiveSearch)
-                        SelectPreviousMatch();
-                    else
-                        SelectPrevious();
-                    return true;
-
-                case KeyCode.DownArrow:
-                    if (typeaheadHelper.HasActiveSearch)
-                        SelectNextMatch();
-                    else
-                        SelectNext();
-                    return true;
-
-                case KeyCode.Home:
-                    JumpToFirst();
-                    return true;
-
-                case KeyCode.End:
-                    JumpToLast();
-                    return true;
-
-                case KeyCode.Return:
-                case KeyCode.KeypadEnter:
-                    Close(selectPart: true);
-                    return true;
-
-                case KeyCode.Escape:
-                    if (typeaheadHelper.HasActiveSearch)
-                    {
-                        ClearTypeahead();
-                    }
-                    else
-                    {
-                        Close(selectPart: false);
-                        TolkHelper.Speak("RimWorldAccess.UI.Cancelled".Loc());
-                    }
-                    return true;
-
-                case KeyCode.Backspace:
-                    if (typeaheadHelper.HasActiveSearch)
-                    {
-                        HandleTypeaheadBackspace();
-                    }
-                    // Always consume backspace to prevent leaking to parent state
-                    return true;
-
-                // CRITICAL: Consume navigation keys to prevent leaking to parent state
-                case KeyCode.LeftArrow:
-                case KeyCode.RightArrow:
-                case KeyCode.Tab:
-                case KeyCode.Delete:
-                    // Silently consume - these don't apply to flat menu navigation
-                    return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Handles character input for typeahead.
-        /// </summary>
-        public static bool HandleCharacterInput(char character)
-        {
-            if (!IsActive) return false;
-
-            if (char.IsLetterOrDigit(character))
-            {
-                return HandleTypeahead(character);
-            }
-
-            return false;
-        }
-
-        #endregion
     }
 }

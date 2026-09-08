@@ -10,8 +10,8 @@ using Verse.Sound;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Available gear actions. Used as the dispatch discriminator so callers
-    /// don't switch on localized labels.
+    /// Available gear actions. The dispatch discriminator, so callers never switch on
+    /// localized labels.
     /// </summary>
     public enum GearAction
     {
@@ -21,14 +21,11 @@ namespace RimWorldAccess
     }
 
     /// <summary>
-    /// Helper class for interactive gear management.
-    /// Provides methods to extract gear items, determine available actions, and execute those actions.
+    /// Extracts a pawn's gear items, determines which actions each allows, and executes them.
     /// </summary>
     public static class InteractiveGearHelper
     {
-        /// <summary>
-        /// Returns the localized menu label for a gear action.
-        /// </summary>
+        /// <summary>Localized menu label for a gear action.</summary>
         public static string GetActionLabel(GearAction action)
         {
             switch (action)
@@ -40,9 +37,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gear item wrapper with display information.
-        /// </summary>
+        /// <summary>Gear item wrapper carrying its display label and category.</summary>
         public class GearItem
         {
             public Thing Thing { get; set; }
@@ -61,21 +56,18 @@ namespace RimWorldAccess
                 var sb = new StringBuilder();
                 sb.Append(thing.LabelCap.StripTags());
 
-                // Add quality if applicable
                 var qualityComp = thing.TryGetComp<CompQuality>();
                 if (qualityComp != null)
                 {
                     sb.Append($" ({qualityComp.Quality})");
                 }
 
-                // Add hit points if damaged
                 if (thing.def.useHitPoints && thing.HitPoints < thing.MaxHitPoints)
                 {
                     float healthPercent = (float)thing.HitPoints / thing.MaxHitPoints;
                     sb.Append($" ({healthPercent:P0} HP)");
                 }
 
-                // Add stack count if >1
                 if (thing.stackCount > 1)
                 {
                     sb.Append($" x{thing.stackCount}");
@@ -85,9 +77,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets all equipment items (weapons and belt items) for a pawn.
-        /// </summary>
+        /// <summary>All equipment items (weapons plus belt-layer apparel) for a pawn.</summary>
         public static List<GearItem> GetEquipmentItems(Pawn pawn)
         {
             var items = new List<GearItem>();
@@ -95,13 +85,11 @@ namespace RimWorldAccess
             if (pawn?.equipment?.AllEquipmentListForReading == null)
                 return items;
 
-            // Add weapons
             foreach (var equipment in pawn.equipment.AllEquipmentListForReading)
             {
                 items.Add(new GearItem(equipment, "Equipment"));
             }
 
-            // Add belt items (utility belt layer apparel)
             if (pawn.apparel?.WornApparel != null)
             {
                 foreach (var apparel in pawn.apparel.WornApparel)
@@ -116,9 +104,7 @@ namespace RimWorldAccess
             return items;
         }
 
-        /// <summary>
-        /// Gets all apparel items (excluding belt layer) for a pawn.
-        /// </summary>
+        /// <summary>All worn apparel for a pawn, excluding the belt layer.</summary>
         public static List<GearItem> GetApparelItems(Pawn pawn)
         {
             var items = new List<GearItem>();
@@ -128,7 +114,7 @@ namespace RimWorldAccess
 
             foreach (var apparel in pawn.apparel.WornApparel)
             {
-                // Skip belt layer items (they're shown in equipment)
+                // Belt items belong to the equipment list.
                 if (apparel.def.apparel.layers.Contains(ApparelLayerDefOf.Belt))
                     continue;
 
@@ -138,9 +124,7 @@ namespace RimWorldAccess
             return items;
         }
 
-        /// <summary>
-        /// Gets all inventory items for a pawn.
-        /// </summary>
+        /// <summary>All inventory items for a pawn.</summary>
         public static List<GearItem> GetInventoryItems(Pawn pawn)
         {
             var items = new List<GearItem>();
@@ -157,84 +141,100 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets all available actions for a gear item.
-        /// Returns enum values; callers use GetActionLabel() to localize.
+        /// Actions this item currently allows. Callers localize via <see cref="GetActionLabel"/>.
         /// </summary>
         public static List<GearAction> GetAvailableActions(GearItem item, Pawn pawn)
         {
             var actions = new List<GearAction>();
 
-            // Drop action is almost always available
             if (CanDropItem(item, pawn))
             {
                 actions.Add(GearAction.Drop);
             }
 
-            // Consume action for food/drugs in inventory
             if (CanConsumeItem(item, pawn))
             {
                 actions.Add(GearAction.Consume);
             }
 
-            // Info action is always available
             actions.Add(GearAction.ViewInfo);
 
             return actions;
         }
 
         /// <summary>
-        /// Checks if an item can be dropped.
+        /// Whether the player can direct this pawn's gear at all, regardless of drop-button
+        /// visibility.
         /// </summary>
+        // MUTATION-C: no gated vanilla method exposes this predicate on its own — it's a
+        // private ITab property. Hand-copied verbatim from ITab_Pawn_Gear.CanControl.
+        private static bool CanControl(Pawn pawn)
+        {
+            if (pawn.Downed || pawn.InMentalState || pawn.CarriedBy != null)
+                return false;
+            if (pawn.Faction != Faction.OfPlayer && !pawn.IsPrisonerOfColony)
+                return false;
+            if (pawn.IsPrisonerOfColony && pawn.Spawned && !pawn.Map.mapPawns.AnyFreeColonistSpawned)
+                return false;
+            if (pawn.IsPrisonerOfColony && (PrisonBreakUtility.IsPrisonBreaking(pawn) || (pawn.CurJob != null && pawn.CurJob.exitMapOnArrival)))
+                return false;
+            return true;
+        }
+
+        /// <summary>Whether the pawn is a player-controlled colonist the player can direct.</summary>
+        // MUTATION-C: same as CanControl above — private ITab property, hand-copied verbatim.
+        private static bool CanControlColonist(Pawn pawn)
+        {
+            return CanControl(pawn) && pawn.IsColonistPlayerControlled;
+        }
+
+        /// <summary>Whether the item can be dropped.</summary>
+        // MUTATION-C: mirrors ITab_Pawn_Gear.DrawThingRow's drop-button visibility gate
+        // (decompiled line 202, "CanControl && (inventory || CanControlColonist ||
+        // off-home-map spawned)") plus its disabled-state flag (lines 206-212: quest-lodger
+        // via EquipmentUtility.QuestLodgerCanUnequip, pawn.kindDef.destroyGearOnDrop for
+        // non-inventory items, and locked-apparel via pawn.apparel.IsLocked). The gate lives
+        // inline in the draw call with no standalone Can*/AcceptanceReport method to invoke,
+        // so it is hand-copied verbatim here.
         public static bool CanDropItem(GearItem item, Pawn pawn)
         {
             if (item == null || item.Thing == null || pawn == null)
                 return false;
 
-            // Check if pawn is controllable
-            if (!pawn.IsColonistPlayerControlled && !pawn.IsSlaveOfColony)
+            bool inventory = item.Category == "Inventory";
+
+            if (!CanControl(pawn))
+                return false;
+            if (!(inventory || CanControlColonist(pawn) || (pawn.Spawned && !pawn.Map.IsPlayerHome)))
                 return false;
 
-            // Dead pawns cannot drop items (corpse inspection)
-            if (pawn.Dead)
-                return false;
+            Thing thing = item.Thing;
 
-            // Check for quest locks (quest lodgers can't drop quest-related gear)
-            if (item.Thing.def.destroyOnDrop)
-                return false;
-
-            // Check for locked apparel
-            if (item.Thing is Apparel apparel)
+            bool questLodgerBlocks = false;
+            if (pawn.IsQuestLodger())
             {
-                if (!ApparelUtility.HasPartsToWear(pawn, apparel.def))
-                    return false;
-
-                // Check if locked by quest or ideology
-                if (pawn.apparel != null && !pawn.apparel.IsLocked(apparel))
-                    return true;
-                else if (pawn.apparel != null)
-                    return false;
+                questLodgerBlocks = inventory || !EquipmentUtility.QuestLodgerCanUnequip(thing, pawn);
             }
+            bool destroyGearOnDropBlocks = !inventory && pawn.kindDef.destroyGearOnDrop;
+            bool lockedApparelBlocks = thing is Apparel apparel && pawn.apparel != null && pawn.apparel.IsLocked(apparel);
 
-            return true;
+            return !(questLodgerBlocks || destroyGearOnDropBlocks || lockedApparelBlocks);
         }
 
-        /// <summary>
-        /// Checks if an item can be consumed.
-        /// </summary>
+        /// <summary>Whether the item can be consumed from the pawn's inventory.</summary>
+        // MUTATION-C: mirrors ITab_Pawn_Gear.DrawThingRow's consume-button gate (decompiled
+        // line 244, "CanControlColonist"), replacing the drifted plain "not dead" check.
         public static bool CanConsumeItem(GearItem item, Pawn pawn)
         {
             if (item == null || item.Thing == null || pawn == null)
                 return false;
 
-            // Dead pawns cannot consume items
-            if (pawn.Dead)
-                return false;
-
-            // Only inventory items can be consumed
             if (item.Category != "Inventory")
                 return false;
 
-            // Must be ingestible
+            if (!CanControlColonist(pawn))
+                return false;
+
             if (item.Thing.def.IsIngestible)
             {
                 return FoodUtility.WillIngestFromInventoryNow(pawn, item.Thing);
@@ -243,9 +243,7 @@ namespace RimWorldAccess
             return false;
         }
 
-        /// <summary>
-        /// Executes the drop action for an item.
-        /// </summary>
+        /// <summary>Drops the item, returning whether the drop completed now.</summary>
         public static bool ExecuteDropAction(GearItem item, Pawn pawn)
         {
             try
@@ -259,8 +257,45 @@ namespace RimWorldAccess
 
                 Thing thing = item.Thing;
 
-                // Handle apparel
-                if (thing is Apparel apparel && pawn.apparel != null)
+                // Rides ITab_Pawn_Gear.DrawThingRow's drop-button wrapper: every drop is gated
+                // through TryConfirmBandwidthLossFromDroppingThing so a mechanitor dropping
+                // bandwidth-granting apparel gets vanilla's own confirmation first.
+                Action performDrop = delegate
+                {
+                    if (PerformDropMutation(item, thing, pawn))
+                    {
+                        WindowlessInspectionState.RebuildTree();
+                    }
+                };
+
+                if (!ModsConfig.BiotechActive || !MechanitorUtility.TryConfirmBandwidthLossFromDroppingThing(pawn, thing, performDrop))
+                {
+                    return PerformDropMutation(item, thing, pawn);
+                }
+
+                // Confirmation raised: performDrop runs only on accept, so report "not yet done"
+                // rather than let the caller rebuild before the dialog resolves.
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[RimWorldAccess] Error dropping item: {ex}");
+                TolkHelper.Speak("RimWorldAccess.Pawns.Gear.ErrorDropping".Loc(item.Label), SpeechPriority.High);
+                SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Performs the drop (ordered job or inventory TryDrop) mirroring
+        /// <c>ITab_Pawn_Gear.InterfaceDrop</c>, and announces the outcome. Runs either
+        /// immediately or from the mechanitor confirmation's accept callback.
+        /// </summary>
+        private static bool PerformDropMutation(GearItem item, Thing thing, Pawn pawn)
+        {
+            try
+            {
+                if (thing is Apparel apparel && pawn.apparel != null && pawn.apparel.WornApparel.Contains(apparel))
                 {
                     Job job = JobMaker.MakeJob(JobDefOf.RemoveApparel, apparel);
                     pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
@@ -269,7 +304,6 @@ namespace RimWorldAccess
                     return true;
                 }
 
-                // Handle equipment
                 if (thing is ThingWithComps equipment && pawn.equipment != null &&
                     pawn.equipment.AllEquipmentListForReading.Contains(equipment))
                 {
@@ -280,9 +314,17 @@ namespace RimWorldAccess
                     return true;
                 }
 
-                // Handle inventory items
+                // destroyOnDrop is a per-item flag, distinct from the pawn-level
+                // kindDef.destroyGearOnDrop already checked by CanDropItem.
                 if (pawn.inventory?.innerContainer != null && pawn.inventory.innerContainer.Contains(thing))
                 {
+                    if (thing.def.destroyOnDrop)
+                    {
+                        TolkHelper.Speak("RimWorldAccess.Pawns.Gear.CannotDrop".Loc(item.Label), SpeechPriority.High);
+                        SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                        return false;
+                    }
+
                     Thing droppedThing;
                     if (pawn.inventory.innerContainer.TryDrop(thing, pawn.Position, pawn.Map, ThingPlaceMode.Near, out droppedThing))
                     {
@@ -311,9 +353,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Executes the consume action for an item.
-        /// </summary>
+        /// <summary>Has the pawn consume the item from inventory.</summary>
         public static bool ExecuteConsumeAction(GearItem item, Pawn pawn)
         {
             try
@@ -327,7 +367,6 @@ namespace RimWorldAccess
 
                 Thing thing = item.Thing;
 
-                // Use RimWorld's built-in consume logic
                 FoodUtility.IngestFromInventoryNow(pawn, thing);
                 TolkHelper.Speak("RimWorldAccess.Pawns.Gear.Consuming".Loc(item.Label));
                 SoundDefOf.Tick_High.PlayOneShotOnCamera();
@@ -342,9 +381,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Displays detailed information about an item.
-        /// </summary>
+        /// <summary>Speaks detailed information about an item.</summary>
         public static void ExecuteInfoAction(GearItem item)
         {
             if (item == null || item.Thing == null)
@@ -359,7 +396,6 @@ namespace RimWorldAccess
             sb.AppendLine(thing.LabelCap.StripTags());
             sb.AppendLine();
 
-            // Get inspect string
             string inspectString = thing.GetInspectString();
             if (!string.IsNullOrEmpty(inspectString))
             {
@@ -367,34 +403,28 @@ namespace RimWorldAccess
                 sb.AppendLine();
             }
 
-            // Quality
             var qualityComp = thing.TryGetComp<CompQuality>();
             if (qualityComp != null)
             {
                 sb.AppendLine("RimWorldAccess.Pawns.Gear.Quality".Translate(qualityComp.Quality.GetLabel()));
             }
 
-            // Hit points
             if (thing.def.useHitPoints)
             {
                 float healthPercent = (float)thing.HitPoints / thing.MaxHitPoints;
                 sb.AppendLine("RimWorldAccess.Pawns.Gear.Condition".Translate(healthPercent.ToString("P0"), thing.HitPoints, thing.MaxHitPoints));
             }
 
-            // Material
             if (thing.Stuff != null)
             {
                 sb.AppendLine("RimWorldAccess.Pawns.Gear.Material".Translate(thing.Stuff.LabelCap.ToString().StripTags()));
             }
 
-            // Market value
             sb.AppendLine("RimWorldAccess.Pawns.Gear.MarketValue".Translate(thing.MarketValue.ToString("F0")));
 
-            // Mass
             float mass = thing.GetStatValue(StatDefOf.Mass);
             sb.AppendLine("RimWorldAccess.Pawns.Gear.Mass".Translate(mass.ToString("F2")));
 
-            // Description
             if (!string.IsNullOrEmpty(thing.def.description))
             {
                 sb.AppendLine();
@@ -406,9 +436,7 @@ namespace RimWorldAccess
             SoundDefOf.Click.PlayOneShotOnCamera();
         }
 
-        /// <summary>
-        /// Gets a summary of available actions for announcing.
-        /// </summary>
+        /// <summary>Comma-joined localized action labels, for announcing.</summary>
         public static string GetActionsSummary(List<GearAction> actions)
         {
             if (actions == null || actions.Count == 0)

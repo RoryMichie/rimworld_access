@@ -58,8 +58,6 @@ Two things to know before queuing surgery:
 
 See [Doctoring](https://rimworldwiki.com/wiki/Doctoring) for success chances and [Prosthesis](https://rimworldwiki.com/wiki/Prosthesis) for what can be installed.
 
-<!-- TODO(Aaron): confirm there isn't a faster map shortcut to jump straight to a pawn's Operations list (this draft routes through the inspection tree via Enter / Ctrl+Alt+Enter, which is what the code shows). -->
-
 ## Health Settings: per-pawn medical rules
 
 The other action under Health is **Health Settings**. Open it to set three things for this pawn:

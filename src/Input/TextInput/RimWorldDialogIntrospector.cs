@@ -59,7 +59,10 @@ namespace RimWorldAccess
 
             return dialog =>
             {
-                int maxLen = (int)maxLenProp.GetValue(dialog, null);
+                // Dialog_Rename<T>.DoWindowContents only keeps the field's text when
+                // "text.Length < MaxNameLength", so the longest name it ever accepts is
+                // MaxNameLength - 1 (base MaxNameLength = 28 -> 27 printable characters).
+                int maxLen = (int)maxLenProp.GetValue(dialog, null) - 1;
                 Func<string, AcceptanceReport> custom = null;
                 if (validateMethod != null)
                 {
@@ -115,6 +118,32 @@ namespace RimWorldAccess
                 maxLength: maximumNameLength,
                 minLength: 1,
                 allowedChars: CharacterCardUtility.ValidNameRegex);
+        }
+
+        /// <summary>
+        /// Spec for the GeneCreationDialogBase name field (xenotype/xenogerm
+        /// editors). Vanilla draws it as
+        /// <c>Widgets.TextField(rect, xenotypeName, 40, ValidSymbolRegex)</c> —
+        /// the 40 is that call site's literal; the charset is read from the
+        /// game's own private static field so it tracks game updates.
+        /// </summary>
+        public static TextFieldSpec ForGeneCreationDialog(string labelKey)
+        {
+            System.Text.RegularExpressions.Regex validSymbols = null;
+            try
+            {
+                validSymbols = (System.Text.RegularExpressions.Regex)AccessTools
+                    .Field(typeof(GeneCreationDialogBase), "ValidSymbolRegex").GetValue(null);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"[RimWorld Access] Could not harvest GeneCreationDialogBase.ValidSymbolRegex: {ex.Message}");
+            }
+            return new TextFieldSpec(
+                labelKey: labelKey,
+                maxLength: 40,
+                minLength: 1,
+                allowedChars: validSymbols);
         }
     }
 }

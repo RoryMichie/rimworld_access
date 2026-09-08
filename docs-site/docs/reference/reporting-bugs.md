@@ -31,6 +31,6 @@ You can paste either path as-is to reach the file. On Windows, paste it into the
 
 ## Where to file it
 
-The easiest place is the **#bug-reports** channel on the Discord. <!-- TODO(Aaron): add the Discord invite link -->
+The easiest place is the **#bug-reports** channel on the [RimWorld Access Discord server](https://discord.rimworldaccess.com).
 
-If you know your way around GitHub, you can also open a GitHub issue instead. <!-- TODO(Aaron): add the GitHub issues link -->
+If you know your way around GitHub, you can also [open a GitHub issue](https://github.com/aaronr7734/rimworld_access/issues) instead.

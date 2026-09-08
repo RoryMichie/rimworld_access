@@ -4,7 +4,6 @@ using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using RimWorld.Planet;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
@@ -123,53 +122,28 @@ namespace RimWorldAccess
                 maxTiles);
         }
 
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
+        /// <summary>
+        /// Enter handler: confirms the destination in launch mode, or just closes
+        /// like Escape in view-only mode. Internal: called from TargetingScope's
+        /// gravshipDest.confirm claim, which replaces the legacy handler's
+        /// Enter branch — including the isLaunching
+        /// fork, ported verbatim. That branch's own
+        /// "skip if WindowlessFloatMenuState is active" guard is now redundant —
+        /// ShellDispatcherPatch's blanket LegacyKeyboardOverlayActive stand-down
+        /// already keeps the whole shell (this claim included) from dispatching
+        /// while a float menu is up.
+        /// </summary>
+        internal static void HandleConfirm()
         {
-            if (!isActive) return false;
-
-            // If TilePicker stopped, close our state
-            if (Find.TilePicker == null || !Find.TilePicker.Active)
+            if (isLaunching)
             {
-                Close();
-                return false;
+                ConfirmCurrentDestination();
             }
-
-            // Enter - confirm current destination (launch mode) or close (view mode)
-            if ((key == KeyCode.Return || key == KeyCode.KeypadEnter) && !shift && !ctrl && !alt)
+            else
             {
-                if (WindowlessFloatMenuState.IsActive)
-                    return false;
-
-                if (isLaunching)
-                {
-                    ConfirmCurrentDestination();
-                }
-                else
-                {
-                    // View range mode — Enter just closes like Escape
-                    CancelTargeting();
-                }
-                return true;
-            }
-
-            // Escape - cancel targeting
-            if (key == KeyCode.Escape)
-            {
-                if (WindowlessFloatMenuState.IsActive)
-                    return false;
-
+                // View range mode — Enter just closes like Escape
                 CancelTargeting();
-                return true;
             }
-
-            // F - announce fuel status
-            if (key == KeyCode.F && !shift && !ctrl && !alt)
-            {
-                AnnounceFuelStatus();
-                return true;
-            }
-
-            return false;
         }
 
         private static void ConfirmCurrentDestination()
@@ -196,9 +170,9 @@ namespace RimWorldAccess
             try
             {
                 if (tilePickerValidatorField == null)
-                    tilePickerValidatorField = AccessTools.Field(typeof(TilePicker), "validator");
+                    tilePickerValidatorField = VanillaAccess.GetField(typeof(TilePicker), "validator");
                 if (tilePickerTileChosenField == null)
-                    tilePickerTileChosenField = AccessTools.Field(typeof(TilePicker), "tileChosen");
+                    tilePickerTileChosenField = VanillaAccess.GetField(typeof(TilePicker), "tileChosen");
 
                 var validator = tilePickerValidatorField?.GetValue(Find.TilePicker) as Func<PlanetTile, bool>;
                 var tileChosen = tilePickerTileChosenField?.GetValue(Find.TilePicker) as Action<PlanetTile>;
@@ -217,7 +191,7 @@ namespace RimWorldAccess
                 }
 
                 // Stop TilePicker internally (without calling noTileChosen)
-                var stopIntMethod = AccessTools.Method(typeof(TilePicker), "StopTargetingInt");
+                var stopIntMethod = VanillaAccess.GetMethod(typeof(TilePicker), "StopTargetingInt");
                 stopIntMethod?.Invoke(Find.TilePicker, null);
 
                 // Invoke the tileChosen callback (this triggers the launch confirmation flow)
@@ -230,7 +204,11 @@ namespace RimWorldAccess
             }
         }
 
-        private static void CancelTargeting()
+        /// <summary>
+        /// Internal: called from HandleConfirm's view-mode branch and directly
+        /// from TargetingScope's gravshipDest.cancel claim.
+        /// </summary>
+        internal static void CancelTargeting()
         {
             // Cache return target before closing
             Thing returnTarget = currentConsole?.parent;
@@ -250,7 +228,10 @@ namespace RimWorldAccess
             }
         }
 
-        private static void AnnounceFuelStatus()
+        /// <summary>
+        /// Internal: called from TargetingScope's gravshipDest.fuelStatus claim.
+        /// </summary>
+        internal static void AnnounceFuelStatus()
         {
             if (currentEngine == null) return;
 

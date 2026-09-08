@@ -13,7 +13,7 @@ Most furniture and buildings can be picked up and moved. Anything you no longer 
 
 For deconstruct, that is all. The object is marked for removal and a pawn will tear it down.
 
-For reinstall, the object enters placement mode. Move the cursor to the new location and confirm, just like placing a manual [designator](architect.md). The jump modes available in building mode (preset distance, adjacent to wall) work here the same way. See [the Architect menu](architect.md) for the full placement flow.
+For reinstall, the object enters placement mode. Move the cursor to the new location and confirm, just like placing a manual [designator](architect.md). The jump modes available in building mode work here the same way. See [the Architect menu](architect.md) for the full placement flow.
 
 ## Gizmo shortcuts
 

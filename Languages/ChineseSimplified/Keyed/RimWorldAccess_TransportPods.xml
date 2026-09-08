@@ -121,10 +121,7 @@
        ========================================================= -->
 
   <!-- Open guards. -->
-  <RimWorldAccess.TransportPods.Loading.NoDialog>没有可用的装载对话框</RimWorldAccess.TransportPods.Loading.NoDialog>
   <RimWorldAccess.TransportPods.Loading.ReflectionFailed>因游戏更新，运输舱装载无障碍功能不可用。请检查模组更新。</RimWorldAccess.TransportPods.Loading.ReflectionFailed>
-  <RimWorldAccess.TransportPods.Loading.NoPortalDialog>没有可用的传送门对话框</RimWorldAccess.TransportPods.Loading.NoPortalDialog>
-  <RimWorldAccess.TransportPods.Loading.PortalReflectionFailed>因游戏更新，传送门装载无障碍功能不可用。请检查模组更新。</RimWorldAccess.TransportPods.Loading.PortalReflectionFailed>
 
   <!-- Entry announcement. One/Many split so translators control pod/pods
        agreement; the pod-noun key is inlined into the sentence so word order
@@ -134,12 +131,8 @@
   <RimWorldAccess.TransportPods.Loading.OpenAnnouncementMany>装载运输舱。{0} 个运输舱，容量 {1} 千克。左右切换选项卡，回车调整。</RimWorldAccess.TransportPods.Loading.OpenAnnouncementMany>
 
   <!-- Tab navigation. -->
-  <RimWorldAccess.TransportPods.Loading.TabPawns>人物</RimWorldAccess.TransportPods.Loading.TabPawns>
-  <RimWorldAccess.TransportPods.Loading.TabItems>物品</RimWorldAccess.TransportPods.Loading.TabItems>
-  <RimWorldAccess.TransportPods.Loading.ReturnedToTab>已返回 {0} 选项卡</RimWorldAccess.TransportPods.Loading.ReturnedToTab>
 
   <!-- Shared empty-tab feedback (spoken in multiple navigation paths). -->
-  <RimWorldAccess.TransportPods.Loading.NoItemsInTab>此选项卡中没有项目</RimWorldAccess.TransportPods.Loading.NoItemsInTab>
 
   <!-- Activation and quantity actions. {0} = item label. -->
   <RimWorldAccess.TransportPods.Loading.ItemChecked>已勾选 {0}</RimWorldAccess.TransportPods.Loading.ItemChecked>
@@ -148,7 +141,6 @@
 
   <!-- Inspect results. -->
   <RimWorldAccess.TransportPods.Loading.NoItemToInspect>没有可查看的物品</RimWorldAccess.TransportPods.Loading.NoItemToInspect>
-  <RimWorldAccess.TransportPods.Loading.CannotInspectItem>无法查看此物品</RimWorldAccess.TransportPods.Loading.CannotInspectItem>
 
   <!-- Delete/remove guard. -->
   <RimWorldAccess.TransportPods.Loading.AlreadyAtZero>已为零</RimWorldAccess.TransportPods.Loading.AlreadyAtZero>
@@ -159,20 +151,12 @@
   <!-- Mass summary (Tab key / AnnounceMassSummary).
        Composed from MassLine + one of OverloadedStatus/RemainingStatus.
        {0} = current usage, {1} = capacity, {2} = status clause. -->
-  <RimWorldAccess.TransportPods.Loading.MassSummary>载重: {0} / {1} 千克。{2}</RimWorldAccess.TransportPods.Loading.MassSummary>
-  <RimWorldAccess.TransportPods.Loading.MassOverloaded>超载 {0} 千克</RimWorldAccess.TransportPods.Loading.MassOverloaded>
-  <RimWorldAccess.TransportPods.Loading.MassRemaining>剩余 {0} 千克</RimWorldAccess.TransportPods.Loading.MassRemaining>
 
   <!-- Summary view (Tab toggle). Empty/error states come next. -->
-  <RimWorldAccess.TransportPods.Loading.NoSummaryForDialog>此对话框没有可用的汇总</RimWorldAccess.TransportPods.Loading.NoSummaryForDialog>
-  <RimWorldAccess.TransportPods.Loading.SummaryEntry>汇总视图。上下浏览数据。Tab 返回。</RimWorldAccess.TransportPods.Loading.SummaryEntry>
-  <RimWorldAccess.TransportPods.Loading.SummaryNoData>无可用数据</RimWorldAccess.TransportPods.Loading.SummaryNoData>
   <RimWorldAccess.TransportPods.Loading.SummaryNoTransporters>没有运输器</RimWorldAccess.TransportPods.Loading.SummaryNoTransporters>
   <RimWorldAccess.TransportPods.Loading.SummaryStatsUnavailable>数据不可用</RimWorldAccess.TransportPods.Loading.SummaryStatsUnavailable>
-  <RimWorldAccess.TransportPods.Loading.SummaryNoSummary>无汇总数据</RimWorldAccess.TransportPods.Loading.SummaryNoSummary>
 
   <!-- Summary item format ({item}. {position}). {0} = stat line, {1} = position. -->
-  <RimWorldAccess.TransportPods.Loading.SummaryItemAnnouncement>{0}. {1}</RimWorldAccess.TransportPods.Loading.SummaryItemAnnouncement>
 
   <!-- Stat-breakdown view (Alt+I in summary mode). NoBreakdown is spoken when
        the selected stat has no cached explanation (e.g. Food).
@@ -216,5 +200,8 @@
   <RimWorldAccess.TransportPods.Portal.FallbackEnter>装载传送门</RimWorldAccess.TransportPods.Portal.FallbackEnter>
   <RimWorldAccess.TransportPods.Portal.FallbackLoading>装载中</RimWorldAccess.TransportPods.Portal.FallbackLoading>
   <!-- Localization guardrail (D.8) sweep — previously hardcoded English. -->
-  <RimWorldAccess.TransportPods.Loading.TabSummary>{0} 选项卡，{1} 项</RimWorldAccess.TransportPods.Loading.TabSummary>
+
+  <!-- Region name for the stats section (screen-model refactor: the old
+       Tab-key Summary view is now a region cycled with Tab/Shift+Tab). -->
+  <RimWorldAccess.TransportPods.Loading.SummaryTab>概要</RimWorldAccess.TransportPods.Loading.SummaryTab>
 </LanguageData>

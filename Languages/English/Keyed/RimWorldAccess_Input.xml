@@ -57,13 +57,24 @@
   <RimWorldAccess.Input.Cursor.NothingToInspect>Nothing to inspect here</RimWorldAccess.Input.Cursor.NothingToInspect>
   <RimWorldAccess.Input.Cursor.InvalidPosition>Invalid position</RimWorldAccess.Input.Cursor.InvalidPosition>
   <RimWorldAccess.Input.Cursor.NoAvailableActions>No available actions</RimWorldAccess.Input.Cursor.NoAvailableActions>
+  <RimWorldAccess.Input.Cursor.Coordinates>{0}, {1}</RimWorldAccess.Input.Cursor.Coordinates>
+
+  <!-- Mouse pointer bridge (Alt+J). PointerOffset is the answer when the pointer cannot
+       be moved: {0} = tile distance, {1} = compass direction of the cursor from it. -->
+  <RimWorldAccess.Input.Cursor.PointerMoved>Pointer at {0}, {1}</RimWorldAccess.Input.Cursor.PointerMoved>
+  <RimWorldAccess.Input.Cursor.PointerOffset>Cursor {0} tiles {1} of pointer</RimWorldAccess.Input.Cursor.PointerOffset>
+  <RimWorldAccess.Input.Cursor.PointerAtCursor>Pointer at cursor</RimWorldAccess.Input.Cursor.PointerAtCursor>
+  <RimWorldAccess.Input.Cursor.PointerOffWindow>Pointer is off the game window</RimWorldAccess.Input.Cursor.PointerOffWindow>
+  <RimWorldAccess.Input.Cursor.MouseTrackingOn>Mouse tracking on</RimWorldAccess.Input.Cursor.MouseTrackingOn>
+  <RimWorldAccess.Input.Cursor.MouseTrackingOff>Mouse tracking off</RimWorldAccess.Input.Cursor.MouseTrackingOff>
+  <RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOn>Pointer follows keyboard on</RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOn>
+  <RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOff>Pointer follows keyboard off</RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOff>
 
   <!-- F1 work menu, F4 animals/mechs menu. -->
   <RimWorldAccess.Input.WorkMenu.NoColonistsAvailable>No colonists available</RimWorldAccess.Input.WorkMenu.NoColonistsAvailable>
   <RimWorldAccess.Input.AnimalsMenu.NoAnimalsOrMechs>No animals or mechs</RimWorldAccess.Input.AnimalsMenu.NoAnimalsOrMechs>
 
   <!-- Gizmo availability guard (G key). -->
-  <RimWorldAccess.Input.Gizmo.UnavailableDuringPlacement>Gizmos unavailable during placement or review</RimWorldAccess.Input.Gizmo.UnavailableDuringPlacement>
 
   <!-- Right/left bracket order execution feedback. -->
   <!-- {0} = single-pawn prefix ("Bob: " or ""), {1} = action label. -->
@@ -95,15 +106,10 @@
        {0} = tile info. -->
   <RimWorldAccess.Input.Map.Boundary>Map boundary</RimWorldAccess.Input.Map.Boundary>
   <RimWorldAccess.Input.Map.PrefixSelected>Selected, {0}</RimWorldAccess.Input.Map.PrefixSelected>
-  <RimWorldAccess.Input.Map.PrefixPreview>Preview, {0}</RimWorldAccess.Input.Map.PrefixPreview>
   <RimWorldAccess.Input.Map.PrefixFirstPoint>First point, {0}</RimWorldAccess.Input.Map.PrefixFirstPoint>
   <RimWorldAccess.Input.Map.PrefixSecondPoint>Second point, {0}</RimWorldAccess.Input.Map.PrefixSecondPoint>
   <RimWorldAccess.Input.Map.PrefixInArea>In area, {0}</RimWorldAccess.Input.Map.PrefixInArea>
   <RimWorldAccess.Input.Map.PrefixDisconnected>Disconnected, {0}</RimWorldAccess.Input.Map.PrefixDisconnected>
 
   <!-- Schedule editor visual overlay (src/Input/UnifiedKeyboardPatch.cs). -->
-  <RimWorldAccess.Input.Schedule.OverlayTitle>Schedule Menu - {0} ({1}/{2}) - Hour {3}</RimWorldAccess.Input.Schedule.OverlayTitle>
-  <RimWorldAccess.Input.Schedule.OverlayCurrent>Current: {0}</RimWorldAccess.Input.Schedule.OverlayCurrent>
-  <RimWorldAccess.Input.Schedule.OverlayInstructions1>Arrows: Navigate | 1-5: Select Brush | Space/Enter: Apply Brush</RimWorldAccess.Input.Schedule.OverlayInstructions1>
-  <RimWorldAccess.Input.Schedule.OverlayInstructions2>Shift+Arrows: Paint | Ctrl+C/V: Copy/Paste | Tab: Areas | Esc: Close</RimWorldAccess.Input.Schedule.OverlayInstructions2>
 </LanguageData>

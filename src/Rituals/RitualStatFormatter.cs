@@ -12,44 +12,6 @@ namespace RimWorldAccess
     /// </summary>
     public static class RitualStatFormatter
     {
-        public static string FormatRole(LordJobRoleView view)
-        {
-            var sb = new StringBuilder();
-            sb.Append(view.Label);
-            sb.Append(": ");
-
-            if (view.MaxCount > 0)
-            {
-                sb.Append((string)"RimWorldAccess.Rituals.Role.AssignedOfMax".Translate(view.AssignedCount, view.MaxCount));
-                if (view.IsRequired) sb.Append((string)"RimWorldAccess.Rituals.Role.Required".Translate());
-            }
-            else if (view.MaxCount == 0)
-            {
-                sb.Append((string)"RimWorldAccess.Rituals.Role.AssignedOptional".Translate(view.AssignedCount));
-            }
-            else
-            {
-                sb.Append((string)"RimWorldAccess.Rituals.Role.AssignedUnlimited".Translate(view.AssignedCount));
-            }
-
-            if (view.IsLocked) sb.Append((string)"RimWorldAccess.Rituals.Role.Locked".Translate());
-            sb.Append(".");
-
-            if (!string.IsNullOrEmpty(view.ExtraInfoLine))
-            {
-                sb.Append(" ");
-                sb.Append(view.ExtraInfoLine);
-            }
-
-            if (!string.IsNullOrEmpty(view.Tooltip))
-            {
-                sb.Append(" ");
-                sb.Append(view.Tooltip);
-            }
-
-            return sb.ToString();
-        }
-
         public static string FormatExtraToggle(LordJobExtraToggle toggle, bool includeTooltip = true)
         {
             var sb = new StringBuilder();
@@ -68,31 +30,6 @@ namespace RimWorldAccess
             return sb.ToString();
         }
 
-        public static string FormatPawn(LordJobPawnView view)
-        {
-            // Order: name → status → disabled reason → suitability → tooltip.
-            // Selection status comes second so screen-reader users hear whether the pawn is
-            // already chosen before sitting through stats and descriptions.
-            var parts = new List<string>();
-            parts.Add(view.Pawn.LabelShort);
-
-            if (view.IsForced)
-                parts.Add((string)"RimWorldAccess.Rituals.Pawn.ForcedCannotChange".Translate());
-            else if (view.IsAssigned)
-                parts.Add((string)"RimWorldAccess.Rituals.Pawn.Selected".Translate());
-
-            if (!string.IsNullOrEmpty(view.DisabledReason))
-                parts.Add((string)"RimWorldAccess.Rituals.Pawn.CannotAssignReason".Translate(view.DisabledReason));
-
-            if (!string.IsNullOrEmpty(view.SuitabilityLine))
-                parts.Add(view.SuitabilityLine);
-
-            if (!string.IsNullOrEmpty(view.Tooltip))
-                parts.Add(view.Tooltip);
-
-            return string.Join(". ", parts) + ".";
-        }
-
         public static string FormatQualityRow(LordJobQualityRow row)
         {
             var sb = new StringBuilder();
@@ -103,15 +40,12 @@ namespace RimWorldAccess
 
             if (!row.IsInformational)
             {
-                bool changeHasContext = !string.IsNullOrEmpty(row.Change) &&
-                    (row.Change.Contains("out of") || row.Change.Contains("(") || row.Change.Contains("/"));
-
                 if (row.IsUncertain)
                 {
                     sb.Append(" ");
                     sb.Append("RimWorldAccess.Rituals.Quality.UncertainOutcome".Translate());
                 }
-                else if (!changeHasContext)
+                else if (!row.HasCountContext)
                 {
                     if (row.IsPresent)
                         sb.Append(row.IsPositive

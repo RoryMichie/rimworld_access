@@ -71,6 +71,8 @@
   <RimWorldAccess.Factions.Recent.EntryCountSuffix>{0} x{1}</RimWorldAccess.Factions.Recent.EntryCountSuffix>
   <RimWorldAccess.Factions.Recent.EntrySignedSuffix>{0} {1}</RimWorldAccess.Factions.Recent.EntrySignedSuffix>
   <RimWorldAccess.Factions.Recent.Summary>近期: {0}</RimWorldAccess.Factions.Recent.Summary>
+  <RimWorldAccess.Factions.NaturalGoodwillRange>自然好感度范围: {0} 至 {1}</RimWorldAccess.Factions.NaturalGoodwillRange>
+  <RimWorldAccess.Factions.AffectedBy>受影响: {0}</RimWorldAccess.Factions.AffectedBy>
 
   <!-- Ideology section (Ideology DLC, non-classic mode).
        Primary: {0} = primary ideology name.

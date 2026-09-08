@@ -16,6 +16,8 @@
 
   <RimWorldAccess.TextInput.EditingField>Редагування {0}: {1}. Введіть нове значення, Enter для підтвердження, Escape для скасування.</RimWorldAccess.TextInput.EditingField>
   <RimWorldAccess.TextInput.EditingMultiLineField>Редагування багаторядкового поля {0}: {1}. Введіть текст, Shift+Enter для нового рядка, Вгору/Вниз для навігації по рядках, Enter для підтвердження, Escape для скасування.</RimWorldAccess.TextInput.EditingMultiLineField>
+  <RimWorldAccess.TextInput.BrowsingField>Перегляд {0}, лише для читання: {1}.</RimWorldAccess.TextInput.BrowsingField>
+  <RimWorldAccess.TextInput.ReadOnlyField>Цей текст лише для читання</RimWorldAccess.TextInput.ReadOnlyField>
   <RimWorldAccess.TextInput.Empty>порожнє</RimWorldAccess.TextInput.Empty>
   <RimWorldAccess.TextInput.Deleted>Видалено: {0}</RimWorldAccess.TextInput.Deleted>
   <RimWorldAccess.TextInput.FieldSet>{0}: {1}</RimWorldAccess.TextInput.FieldSet>

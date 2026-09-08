@@ -38,6 +38,8 @@ Press **`/`** to focus the pawn under the cursor on the colonist bar. If the cur
 
 Press **Alt+C** to move the cursor and camera to the currently selected pawn. This is the reverse of **`/`**: it takes you from "pawn selected on bar" to "cursor on pawn." When several pawns are multi-selected, **Alt+C** opens a picker so you can choose which one to jump to.
 
+After the jump, the cursor stays with that pawn. It rides along as they walk, silently, so pressing **K** tells you where they are right now rather than where they were when you jumped. Move the cursor any way you like, or select someone else, and it stops riding and is yours again. Press **Alt+C** again whenever you want to catch back up.
+
 ## Multi-select (Alt+Space)
 
 **Alt+Space** toggles the pawn under the cursor (or the currently focused bar pawn) into or out of a multi-select group. Once multiple pawns are selected, orders issued via **`]`** or gizmos apply to all of them.

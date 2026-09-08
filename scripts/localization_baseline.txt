@@ -1,0 +1,18 @@
+# Localization guardrail baseline — reviewed, intentional English.
+# Format: <relpath>\t<exact string>. Regenerate with --update-baseline only after review.
+src/DevBridge/RoslynEvaluator.cs	(empty sequence)
+src/DevBridge/RoslynEvaluator.cs	ERROR (compile)\n
+src/DevBridge/RoslynEvaluator.cs	ERROR\nRoslyn failed to initialize:\n
+src/Inspection/Capture/ActionParityOracle.Game.cs	(no request)
+src/Inspection/Capture/ActionParityOracle.Game.cs	(pending, {pending} captures left)
+src/Inspection/Capture/ActionParityOracle.Game.cs	category mismatch: tree has {categoryItems.Count}, discovery has {categories.Count} — oracle needs updating
+src/Inspection/Capture/ActionParityOracle.Game.cs	null target
+src/Inspection/Capture/ActionParityOracle.Game.cs	queued {pending} tab captures, {totalActions} actions across {surfaces.Count} categories
+src/Inspection/Capture/InspectTabCaptureOracle.Game.cs	(no request)
+src/Inspection/Capture/InspectTabCaptureOracle.Game.cs	(pending, {captured.Count + skipped.Count}/{surfaceOrder.Count} surfaces)
+src/Inspection/Capture/InspectTabCaptureOracle.Game.cs	null pawn
+src/Inspection/Capture/InspectTabCaptureOracle.Game.cs	queued {pendingTabs.Count} card tabs + {pendingCards.Count} info-card surfaces for {pawn.LabelShortCap}
+src/Inspection/Capture/InspectTabCaptureProbe.Game.cs	STABLE across {dumps.Count} repaint passes\n{dumps[0]}
+src/Inspection/Capture/InspectTabCaptureProbe.Game.cs	queued {tab?.Name} x{passesWanted} for {thing?.LabelCap}
+src/Inspection/InspectionSelfAudit.cs	label fallbacks: {LabelFallbackCount}; types: 
+src/Shell/Focus/FocusStackCore.cs	FocusStack: (empty)

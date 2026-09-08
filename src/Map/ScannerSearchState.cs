@@ -7,52 +7,44 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Core search state management for both map and world scanners.
-    /// Allows typeahead search to filter scanner items by name.
+    /// Typeahead search filtering scanner items by name, shared by the map and world scanners.
     /// </summary>
     public static class ScannerSearchState
     {
-        // State
         private static string searchBuffer = "";
         private static bool isOnWorldMap = false;
         private static bool isSearchModeActive = false;
 
-        // Active filter (persists after search is confirmed with Enter)
+        // Survives an Enter-confirmed search.
         private static string activeFilterQuery = "";
         private static bool activeFilterIsWorldMap = false;
 
-        // Previous filter state for restoration on cancel
+        // Restored on cancel.
         private static string savedFilterQuery = "";
         private static bool savedFilterIsWorldMap = false;
 
 
-        /// <summary>
-        /// Returns true if search input mode is active (user is typing).
-        /// </summary>
+        /// <summary>Whether search input mode is active.</summary>
         public static bool IsActive => isSearchModeActive;
 
         /// <summary>
-        /// Returns true if there's an active filter (search was confirmed with Enter).
+        /// True while the session belongs to the world scanner, letting the colony overlay
+        /// mirror gate on colony sessions alone.
         /// </summary>
+        public static bool IsOnWorldMap => isOnWorldMap;
+
+        /// <summary>Whether a confirmed filter is in force.</summary>
         public static bool HasActiveFilter => !string.IsNullOrEmpty(activeFilterQuery);
 
-        /// <summary>
-        /// Gets the current search string.
-        /// </summary>
+        /// <summary>The current search string.</summary>
         public static string SearchBuffer => searchBuffer;
 
-        /// <summary>
-        /// Activates search mode (Z key pressed).
-        /// Saves existing filter for restoration on cancel, then clears it.
-        /// </summary>
-        /// <param name="onWorldMap">True if on world map, false if on colony map</param>
+        /// <summary>Opens search mode, saving any existing filter for restoration on cancel.</summary>
         public static void Activate(bool onWorldMap)
         {
-            // Save the previous filter state BEFORE clearing (for restoration on cancel)
             savedFilterQuery = activeFilterQuery;
             savedFilterIsWorldMap = activeFilterIsWorldMap;
 
-            // Clear any existing filter - new search will replace it
             if (HasActiveFilter)
             {
                 activeFilterQuery = "";
@@ -70,8 +62,7 @@ namespace RimWorldAccess
             searchBuffer = "";
             isSearchModeActive = true;
 
-            // Save focus before we start modifying scanner state
-            // Only save focus if there was no previous filter (filter already has its own position)
+            // Only with no previous filter: that filter already carries its own position.
             if (string.IsNullOrEmpty(savedFilterQuery))
             {
                 if (onWorldMap)
@@ -93,10 +84,7 @@ namespace RimWorldAccess
             TolkHelper.Speak("RimWorldAccess.Map.Search.Activated".Loc(), SpeechPriority.Normal);
         }
 
-        /// <summary>
-        /// Handles a character input (letter key typed).
-        /// </summary>
-        /// <param name="c">The character to add to search buffer</param>
+        /// <summary>Appends a typed character to the search buffer.</summary>
         public static void HandleCharacter(char c)
         {
             searchBuffer += c;
@@ -104,9 +92,7 @@ namespace RimWorldAccess
             UpdateSearchResults();
         }
 
-        /// <summary>
-        /// Removes the last character from the search buffer.
-        /// </summary>
+        /// <summary>Removes the last character; an empty buffer cancels the search.</summary>
         public static void HandleBackspace()
         {
             if (string.IsNullOrEmpty(searchBuffer))
@@ -118,56 +104,72 @@ namespace RimWorldAccess
 
             if (string.IsNullOrEmpty(searchBuffer))
             {
-                // Buffer is empty, cancel search
                 CancelSearch();
             }
             else
             {
-                // Update results with shortened buffer
                 UpdateSearchResults();
             }
         }
 
         /// <summary>
-        /// Confirms the search and keeps the filter active (Enter key).
-        /// Exits search input mode but preserves the search category.
-        /// The filter will refresh automatically when the scanner refreshes.
-        /// Clears any saved filter state - new filter permanently replaces old.
+        /// Enter: leaves input mode keeping the filter and its category, which refreshes with the
+        /// scanner. The saved filter is dropped — the new one replaces it permanently.
         /// </summary>
         public static void ConfirmSearch()
         {
+            ConfirmSearch(announce: true);
+        }
+
+        /// <summary>
+        /// Ends a search silently: keeps the typed filter like Enter, or unwinds an empty session
+        /// like Escape. Used by the jump-to-result path, so the jump is the only utterance.
+        /// </summary>
+        public static void DismissSilently()
+        {
+            if (!isSearchModeActive)
+                return;
+            if (string.IsNullOrEmpty(searchBuffer))
+                CancelSearch(announce: false);
+            else
+                ConfirmSearch(announce: false);
+        }
+
+        private static void ConfirmSearch(bool announce)
+        {
             if (IsActive && !string.IsNullOrEmpty(searchBuffer))
             {
-                // Store the filter for live refresh
                 activeFilterQuery = searchBuffer;
                 activeFilterIsWorldMap = isOnWorldMap;
 
                 searchBuffer = "";
                 isSearchModeActive = false;
 
-                // Clear saved filter - new one replaces it permanently
                 savedFilterQuery = "";
                 savedFilterIsWorldMap = false;
 
-                TolkHelper.Speak("RimWorldAccess.Map.Search.NowFiltering".Loc(activeFilterQuery), SpeechPriority.Normal);
+                if (announce)
+                    TolkHelper.Speak("RimWorldAccess.Map.Search.NowFiltering".Loc(activeFilterQuery), SpeechPriority.Normal);
             }
             else
             {
-                // No search query, just cancel
-                CancelSearch();
+                CancelSearch(announce);
             }
         }
 
         /// <summary>
-        /// Cancels the search and reverts to previous scanner state (Escape key).
-        /// If there was a previous filter, restores it. Otherwise, restores focus to pre-search position.
+        /// Escape: restores the previous filter if there was one, else the pre-search position.
         /// </summary>
         public static void CancelSearch()
+        {
+            CancelSearch(announce: true);
+        }
+
+        private static void CancelSearch(bool announce)
         {
             searchBuffer = "";
             isSearchModeActive = false;
 
-            // Remove current search temporary category
             if (isOnWorldMap)
             {
                 WorldScannerState.RemoveTemporaryCategory();
@@ -177,13 +179,11 @@ namespace RimWorldAccess
                 ScannerState.RemoveTemporaryCategory();
             }
 
-            // Restore previous filter if there was one
             if (!string.IsNullOrEmpty(savedFilterQuery))
             {
                 activeFilterQuery = savedFilterQuery;
                 activeFilterIsWorldMap = savedFilterIsWorldMap;
 
-                // Recreate the previous filter's temporary category
                 if (savedFilterIsWorldMap)
                 {
                     var matching = RefreshWorldFilter();
@@ -203,12 +203,12 @@ namespace RimWorldAccess
                     }
                 }
 
-                TolkHelper.Speak("RimWorldAccess.Map.Search.RestoredFilter".Loc(savedFilterQuery), SpeechPriority.Normal);
+                if (announce)
+                    TolkHelper.Speak("RimWorldAccess.Map.Search.RestoredFilter".Loc(savedFilterQuery), SpeechPriority.Normal);
             }
             else
             {
                 activeFilterQuery = "";
-                // Restore saved focus (pre-search position)
                 if (isOnWorldMap)
                 {
                     WorldScannerState.RestoreFocus();
@@ -217,19 +217,17 @@ namespace RimWorldAccess
                 {
                     ScannerState.RestoreFocus();
                 }
-                TolkHelper.Speak("RimWorldAccess.Map.Search.Cancelled".Loc(), SpeechPriority.Normal);
+                if (announce)
+                    TolkHelper.Speak("RimWorldAccess.Map.Search.Cancelled".Loc(), SpeechPriority.Normal);
             }
 
-            // Clear saved state
             savedFilterQuery = "";
             savedFilterIsWorldMap = false;
         }
 
         /// <summary>
-        /// Clears the active search filter and removes the search temporary category.
-        /// Called by Ctrl+Z when not actively searching.
-        /// If the user is currently in the search category, restores focus to pre-search position.
-        /// Does nothing if there is no active filter.
+        /// Ctrl+Z outside a search: drops the active filter and its category, restoring the
+        /// pre-search position if the cursor is inside that category. No-op without a filter.
         /// </summary>
         public static void ClearActiveFilter()
         {
@@ -260,22 +258,18 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Clears the search without announcement.
-        /// Used when map is invalidated or switched.
-        /// Also clears any active filter.
+        /// Clears the search and any active filter silently, for a map switch or invalidation.
         /// </summary>
         public static void ClearSearchSilent()
         {
             searchBuffer = "";
             isSearchModeActive = false;
             activeFilterQuery = "";
-            // Note: temporary category removal is handled by ScannerState.Invalidate()
+            // The temporary category is removed by ScannerState.Invalidate().
         }
 
         /// <summary>
-        /// Refreshes the active filter with fresh items from the map.
-        /// Called by CancelSearch when restoring a previous filter.
-        /// Returns the updated list of matching items, or null if no active filter.
+        /// Re-runs the active filter over fresh map items, or null when no filter is active.
         /// </summary>
         public static List<ScannerItem> RefreshMapFilter(Map map, IntVec3 cursorPosition)
         {
@@ -287,9 +281,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Refreshes the active filter from pre-collected categories.
-        /// Called by ScannerState.RefreshItems() to avoid double-collecting.
-        /// Returns the updated list of matching items, or null if no active filter.
+        /// Re-runs the active filter over already-collected categories, avoiding a second
+        /// collection pass. Null when no filter is active.
         /// </summary>
         public static List<ScannerItem> RefreshMapFilter(List<ScannerCategory> preCollectedCategories)
         {
@@ -305,11 +298,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Returns the items from the top-level "All" category's "All-All" subcategory.
-        /// That subcategory is the authoritative, reference-deduped, grouped-once view of
-        /// every item on the map. Falls back to an empty list if the "All" category wasn't
-        /// produced (e.g., an empty map). See CollectAllMapItemsFlat for why we don't
-        /// iterate every subcategory ourselves.
+        /// The "All"/"All-All" subcategory: the reference-deduped, grouped-once view of every item
+        /// on the map. Empty when no "All" category was produced.
         /// </summary>
         private static List<ScannerItem> FlattenFromAllCategory(List<ScannerCategory> categories)
         {
@@ -326,9 +316,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Refreshes the active filter with fresh items from the world map.
-        /// Called when restoring a previous filter on the world map.
-        /// Returns the updated list of matching items, or null if no active filter.
+        /// Re-runs the active filter over fresh world items, or null when no filter is active.
         /// </summary>
         public static List<WorldScannerItem> RefreshWorldFilter()
         {
@@ -344,17 +332,13 @@ namespace RimWorldAccess
                 item => item.GetDistance(originTile, 0));
         }
 
-        /// <summary>
-        /// Gets the name for the current filter category.
-        /// </summary>
+        /// <summary>The current filter category's name.</summary>
         public static string GetFilterCategoryName()
         {
             return "RimWorldAccess.Map.Search.CategoryName".Translate(activeFilterQuery);
         }
 
-        /// <summary>
-        /// Updates search results based on current buffer.
-        /// </summary>
+        /// <summary>Re-runs the search for the current buffer.</summary>
         private static void UpdateSearchResults()
         {
             if (string.IsNullOrEmpty(searchBuffer))
@@ -370,9 +354,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Updates search results for colony map scanner.
-        /// </summary>
         private static void UpdateMapSearchResults()
         {
             var map = Find.CurrentMap;
@@ -384,8 +365,7 @@ namespace RimWorldAccess
 
             var cursor = MapNavigationState.CurrentCursorPosition;
 
-            // Collect all items from all categories. Fog-of-war regions all share the same
-            // "unexplored area" label, so exclude them from search to avoid noise.
+            // Fog-of-war regions all share one label, so searching them is noise.
             var allItems = CollectAllMapItemsFlat(map, cursor)
                 .Where(item => item.Label != ScannerHelper.UnexploredAreaLabel)
                 .ToList();
@@ -393,28 +373,21 @@ namespace RimWorldAccess
             var matching = ScannerSearchEngine.FilterAndRank(
                 allItems, searchBuffer, item => item.Label, item => item.Distance);
 
-            // Group identical items
             matching = GroupIdenticalItems(matching, cursor);
 
             if (matching.Count == 0)
             {
-                // No matches - announce and clear buffer so user can type again
+                // Clear the buffer so the player can type again.
                 TolkHelper.Speak("RimWorldAccess.Search.NoMatches".Loc(searchBuffer), SpeechPriority.Normal);
                 searchBuffer = "";
                 return;
             }
 
-            // Create temporary category with results
-            // Note: Focus is saved in Activate() when search starts
             ScannerState.CreateTemporaryCategory("RimWorldAccess.Map.Search.CategoryName".Translate(searchBuffer), matching);
 
-            // Announce results
             AnnounceSearchResults(matching);
         }
 
-        /// <summary>
-        /// Updates search results for world map scanner.
-        /// </summary>
         private static void UpdateWorldSearchResults()
         {
             if (!WorldNavigationState.IsActive || !WorldNavigationState.IsInitialized)
@@ -425,7 +398,6 @@ namespace RimWorldAccess
 
             var originTile = WorldNavigationState.CurrentSelectedTile;
 
-            // Collect all items from all categories (world scanner collects on refresh)
             var allItems = CollectAllWorldItemsFlat();
 
             var matching = ScannerSearchEngine.FilterAndRank(
@@ -435,27 +407,22 @@ namespace RimWorldAccess
 
             if (matching.Count == 0)
             {
-                // No matches - announce and clear buffer so user can type again
+                // Clear the buffer so the player can type again.
                 TolkHelper.Speak("RimWorldAccess.Search.NoMatches".Loc(searchBuffer), SpeechPriority.Normal);
                 searchBuffer = "";
                 return;
             }
 
-            // Create temporary category with results
-            // Note: Focus is saved in Activate() when search starts
             WorldScannerState.CreateTemporaryCategory("RimWorldAccess.Map.Search.CategoryName".Translate(searchBuffer), matching);
 
-            // Announce results
             AnnounceWorldSearchResults(matching);
         }
 
         /// <summary>
-        /// Collects all scanner items into a single flat list by reading from the top-level
-        /// "All" category's "All-All" subcategory. That subcategory is built with reference
-        /// dedup and then grouped exactly once, so every unique item/bulk appears here once.
-        /// A naive flatten of every subcategory would over-count: the per-subcategory
-        /// GroupIdenticalItems pass creates a distinct bulk ScannerItem per subcategory even
-        /// when they all wrap the same underlying Things, which reference-dedup cannot catch.
+        /// Every scanner item, flattened from the "All"/"All-All" subcategory. Do NOT flatten
+        /// every subcategory instead: each one's own GroupIdenticalItems pass mints a distinct
+        /// bulk item over the same Things, which reference dedup cannot catch, so the count would
+        /// come out too high.
         /// </summary>
         private static List<ScannerItem> CollectAllMapItemsFlat(Map map, IntVec3 cursorPosition)
         {
@@ -464,39 +431,27 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Collects all world scanner items flattened into a single list.
-        /// Delegates to WorldScannerState which builds all categories (settlements, biomes, roads, etc.)
-        /// and returns them flattened, mirroring how CollectAllMapItemsFlat uses ScannerHelper.
+        /// Every world scanner item, flattened.
         /// </summary>
         private static List<WorldScannerItem> CollectAllWorldItemsFlat()
         {
             return WorldScannerState.CollectAllItemsFlat();
         }
 
-        /// <summary>
-        /// Groups identical map items together.
-        /// Reuses the logic from ScannerHelper.
-        /// </summary>
+        /// <summary>Search results keep their relevance order; grouping by type would lose it.</summary>
         private static List<ScannerItem> GroupIdenticalItems(List<ScannerItem> items, IntVec3 cursorPosition)
         {
-            // Note: Items coming from search are already individual items,
-            // but we need to group them by type for efficient navigation
             var grouped = new List<ScannerItem>();
             var processedLabels = new HashSet<string>();
 
             foreach (var item in items)
             {
-                // For simplicity, keep items as-is since they're already sorted by relevance
-                // Grouping by type would lose the relevance ordering
                 grouped.Add(item);
             }
 
             return grouped;
         }
 
-        /// <summary>
-        /// Announces search results for map scanner.
-        /// </summary>
         private static void AnnounceSearchResults(List<ScannerItem> results)
         {
             if (results.Count == 0)
@@ -518,9 +473,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Announces search results for world scanner.
-        /// </summary>
         private static void AnnounceWorldSearchResults(List<WorldScannerItem> results)
         {
             if (results.Count == 0)

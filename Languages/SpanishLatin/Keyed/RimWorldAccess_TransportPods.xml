@@ -121,10 +121,7 @@
        ========================================================= -->
 
   <!-- Open guards. -->
-  <RimWorldAccess.TransportPods.Loading.NoDialog>No hay ningún menú de carga disponible</RimWorldAccess.TransportPods.Loading.NoDialog>
   <RimWorldAccess.TransportPods.Loading.ReflectionFailed>La accesibilidad de carga de cápsulas de transporte no está disponible debido a una actualización del juego. Busca actualizaciones del mod.</RimWorldAccess.TransportPods.Loading.ReflectionFailed>
-  <RimWorldAccess.TransportPods.Loading.NoPortalDialog>No hay ningún menú de portal disponible</RimWorldAccess.TransportPods.Loading.NoPortalDialog>
-  <RimWorldAccess.TransportPods.Loading.PortalReflectionFailed>La accesibilidad de carga de portales no está disponible debido a una actualización del juego. Busca actualizaciones del mod.</RimWorldAccess.TransportPods.Loading.PortalReflectionFailed>
 
   <!-- Entry announcement. One/Many split so translators control pod/pods
        agreement; the pod-noun key is inlined into the sentence so word order
@@ -134,12 +131,8 @@
   <RimWorldAccess.TransportPods.Loading.OpenAnnouncementMany>Cargar cápsulas de transporte. {0} cápsulas, {1} kg de capacidad. Izquierda/Derecha para pestañas, Enter para ajustar.</RimWorldAccess.TransportPods.Loading.OpenAnnouncementMany>
 
   <!-- Tab navigation. -->
-  <RimWorldAccess.TransportPods.Loading.TabPawns>Personajes</RimWorldAccess.TransportPods.Loading.TabPawns>
-  <RimWorldAccess.TransportPods.Loading.TabItems>Elementos</RimWorldAccess.TransportPods.Loading.TabItems>
-  <RimWorldAccess.TransportPods.Loading.ReturnedToTab>Regreso a la pestaña {0}</RimWorldAccess.TransportPods.Loading.ReturnedToTab>
 
   <!-- Shared empty-tab feedback (spoken in multiple navigation paths). -->
-  <RimWorldAccess.TransportPods.Loading.NoItemsInTab>No hay elementos en esta pestaña</RimWorldAccess.TransportPods.Loading.NoItemsInTab>
 
   <!-- Activation and quantity actions. {0} = item label. -->
   <RimWorldAccess.TransportPods.Loading.ItemChecked>{0}: marcado</RimWorldAccess.TransportPods.Loading.ItemChecked>
@@ -148,7 +141,6 @@
 
   <!-- Inspect results. -->
   <RimWorldAccess.TransportPods.Loading.NoItemToInspect>No hay ningún elemento para inspeccionar</RimWorldAccess.TransportPods.Loading.NoItemToInspect>
-  <RimWorldAccess.TransportPods.Loading.CannotInspectItem>No se puede inspeccionar este elemento</RimWorldAccess.TransportPods.Loading.CannotInspectItem>
 
   <!-- Delete/remove guard. -->
   <RimWorldAccess.TransportPods.Loading.AlreadyAtZero>Ya está en cero</RimWorldAccess.TransportPods.Loading.AlreadyAtZero>
@@ -159,20 +151,12 @@
   <!-- Mass summary (Tab key / AnnounceMassSummary).
        Composed from MassLine + one of OverloadedStatus/RemainingStatus.
        {0} = current usage, {1} = capacity, {2} = status clause. -->
-  <RimWorldAccess.TransportPods.Loading.MassSummary>Masa: {0} de {1} kg. {2}</RimWorldAccess.TransportPods.Loading.MassSummary>
-  <RimWorldAccess.TransportPods.Loading.MassOverloaded>SOBRECARGA de {0} kg</RimWorldAccess.TransportPods.Loading.MassOverloaded>
-  <RimWorldAccess.TransportPods.Loading.MassRemaining>{0} kg restantes</RimWorldAccess.TransportPods.Loading.MassRemaining>
 
   <!-- Summary view (Tab toggle). Empty/error states come next. -->
-  <RimWorldAccess.TransportPods.Loading.NoSummaryForDialog>No hay resumen disponible para este menú</RimWorldAccess.TransportPods.Loading.NoSummaryForDialog>
-  <RimWorldAccess.TransportPods.Loading.SummaryEntry>Vista de resumen. Arriba/Abajo navega las estadísticas. Tab para regresar.</RimWorldAccess.TransportPods.Loading.SummaryEntry>
-  <RimWorldAccess.TransportPods.Loading.SummaryNoData>No hay datos disponibles</RimWorldAccess.TransportPods.Loading.SummaryNoData>
   <RimWorldAccess.TransportPods.Loading.SummaryNoTransporters>Sin transportadores</RimWorldAccess.TransportPods.Loading.SummaryNoTransporters>
   <RimWorldAccess.TransportPods.Loading.SummaryStatsUnavailable>Estadísticas no disponibles</RimWorldAccess.TransportPods.Loading.SummaryStatsUnavailable>
-  <RimWorldAccess.TransportPods.Loading.SummaryNoSummary>No hay datos de resumen</RimWorldAccess.TransportPods.Loading.SummaryNoSummary>
 
   <!-- Summary item format ({item}. {position}). {0} = stat line, {1} = position. -->
-  <RimWorldAccess.TransportPods.Loading.SummaryItemAnnouncement>{0}. {1}</RimWorldAccess.TransportPods.Loading.SummaryItemAnnouncement>
 
   <!-- Stat-breakdown view (Alt+I in summary mode). NoBreakdown is spoken when
        the selected stat has no cached explanation (e.g. Food).
@@ -216,5 +200,8 @@
   <RimWorldAccess.TransportPods.Portal.FallbackEnter>Cargar portal</RimWorldAccess.TransportPods.Portal.FallbackEnter>
   <RimWorldAccess.TransportPods.Portal.FallbackLoading>Cargando</RimWorldAccess.TransportPods.Portal.FallbackLoading>
   <!-- Localization guardrail (D.8) sweep — previously hardcoded English. -->
-  <RimWorldAccess.TransportPods.Loading.TabSummary>{0} pestaña, {1} elementos</RimWorldAccess.TransportPods.Loading.TabSummary>
+
+  <!-- Region name for the stats section (screen-model refactor: the old
+       Tab-key Summary view is now a region cycled with Tab/Shift+Tab). -->
+  <RimWorldAccess.TransportPods.Loading.SummaryTab>Resumen</RimWorldAccess.TransportPods.Loading.SummaryTab>
 </LanguageData>

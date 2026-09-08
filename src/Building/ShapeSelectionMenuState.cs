@@ -1,13 +1,22 @@
 using System.Collections.Generic;
 using Verse;
 using RimWorld;
-using UnityEngine;
+using RimWorldAccess.Shell;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages a windowless shape selection menu for building placement.
-    /// Provides keyboard navigation through available shapes with typeahead support.
+    /// The windowless shape selection menu for building placement: which shapes the active
+    /// designator offers, and the two ways out of the menu (confirm into shape placement, or
+    /// cancel).
+    ///
+    /// Navigation, typeahead and per-row announcements belong to
+    /// <see cref="ShapeSelectionScope"/>'s <see cref="ScreenScope"/> chassis (the ScreenScope
+    /// migration), which reads <see cref="AvailableShapes"/> and calls
+    /// <see cref="ConfirmAt"/>/<see cref="Cancel"/>. What used to live here — a
+    /// <c>FlatListCursor</c> plus two announcement formats and the per-key routers that chose
+    /// between them — is gone; the legacy handler's search-aware Up/Down/Home/End behavior is now
+    /// the shared typeahead engine's.
     /// </summary>
     public static class ShapeSelectionMenuState
     {
@@ -16,17 +25,11 @@ namespace RimWorldAccess
         /// </summary>
         public static bool IsActive { get; private set; }
 
-        /// <summary>
-        /// Gets the currently selected shape type.
-        /// </summary>
-        public static ShapeType SelectedShape => selectedIndex >= 0 && selectedIndex < availableShapes.Count
-            ? availableShapes[selectedIndex]
-            : ShapeType.Manual;
+        /// <summary>The shapes the active designator offers, in ShapeHelper's own order.</summary>
+        internal static IReadOnlyList<ShapeType> AvailableShapes => availableShapes;
 
         private static List<ShapeType> availableShapes = new List<ShapeType>();
-        private static int selectedIndex = 0;
         private static Designator currentDesignator = null;
-        private static TypeaheadSearchHelper typeaheadHelper = new TypeaheadSearchHelper();
 
         /// <summary>
         /// Opens the shape selection menu for the given designator.
@@ -42,17 +45,9 @@ namespace RimWorldAccess
 
             currentDesignator = designator;
             availableShapes = ShapeHelper.GetAvailableShapes(designator);
-            selectedIndex = 0;
             IsActive = true;
-            typeaheadHelper.ClearSearch();
 
-            // Announce menu opening (NOT all shapes - just the menu name)
-            TolkHelper.Speak("RimWorldAccess.Building.ShapeSelect.MenuOpened".Loc());
-
-            // Announce the first shape
-            AnnounceCurrentShape();
-
-            Log.Message($"Opened shape selection menu with {availableShapes.Count} shapes for {designator.Label}");
+            ModLogger.Dev($"Opened shape selection menu with {availableShapes.Count} shapes for {designator.Label}");
         }
 
         /// <summary>
@@ -62,78 +57,31 @@ namespace RimWorldAccess
         {
             IsActive = false;
             currentDesignator = null;
-            typeaheadHelper.ClearSearch();
         }
 
         /// <summary>
-        /// Moves selection to the next shape.
+        /// Enter on a shape row: confirms the selection and enters shape placement mode with the
+        /// chosen shape, capturing the designator before <see cref="Confirm"/> clears it (the
+        /// legacy handler's own Enter branch).
         /// </summary>
-        public static void SelectNext()
+        internal static void ConfirmAt(int index)
         {
-            if (availableShapes == null || availableShapes.Count == 0)
-                return;
-
-            selectedIndex = MenuHelper.SelectNext(selectedIndex, availableShapes.Count);
-            AnnounceCurrentShape();
-        }
-
-        /// <summary>
-        /// Moves selection to the previous shape.
-        /// </summary>
-        public static void SelectPrevious()
-        {
-            if (availableShapes == null || availableShapes.Count == 0)
-                return;
-
-            selectedIndex = MenuHelper.SelectPrevious(selectedIndex, availableShapes.Count);
-            AnnounceCurrentShape();
-        }
-
-        /// <summary>
-        /// Announces the currently selected shape with position information and description.
-        /// Format: "{shape name}, {position}. {description}" e.g., "Empty Rectangle, 2 of 5. Places only the border..."
-        /// </summary>
-        private static void AnnounceCurrentShape()
-        {
-            if (availableShapes == null || availableShapes.Count == 0)
-                return;
-
-            if (selectedIndex < 0 || selectedIndex >= availableShapes.Count)
-                return;
-
-            ShapeType currentShape = availableShapes[selectedIndex];
-            string shapeName = ShapeHelper.GetShapeName(currentShape);
-            string description = ShapeHelper.GetShapeDescription(currentShape);
-            string position = MenuHelper.FormatPosition(selectedIndex, availableShapes.Count);
-
-            string announcement = string.IsNullOrEmpty(position)
-                ? (string)"RimWorldAccess.Building.ShapeSelect.ShapeNoPosition".Translate(shapeName, description)
-                : (string)"RimWorldAccess.Building.ShapeSelect.ShapeWithPosition".Translate(shapeName, position, description);
-
-            TolkHelper.SpeakData(announcement);
-        }
-
-        /// <summary>
-        /// Announces the current shape with typeahead search context.
-        /// </summary>
-        private static void AnnounceWithSearch()
-        {
-            if (availableShapes == null || availableShapes.Count == 0)
-                return;
-
-            if (selectedIndex < 0 || selectedIndex >= availableShapes.Count)
-                return;
-
-            string shapeName = ShapeHelper.GetShapeName(availableShapes[selectedIndex]);
-
-            if (typeaheadHelper.HasActiveSearch)
+            Designator designatorForPlacement = currentDesignator;
+            ShapeType selectedShape = Confirm(index);
+            if (designatorForPlacement != null)
             {
-                TolkHelper.SpeakData(typeaheadHelper.BuildItemAnnouncement(shapeName));
+                ShapePlacementState.Enter(designatorForPlacement, selectedShape);
             }
-            else
-            {
-                AnnounceCurrentShape();
-            }
+        }
+
+        /// <summary>
+        /// Escape: cancels and closes the menu without selecting, the legacy handler's own
+        /// Escape branch (its search-clearing first tier is now the chassis's).
+        /// </summary>
+        internal static void Cancel()
+        {
+            TolkHelper.Speak("RimWorldAccess.Building.ShapeSelect.Cancelled".Loc());
+            Close();
         }
 
         /// <summary>
@@ -141,259 +89,22 @@ namespace RimWorldAccess
         /// Announces "{shape name} selected" and closes the menu.
         /// </summary>
         /// <returns>The selected ShapeType</returns>
-        public static ShapeType Confirm()
+        private static ShapeType Confirm(int index)
         {
-            if (availableShapes == null || availableShapes.Count == 0)
+            if (index < 0 || index >= availableShapes.Count)
             {
                 Close();
                 return ShapeType.Manual;
             }
 
-            if (selectedIndex < 0 || selectedIndex >= availableShapes.Count)
-            {
-                Close();
-                return ShapeType.Manual;
-            }
-
-            ShapeType selected = availableShapes[selectedIndex];
+            ShapeType selected = availableShapes[index];
             string shapeName = ShapeHelper.GetShapeName(selected);
 
             TolkHelper.Speak("RimWorldAccess.Building.ShapeSelect.ShapeSelected".Loc(shapeName));
-            Log.Message($"Shape selected: {shapeName}");
+            ModLogger.Dev($"Shape selected: {shapeName}");
 
             Close();
             return selected;
         }
-
-        /// <summary>
-        /// Gets the DrawStyleDef for the currently selected shape.
-        /// Used to set the game's SelectedStyle when the user confirms.
-        /// </summary>
-        /// <returns>The DrawStyleDef, or null for Manual mode</returns>
-        public static DrawStyleDef GetSelectedDrawStyleDef()
-        {
-            if (currentDesignator == null || selectedIndex < 0 || selectedIndex >= availableShapes.Count)
-                return null;
-
-            return ShapeHelper.GetDrawStyleDef(currentDesignator, availableShapes[selectedIndex]);
-        }
-
-        /// <summary>
-        /// Jumps to the first shape in the list.
-        /// </summary>
-        public static void JumpToFirst()
-        {
-            if (availableShapes == null || availableShapes.Count == 0)
-                return;
-
-            if (typeaheadHelper.HasActiveSearch && !typeaheadHelper.HasNoMatches)
-            {
-                selectedIndex = typeaheadHelper.GetFirstMatch();
-                AnnounceWithSearch();
-                return;
-            }
-
-            selectedIndex = MenuHelper.JumpToFirst();
-            typeaheadHelper.ClearSearch();
-            AnnounceCurrentShape();
-        }
-
-        /// <summary>
-        /// Jumps to the last shape in the list.
-        /// </summary>
-        public static void JumpToLast()
-        {
-            if (availableShapes == null || availableShapes.Count == 0)
-                return;
-
-            if (typeaheadHelper.HasActiveSearch && !typeaheadHelper.HasNoMatches)
-            {
-                selectedIndex = typeaheadHelper.GetLastMatch();
-                AnnounceWithSearch();
-                return;
-            }
-
-            selectedIndex = MenuHelper.JumpToLast(availableShapes.Count);
-            typeaheadHelper.ClearSearch();
-            AnnounceCurrentShape();
-        }
-
-        /// <summary>
-        /// Handles keyboard input for the shape selection menu.
-        /// </summary>
-        /// <param name="ev">The current event</param>
-        /// <returns>True if input was handled, false otherwise</returns>
-        public static bool HandleInput(Event ev)
-        {
-            if (!IsActive || availableShapes == null || availableShapes.Count == 0)
-                return false;
-
-            if (ev.type != EventType.KeyDown)
-                return false;
-
-            KeyCode key = ev.keyCode;
-
-            // Handle Home - jump to first
-            if (key == KeyCode.Home)
-            {
-                JumpToFirst();
-                return true;
-            }
-
-            // Handle End - jump to last
-            if (key == KeyCode.End)
-            {
-                JumpToLast();
-                return true;
-            }
-
-            // Handle Escape - clear search first, then cancel
-            if (key == KeyCode.Escape)
-            {
-                if (typeaheadHelper.HasActiveSearch)
-                {
-                    typeaheadHelper.ClearSearchAndAnnounce();
-                    AnnounceCurrentShape();
-                    return true;
-                }
-                // Close without selecting
-                TolkHelper.Speak("RimWorldAccess.Building.ShapeSelect.Cancelled".Loc());
-                Close();
-                return true;
-            }
-
-            // Handle Backspace for search
-            if (key == KeyCode.Backspace && typeaheadHelper.HasActiveSearch)
-            {
-                var labels = GetShapeLabels();
-                if (typeaheadHelper.ProcessBackspace(labels, out int newIndex))
-                {
-                    if (newIndex >= 0)
-                        selectedIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-                return true;
-            }
-
-            // Handle Up arrow - navigate with search awareness
-            if (key == KeyCode.UpArrow)
-            {
-                if (typeaheadHelper.HasActiveSearch && !typeaheadHelper.HasNoMatches)
-                {
-                    // Navigate through matches only
-                    int prevIndex = typeaheadHelper.GetPreviousMatch(selectedIndex);
-                    if (prevIndex >= 0)
-                    {
-                        selectedIndex = prevIndex;
-                        AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    SelectPrevious();
-                }
-                return true;
-            }
-
-            // Handle Down arrow - navigate with search awareness
-            if (key == KeyCode.DownArrow)
-            {
-                if (typeaheadHelper.HasActiveSearch && !typeaheadHelper.HasNoMatches)
-                {
-                    // Navigate through matches only
-                    int nextIndex = typeaheadHelper.GetNextMatch(selectedIndex);
-                    if (nextIndex >= 0)
-                    {
-                        selectedIndex = nextIndex;
-                        AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    SelectNext();
-                }
-                return true;
-            }
-
-            // Handle Enter - confirm selection and enter shape placement mode
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                // Store the designator before Confirm() clears it
-                Designator designatorForPlacement = currentDesignator;
-                ShapeType selectedShape = Confirm();
-                // Enter shape placement mode with the selected shape
-                if (designatorForPlacement != null)
-                {
-                    ShapePlacementState.Enter(designatorForPlacement, selectedShape);
-                }
-                return true;
-            }
-
-            // Handle typeahead characters
-            bool isLetter = key >= KeyCode.A && key <= KeyCode.Z;
-            bool isNumber = key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9;
-
-            if (isLetter || isNumber)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Handles typeahead character input from the layout-aware dispatcher.
-        /// </summary>
-        public static void HandleTypeahead(char c)
-        {
-            if (!IsActive) return;
-            if (typeaheadHelper == null) return;
-
-            var labels = GetShapeLabels();
-            if (typeaheadHelper.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeaheadHelper.SpeakNoMatches();
-            }
-        }
-
-        /// <summary>
-        /// Gets the list of labels for all available shapes.
-        /// Used for typeahead search.
-        /// </summary>
-        private static List<string> GetShapeLabels()
-        {
-            var labels = new List<string>();
-            if (availableShapes != null)
-            {
-                foreach (var shape in availableShapes)
-                {
-                    labels.Add(ShapeHelper.GetShapeName(shape));
-                }
-            }
-            return labels;
-        }
-
-        /// <summary>
-        /// Gets whether typeahead search is currently active.
-        /// </summary>
-        public static bool HasActiveSearch => typeaheadHelper.HasActiveSearch;
-
-        /// <summary>
-        /// Gets the number of available shapes.
-        /// </summary>
-        public static int ShapeCount => availableShapes?.Count ?? 0;
-
-        /// <summary>
-        /// Gets the current designator that the menu was opened for.
-        /// </summary>
-        public static Designator CurrentDesignator => currentDesignator;
     }
 }

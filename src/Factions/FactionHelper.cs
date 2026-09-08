@@ -1,28 +1,49 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using HarmonyLib;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Shared utility methods for building faction data used by both
-    /// FactionLandingState (pre-game) and FactionTabState (in-game).
-    /// </summary>
+    /// <summary>Shared faction-data builders for the pre-game landing surface and the in-game tab.</summary>
     public static class FactionHelper
     {
+        // FactionUIUtility's private static "DEV: Show all" flag: the enemy-of filter needs it
+        // directly, since vanilla's DrawFactionRow reads the field in-class.
+        private static readonly FieldInfo ShowAllField = AccessTools.Field(typeof(FactionUIUtility), "showAll");
+
         /// <summary>
-        /// Builds the list of visible non-player, non-hidden factions
-        /// in RimWorld's standard view order (defeated ascending, then listOrderPriority descending).
+        /// The live "DEV: Show all" state. No Prefs.DevMode gate: vanilla's DoWindowContents forces
+        /// the field false on every draw pass outside dev mode, and it keeps drawing underneath both
+        /// surfaces that read this.
         /// </summary>
-        public static List<Faction> BuildFactionList()
+        internal static bool DevShowAll => ShowAllField != null && (bool)ShowAllField.GetValue(null);
+
+        /// <summary>Flips "DEV: Show all" for the keyboard surfaces mirroring vanilla's checkbox.</summary>
+        internal static void SetDevShowAll(bool value)
+        {
+            // MUTATION-C: mirrors FactionUIUtility's "DEV: Show all" CheckboxLabeled,
+            // which writes the private static showAll by ref (decompiled :49); no gated
+            // setter exists.
+            ShowAllField?.SetValue(null, value);
+        }
+
+        /// <summary>
+        /// Visible non-player, non-hidden factions in RimWorld's own view order: defeated ascending,
+        /// then listOrderPriority descending. <paramref name="showAll"/> mirrors vanilla's
+        /// <c>(!item.IsPlayer &amp;&amp; !item.Hidden) || showAll</c> gate.
+        /// </summary>
+        public static List<Faction> BuildFactionList(bool showAll = false)
         {
             var result = new List<Faction>();
             foreach (Faction faction in Find.FactionManager.AllFactionsInViewOrder)
             {
-                if (!faction.IsPlayer && !faction.Hidden)
+                if ((!faction.IsPlayer && !faction.Hidden) || showAll)
                 {
                     result.Add(faction);
                 }
@@ -30,30 +51,21 @@ namespace RimWorldAccess
             return result;
         }
 
-        /// <summary>
-        /// Builds the full announcement string for a faction including:
-        /// name, defeated status, type, leader, relation+goodwill+natural goodwill,
-        /// ongoing goodwill events, recent goodwill events,
-        /// ideology (if DLC active), and enemy-of list.
-        /// </summary>
+        /// <summary>The full spoken line for a faction, from its name through its enemy-of list.</summary>
         public static string BuildFactionAnnouncement(Faction faction)
         {
             var sb = new StringBuilder();
 
-            // Faction name
             sb.Append(faction.Name.CapitalizeFirst());
 
-            // Defeated status
             if (faction.defeated)
             {
                 sb.Append(", ");
                 sb.Append("RimWorldAccess.Factions.Status.Defeated".Translate());
             }
 
-            // Faction type
             AppendSentence(sb, faction.def.LabelCap.Resolve());
 
-            // Leader info
             if (faction.leader != null)
             {
                 string leaderTitle = faction.LeaderTitle.CapitalizeFirst();
@@ -61,7 +73,6 @@ namespace RimWorldAccess
                 AppendSentence(sb, "RimWorldAccess.Factions.Leader".Translate(leaderTitle, leaderName));
             }
 
-            // Relation and goodwill
             string relation = faction.PlayerRelationKind.GetLabelCap();
             if (faction.HasGoodwill && !faction.def.permanentEnemy)
             {
@@ -70,26 +81,32 @@ namespace RimWorldAccess
                     faction.PlayerGoodwill.ToStringWithSign(),
                     faction.NaturalGoodwill.ToStringWithSign()));
 
-                // Ongoing goodwill events (situations limiting max goodwill)
                 string ongoing = BuildOngoingEvents(faction);
                 if (!string.IsNullOrEmpty(ongoing))
                     AppendSentence(sb, ongoing);
 
-                // Recent goodwill events (history)
                 string recent = BuildRecentEvents(faction);
                 if (!string.IsNullOrEmpty(recent))
                     AppendSentence(sb, recent);
+
+                // Vanilla shows the relation-kind meaning and natural-goodwill breakdown on hover only.
+                string goodwillTip = BuildGoodwillTooltipDetail(faction);
+                if (!string.IsNullOrEmpty(goodwillTip))
+                    AppendSentence(sb, goodwillTip);
             }
             else if (faction.def.permanentEnemy)
             {
                 AppendSentence(sb, "RimWorldAccess.Factions.RelationPermanentEnemy".Translate(relation));
+
+                string relationTip = BuildRelationKindTip(faction);
+                if (!string.IsNullOrEmpty(relationTip))
+                    AppendSentence(sb, relationTip);
             }
             else
             {
                 AppendSentence(sb, relation);
             }
 
-            // Ideology (if Ideology DLC active and not classic mode)
             if (ModsConfig.IdeologyActive && !Find.IdeoManager.classicMode && faction.ideos != null)
             {
                 if (faction.ideos.PrimaryIdeo != null)
@@ -105,9 +122,10 @@ namespace RimWorldAccess
                 }
             }
 
-            // Enemy-of list
+            // Mirrors vanilla's own showAll term, so "DEV: Show all" reveals hidden/player enemies
+            // here too, not just in the faction list.
             var enemies = Find.FactionManager.AllFactionsInViewOrder
-                .Where(f => f != faction && f.HostileTo(faction) && !f.IsPlayer && !f.Hidden)
+                .Where(f => f != faction && f.HostileTo(faction) && ((!f.IsPlayer && !f.Hidden) || DevShowAll))
                 .ToArray();
 
             if (enemies.Length > 0)
@@ -116,7 +134,6 @@ namespace RimWorldAccess
                 AppendSentence(sb, "RimWorldAccess.Factions.EnemyOf".Translate(string.Join(", ", enemyNames)));
             }
 
-            // Faction description (shown as tooltip on hover in vanilla)
             string description = faction.def.Description;
             if (!string.IsNullOrEmpty(description))
                 AppendSentence(sb, description);
@@ -124,10 +141,7 @@ namespace RimWorldAccess
             return sb.ToString();
         }
 
-        /// <summary>
-        /// Appends text as a new sentence, ensuring no double periods.
-        /// Adds ". " separator only if the current text doesn't already end with punctuation.
-        /// </summary>
+        /// <summary>Appends text as a new sentence, adding a separator only where one is missing.</summary>
         public static void AppendSentence(StringBuilder sb, string text)
         {
             if (string.IsNullOrEmpty(text))
@@ -144,11 +158,7 @@ namespace RimWorldAccess
             sb.Append(text);
         }
 
-        /// <summary>
-        /// Builds ongoing goodwill events string from GoodwillSituationManager.
-        /// Only includes situations that cap max goodwill below 100.
-        /// Returns null if no ongoing events.
-        /// </summary>
+        /// <summary>Ongoing goodwill situations that cap max goodwill below 100, or null if none.</summary>
         internal static string BuildOngoingEvents(Faction faction)
         {
             var situations = Find.GoodwillSituationManager.GetSituations(faction);
@@ -171,11 +181,7 @@ namespace RimWorldAccess
             return "RimWorldAccess.Factions.Ongoing.Summary".Translate(string.Join(", ", parts)).ToString();
         }
 
-        /// <summary>
-        /// Builds recent goodwill events string from HistoryEventsManager.
-        /// Looks at events within the last 3,600,000 ticks (~60 in-game days).
-        /// Returns null if no recent events with goodwill impact.
-        /// </summary>
+        /// <summary>Goodwill-affecting events from the last ~60 in-game days, or null if none.</summary>
         internal static string BuildRecentEvents(Faction faction)
         {
             var allEventDefs = DefDatabase<HistoryEventDef>.AllDefsListForReading;
@@ -219,10 +225,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Builds a treeview of factions. Root is hidden (IndentLevel -1).
-        /// Each faction is a collapsible level-0 node with the full announcement as its label.
-        /// Children are individual sections (type, leader, relation, etc.).
-        /// Description child is expandable with each line as a grandchild.
+        /// A faction treeview: hidden root, one collapsible node per faction labelled with its full
+        /// announcement, section children beneath, and the description expanding line by line.
         /// </summary>
         public static InspectionTreeItem BuildFactionTree(List<Faction> factions)
         {
@@ -257,14 +261,11 @@ namespace RimWorldAccess
                 Type = InspectionTreeItem.ItemType.Category
             };
 
-            // Faction type
             AddChildNode(node, faction.def.LabelCap.Resolve());
 
-            // Defeated status
             if (faction.defeated)
                 AddChildNode(node, "RimWorldAccess.Factions.Status.DefeatedCap".Translate());
 
-            // Leader info
             if (faction.leader != null)
             {
                 string leaderTitle = faction.LeaderTitle.CapitalizeFirst();
@@ -272,7 +273,6 @@ namespace RimWorldAccess
                 AddChildNode(node, "RimWorldAccess.Factions.Leader".Translate(leaderTitle, leaderName));
             }
 
-            // Relation and goodwill
             string relation = faction.PlayerRelationKind.GetLabelCap();
             if (faction.HasGoodwill && !faction.def.permanentEnemy)
             {
@@ -288,17 +288,24 @@ namespace RimWorldAccess
                 string recent = BuildRecentEvents(faction);
                 if (!string.IsNullOrEmpty(recent))
                     AddChildNode(node, recent);
+
+                string goodwillTip = BuildGoodwillTooltipDetail(faction);
+                if (!string.IsNullOrEmpty(goodwillTip))
+                    AddChildNode(node, goodwillTip);
             }
             else if (faction.def.permanentEnemy)
             {
                 AddChildNode(node, "RimWorldAccess.Factions.RelationPermanentEnemy".Translate(relation));
+
+                string relationTip = BuildRelationKindTip(faction);
+                if (!string.IsNullOrEmpty(relationTip))
+                    AddChildNode(node, relationTip);
             }
             else
             {
                 AddChildNode(node, relation);
             }
 
-            // Ideology
             if (ModsConfig.IdeologyActive && !Find.IdeoManager.classicMode && faction.ideos != null)
             {
                 if (faction.ideos.PrimaryIdeo != null)
@@ -312,9 +319,10 @@ namespace RimWorldAccess
                 }
             }
 
-            // Enemy-of list
+            // Mirrors vanilla's own showAll term, so "DEV: Show all" reveals hidden/player enemies
+            // here too.
             var enemies = Find.FactionManager.AllFactionsInViewOrder
-                .Where(f => f != faction && f.HostileTo(faction) && !f.IsPlayer && !f.Hidden)
+                .Where(f => f != faction && f.HostileTo(faction) && ((!f.IsPlayer && !f.Hidden) || DevShowAll))
                 .ToArray();
             if (enemies.Length > 0)
             {
@@ -322,7 +330,6 @@ namespace RimWorldAccess
                 AddChildNode(node, "RimWorldAccess.Factions.EnemyOf".Translate(string.Join(", ", enemyNames)));
             }
 
-            // Description (expandable with lines as grandchildren)
             string description = faction.def.Description;
             if (!string.IsNullOrEmpty(description))
             {
@@ -330,12 +337,10 @@ namespace RimWorldAccess
 
                 if (lines.Length <= 1)
                 {
-                    // Single line — non-expandable leaf with the full text
                     AddChildNode(node, description.Trim());
                 }
                 else
                 {
-                    // Multi-line — expandable node with each line as a grandchild
                     var descNode = new InspectionTreeItem
                     {
                         Label = description.Replace("\r", "").Replace("\n", " ").Trim(),
@@ -359,6 +364,93 @@ namespace RimWorldAccess
             }
 
             return node;
+        }
+
+        /// <summary>
+        /// The "what this relation kind means" explanation vanilla shows only on hover over the
+        /// goodwill number. The thresholds (0, -75, 75) are vanilla's own literal switch-branch
+        /// arguments, mirrored verbatim.
+        /// </summary>
+        internal static string BuildRelationKindTip(Faction faction)
+        {
+            if (faction.def.permanentEnemy)
+                return "CurrentGoodwillTip_PermanentEnemy".Translate().ToString();
+
+            if (!faction.HasGoodwill)
+                return null;
+
+            switch (faction.PlayerRelationKind)
+            {
+                case FactionRelationKind.Ally:
+                    return "CurrentGoodwillTip_Ally".Translate(0.ToString("F0")).ToString();
+                case FactionRelationKind.Neutral:
+                    return "CurrentGoodwillTip_Neutral".Translate((-75).ToString("F0"), 75.ToString("F0")).ToString();
+                case FactionRelationKind.Hostile:
+                    return "CurrentGoodwillTip_Hostile".Translate(0.ToString("F0")).ToString();
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// Vanilla's "Affected by:" natural-goodwill offsets as a flat comma list rather than newline
+        /// bullets; null when no situation offsets natural goodwill.
+        /// </summary>
+        private static string BuildAffectedByEntries(Faction faction)
+        {
+            var situations = Find.GoodwillSituationManager.GetSituations(faction);
+            var parts = new List<string>();
+            for (int i = 0; i < situations.Count; i++)
+            {
+                if (situations[i].naturalGoodwillOffset != 0)
+                {
+                    string label = situations[i].def.Worker.GetPostProcessedLabelCap(faction);
+                    parts.Add(label + ": " + situations[i].naturalGoodwillOffset.ToStringWithSign());
+                }
+            }
+            return parts.Count > 0 ? string.Join(", ", parts) : null;
+        }
+
+        /// <summary>
+        /// Vanilla's natural-goodwill badge tooltip: the range, the "Affected by" breakdown and the
+        /// decay-rate description. The 1.25 decay multiplier is vanilla's own hardcoded literal at
+        /// that call site, not a def value reflection could harvest.
+        /// </summary>
+        private static string BuildNaturalGoodwillBreakdown(Faction faction)
+        {
+            var parts = new List<string>();
+
+            int rangeMin = Mathf.Clamp(faction.NaturalGoodwill - 50, -100, 100);
+            int rangeMax = Mathf.Clamp(faction.NaturalGoodwill + 50, -100, 100);
+            parts.Add("RimWorldAccess.Factions.NaturalGoodwillRange".Translate(rangeMin, rangeMax).ToString());
+
+            string affectedBy = BuildAffectedByEntries(faction);
+            if (!string.IsNullOrEmpty(affectedBy))
+                parts.Add("RimWorldAccess.Factions.AffectedBy".Translate(affectedBy).ToString());
+
+            parts.Add("NaturalGoodwillDescription".Translate(1.25f.ToStringPercent()).ToString());
+
+            return string.Join(" ", parts);
+        }
+
+        /// <summary>
+        /// The supplementary suffix after the Goodwill line: vanilla splits this across two hover
+        /// tooltips, but the announcement model has one combined goodwill element, so both are
+        /// appended to it in vanilla's reading order.
+        /// </summary>
+        internal static string BuildGoodwillTooltipDetail(Faction faction)
+        {
+            var parts = new List<string>();
+
+            string relationTip = BuildRelationKindTip(faction);
+            if (!string.IsNullOrEmpty(relationTip))
+                parts.Add(relationTip);
+
+            string naturalBreakdown = BuildNaturalGoodwillBreakdown(faction);
+            if (!string.IsNullOrEmpty(naturalBreakdown))
+                parts.Add(naturalBreakdown);
+
+            return parts.Count > 0 ? string.Join(" ", parts) : null;
         }
 
         private static void AddChildNode(InspectionTreeItem parent, string label)

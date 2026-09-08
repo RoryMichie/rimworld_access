@@ -1,23 +1,32 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
+about: Suggest an idea, and document it thoroughly
 title: ''
 labels: enhancement
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+A detailed, well-specified idea is the most valuable thing you can contribute to this project. The more precisely you describe it, the more likely it is to get built. Please fill this out properly rather than in a single line.
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+**What is the problem or gap?**
+What can you not do today, or what is harder than it should be?
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+**What should happen**
+Describe the feature in detail. What does it do, and how does it behave?
 
-**Additional context**
-Add any other context about the feature request here.
+**What should the screen reader announce?**
+The exact wording, or as close as you can get, for the important moments of the feature.
 
-**Are you implementing this?**
-If you intend to work on the feature, please note it here.
+**Where does it fit?**
+Which screen or menu, and how it relates to controls that already exist.
+
+**Edge cases you have thought about**
+What happens in the unusual situations? Empty lists, missing DLC, conflicting states, and so on.
+
+**Alternatives you considered**
+Other ways this could work, and why you would choose this one.
+
+---
+
+A note on building it yourself: please do not open a pull request for a new feature without discussing it here first and getting a response. See [contributing.md](../../contributing.md) for how contributions work, including the requirement that pull requests include the full coding-agent transcript.

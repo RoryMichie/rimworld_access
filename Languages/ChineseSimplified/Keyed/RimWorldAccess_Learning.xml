@@ -27,15 +27,10 @@
   <!-- Menu opening / Tab-toggle announcements.
        {0} = vanilla "LearningHelper" title.
        AllLessonsCount additionally takes {1} = total concept count. -->
-  <RimWorldAccess.Learning.OpeningNoActive>{0}. 无进行中的教程。按 Tab 浏览全部教程。</RimWorldAccess.Learning.OpeningNoActive>
-  <RimWorldAccess.Learning.AllLessonsCount>{0}. 全部教程，共 {1} 项</RimWorldAccess.Learning.AllLessonsCount>
-  <RimWorldAccess.Learning.ActiveLessons>{0}. 进行中的教程</RimWorldAccess.Learning.ActiveLessons>
 
   <!-- Empty-list announcements. NoActive is also spoken after returning to
        an empty list when leaving detail view. -->
   <RimWorldAccess.Learning.NoLessonsAvailable>无可用教程</RimWorldAccess.Learning.NoLessonsAvailable>
-  <RimWorldAccess.Learning.NoActive>无进行中的教程。按 Tab 浏览全部教程。</RimWorldAccess.Learning.NoActive>
-  <RimWorldAccess.Learning.NoActiveRemaining>没有剩余的进行中教程。按 Tab 浏览全部教程。</RimWorldAccess.Learning.NoActiveRemaining>
 
   <!-- Button feedback.
        MarkLearnedConfirmation is spoken immediately after the "Mark as
@@ -48,14 +43,10 @@
        {0} = the user's current search buffer. Other menus use the generic
        RimWorldAccess.Search.ContextSuffix key; Learning uses this simpler
        form because its announcement does not yet include a match position. -->
-  <RimWorldAccess.Learning.SearchSuffix> 搜索: '{0}'</RimWorldAccess.Learning.SearchSuffix>
 
   <!-- TwoLevelMenuHelper boundary messages (Learning-scoped).
        Passed as the endOfItemMessage / startOfItemMessage / openFirstMessage
        arguments when the helper is constructed. -->
-  <RimWorldAccess.Learning.EndOfLesson>教程末尾</RimWorldAccess.Learning.EndOfLesson>
-  <RimWorldAccess.Learning.StartOfLesson>教程开头</RimWorldAccess.Learning.StartOfLesson>
-  <RimWorldAccess.Learning.OpenLessonFirst>请先按回车键打开教程</RimWorldAccess.Learning.OpenLessonFirst>
 
   <!-- Fallback when a ConceptDef has no help text (should be rare - vanilla
        concepts always ship with HelpTextAdjusted). -->

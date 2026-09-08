@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Research module strings (src/Research/). Two state files contribute:
+      - WindowlessResearchMenuState.cs  (the accessible research menu that
+        replaces MainTabWindow_Research; hierarchical tree of tabs,
+        status groups, and projects)
+      - WindowlessResearchDetailState.cs  (the detail view opened from a
+        project; tree of description, prerequisites, unlocks, dependents,
+        and the start/stop action)
+
+    Shared phrases (no info card available, already at edge, etc.) are
+    delegated to RimWorldAccess_Common.xml so translators only localize
+    them once. Only strings unique to the research UI live here.
+
+    Placeholders follow string.Format ({0}, {1}, ...). One/Many key
+    variants are used where English needs singular vs. plural agreement
+    (e.g. "1 hidden prerequisite" vs "3 hidden prerequisites");
+    translators with different plural classes can either collapse or
+    split these further.
+  -->
+
+  <!-- Menu open/close announcements (WindowlessResearchMenuState). -->
+  <RimWorldAccess.Research.Menu.Title>Araştırma menüsü</RimWorldAccess.Research.Menu.Title>
+  <RimWorldAccess.Research.Menu.Closed>Araştırma menüsü kapatıldı</RimWorldAccess.Research.Menu.Closed>
+  <RimWorldAccess.Research.Menu.ProjectNotAvailable>Araştırma projesi kullanılamıyor</RimWorldAccess.Research.Menu.ProjectNotAvailable>
+  <RimWorldAccess.Research.Menu.ProjectNotFound>Araştırma projesi {0} menüde bulunamadı</RimWorldAccess.Research.Menu.ProjectNotFound>
+
+  <!-- Root label for the built category tree. -->
+  <RimWorldAccess.Research.Tree.RootLabel>Araştırma</RimWorldAccess.Research.Tree.RootLabel>
+
+  <!-- Status group labels. {0} = number of projects in the group. -->
+  <RimWorldAccess.Research.Status.InProgress>Devam ediyor ({0})</RimWorldAccess.Research.Status.InProgress>
+  <RimWorldAccess.Research.Status.Available>Araştırılabilir ({0})</RimWorldAccess.Research.Status.Available>
+  <RimWorldAccess.Research.Status.Completed>Tamamlandı ({0})</RimWorldAccess.Research.Status.Completed>
+  <RimWorldAccess.Research.Status.Locked>Kilitli ({0})</RimWorldAccess.Research.Status.Locked>
+
+  <!-- Short status words used inline in labels (e.g. after prereq/dep rows). -->
+  <RimWorldAccess.Research.Status.CompletedWord>Tamamlandı</RimWorldAccess.Research.Status.CompletedWord>
+  <RimWorldAccess.Research.Status.AvailableWord>Araştırılabilir</RimWorldAccess.Research.Status.AvailableWord>
+  <RimWorldAccess.Research.Status.LockedWord>Kilitli</RimWorldAccess.Research.Status.LockedWord>
+
+  <!-- Project label formatting (menu list entries).
+       Cost/knowledge/progress suffixes are composed together with the
+       project name by the caller. {0} = the numeric value. -->
+  <RimWorldAccess.Research.Label.CostSuffix> - maliyet: {0}</RimWorldAccess.Research.Label.CostSuffix>
+  <RimWorldAccess.Research.Label.KnowledgeSuffix> - bilgi: {0}</RimWorldAccess.Research.Label.KnowledgeSuffix>
+  <RimWorldAccess.Research.Label.ProgressSuffix> - %{0} tamamlandı</RimWorldAccess.Research.Label.ProgressSuffix>
+  <RimWorldAccess.Research.Label.StatusSuffix> - {0}</RimWorldAccess.Research.Label.StatusSuffix>
+
+  <!-- Detail view navigation (WindowlessResearchDetailState).
+       BackTo: {0} = the previous research project we return to. -->
+  <RimWorldAccess.Research.Detail.BackTo>Geri dön: {0}</RimWorldAccess.Research.Detail.BackTo>
+  <RimWorldAccess.Research.Detail.ReturnedToMenu>Araştırma menüsüne geri dönüldü</RimWorldAccess.Research.Detail.ReturnedToMenu>
+
+  <!-- Detail top-level node labels. -->
+  <RimWorldAccess.Research.Detail.DescriptionLabel>Açıklama</RimWorldAccess.Research.Detail.DescriptionLabel>
+  <RimWorldAccess.Research.Detail.StartResearch>Araştırmayı başlat</RimWorldAccess.Research.Detail.StartResearch>
+  <RimWorldAccess.Research.Detail.StopResearch>Araştırmayı durdur</RimWorldAccess.Research.Detail.StopResearch>
+  <RimWorldAccess.Research.Detail.StartResearchHint>Bu araştırmayı başlatmak için Enter'a bas</RimWorldAccess.Research.Detail.StartResearchHint>
+  <RimWorldAccess.Research.Detail.StopResearchHint>Bu araştırmayı durdurmak için Enter'a bas</RimWorldAccess.Research.Detail.StopResearchHint>
+
+  <!-- Category headers inside the detail tree.
+       WithCount: {0} = number of child items; None is used when empty. -->
+  <RimWorldAccess.Research.Detail.PrerequisitesWithCount>Ön koşullar ({0} öğe)</RimWorldAccess.Research.Detail.PrerequisitesWithCount>
+  <RimWorldAccess.Research.Detail.PrerequisitesNone>Ön koşullar (yok)</RimWorldAccess.Research.Detail.PrerequisitesNone>
+  <RimWorldAccess.Research.Detail.UnlocksWithCount>Kilidi açılanlar ({0} öğe)</RimWorldAccess.Research.Detail.UnlocksWithCount>
+  <RimWorldAccess.Research.Detail.UnlocksNone>Kilidi açılanlar (yok)</RimWorldAccess.Research.Detail.UnlocksNone>
+  <RimWorldAccess.Research.Detail.DependentsWithCount>Bağımlı projeler ({0} öğe)</RimWorldAccess.Research.Detail.DependentsWithCount>
+  <RimWorldAccess.Research.Detail.DependentsNone>Bağımlı projeler (yok)</RimWorldAccess.Research.Detail.DependentsNone>
+
+  <!-- Content-source row, mirroring vanilla's DrawContentSource: {0} = mod name,
+       {1} = expansion name (shown only when the mod is a DLC expansion). -->
+  <RimWorldAccess.Research.Detail.ContentSourceWithExpansion>{0}. {1} genişletmesinin parçası.</RimWorldAccess.Research.Detail.ContentSourceWithExpansion>
+
+  <!-- Research row inside a category (prereqs / dependents).
+       {0} = project label, {1} = cost, {2} = status word. -->
+  <RimWorldAccess.Research.Detail.ResearchRow>{0} - maliyet: {1} {2}</RimWorldAccess.Research.Detail.ResearchRow>
+
+  <!-- Hidden prerequisite summary. AllCompleted is used when nothing is
+       missing; IncompleteCount takes {0} = number still incomplete.
+       HiddenOne/Many compose with the status word: {0} = count (omitted
+       in One form), {1} = status word. -->
+  <RimWorldAccess.Research.Detail.HiddenAllCompleted>Tümü tamamlandı</RimWorldAccess.Research.Detail.HiddenAllCompleted>
+  <RimWorldAccess.Research.Detail.HiddenIncompleteCount>{0} tamamlanmamış</RimWorldAccess.Research.Detail.HiddenIncompleteCount>
+  <RimWorldAccess.Research.Detail.HiddenOne>1 gizli ön koşul - {0}</RimWorldAccess.Research.Detail.HiddenOne>
+  <RimWorldAccess.Research.Detail.HiddenMany>{0} gizli ön koşul - {1}</RimWorldAccess.Research.Detail.HiddenMany>
+
+  <!-- Prerequisite bench/facility/techprint/mechanitor/analyze/grav rows.
+       Each row has an inline status tail. {0} = value or main label. -->
+  <RimWorldAccess.Research.Detail.BenchAvailable>Kullanılabilir</RimWorldAccess.Research.Detail.BenchAvailable>
+  <RimWorldAccess.Research.Detail.BenchNotAvailable>Kullanılamıyor</RimWorldAccess.Research.Detail.BenchNotAvailable>
+  <RimWorldAccess.Research.Detail.RequiresBench>Gereken masa: {0} - {1}</RimWorldAccess.Research.Detail.RequiresBench>
+  <RimWorldAccess.Research.Detail.RequiresFacility>Gereken tesis: {0} - {1}</RimWorldAccess.Research.Detail.RequiresFacility>
+
+  <RimWorldAccess.Research.Detail.TechprintsComplete>Tamamlandı</RimWorldAccess.Research.Detail.TechprintsComplete>
+  <RimWorldAccess.Research.Detail.TechprintsProgress>{0}/{1}</RimWorldAccess.Research.Detail.TechprintsProgress>
+  <RimWorldAccess.Research.Detail.RequiresTechprints>Gereken teknobaskılar: {0}</RimWorldAccess.Research.Detail.RequiresTechprints>
+
+  <RimWorldAccess.Research.Detail.MechanitorMet>Karşılandı</RimWorldAccess.Research.Detail.MechanitorMet>
+  <RimWorldAccess.Research.Detail.MechanitorNotMet>Karşılanmadı</RimWorldAccess.Research.Detail.MechanitorNotMet>
+  <RimWorldAccess.Research.Detail.RequiresMechanitor>Mekanitör gerekli - {0}</RimWorldAccess.Research.Detail.RequiresMechanitor>
+
+  <RimWorldAccess.Research.Detail.AnalyzeComplete>Tamamlandı</RimWorldAccess.Research.Detail.AnalyzeComplete>
+  <RimWorldAccess.Research.Detail.AnalyzeProgress>{0}/{1}</RimWorldAccess.Research.Detail.AnalyzeProgress>
+  <RimWorldAccess.Research.Detail.RequiresAnalyzing>Gereken analiz: {0} - {1}</RimWorldAccess.Research.Detail.RequiresAnalyzing>
+  <RimWorldAccess.Research.Detail.AnalyzedThingRow>{0}. {1}.</RimWorldAccess.Research.Detail.AnalyzedThingRow>
+  <RimWorldAccess.Research.Detail.StudiedYes>İncelendi</RimWorldAccess.Research.Detail.StudiedYes>
+  <RimWorldAccess.Research.Detail.StudiedNo>İncelenmedi</RimWorldAccess.Research.Detail.StudiedNo>
+
+  <RimWorldAccess.Research.Detail.GravEngineInspected>İncelendi</RimWorldAccess.Research.Detail.GravEngineInspected>
+  <RimWorldAccess.Research.Detail.GravEngineNotInspected>İncelenmedi</RimWorldAccess.Research.Detail.GravEngineNotInspected>
+  <RimWorldAccess.Research.Detail.RequiresGravEngine>Grav motoru incelemesi gerekli - {0}</RimWorldAccess.Research.Detail.RequiresGravEngine>
+
+  <!-- Unlocked item categories. Nouns used in labels like "(Building)". -->
+  <RimWorldAccess.Research.Detail.UnlockCategoryBuilding>Yapı</RimWorldAccess.Research.Detail.UnlockCategoryBuilding>
+  <RimWorldAccess.Research.Detail.UnlockCategoryPlant>Bitki</RimWorldAccess.Research.Detail.UnlockCategoryPlant>
+  <RimWorldAccess.Research.Detail.UnlockCategoryItem>Öğe</RimWorldAccess.Research.Detail.UnlockCategoryItem>
+  <RimWorldAccess.Research.Detail.UnlockCategoryTerrain>Arazi</RimWorldAccess.Research.Detail.UnlockCategoryTerrain>
+  <RimWorldAccess.Research.Detail.UnlockCategorySurgery>Ameliyat</RimWorldAccess.Research.Detail.UnlockCategorySurgery>
+  <RimWorldAccess.Research.Detail.UnlockCategoryPsychicRitual>Psişik ayin</RimWorldAccess.Research.Detail.UnlockCategoryPsychicRitual>
+  <RimWorldAccess.Research.Detail.UnlockCategoryWorkType>İş türü</RimWorldAccess.Research.Detail.UnlockCategoryWorkType>
+
+  <!-- Unlocks sub-group header, used when a set of unlocked defs also requires other research
+       projects beyond this one (ResearchPrerequisitesUtility.UnlockedDefsGroupedByPrerequisites).
+       {0} = comma-joined "{project} ({status})" list of the other required projects,
+       {1} = number of items in the sub-group. -->
+  <RimWorldAccess.Research.Detail.UnlockedWithHeader>{0} ile açılır ({1} öğe)</RimWorldAccess.Research.Detail.UnlockedWithHeader>
+  <RimWorldAccess.Research.Detail.UnlockedWithProjectStatus>{0} ({1})</RimWorldAccess.Research.Detail.UnlockedWithProjectStatus>
+
+  <!-- No-info-card message for non-target tree sections. -->
+  <RimWorldAccess.Research.Detail.NoInfoCardForSection>Bu bölüm için bilgi kartı yok</RimWorldAccess.Research.Detail.NoInfoCardForSection>
+
+  <!-- Description content builder (StringBuilder in BuildDescriptionContent).
+       Each key is a single line in the composed text block. -->
+  <RimWorldAccess.Research.Desc.ProjectLine>Proje: {0}</RimWorldAccess.Research.Desc.ProjectLine>
+  <RimWorldAccess.Research.Desc.ResearchCost>Araştırma maliyeti: {0}</RimWorldAccess.Research.Desc.ResearchCost>
+  <RimWorldAccess.Research.Desc.KnowledgeCost>Bilgi maliyeti: {0}</RimWorldAccess.Research.Desc.KnowledgeCost>
+  <RimWorldAccess.Research.Desc.KnowledgeCategory>Bilgi kategorisi: {0}</RimWorldAccess.Research.Desc.KnowledgeCategory>
+  <RimWorldAccess.Research.Desc.TechLevel>Teknoloji seviyesi: {0}.</RimWorldAccess.Research.Desc.TechLevel>
+  <RimWorldAccess.Research.Desc.ProgressDetail>İlerleme: {0} / {1}, {2}.</RimWorldAccess.Research.Desc.ProgressDetail>
+  <RimWorldAccess.Research.Desc.StatusInProgress>Şu anda araştırılıyor.</RimWorldAccess.Research.Desc.StatusInProgress>
+  <RimWorldAccess.Research.Desc.StatusCompleted>Durum: Tamamlandı</RimWorldAccess.Research.Desc.StatusCompleted>
+  <RimWorldAccess.Research.Desc.StatusAvailable>Durum: Araştırılabilir</RimWorldAccess.Research.Desc.StatusAvailable>
+  <RimWorldAccess.Research.Desc.StatusLocked>Durum: Kilitli</RimWorldAccess.Research.Desc.StatusLocked>
+  <RimWorldAccess.Research.Desc.RequiredBench>Gereken masa: {0}</RimWorldAccess.Research.Desc.RequiredBench>
+  <RimWorldAccess.Research.Desc.RequiredFacilitiesPrefix>Gereken tesisler: </RimWorldAccess.Research.Desc.RequiredFacilitiesPrefix>
+
+  <!-- Research action announcements (start / stop / blocked). -->
+  <RimWorldAccess.Research.Action.Stopped>Araştırma durduruldu: {0}</RimWorldAccess.Research.Action.Stopped>
+  <RimWorldAccess.Research.Action.AlreadyCompleted>{0} zaten tamamlandı</RimWorldAccess.Research.Action.AlreadyCompleted>
+  <RimWorldAccess.Research.Action.Locked>Araştırma başlatılamıyor: {0}</RimWorldAccess.Research.Action.Locked>
+  <RimWorldAccess.Research.Action.Started>Araştırma başlatıldı: {0}</RimWorldAccess.Research.Action.Started>
+  <RimWorldAccess.Research.Action.StartedReplacing>Araştırma başlatıldı: {0}. {1} durduruldu, %{2} ilerlemede.</RimWorldAccess.Research.Action.StartedReplacing>
+  <RimWorldAccess.Research.Action.DebugFinished>Tamamlandı: {0}.</RimWorldAccess.Research.Action.DebugFinished>
+  <RimWorldAccess.Research.Action.DebugTechprintApplied>Teknobaskı uygulandı. {0} / {1}.</RimWorldAccess.Research.Action.DebugTechprintApplied>
+
+  <!-- Missing prerequisite list fragments.
+       Unknown: spoken when currentProject is null or no parts collected.
+       HiddenOne/Many: {0} = count of hidden missing prereqs (omitted in One form). -->
+  <RimWorldAccess.Research.MissingPrereqs.Unknown>Bilinmiyor</RimWorldAccess.Research.MissingPrereqs.Unknown>
+  <RimWorldAccess.Research.MissingPrereqs.HiddenOne>1 gizli ön koşul</RimWorldAccess.Research.MissingPrereqs.HiddenOne>
+  <RimWorldAccess.Research.MissingPrereqs.HiddenMany>{0} gizli ön koşul</RimWorldAccess.Research.MissingPrereqs.HiddenMany>
+</LanguageData>

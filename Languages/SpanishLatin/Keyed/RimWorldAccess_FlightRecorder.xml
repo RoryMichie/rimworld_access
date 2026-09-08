@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    QA flight recorder (src/Shell/Compat/FlightRecorder.Game.cs). Alt (Option on macOS) plus
+    the vanilla screenshot key starts and stops a recording anywhere; stopping opens
+    Dialog_RecordingSaved with the saved path unless suppressed. The two Settings keys are the
+    suppression toggle's row in both RimWorld Access settings surfaces.
+  -->
+  <RimWorldAccess.FlightRecorder.Started>Grabadora de vuelo iniciada.</RimWorldAccess.FlightRecorder.Started>
+  <RimWorldAccess.FlightRecorder.Stopped>Grabadora de vuelo detenida.</RimWorldAccess.FlightRecorder.Stopped>
+  <RimWorldAccess.FlightRecorder.StoppedWithPath>Grabadora de vuelo detenida. Grabación guardada en {0}.</RimWorldAccess.FlightRecorder.StoppedWithPath>
+  <RimWorldAccess.FlightRecorder.Marker>Marcador {0} registrado.</RimWorldAccess.FlightRecorder.Marker>
+  <RimWorldAccess.FlightRecorder.DialogTitle>Grabación guardada</RimWorldAccess.FlightRecorder.DialogTitle>
+  <RimWorldAccess.FlightRecorder.DialogBody>El registro de la grabadora de vuelo se guardó en: {0}</RimWorldAccess.FlightRecorder.DialogBody>
+  <RimWorldAccess.FlightRecorder.DontShowAgain>No volver a mostrar este diálogo</RimWorldAccess.FlightRecorder.DontShowAgain>
+  <RimWorldAccess.FlightRecorder.OpenFolder>Abrir carpeta</RimWorldAccess.FlightRecorder.OpenFolder>
+  <RimWorldAccess.Core.Settings.ShowRecordingSavedDialog.Label>Mostrar un diálogo cuando se guarde una grabación de vuelo</RimWorldAccess.Core.Settings.ShowRecordingSavedDialog.Label>
+  <RimWorldAccess.Core.Settings.ShowRecordingSavedDialog.Desc>Cuando una sesión de la grabadora de vuelo se detiene ({0}), abre un diálogo con la ubicación del archivo guardado. Si está desactivado, la ubicación se anuncia con voz.</RimWorldAccess.Core.Settings.ShowRecordingSavedDialog.Desc>
+</LanguageData>

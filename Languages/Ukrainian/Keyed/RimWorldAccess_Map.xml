@@ -112,7 +112,6 @@
        UnknownKey is a defensive fallback that should never reach a
        user in normal play.
        ================================================================= -->
-  <RimWorldAccess.Map.Detail.UnknownKey>Невідома клавіша</RimWorldAccess.Map.Detail.UnknownKey>
 
   <!-- =================================================================
        Go-to dialog (GoToState, Ctrl+G).
@@ -165,6 +164,15 @@
   <RimWorldAccess.Map.Pawn.Idle>Без діла</RimWorldAccess.Map.Pawn.Idle>
   <RimWorldAccess.Map.Pawn.Selection>{0} - {1}</RimWorldAccess.Map.Pawn.Selection>
   <RimWorldAccess.Map.Pawn.SelectionWithCover>{0}, {1} - {2}</RimWorldAccess.Map.Pawn.SelectionWithCover>
+  <RimWorldAccess.Map.Pawn.Follow.ActivityAndLocation>{0}, {1}</RimWorldAccess.Map.Pawn.Follow.ActivityAndLocation>
+
+  <!-- Selection announcements shared by pawn cycling and mouse clicks on the map.
+       Thing.Selection: {0} = thing label, {1} = location context.
+       Multiple: {0} = number of selected objects.
+       Cleared: the click emptied a selection that had something in it. -->
+  <RimWorldAccess.Map.Thing.Selection>{0}, {1}</RimWorldAccess.Map.Thing.Selection>
+  <RimWorldAccess.Map.Selection.Multiple>Вибрано: {0}</RimWorldAccess.Map.Selection.Multiple>
+  <RimWorldAccess.Map.Selection.Cleared>Виділення очищено</RimWorldAccess.Map.Selection.Cleared>
 
   <!-- =================================================================
        Performance announcement (PerformanceAnnouncementState, Shift+T).
@@ -242,21 +250,28 @@
 
   <!-- =================================================================
        Jump-mode navigation (MapNavigationState).
-       PageUp/PageDown cycles between modes; Ctrl+arrows jumps in the
+       Shift+Up/Down cycles between modes; Ctrl+arrows jumps in the
        active mode.
        Distance:        {0} = the new preset jump distance (in tiles).
        PresetDistanceMode: {0} = the preset jump distance.
-       Boundary / NoWallFound / AlreadyAdjacent: spoken when the jump
-       cannot proceed.
+       Boundary / Blocked / NoTerrainChange / NoStructureChange: spoken
+       when the jump cannot proceed.
+       Moved:           {0} = tiles crossed, leading a scanning jump's
+       landing announcement.
        ================================================================= -->
   <RimWorldAccess.Map.Jump.Distance>Відстань переходу: {0}</RimWorldAccess.Map.Jump.Distance>
   <RimWorldAccess.Map.Jump.MinimumDistance>Мінімальна відстань</RimWorldAccess.Map.Jump.MinimumDistance>
   <RimWorldAccess.Map.Jump.Mode.PresetDistance>Режим переходу: Задана відстань, {0} клітинок</RimWorldAccess.Map.Jump.Mode.PresetDistance>
-  <RimWorldAccess.Map.Jump.Mode.AdjacentToWall>Режим переходу: Поруч зі стіною</RimWorldAccess.Map.Jump.Mode.AdjacentToWall>
+  <RimWorldAccess.Map.Jump.Mode.Impassable>Режим переходу: Непроходиме</RimWorldAccess.Map.Jump.Mode.Impassable>
+  <RimWorldAccess.Map.Jump.Mode.Terrain>Режим переходу: Місцевість</RimWorldAccess.Map.Jump.Mode.Terrain>
+  <RimWorldAccess.Map.Jump.Mode.Structure>Режим переходу: Споруда</RimWorldAccess.Map.Jump.Mode.Structure>
   <RimWorldAccess.Map.Jump.Mode.Unknown>Режим переходу: Невідомо</RimWorldAccess.Map.Jump.Mode.Unknown>
   <RimWorldAccess.Map.Jump.Boundary>Край мапи</RimWorldAccess.Map.Jump.Boundary>
-  <RimWorldAccess.Map.Jump.AlreadyAdjacent>Вже поруч зі стіною</RimWorldAccess.Map.Jump.AlreadyAdjacent>
-  <RimWorldAccess.Map.Jump.NoWallFound>Стіну не знайдено</RimWorldAccess.Map.Jump.NoWallFound>
+  <RimWorldAccess.Map.Jump.Blocked>Заблоковано</RimWorldAccess.Map.Jump.Blocked>
+  <RimWorldAccess.Map.Jump.NoTerrainChange>У цьому напрямку місцевість не змінюється</RimWorldAccess.Map.Jump.NoTerrainChange>
+  <RimWorldAccess.Map.Jump.NoStructureChange>У цьому напрямку споруди не змінюються</RimWorldAccess.Map.Jump.NoStructureChange>
+  <RimWorldAccess.Map.Jump.Moved.One>1 клітинка</RimWorldAccess.Map.Jump.Moved.One>
+  <RimWorldAccess.Map.Jump.Moved.Many>{0} клітинок</RimWorldAccess.Map.Jump.Moved.Many>
 
   <!-- =================================================================
        Map display name fallback (MapNavigationState.GetMapDisplayName).
@@ -314,12 +329,12 @@
   <RimWorldAccess.Map.Scanner.NoItemSelected>Нічого не вибрано</RimWorldAccess.Map.Scanner.NoItemSelected>
   <RimWorldAccess.Map.Scanner.EmptyCategory>У цій категорії немає об'єктів</RimWorldAccess.Map.Scanner.EmptyCategory>
 
-  <!-- Category / subcategory switch announcements.
-       One/Many split for the item count.
+  <!-- Category / subcategory heading. The first item of the new category
+       speaks right after it as its own utterance, so no count belongs here.
        {0} = localized category or subcategory name (see CatName.* /
-       SubName.* below), {1} = item count. -->
-  <RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>{0} - 1 об'єкт</RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>
-  <RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>{0} - {1} об'єктів</RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>
+       SubName.* below). -->
+  <RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>{0}, 1 об'єкт</RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>
+  <RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>{0}, {1} об'єктів</RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>
 
   <!-- End-key distance/direction readout. -->
   <RimWorldAccess.Map.Scanner.DistanceDirection>{0} клітинок {1}</RimWorldAccess.Map.Scanner.DistanceDirection>
@@ -409,6 +424,7 @@
   <RimWorldAccess.Map.Scanner.SubName.Guests>Гості</RimWorldAccess.Map.Scanner.SubName.Guests>
   <RimWorldAccess.Map.Scanner.SubName.Hostile>Вороги</RimWorldAccess.Map.Scanner.SubName.Hostile>
   <RimWorldAccess.Map.Scanner.SubName.PlayerMechs>Ваші механоїди</RimWorldAccess.Map.Scanner.SubName.PlayerMechs>
+  <RimWorldAccess.Map.Scanner.SubName.Controllable>Підконтрольні підрозділи</RimWorldAccess.Map.Scanner.SubName.Controllable>
   <RimWorldAccess.Map.Scanner.SubName.HostileMechs>Ворожі механоїди</RimWorldAccess.Map.Scanner.SubName.HostileMechs>
   <RimWorldAccess.Map.Scanner.SubName.Pen>Загін</RimWorldAccess.Map.Scanner.SubName.Pen>
   <RimWorldAccess.Map.Scanner.SubName.NonPen>Поза загоном</RimWorldAccess.Map.Scanner.SubName.NonPen>
@@ -519,14 +535,14 @@
   <!-- Cell-info parenthesized suffix: " ({BuildingCellHelper})".
        Inlined onto the thing label, so leading space is intentional. -->
   <RimWorldAccess.Map.Tile.CellSuffix> ({0})</RimWorldAccess.Map.Tile.CellSuffix>
-  <!-- " wall" appended to smoothed-stone walls. -->
-  <RimWorldAccess.Map.Tile.WallSuffix> стіна</RimWorldAccess.Map.Tile.WallSuffix>
+  <!-- Smoothed-stone wall label. {0} = the building's short label. -->
+  <RimWorldAccess.Map.Tile.WallLabel>{0} стіна</RimWorldAccess.Map.Tile.WallLabel>
   <!-- Work-left fragment for unfinished things (e.g., joinery in progress). -->
   <RimWorldAccess.Map.Tile.WorkLeftAppend>залишилось роботи: {0}</RimWorldAccess.Map.Tile.WorkLeftAppend>
   <!-- "Forbidden " prefix on item labels. -->
   <RimWorldAccess.Map.Tile.ForbiddenPrefix>Заборонено {0}</RimWorldAccess.Map.Tile.ForbiddenPrefix>
-  <!-- " floor" appended to smoothed-stone terrain labels. -->
-  <RimWorldAccess.Map.Tile.FloorSuffix> підлога</RimWorldAccess.Map.Tile.FloorSuffix>
+  <!-- Smoothed-stone terrain label. {0} = the terrain's label. -->
+  <RimWorldAccess.Map.Tile.FloorLabel>{0} підлога</RimWorldAccess.Map.Tile.FloorLabel>
   <!-- Roof status. -->
 
   <!-- Stack count appended to item label (e.g. "wood x5"). -->
@@ -651,6 +667,13 @@
   <RimWorldAccess.Map.Scanner.PressHomeForCenter>Натисніть Home для центру</RimWorldAccess.Map.Scanner.PressHomeForCenter>
   <RimWorldAccess.Map.Scanner.JumpedTilesToCenter>Перейдено на {0} клітинок {1} до центру</RimWorldAccess.Map.Scanner.JumpedTilesToCenter>
   <RimWorldAccess.Map.Scanner.JumpedToCenter>Перейдено до центру</RimWorldAccess.Map.Scanner.JumpedToCenter>
+
+  <!-- Mouse drag readouts. PaintExtent: {0} = width, {1} = height, {2} = the
+       number of cells the designator will act on (the same three numbers
+       vanilla paints over the drag box). SelectExtent: {0} = width,
+       {1} = height of the drag-select box, in cells. -->
+  <RimWorldAccess.Map.Drag.PaintExtent>{0} на {1}, {2} клітинок</RimWorldAccess.Map.Drag.PaintExtent>
+  <RimWorldAccess.Map.Drag.SelectExtent>{0} на {1}</RimWorldAccess.Map.Drag.SelectExtent>
   <RimWorldAccess.Map.Scanner.SubName.Polluted>Забруднені</RimWorldAccess.Map.Scanner.SubName.Polluted>
   <RimWorldAccess.Map.Scanner.SubName.ThickRoof>Навислі гори</RimWorldAccess.Map.Scanner.SubName.ThickRoof>
   <RimWorldAccess.Map.Scanner.SubName.ThinRoof>Тонка порода</RimWorldAccess.Map.Scanner.SubName.ThinRoof>

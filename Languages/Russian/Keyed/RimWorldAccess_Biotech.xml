@@ -40,26 +40,6 @@
   <RimWorldAccess.Biotech.Color.SkinBrown>коричневый</RimWorldAccess.Biotech.Color.SkinBrown>
   <RimWorldAccess.Biotech.Color.SkinDarkBrown>тёмно-коричневый</RimWorldAccess.Biotech.Color.SkinDarkBrown>
 
-  <!-- Grayscale / brightness descriptions (hair, non-skin). -->
-  <RimWorldAccess.Biotech.Color.VeryDark>очень тёмный</RimWorldAccess.Biotech.Color.VeryDark>
-  <RimWorldAccess.Biotech.Color.Dark>тёмный</RimWorldAccess.Biotech.Color.Dark>
-  <RimWorldAccess.Biotech.Color.MediumDark>средне-тёмный</RimWorldAccess.Biotech.Color.MediumDark>
-  <RimWorldAccess.Biotech.Color.Medium>средний</RimWorldAccess.Biotech.Color.Medium>
-  <RimWorldAccess.Biotech.Color.Light>светлый</RimWorldAccess.Biotech.Color.Light>
-  <RimWorldAccess.Biotech.Color.VeryLight>очень светлый</RimWorldAccess.Biotech.Color.VeryLight>
-
-  <!-- Hue-based color descriptions. -->
-  <RimWorldAccess.Biotech.Color.Orange>оранжевый</RimWorldAccess.Biotech.Color.Orange>
-  <RimWorldAccess.Biotech.Color.Brown>коричневый</RimWorldAccess.Biotech.Color.Brown>
-  <RimWorldAccess.Biotech.Color.Pink>розовый</RimWorldAccess.Biotech.Color.Pink>
-  <RimWorldAccess.Biotech.Color.Red>красный</RimWorldAccess.Biotech.Color.Red>
-  <RimWorldAccess.Biotech.Color.LightGreen>светло-зелёный</RimWorldAccess.Biotech.Color.LightGreen>
-  <RimWorldAccess.Biotech.Color.Green>зелёный</RimWorldAccess.Biotech.Color.Green>
-  <RimWorldAccess.Biotech.Color.LightBlue>голубой</RimWorldAccess.Biotech.Color.LightBlue>
-  <RimWorldAccess.Biotech.Color.Blue>синий</RimWorldAccess.Biotech.Color.Blue>
-  <RimWorldAccess.Biotech.Color.Blonde>светло-русый</RimWorldAccess.Biotech.Color.Blonde>
-  <RimWorldAccess.Biotech.Color.Gray>серый</RimWorldAccess.Biotech.Color.Gray>
-
   <!-- Gene tree root labels.
        {0} = xenotype label, {1} = gene count (with unit suffix). -->
   <RimWorldAccess.Biotech.Gene.RootBabyGenes>Гены ребёнка</RimWorldAccess.Biotech.Gene.RootBabyGenes>
@@ -80,7 +60,6 @@
   <RimWorldAccess.Biotech.Gene.CountSuffixMany>({0_numCase ? ген : гена : генов})</RimWorldAccess.Biotech.Gene.CountSuffixMany>
 
   <!-- Gene node and status markers. -->
-  <RimWorldAccess.Biotech.Gene.StatusOverridden>[перекрыт]</RimWorldAccess.Biotech.Gene.StatusOverridden>
   <RimWorldAccess.Biotech.Gene.StatusInactive>[неактивен]</RimWorldAccess.Biotech.Gene.StatusInactive>
   <RimWorldAccess.Biotech.Gene.CosmeticNoEffects>Косметический ген без игровых эффектов</RimWorldAccess.Biotech.Gene.CosmeticNoEffects>
   <RimWorldAccess.Biotech.Gene.NoDetails>Дополнительные сведения отсутствуют</RimWorldAccess.Biotech.Gene.NoDetails>
@@ -117,7 +96,6 @@
   <RimWorldAccess.Biotech.GrowthMoment.TabPassions>Интересы</RimWorldAccess.Biotech.GrowthMoment.TabPassions>
   <RimWorldAccess.Biotech.GrowthMoment.TabTraits>Черты характера</RimWorldAccess.Biotech.GrowthMoment.TabTraits>
   <RimWorldAccess.Biotech.GrowthMoment.TabUnknown>Неизвестно</RimWorldAccess.Biotech.GrowthMoment.TabUnknown>
-  <RimWorldAccess.Biotech.GrowthMoment.OnlyOneTab>Доступна только одна вкладка</RimWorldAccess.Biotech.GrowthMoment.OnlyOneTab>
 
   <!-- Tab announcements. {0} = count for passions, {1} = total. -->
   <RimWorldAccess.Biotech.GrowthMoment.ChooseOne>Выберите 1</RimWorldAccess.Biotech.GrowthMoment.ChooseOne>
@@ -125,7 +103,6 @@
 
   <!-- Info tab. {0} = growth tier number, {1} = old name, {2} = new name,
        {3} = passions list, {4} = trait label. -->
-  <RimWorldAccess.Biotech.GrowthMoment.NoInformation>Сведения отсутствуют</RimWorldAccess.Biotech.GrowthMoment.NoInformation>
   <RimWorldAccess.Biotech.GrowthMoment.GrowthTier>Уровень развития: {0}</RimWorldAccess.Biotech.GrowthMoment.GrowthTier>
   <RimWorldAccess.Biotech.GrowthMoment.NicknameChanged>Прозвище изменено: {0} на {1}</RimWorldAccess.Biotech.GrowthMoment.NicknameChanged>
   <RimWorldAccess.Biotech.GrowthMoment.ChosenPassions>Выбранные интересы: {0}</RimWorldAccess.Biotech.GrowthMoment.ChosenPassions>
@@ -133,11 +110,16 @@
   <RimWorldAccess.Biotech.GrowthMoment.NoTraitChosen>Без черты</RimWorldAccess.Biotech.GrowthMoment.NoTraitChosen>
 
   <!-- Passion tab item/action announcements. {0} = skill label,
-       {1} = current passion, {2} = new passion, {3} = count, {4} = total. -->
-  <RimWorldAccess.Biotech.GrowthMoment.NoPassions>Нет доступных интересов</RimWorldAccess.Biotech.GrowthMoment.NoPassions>
-  <RimWorldAccess.Biotech.GrowthMoment.PassionTransition>{0}, {1} на {2}. {3}</RimWorldAccess.Biotech.GrowthMoment.PassionTransition>
-  <RimWorldAccess.Biotech.GrowthMoment.PassionSelectedStatus>Выбрано</RimWorldAccess.Biotech.GrowthMoment.PassionSelectedStatus>
-  <RimWorldAccess.Biotech.GrowthMoment.PassionNotSelectedStatus>Не выбрано</RimWorldAccess.Biotech.GrowthMoment.PassionNotSelectedStatus>
+       {1} = current passion, {2} = new passion, {3} = count, {4} = total.
+       The focus announcement itself (label, role, selected state, transition
+       detail, position) now renders through AnnouncementComposer.ComposeFocus
+       (element-uniformity campaign, task 8 packet B); see
+       GrowthMomentState.AnnouncePassionItem/PassionTransitionDetail below;
+       PassionSelectedStatus/NotSelectedStatus/PassionTransition are retired
+       (superseded by the shared shell vocabulary's own selected/not-selected
+       words and the composer's Label/Extras fields). -->
+  <!-- {0} = current passion, {1} = new passion. -->
+  <RimWorldAccess.Biotech.GrowthMoment.PassionTransitionDetail>{0} на {1}</RimWorldAccess.Biotech.GrowthMoment.PassionTransitionDetail>
   <RimWorldAccess.Biotech.GrowthMoment.PassionSelectedFeedback>{0}: выбрано. Выбрано интересов: {1} из {2}</RimWorldAccess.Biotech.GrowthMoment.PassionSelectedFeedback>
   <RimWorldAccess.Biotech.GrowthMoment.PassionDeselectedFeedback>{0}: снят выбор. Выбрано интересов: {1} из {2}</RimWorldAccess.Biotech.GrowthMoment.PassionDeselectedFeedback>
   <RimWorldAccess.Biotech.GrowthMoment.PassionLimitReached>Уже выбрано {0} из {0} интересов. Сначала снимите выбор с одного</RimWorldAccess.Biotech.GrowthMoment.PassionLimitReached>
@@ -147,10 +129,13 @@
   <RimWorldAccess.Biotech.GrowthMoment.PassionMinor>Средний</RimWorldAccess.Biotech.GrowthMoment.PassionMinor>
   <RimWorldAccess.Biotech.GrowthMoment.PassionMajor>Горячий</RimWorldAccess.Biotech.GrowthMoment.PassionMajor>
 
-  <!-- Trait tab announcements. -->
-  <RimWorldAccess.Biotech.GrowthMoment.NoTraits>Нет доступных черт</RimWorldAccess.Biotech.GrowthMoment.NoTraits>
-  <RimWorldAccess.Biotech.GrowthMoment.TraitWithDesc>{0}. {1}. {2}</RimWorldAccess.Biotech.GrowthMoment.TraitWithDesc>
-  <RimWorldAccess.Biotech.GrowthMoment.TraitWithoutDesc>{0}. {1}</RimWorldAccess.Biotech.GrowthMoment.TraitWithoutDesc>
+  <!-- Trait tab announcements. The focus announcement (label, RadioButton role,
+       selected state, description) now renders through
+       AnnouncementComposer.ComposeFocus (element-uniformity campaign, task 8
+       packet B); TraitWithDesc/TraitWithoutDesc are retired (superseded by
+       the composer's own Label/Extras fields and the shared shell vocabulary's
+       selected/not-selected words); this also covers the Aspirations tab's
+       identically-shaped rows. -->
   <RimWorldAccess.Biotech.GrowthMoment.TraitSelected>{0}: выбрано</RimWorldAccess.Biotech.GrowthMoment.TraitSelected>
   <RimWorldAccess.Biotech.GrowthMoment.NoTraitSelected>Черта не выбрана</RimWorldAccess.Biotech.GrowthMoment.NoTraitSelected>
 
@@ -188,9 +173,12 @@
   <!-- Recharge range editor. {0} = min%, {1} = max%, {2} = current label. -->
   <RimWorldAccess.Biotech.Mech.RangeSaved>Диапазон подзарядки сохранён: от {0} до {1}</RimWorldAccess.Biotech.Mech.RangeSaved>
   <RimWorldAccess.Biotech.Mech.RangeCancelled>Изменение диапазона подзарядки отменено</RimWorldAccess.Biotech.Mech.RangeCancelled>
+  <RimWorldAccess.Biotech.Mech.RangeReset>Восстановлено значение по умолчанию: от {0} до {1}</RimWorldAccess.Biotech.Mech.RangeReset>
   <RimWorldAccess.Biotech.Mech.RangeMinimum>Минимум</RimWorldAccess.Biotech.Mech.RangeMinimum>
   <RimWorldAccess.Biotech.Mech.RangeMaximum>Максимум</RimWorldAccess.Biotech.Mech.RangeMaximum>
-  <RimWorldAccess.Biotech.Mech.RangeSelection>{0}: {1}. Диапазон: от {2} до {3}</RimWorldAccess.Biotech.Mech.RangeSelection>
+  <!-- RangeSelection retired (element-uniformity campaign, packet D): the focused bound is
+       now composed by AnnouncementComposer from the bound name, its value, its 1-of-2
+       position and the working range, so the hand-built sentence has no caller left. -->
 
   <!-- Select-all and reassignment. -->
   <RimWorldAccess.Biotech.Mech.NoMechsInGroup>В этой группе нет механоидов</RimWorldAccess.Biotech.Mech.NoMechsInGroup>
@@ -199,7 +187,8 @@
   <RimWorldAccess.Biotech.Mech.NoOtherGroups>Нет других доступных групп управления</RimWorldAccess.Biotech.Mech.NoOtherGroups>
   <RimWorldAccess.Biotech.Mech.AssignedToGroup>{0}: назначено в {1} {2}</RimWorldAccess.Biotech.Mech.AssignedToGroup>
 
-  <!-- Mech labels and uncontrolled marker. -->
+  <!-- Mech labels and uncontrolled marker. {0} = energy percent, {1} = the energy need's label. -->
+  <RimWorldAccess.Biotech.Mech.MechEnergy>{0} {1}</RimWorldAccess.Biotech.Mech.MechEnergy>
   <RimWorldAccess.Biotech.Mech.Uncontrolled>без управления</RimWorldAccess.Biotech.Mech.Uncontrolled>
 
   <!-- Gizmo label fallback and merged-group suffixes. -->
@@ -214,13 +203,9 @@
        ============================================================ -->
 
   <!-- Tab announcements. {0} = label, {1} = count. -->
-  <RimWorldAccess.Biotech.Xenogerm.Controls>Управление.</RimWorldAccess.Biotech.Xenogerm.Controls>
-  <RimWorldAccess.Biotech.Xenogerm.TabSummaryOne>{0}, 1 элемент.</RimWorldAccess.Biotech.Xenogerm.TabSummaryOne>
-  <RimWorldAccess.Biotech.Xenogerm.TabSummaryMany>{0}, {1_numCase ? элемент : элемента : элементов}.</RimWorldAccess.Biotech.Xenogerm.TabSummaryMany>
 
   <!-- Opening announcement. {0} = header, {1} = complexity label,
        {2} = max complexity value, {3} = tab announcement. -->
-  <RimWorldAccess.Biotech.Xenogerm.OpeningSummary>{0}. {1}, предел {2}. {3}</RimWorldAccess.Biotech.Xenogerm.OpeningSummary>
 
   <!-- Rename feedback. {0} = new name. -->
   <RimWorldAccess.Biotech.Xenogerm.RenameCancelled>Переименование отменено.</RimWorldAccess.Biotech.Xenogerm.RenameCancelled>
@@ -247,8 +232,6 @@
   <RimWorldAccess.Biotech.Xenogerm.BiostatsNoMax>{0} {1}</RimWorldAccess.Biotech.Xenogerm.BiostatsNoMax>
 
   <!-- Name display fields. {0} = label, {1} = value. -->
-  <RimWorldAccess.Biotech.Xenogerm.NameWithValue>{0}: {1}</RimWorldAccess.Biotech.Xenogerm.NameWithValue>
-  <RimWorldAccess.Biotech.Xenogerm.NameNone>{0}: ({1})</RimWorldAccess.Biotech.Xenogerm.NameNone>
 
   <!-- ============================================================
        Xenotype editor (XenotypeEditorState.cs).
@@ -256,13 +239,8 @@
        ============================================================ -->
 
   <!-- Tab announcements. {0} = label, {1} = count. -->
-  <RimWorldAccess.Biotech.XenotypeEditor.TabSummaryOne>{0}, 1 элемент.</RimWorldAccess.Biotech.XenotypeEditor.TabSummaryOne>
-  <RimWorldAccess.Biotech.XenotypeEditor.TabSummaryMany>{0}, {1_numCase ? элемент : элемента : элементов}.</RimWorldAccess.Biotech.XenotypeEditor.TabSummaryMany>
-  <RimWorldAccess.Biotech.XenotypeEditor.TabSummaryCategoryOne>{0}, 1 категория.</RimWorldAccess.Biotech.XenotypeEditor.TabSummaryCategoryOne>
-  <RimWorldAccess.Biotech.XenotypeEditor.TabSummaryCategoryMany>{0}, {1_numCase ? категория : категории : категорий}.</RimWorldAccess.Biotech.XenotypeEditor.TabSummaryCategoryMany>
 
   <!-- Opening announcement. {0} = header, {1} = tab summary. -->
-  <RimWorldAccess.Biotech.XenotypeEditor.OpeningSummary>{0}. {1}</RimWorldAccess.Biotech.XenotypeEditor.OpeningSummary>
 
   <!-- Gene selection / library / rename feedback. -->
   <RimWorldAccess.Biotech.XenotypeEditor.GeneAdded>{0}: добавлено. {1}</RimWorldAccess.Biotech.XenotypeEditor.GeneAdded>
@@ -272,7 +250,6 @@
   <RimWorldAccess.Biotech.XenotypeEditor.Renamed>Переименовано: {0}. Имя зафиксировано.</RimWorldAccess.Biotech.XenotypeEditor.Renamed>
 
   <!-- Save/apply validation. -->
-  <RimWorldAccess.Biotech.XenotypeEditor.TooManySaved>Сохранено слишком много пользовательских ксенотипов. Сначала удалите часть.</RimWorldAccess.Biotech.XenotypeEditor.TooManySaved>
   <RimWorldAccess.Biotech.XenotypeEditor.NoCustom>Нет сохранённых пользовательских ксенотипов.</RimWorldAccess.Biotech.XenotypeEditor.NoCustom>
   <RimWorldAccess.Biotech.XenotypeEditor.FailedToLoad>Не удалось загрузить ксенотип.</RimWorldAccess.Biotech.XenotypeEditor.FailedToLoad>
   <RimWorldAccess.Biotech.XenotypeEditor.NoPremade>Нет доступных готовых ксенотипов.</RimWorldAccess.Biotech.XenotypeEditor.NoPremade>
@@ -283,7 +260,11 @@
 
   <!-- Controls formatting. {0} = label, {1} = value. -->
   <RimWorldAccess.Biotech.XenotypeEditor.NameWithValue>{0}: {1}</RimWorldAccess.Biotech.XenotypeEditor.NameWithValue>
-  <RimWorldAccess.Biotech.XenotypeEditor.NameNone>{0}: ({1})</RimWorldAccess.Biotech.XenotypeEditor.NameNone>
+
+  <!-- Gene conflict status, mirroring Dialog_CreateXenotype's own gene tooltip.
+       {0} = the gene that applies / the genes chosen between. -->
+  <RimWorldAccess.Biotech.XenotypeEditor.GeneSuppressedBy>подавлено геном {0}</RimWorldAccess.Biotech.XenotypeEditor.GeneSuppressedBy>
+  <RimWorldAccess.Biotech.XenotypeEditor.GeneRandomlyChosen>один из этих генов будет активен случайным образом: {0}</RimWorldAccess.Biotech.XenotypeEditor.GeneRandomlyChosen>
   <RimWorldAccess.Biotech.XenotypeEditor.YesValue>Да</RimWorldAccess.Biotech.XenotypeEditor.YesValue>
   <RimWorldAccess.Biotech.XenotypeEditor.NoValue>Нет</RimWorldAccess.Biotech.XenotypeEditor.NoValue>
 
@@ -292,6 +273,10 @@
   <RimWorldAccess.Biotech.XenotypeEditor.AchiteRemovedMany>. Удалено {0_numCase ? архитный ген : архитных гена : архитных генов}.</RimWorldAccess.Biotech.XenotypeEditor.AchiteRemovedMany>
 
   <!-- Controls tab fallback announcement. -->
-  <RimWorldAccess.Biotech.XenotypeEditor.ControlsLabel>Управление.</RimWorldAccess.Biotech.XenotypeEditor.ControlsLabel>
 
+  <!-- Dialog_SelectXenotypeIcon (XenotypeIconScope.Game.cs, task 6 slice B). Everything
+       else this screen speaks reuses vanilla's own keys (SelectIcon, Accept, CloseButton). -->
+  <RimWorldAccess.Biotech.XenotypeIcon.IconsRegion>Значки</RimWorldAccess.Biotech.XenotypeIcon.IconsRegion>
+
+  <RimWorldAccess.Biotech.GeneDialogs.NameSuggestions>Варианты имён</RimWorldAccess.Biotech.GeneDialogs.NameSuggestions>
 </LanguageData>

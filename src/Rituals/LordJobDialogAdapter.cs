@@ -21,11 +21,6 @@ namespace RimWorldAccess
 
         IReadOnlyList<string> ComputeWarnings();
 
-        IReadOnlyList<LordJobRoleView> BuildRoleList();
-        IReadOnlyList<LordJobPawnView> BuildPawnList(LordJobRoleView role);
-
-        AssignmentResult ToggleAssignment(LordJobRoleView role, LordJobPawnView pawn, out string failureReason);
-
         IReadOnlyList<QualityFactor> GetQualityFactors(out FloatRange qualityRange);
         IReadOnlyList<LordJobQualityRow> BuildExtraQualityRows();
         IReadOnlyList<LordJobOutcomeRow> BuildOutcomeChances(FloatRange qualityRange);
@@ -35,35 +30,7 @@ namespace RimWorldAccess
 
         TargetInfo Target { get; }
 
-        void Notify_AssignmentsChanged();
         bool TryStart(out IReadOnlyList<string> blockingReasons);
-    }
-
-    public sealed class LordJobRoleView
-    {
-        public enum Kind { Role, Spectators, ExtraToggle }
-
-        public Kind Type;
-        public string Label;
-        public int AssignedCount;
-        public int MaxCount;
-        public int MinCount;
-        public bool IsRequired;
-        public bool IsLocked;
-        public string ExtraInfoLine;
-        public string Tooltip;
-        public object AdapterTag;
-    }
-
-    public sealed class LordJobPawnView
-    {
-        public Pawn Pawn;
-        public bool IsAssigned;
-        public bool IsForced;
-        public string SuitabilityLine;
-        public string DisabledReason;
-        public string Tooltip;
-        public object AdapterTag;
     }
 
     public sealed class LordJobExtraToggle
@@ -83,6 +50,13 @@ namespace RimWorldAccess
         public bool IsPositive = true;
         public bool IsUncertain;
         public bool IsInformational;
+        /// <summary>
+        /// True when <see cref="Change"/> already reads as self-explanatory (e.g. vanilla's
+        /// "QualityOutOf" range text or our own parenthetical tag) so RitualStatFormatter
+        /// should not also append a Bonus/Penalty/Not-met word. Set by the row's builder,
+        /// which knows where Change came from — never inferred by matching English text.
+        /// </summary>
+        public bool HasCountContext;
         public string Tooltip;
         public string Explanation;
     }
@@ -92,15 +66,6 @@ namespace RimWorldAccess
         public string Label;
         public float Percentage;
         public string Tooltip;
-    }
-
-    public enum AssignmentResult
-    {
-        Assigned,
-        Unassigned,
-        BlockedForced,
-        BlockedDisabled,
-        Failed,
     }
 
     public abstract class LordJobDialogAdapterBase : ILordJobDialogAdapter
@@ -212,10 +177,6 @@ namespace RimWorldAccess
 
         protected virtual void AppendDialogSpecificWarnings(List<string> warnings) { }
 
-        public abstract IReadOnlyList<LordJobRoleView> BuildRoleList();
-        public abstract IReadOnlyList<LordJobPawnView> BuildPawnList(LordJobRoleView role);
-        public abstract AssignmentResult ToggleAssignment(LordJobRoleView role, LordJobPawnView pawn, out string failureReason);
-
         public virtual IReadOnlyList<QualityFactor> GetQualityFactors(out FloatRange qualityRange)
         {
             qualityRange = new FloatRange(0f, 0f);
@@ -269,8 +230,6 @@ namespace RimWorldAccess
         }
 
         public virtual bool ApplyExtraToggle(LordJobExtraToggle toggle) => false;
-
-        public virtual void Notify_AssignmentsChanged() { }
 
         public virtual bool TryStart(out IReadOnlyList<string> blockingReasons)
         {

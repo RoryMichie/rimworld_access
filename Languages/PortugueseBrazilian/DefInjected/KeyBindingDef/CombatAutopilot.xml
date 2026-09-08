@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RWA_GizmoEngage.label>botão: atacar alvo</RWA_GizmoEngage.label>
+  <RWA_GizmoSeekDestroy.label>botão: procurar e destruir</RWA_GizmoSeekDestroy.label>
+  <RWA_GizmoCombatPolicy.label>botão: política de combate</RWA_GizmoCombatPolicy.label>
+  <RWA_GizmoPause.label>botão: pausar automação</RWA_GizmoPause.label>
+  <RWA_GizmoHuntAnimals.label>botão: caçar animais</RWA_GizmoHuntAnimals.label>
+  <RWA_GizmoAutocastAll.label>botão: autolançar tudo</RWA_GizmoAutocastAll.label>
+  <RWA_GizmoPatrol.label>botão: patrulha</RWA_GizmoPatrol.label>
+</LanguageData>

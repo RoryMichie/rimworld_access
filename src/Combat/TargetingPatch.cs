@@ -10,28 +10,20 @@ using System.Linq;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patch for Targeter.ProcessInputEvents to add keyboard support for target selection.
-    /// Allows using Enter key at map cursor position to select targets instead of requiring mouse click.
+    /// Keyboard target selection: Enter at the map cursor stands in for the mouse click
+    /// Targeter.ProcessInputEvents would otherwise require.
     /// </summary>
     [HarmonyPatch(typeof(Targeter))]
     [HarmonyPatch("ProcessInputEvents")]
     public static class TargetingPatch
     {
-        // Targeting context for Command_Target with known range (e.g., animal attack target).
-        // Set by GizmoNavigationState when executing a Command_Target with known range constraints.
+        // Range constraints GizmoNavigationState knows for a Command_Target (animal attack).
         private static bool hasTargetingContext = false;
         private static IntVec3 contextCasterPos = IntVec3.Invalid;
         private static float contextRange = 0f;
 
-        /// <summary>
-        /// Gets whether a targeting context with range info is active.
-        /// </summary>
         public static bool HasTargetingContext => hasTargetingContext;
 
-        /// <summary>
-        /// Sets targeting context for a Command_Target with known range constraints.
-        /// Called by GizmoNavigationState when executing animal attack commands.
-        /// </summary>
         public static void SetTargetingContext(IntVec3 casterPos, float range)
         {
             hasTargetingContext = true;
@@ -39,9 +31,6 @@ namespace RimWorldAccess
             contextRange = range;
         }
 
-        /// <summary>
-        /// Clears the targeting context. Called when targeting stops.
-        /// </summary>
         public static void ClearTargetingContext()
         {
             hasTargetingContext = false;
@@ -50,8 +39,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Announces range info for Command_Target targeting with context.
-        /// Called from UnifiedKeyboardPatch when user presses R during targeting.
+        /// Announces the cursor's distance against the active targeting context's range.
         /// </summary>
         public static void HandleRangeCheck()
         {
@@ -75,525 +63,448 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Prefix patch that intercepts Enter key during targeting mode and converts it to target selection.
+        /// Converts an Enter press during targeting into a target selection at the cursor.
         /// </summary>
         [HarmonyPrefix]
         [HarmonyPriority(Priority.High)]
         public static bool Prefix(Targeter __instance)
         {
-            // Only process if targeting is active
             if (!__instance.IsTargeting)
                 return true;
 
-            // Only process keyboard events
-            if (Event.current.type != EventType.KeyDown)
-                return true;
-
-            KeyCode key = Event.current.keyCode;
-
-            // Check for Enter key
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
+            IntVec3 cursorPosition;
+            switch (KeyboardTargeterConfirm.TryResolveCell(out cursorPosition))
             {
-                // Make sure map navigation is initialized
-                if (!MapNavigationState.IsInitialized)
+                case KeyboardTargeterConfirm.Outcome.NotOurs:
                     return true;
+                case KeyboardTargeterConfirm.Outcome.InvalidPosition:
+                    return false;
+            }
 
-                // Get the current cursor position
-                IntVec3 cursorPosition = MapNavigationState.CurrentCursorPosition;
+            var targetingSourceField = AccessTools.Field(typeof(Targeter), "targetingSource");
+            var targetingSource = targetingSourceField?.GetValue(__instance) as ITargetingSource;
 
-                // Validate cursor position
-                if (!cursorPosition.IsValid || !cursorPosition.InBounds(Find.CurrentMap))
+            if (targetingSource != null)
+            {
+                // Verb-based targeting (Command_VerbTarget). thingsOnly is required: GenUI.TargetsAt
+                // falls back to UI.MouseCell() rather than the clickPos passed in, so cell targeting
+                // is handled below against the virtual cursor instead.
+                Vector3 clickPos = cursorPosition.ToVector3Shifted();
+                var targets = GenUI.TargetsAt(clickPos, targetingSource.targetParams, thingsOnly: true, targetingSource);
+                LocalTargetInfo target = targets.FirstOrFallback(LocalTargetInfo.Invalid);
+
+                if (!target.IsValid)
                 {
-                    TolkHelper.Speak("RimWorldAccess.Combat.Target.InvalidPosition".Loc());
+                    target = new LocalTargetInfo(cursorPosition);
+                }
+
+                if (JumpTargetingState.IsActive)
+                {
+                    string jumpError = JumpTargetingState.ValidateAndGetError(cursorPosition);
+                    if (jumpError != null)
+                    {
+                        TolkHelper.SpeakData(jumpError, SpeechPriority.High);
+                        Event.current.Use();
+                        return false;
+                    }
+                }
+
+                // No predictive ability pre-checks: ValidateTarget below is trusted, and its
+                // silent rejections are covered by the fallback branch. Guessing which
+                // verbs/comps/mods speak is not sound.
+
+                // Vanilla's Verb.OrderForceTarget only rejects below-min-range when the target
+                // is adjacent, so a non-adjacent below-min target is accepted and then stalls
+                // silently at the aim stance. Announce it and keep targeting open for a retry.
+                if (GenericTargetingState.IsActive)
+                {
+                    string genericRangeError = GenericTargetingState.ValidateRangeError(cursorPosition);
+                    if (genericRangeError != null)
+                    {
+                        TolkHelper.SpeakData(genericRangeError, SpeechPriority.High);
+                        Event.current.Use();
+                        return false;
+                    }
+                }
+
+                // Cell-fallback rejection: block "no thing at cursor" only when the params
+                // genuinely refuse locations. Verbs that accept cells (turret packs, mortars,
+                // ranged mech abilities) must stay able to fire on empty tiles.
+                if (!target.HasThing && !TargetingParametersDescriber.AcceptsLocations(targetingSource.targetParams))
+                {
+                    string typeDesc = TargetingParametersDescriber.Describe(targetingSource.targetParams);
+                    string msg = string.IsNullOrEmpty(typeDesc)
+                        ? (string)"RimWorldAccess.Abilities.Item.NoTargetAtCursor".Translate()
+                        : (string)"RimWorldAccess.Combat.Target.NoValidAtCursorWithDesc".Translate(typeDesc);
+                    TolkHelper.SpeakData(msg, SpeechPriority.High);
                     Event.current.Use();
                     return false;
                 }
 
-                // Check if this is verb-based targeting (Command_VerbTarget) or action-based (Command_Target)
-                var targetingSourceField = AccessTools.Field(typeof(Targeter), "targetingSource");
-                var targetingSource = targetingSourceField?.GetValue(__instance) as ITargetingSource;
-
-                if (targetingSource != null)
+                // targetingParameters.validator is consulted by GenUI.TargetsAt only for Thing
+                // targets, so a cell-only fallback target bypasses the permit's range check.
+                if (targetingSource is RoyalTitlePermitWorker_Targeted permitWorker
+                    && permitWorker.def.royalAid != null)
                 {
-                    // VERB-BASED TARGETING (Command_VerbTarget - weapon attacks, abilities)
-                    // Get the best target at the cursor position (prioritized: pawns > things > cell)
-                    // IMPORTANT: Use thingsOnly: true because GenUI.TargetsAt has a bug where it falls back
-                    // to UI.MouseCell() (actual mouse position) instead of the clickPos we pass in.
-                    // We handle cell targeting explicitly below using our virtual cursor position.
-                    Vector3 clickPos = cursorPosition.ToVector3Shifted();
-                    var targets = GenUI.TargetsAt(clickPos, targetingSource.targetParams, thingsOnly: true, targetingSource);
-                    LocalTargetInfo target = targets.FirstOrFallback(LocalTargetInfo.Invalid);
+                    float targetingRange = permitWorker.def.royalAid.targetingRange;
+                    float weatherCap = Find.CurrentMap.weatherManager.CurWeatherMaxRangeCap;
+                    float rangeClamped = Mathf.Min(targetingRange, weatherCap);
 
-                    // If no specific thing found, use the cell itself (for mortars and other cell-targeting weapons)
-                    // This ensures we use OUR cursor position, not the actual mouse position
-                    if (!target.IsValid)
+                    if (rangeClamped > 0f)
                     {
-                        target = new LocalTargetInfo(cursorPosition);
-                    }
+                        IntVec3 casterPos = permitWorker.CasterPawn.Position;
+                        float distance = cursorPosition.DistanceTo(casterPos);
 
-                    // For jump targeting, provide specific feedback before standard validation
-                    if (JumpTargetingState.IsActive)
-                    {
-                        string jumpError = JumpTargetingState.ValidateAndGetError(cursorPosition);
-                        if (jumpError != null)
+                        if (distance > rangeClamped)
                         {
-                            TolkHelper.SpeakData(jumpError, SpeechPriority.High);
+                            TolkHelper.Speak(
+                                "RimWorldAccess.Combat.Target.OutOfRange".Loc(distance.ToString("F0"), rangeClamped.ToString("F0")),
+                                SpeechPriority.High);
                             Event.current.Use();
                             return false;
                         }
                     }
+                }
 
-                    // No predictive ability pre-checks here. We trust each ITargetingSource's
-                    // own ValidateTarget below; if it stays silent (no Messages.Message
-                    // emitted), the catch-all silent-rejection branch below synthesizes a
-                    // fallback. This avoids guessing which verbs/comps/mods speak.
-
-                    // Generic verb-range pre-check (mech weapons, turret-pack apparel, modded
-                    // sources routed through GenericTargetingState). Vanilla's Verb.OrderForceTarget
-                    // only rejects below-min-range when the target is adjacent, so non-adjacent
-                    // below-min targets are accepted and then silently stall at the aim stance
-                    // (e.g. Diabolus Hellsphere cannon with minRange 5.9 targeting a 3-tile cell).
-                    // Sighted players see the ring and avoid it — announce it to screen readers
-                    // and keep targeting open so the user can adjust and retry.
-                    if (GenericTargetingState.IsActive)
+                // Sampling the message-emission counter around ValidateTarget separates a
+                // rejection the source already announced (NotificationAccessibilityPatch spoke
+                // it; announcing again would double it) from a silent one needing a fallback.
+                long messagesBefore = NotificationAccessibilityPatch.MessageEmissionCount;
+                long messageAttemptsBefore = NotificationAccessibilityPatch.MessageAttemptCount;
+                if (!targetingSource.ValidateTarget(target, showMessages: true))
+                {
+                    bool gameSpoke = NotificationAccessibilityPatch.MessageEmissionCount != messagesBefore;
+                    if (!gameSpoke)
                     {
-                        string genericRangeError = GenericTargetingState.ValidateRangeError(cursorPosition);
-                        if (genericRangeError != null)
+                        string fallback = null;
+
+                        // A rejection message suppressed as a recent duplicate never reaches the
+                        // display funnel but is still seen by AcceptsMessage; recovering it beats
+                        // speaking a generic "Invalid target".
+                        if (NotificationAccessibilityPatch.MessageAttemptCount != messageAttemptsBefore)
                         {
-                            TolkHelper.SpeakData(genericRangeError, SpeechPriority.High);
-                            Event.current.Use();
-                            return false;
+                            fallback = NotificationAccessibilityPatch.LastAttemptedMessageText;
                         }
-                    }
 
-                    // Cell-fallback rejection: only block "no thing at cursor" when the params
-                    // legitimately don't accept locations. Verbs that DO accept cells (turret
-                    // packs, mortars, ranged mech abilities) MUST be allowed to fire on empty
-                    // tiles. Previously this branch keyed off ItemTargetingState.IsActive,
-                    // which fired for every non-ability source and broke cell-targeting verbs.
-                    if (!target.HasThing && !TargetingParametersDescriber.AcceptsLocations(targetingSource.targetParams))
-                    {
-                        string typeDesc = TargetingParametersDescriber.Describe(targetingSource.targetParams);
-                        string msg = string.IsNullOrEmpty(typeDesc)
-                            ? (string)"RimWorldAccess.Abilities.Item.NoTargetAtCursor".Translate()
-                            : (string)"RimWorldAccess.Combat.Target.NoValidAtCursorWithDesc".Translate(typeDesc);
-                        TolkHelper.SpeakData(msg, SpeechPriority.High);
-                        Event.current.Use();
-                        return false;
-                    }
-
-                    // For permit targeting, validate range before game's validation.
-                    // The range validator in targetingParameters.validator is only consulted by
-                    // GenUI.TargetsAt for Thing targets; cell-only fallback targets bypass it.
-                    if (targetingSource is RoyalTitlePermitWorker_Targeted permitWorker
-                        && permitWorker.def.royalAid != null)
-                    {
-                        float targetingRange = permitWorker.def.royalAid.targetingRange;
-                        float weatherCap = Find.CurrentMap.weatherManager.CurWeatherMaxRangeCap;
-                        float rangeClamped = Mathf.Min(targetingRange, weatherCap);
-
-                        if (rangeClamped > 0f)
+                        if (string.IsNullOrEmpty(fallback))
                         {
-                            IntVec3 casterPos = permitWorker.CasterPawn.Position;
-                            float distance = cursorPosition.DistanceTo(casterPos);
-
-                            if (distance > rangeClamped)
+                            if (AbilityTargetingState.IsActive)
                             {
-                                TolkHelper.Speak(
-                                    "RimWorldAccess.Combat.Target.OutOfRange".Loc(distance.ToString("F0"), rangeClamped.ToString("F0")),
-                                    SpeechPriority.High);
-                                Event.current.Use();
-                                return false;
+                                fallback = AbilityTargetingState.DiagnoseRejection(target, cursorPosition);
+                            }
+                            else if (ItemTargetingState.IsActive)
+                            {
+                                string targetLabel = target.HasThing
+                                    ? target.Thing.LabelShort
+                                    : (string)"RimWorldAccess.Combat.Target.GenericTargetLabel".Translate();
+                                fallback = "RimWorldAccess.Combat.Target.NotValidTarget".Translate(targetLabel).ToString();
                             }
                         }
+                        TolkHelper.SpeakData(fallback ?? (string)"RimWorldAccess.Combat.Target.InvalidTarget".Translate(), SpeechPriority.High);
                     }
-
-                    // Validate the target can be attacked/used. Sample the message-emission
-                    // counter before/after so we can detect silent rejections: if the
-                    // ability/comp announced the failure via Messages.Message, our existing
-                    // NotificationAccessibilityPatch already spoke it and we don't want to
-                    // double-announce. If the count didn't move, the rejection was silent
-                    // and we synthesize a fallback so the user isn't left guessing.
-                    long messagesBefore = NotificationAccessibilityPatch.MessageEmissionCount;
-                    long messageAttemptsBefore = NotificationAccessibilityPatch.MessageAttemptCount;
-                    if (!targetingSource.ValidateTarget(target, showMessages: true))
-                    {
-                        bool gameSpoke = NotificationAccessibilityPatch.MessageEmissionCount != messagesBefore;
-                        if (!gameSpoke)
-                        {
-                            string fallback = null;
-
-                            // The game may have TRIED to emit a rejection message that RimWorld
-                            // suppressed as a recent duplicate (e.g. casting an ability twice on
-                            // the same invalid target). In that case nothing reached the display
-                            // funnel, but AcceptsMessage still saw the text — recover it so the
-                            // user hears the real reason instead of a generic "Invalid target".
-                            if (NotificationAccessibilityPatch.MessageAttemptCount != messageAttemptsBefore)
-                            {
-                                fallback = NotificationAccessibilityPatch.LastAttemptedMessageText;
-                            }
-
-                            if (string.IsNullOrEmpty(fallback))
-                            {
-                                if (AbilityTargetingState.IsActive)
-                                {
-                                    fallback = AbilityTargetingState.DiagnoseRejection(target, cursorPosition);
-                                }
-                                else if (ItemTargetingState.IsActive)
-                                {
-                                    string targetLabel = target.HasThing
-                                        ? target.Thing.LabelShort
-                                        : (string)"RimWorldAccess.Combat.Target.GenericTargetLabel".Translate();
-                                    fallback = "RimWorldAccess.Combat.Target.NotValidTarget".Translate(targetLabel).ToString();
-                                }
-                            }
-                            TolkHelper.SpeakData(fallback ?? (string)"RimWorldAccess.Combat.Target.InvalidTarget".Translate(), SpeechPriority.High);
-                        }
-                        // User must press Escape to exit targeting
-                        Event.current.Use();
-                        return false;
-                    }
-
-                    try
-                    {
-                        // For turrets, call OrderAttack on the building instead of the verb's OrderForceTarget
-                        // (Verb.OrderForceTarget assumes a pawn caster and will throw NullReferenceException)
-                        var verb = targetingSource as Verb;
-                        if (verb?.caster is Building_TurretGun turret)
-                        {
-                            // Pre-check range to stay in targeting mode on failure
-                            float distance = (target.Cell - turret.Position).LengthHorizontal;
-                            float minRange = turret.AttackVerb.verbProps.EffectiveMinRange(target, turret);
-                            float maxRange = turret.AttackVerb.EffectiveRange;
-
-                            if (distance < minRange)
-                            {
-                                Messages.Message("MessageTargetBelowMinimumRange".Translate(), turret, MessageTypeDefOf.RejectInput, historical: false);
-                                Event.current.Use();
-                                return false;
-                            }
-                            if (distance > maxRange)
-                            {
-                                Messages.Message("MessageTargetBeyondMaximumRange".Translate(), turret, MessageTypeDefOf.RejectInput, historical: false);
-                                Event.current.Use();
-                                return false;
-                            }
-
-                            turret.OrderAttack(target);
-                        }
-                        else
-                        {
-                            // Standard pawn targeting
-                            targetingSource.OrderForceTarget(target);
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        ModLogger.Error($"Exception in OrderForceTarget: {ex.Message}");
-                        TolkHelper.Speak(
-                            "RimWorldAccess.Combat.Target.ErrorUsing".Loc(ex.Message),
-                            SpeechPriority.High);
-                        Event.current.Use();
-                        return false;
-                    }
-
-                    // Check if OrderForceTarget started a NEW targeting phase.
-                    // This happens with multi-phase items like the sentience catalyst:
-                    //   Phase 1 (CompUsable): select colonist to administer → OrderForceTarget
-                    //   Phase 2 (CompTargetable): select target animal (started inside OrderForceTarget)
-                    // If the Targeter's targeting source changed, a new phase was started.
-                    // Do NOT call StopTargeting or we'd kill the new phase.
-                    var newTargetingSource = targetingSourceField?.GetValue(__instance) as ITargetingSource;
-                    if (__instance.IsTargeting && newTargetingSource != null && newTargetingSource != targetingSource)
-                    {
-                        // New targeting phase started by OrderForceTarget.
-                        // The BeginTargeting postfix already announced it via ItemTargetingState.Open().
-                        // Just consume the event and let the new phase continue.
-                        Event.current.Use();
-                        return false;
-                    }
-
-                    // Build success announcement BEFORE stopping targeting
-                    // (StopTargeting closes AbilityTargetingState via our patch)
-                    string successMessage;
-                    if (JumpTargetingState.IsActive)
-                    {
-                        successMessage = JumpTargetingState.BuildSuccessAnnouncement(cursorPosition);
-                    }
-                    else if (AbilityTargetingState.IsActive)
-                    {
-                        successMessage = AbilityTargetingState.BuildSuccessAnnouncement(target, cursorPosition);
-                    }
-                    else if (ItemTargetingState.IsActive)
-                    {
-                        successMessage = ItemTargetingState.BuildSuccessAnnouncement(target);
-                    }
-                    else if (GenericTargetingState.IsActive)
-                    {
-                        successMessage = GenericTargetingState.BuildSuccessAnnouncement(target);
-                    }
-                    else
-                    {
-                        // Non-ability targeting (weapons, turrets)
-                        if (target.HasThing)
-                        {
-                            successMessage = "RimWorldAccess.Combat.Target.Targeting".Translate(target.Thing.LabelShort);
-                        }
-                        else
-                        {
-                            // Cell-only target (like mortar bombardment)
-                            successMessage = "RimWorldAccess.Combat.Target.TargetingLocation".Translate();
-                        }
-                    }
-
-                    // Check if this ability has a second phase (destination selection, like Skip)
-                    if (targetingSource.DestinationSelector != null)
-                    {
-                        // Update AbilityTargetingState with destination phase context BEFORE
-                        // BeginTargeting (which triggers AbilityTargetingPatch postfix).
-                        // Pass the first target position so range is measured from the selected target.
-                        if (AbilityTargetingState.IsActive && targetingSource.DestinationSelector is CompAbilityEffect_WithDest destCompForContext)
-                        {
-                            AbilityTargetingState.EnterDestinationPhase(target.Cell, destCompForContext);
-                        }
-
-                        // Start second targeting phase for destination selection
-                        __instance.BeginTargeting(targetingSource.DestinationSelector, targetingSource);
-
-                        // Announce with destination range if available
-                        string destInfo = "RimWorldAccess.Combat.Target.SelectDestination".Translate();
-                        if (targetingSource.DestinationSelector is CompAbilityEffect_WithDest destComp)
-                        {
-                            var props = destComp.Props;
-                            if (props.range > 0)
-                            {
-                                destInfo = "RimWorldAccess.Combat.Target.SelectDestinationInRange".Translate(props.range.ToString("F0"));
-                            }
-                        }
-                        TolkHelper.SpeakData($"{successMessage}. {destInfo}");
-                    }
-                    else
-                    {
-                        // No second phase - stop targeting mode
-                        __instance.StopTargeting();
-                        TolkHelper.SpeakData(successMessage);
-                    }
-
-                    // Consume the event
+                    // Targeting stays open; Escape is the way out.
                     Event.current.Use();
                     return false;
+                }
+
+                try
+                {
+                    // Turrets take OrderAttack on the building: Verb.OrderForceTarget assumes a
+                    // pawn caster and throws.
+                    var verb = targetingSource as Verb;
+                    if (verb?.caster is Building_TurretGun turret)
+                    {
+                        // Pre-check range so a failure keeps targeting open.
+                        float distance = (target.Cell - turret.Position).LengthHorizontal;
+                        float minRange = turret.AttackVerb.verbProps.EffectiveMinRange(target, turret);
+                        float maxRange = turret.AttackVerb.EffectiveRange;
+
+                        if (distance < minRange)
+                        {
+                            Messages.Message("MessageTargetBelowMinimumRange".Translate(), turret, MessageTypeDefOf.RejectInput, historical: false);
+                            Event.current.Use();
+                            return false;
+                        }
+                        if (distance > maxRange)
+                        {
+                            Messages.Message("MessageTargetBeyondMaximumRange".Translate(), turret, MessageTypeDefOf.RejectInput, historical: false);
+                            Event.current.Use();
+                            return false;
+                        }
+
+                        turret.OrderAttack(target);
+                    }
+                    else if (JecsAbilityCompat.TryCastViaAbility(
+                        targetingSource, target, out bool jecsCast, out string jecsRefusal))
+                    {
+                        // PawnAbility.TryCastAbility is JecsTools' own gated cast vehicle;
+                        // Verb.OrderForceTarget would bypass CanCastPowerCheck and the cooldown.
+                        if (!jecsCast)
+                        {
+                            TolkHelper.SpeakData(
+                                !string.IsNullOrEmpty(jecsRefusal)
+                                    ? jecsRefusal
+                                    : (string)"RimWorldAccess.Compat.JecsAbility.CannotCastNow".Translate(),
+                                SpeechPriority.High);
+                            Event.current.Use();
+                            return false; // Keep targeting open for retry.
+                        }
+                    }
+                    else
+                    {
+                        targetingSource.OrderForceTarget(target);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    ModLogger.Error($"Exception in OrderForceTarget: {ex.Message}");
+                    TolkHelper.Speak(
+                        "RimWorldAccess.Combat.Target.ErrorUsing".Loc(ex.Message),
+                        SpeechPriority.High);
+                    Event.current.Use();
+                    return false;
+                }
+
+                // Multi-phase items (the sentience catalyst) start a second targeting phase from
+                // inside OrderForceTarget; a changed targeting source means StopTargeting here
+                // would kill that new phase.
+                var newTargetingSource = targetingSourceField?.GetValue(__instance) as ITargetingSource;
+                if (__instance.IsTargeting && newTargetingSource != null && newTargetingSource != targetingSource)
+                {
+                    // The BeginTargeting postfix already announced the new phase.
+                    Event.current.Use();
+                    return false;
+                }
+
+                // Build the announcement BEFORE StopTargeting, which closes AbilityTargetingState.
+                string successMessage;
+                if (JumpTargetingState.IsActive)
+                {
+                    successMessage = JumpTargetingState.BuildSuccessAnnouncement(cursorPosition);
+                }
+                else if (AbilityTargetingState.IsActive)
+                {
+                    successMessage = AbilityTargetingState.BuildSuccessAnnouncement(target, cursorPosition);
+                }
+                else if (ItemTargetingState.IsActive)
+                {
+                    successMessage = ItemTargetingState.BuildSuccessAnnouncement(target);
+                }
+                else if (GenericTargetingState.IsActive)
+                {
+                    successMessage = GenericTargetingState.BuildSuccessAnnouncement(target);
                 }
                 else
                 {
-                    // ACTION-BASED TARGETING (Command_Target - copy, reinstall, etc.)
-                    // Get the action callback and targeting parameters via reflection
-                    var actionField = AccessTools.Field(typeof(Targeter), "action");
-                    var action = actionField?.GetValue(__instance) as Action<LocalTargetInfo>;
-
-                    var targetParamsField = AccessTools.Field(typeof(Targeter), "targetParams");
-                    var targetParams = targetParamsField?.GetValue(__instance) as TargetingParameters;
-
-                    if (action == null)
+                    if (target.HasThing)
                     {
-                        TolkHelper.Speak("RimWorldAccess.Combat.Target.NoActionAvailable".Loc());
-                        Event.current.Use();
-                        return false;
-                    }
-
-                    // Get the best target at the cursor position
-                    // IMPORTANT: Use thingsOnly: true because GenUI.TargetsAt has a bug where it falls back
-                    // to UI.MouseCell() (actual mouse position) instead of the clickPos we pass in.
-                    // We handle cell targeting explicitly below using our virtual cursor position.
-                    Vector3 clickPos = cursorPosition.ToVector3Shifted();
-                    var targets = GenUI.TargetsAt(clickPos, targetParams, thingsOnly: true, null);
-                    LocalTargetInfo target = targets.FirstOrFallback(LocalTargetInfo.Invalid);
-
-                    // If no specific thing found, use the cell position itself
-                    // This ensures we use OUR cursor position, not the actual mouse position
-                    if (!target.IsValid)
-                    {
-                        target = new LocalTargetInfo(cursorPosition);
-                    }
-
-                    // Check if there's a validator
-                    var validatorField = AccessTools.Field(typeof(Targeter), "targetValidator");
-                    var validator = validatorField?.GetValue(__instance) as Func<LocalTargetInfo, bool>;
-
-                    if (validator != null && !validator(target))
-                    {
-                        TolkHelper.Speak("RimWorldAccess.Combat.Target.InvalidTarget".Loc());
-                        Event.current.Use();
-                        return false;
-                    }
-
-                    // Validate against the targeting parameters (which honor any validator
-                    // predicate, e.g. ForForceWear's filter that narrows to humanlike colonists
-                    // / outfit stands). Vanilla's GenUI.TargetsAtMouse pre-filtering would have
-                    // produced an Invalid LocalTargetInfo on a sighted mouse-click in the same
-                    // case; our cursor-based path falls back to a cell target so we have to
-                    // gate it ourselves. Use the describer for consistency with the rest of
-                    // the targeting modes — the boolean flags reflect the targets the params
-                    // genuinely accept (e.g. force-wear truly does accept buildings, since
-                    // outfit stands are a valid target). The validator may narrow further,
-                    // but describing the params is more accurate than misleading silence.
-                    if (targetParams != null
-                        && Find.CurrentMap != null
-                        && !targetParams.CanTarget(target.ToTargetInfo(Find.CurrentMap)))
-                    {
-                        string typeDesc = TargetingParametersDescriber.Describe(targetParams);
-                        string msg = string.IsNullOrEmpty(typeDesc)
-                            ? (string)"RimWorldAccess.Abilities.Item.NoTargetAtCursor".Translate()
-                            : (string)"RimWorldAccess.Combat.Target.NoValidAtCursorWithDesc".Translate(typeDesc);
-                        TolkHelper.SpeakData(msg, SpeechPriority.High);
-                        Event.current.Use();
-                        return false;
-                    }
-
-                    // Pre-validate range for Command_Target with known range (e.g., animal attack)
-                    // The game's range check is inside the action delegate, so we check BEFORE calling it
-                    // to provide clear feedback and keep targeting open for retry
-                    if (hasTargetingContext && contextCasterPos.IsValid && contextRange > 0f)
-                    {
-                        float distance = (cursorPosition - contextCasterPos).LengthHorizontal;
-                        if (distance > contextRange)
-                        {
-                            TolkHelper.Speak(
-                                "RimWorldAccess.Combat.Target.OutOfRange".Loc(distance.ToString("F0"), contextRange.ToString("F0")),
-                                SpeechPriority.High);
-                            Event.current.Use();
-                            return false; // Stay in targeting mode for retry
-                        }
-                    }
-
-                    // For multi-select: snapshot pawn jobs before executing the action
-                    Dictionary<Pawn, Verse.AI.Job> jobsBeforeTarget = null;
-                    Dictionary<Pawn, int> queueBeforeTarget = null;
-                    bool isMultiSelect = MultiSelectState.IsMultiSelectActive;
-                    List<Pawn> multiPawns = null;
-                    if (isMultiSelect)
-                    {
-                        multiPawns = Find.Selector.SelectedPawns.ToList();
-                        jobsBeforeTarget = new Dictionary<Pawn, Verse.AI.Job>();
-                        queueBeforeTarget = new Dictionary<Pawn, int>();
-                        foreach (var p in multiPawns)
-                        {
-                            jobsBeforeTarget[p] = p.jobs?.curJob;
-                            queueBeforeTarget[p] = p.jobs?.jobQueue?.Count ?? 0;
-                        }
-                    }
-
-                    // Snapshot the targeter's action delegate so we can detect whether the
-                    // callback itself restarted targeting. Some action callbacks (notably
-                    // CompPlantable seed planting) re-open BeginTargeting on an invalid cell to
-                    // keep the player in placement mode. Vanilla relies on this: its
-                    // needsStopTargetingCall flag is reset to false by every BeginTargeting
-                    // overload, so the re-open suppresses the StopTargeting that would otherwise
-                    // fire. We replicate that here — if a fresh session was started, do NOT
-                    // StopTargeting and do NOT announce a bogus success. The callback already
-                    // spoke the rejection reason via Messages.Message (surfaced by
-                    // NotificationAccessibilityPatch), and the user stays in placement mode.
-                    var actionBeforeCallback = action;
-                    int windowCountBeforeCallback = Find.WindowStack?.Count ?? 0;
-                    bool windowlessDialogActiveBeforeCallback = WindowlessDialogState.IsActive;
-
-                    // Execute the action callback
-                    action(target);
-
-                    var actionAfterCallback = actionField?.GetValue(__instance) as Action<LocalTargetInfo>;
-                    if (__instance.IsTargeting
-                        && actionAfterCallback != null
-                        && !ReferenceEquals(actionAfterCallback, actionBeforeCallback))
-                    {
-                        // Callback rejected this cell and restarted targeting. Stay in placement
-                        // mode so the user can adjust the cursor and retry.
-                        Event.current.Use();
-                        return false;
-                    }
-
-                    // Did the callback open a confirmation dialog (e.g. CompPlantable warning that
-                    // planting a Gauranlen seed near artificial buildings will reduce connection
-                    // strength)? If so, that dialog now owns the interaction. The window count
-                    // alone can't tell us: DialogInterceptionPatch swallows WindowStack.Add for
-                    // Dialog_MessageBox and presents it via WindowlessDialogState instead, so the
-                    // stack never grows — check for the windowless dialog becoming active too.
-                    int windowCountAfterCallback = Find.WindowStack?.Count ?? 0;
-                    bool confirmationDialogOpened =
-                        windowCountAfterCallback > windowCountBeforeCallback
-                        || (WindowlessDialogState.IsActive && !windowlessDialogActiveBeforeCallback);
-
-                    // Capture the planting context BEFORE StopTargeting closes PlantTargetingState,
-                    // so that cancelling the dialog can re-open placement (see WatchConfirmationDialog)
-                    // instead of kicking the user out.
-                    if (confirmationDialogOpened && PlantTargetingState.IsActive)
-                        PlantTargetingState.NotifyConfirmationDialogOpened();
-
-                    // Stop targeting mode
-                    __instance.StopTargeting();
-
-                    if (confirmationDialogOpened)
-                    {
-                        // Two things must happen: (1) don't announce a bogus "Target selected" — the
-                        // dialog's own accessibility patch announces it; (2) stop the Enter that
-                        // opened it from auto-confirming it. An intercepted (windowless) dialog is
-                        // protected by WindowlessDialogState's same-frame guard; a non-intercepted
-                        // dialog would be auto-confirmed via Window.OnAcceptKeyPressed, which
-                        // Event.current.Use() does NOT block (see CLAUDE.md keyboard isolation
-                        // notes) — so mark the frame and let TargetConfirmDialogGuard's patch block
-                        // the game's accept for this frame.
-                        TargetConfirmDialogGuard.MarkDialogOpenedThisFrame();
-                        Event.current.Use();
-                        return false;
-                    }
-
-                    // Announce with multi-select feedback
-                    string targetLabel = target.HasThing
-                        ? target.Thing.LabelShort
-                        : "RimWorldAccess.Combat.Target.GenericLocationLabel".Translate().ToString();
-                    if (isMultiSelect && multiPawns != null && multiPawns.Count > 1)
-                    {
-                        string everyone = ((string)"ConfirmAbandonHomeNegativeThoughts_Everyone".Translate()).TrimEnd(':', ' ');
-                        var succeeded = multiPawns.Where(p =>
-                            p.jobs?.curJob != jobsBeforeTarget[p] ||
-                            (p.jobs?.jobQueue?.Count ?? 0) > queueBeforeTarget[p]).ToList();
-                        var unchanged = multiPawns.Where(p =>
-                            p.jobs?.curJob == jobsBeforeTarget[p] &&
-                            (p.jobs?.jobQueue?.Count ?? 0) <= queueBeforeTarget[p]).ToList();
-
-                        if (unchanged.Count == 0)
-                        {
-                            TolkHelper.Speak("RimWorldAccess.Combat.MultiSelect.EveryoneAttacks".Loc(everyone, targetLabel));
-                        }
-                        else if (succeeded.Count == 0)
-                        {
-                            TolkHelper.Speak("RimWorldAccess.Combat.MultiSelect.NoOneCouldAttack".Loc(targetLabel));
-                        }
-                        else if (unchanged.Count <= succeeded.Count)
-                        {
-                            string names = MenuHelper.FormatNameList(unchanged.Select(p => p.LabelShort).ToList());
-                            TolkHelper.Speak("RimWorldAccess.Combat.MultiSelect.EveryoneExceptAttacks".Loc(everyone, names, targetLabel));
-                        }
-                        else
-                        {
-                            string names = MenuHelper.FormatNameList(succeeded.Select(p => p.LabelShort).ToList());
-                            string onlyKey = succeeded.Count == 1
-                                ? "RimWorldAccess.Combat.MultiSelect.OnlyOneAttacks"
-                                : "RimWorldAccess.Combat.MultiSelect.OnlyManyAttack";
-                            TolkHelper.Speak(onlyKey.Loc(names, targetLabel));
-                        }
+                        successMessage = "RimWorldAccess.Combat.Target.Targeting".Translate(target.Thing.LabelShort);
                     }
                     else
                     {
-                        TolkHelper.Speak("RimWorldAccess.Combat.Target.Selected".Loc(targetLabel));
+                        successMessage = "RimWorldAccess.Combat.Target.TargetingLocation".Translate();
+                    }
+                }
+
+                // A destination selector means a second phase (Skip). The state must learn the
+                // first target BEFORE BeginTargeting fires AbilityTargetingPatch's postfix, so
+                // range is measured from that target.
+                if (targetingSource.DestinationSelector != null)
+                {
+                    if (AbilityTargetingState.IsActive && targetingSource.DestinationSelector is CompAbilityEffect_WithDest destCompForContext)
+                    {
+                        AbilityTargetingState.EnterDestinationPhase(target.Cell, destCompForContext);
                     }
 
-                    // Consume the event
+                    __instance.BeginTargeting(targetingSource.DestinationSelector, targetingSource);
+
+                    string destInfo = "RimWorldAccess.Combat.Target.SelectDestination".Translate();
+                    if (targetingSource.DestinationSelector is CompAbilityEffect_WithDest destComp)
+                    {
+                        var props = destComp.Props;
+                        if (props.range > 0)
+                        {
+                            destInfo = "RimWorldAccess.Combat.Target.SelectDestinationInRange".Translate(props.range.ToString("F0"));
+                        }
+                    }
+                    TolkHelper.SpeakData($"{successMessage}. {destInfo}");
+                }
+                else
+                {
+                    __instance.StopTargeting();
+                    TolkHelper.SpeakData(successMessage);
+                }
+
+                Event.current.Use();
+                return false;
+            }
+            else
+            {
+                // Action-based targeting (Command_Target: copy, reinstall).
+                var actionField = AccessTools.Field(typeof(Targeter), "action");
+                var action = actionField?.GetValue(__instance) as Action<LocalTargetInfo>;
+
+                var targetParamsField = AccessTools.Field(typeof(Targeter), "targetParams");
+                var targetParams = targetParamsField?.GetValue(__instance) as TargetingParameters;
+
+                if (action == null)
+                {
+                    TolkHelper.Speak("RimWorldAccess.Combat.Target.NoActionAvailable".Loc());
                     Event.current.Use();
                     return false;
                 }
-            }
 
-            // Let other keys pass through
-            return true;
+                LocalTargetInfo target = KeyboardTargeterConfirm.ResolveTargetAt(cursorPosition, targetParams);
+
+                var validatorField = AccessTools.Field(typeof(Targeter), "targetValidator");
+                var validator = validatorField?.GetValue(__instance) as Func<LocalTargetInfo, bool>;
+
+                if (validator != null && !validator(target))
+                {
+                    TolkHelper.Speak("RimWorldAccess.Combat.Target.InvalidTarget".Loc());
+                    Event.current.Use();
+                    return false;
+                }
+
+                // A sighted mouse click would get an Invalid LocalTargetInfo from vanilla's
+                // GenUI.TargetsAtMouse pre-filtering; the cursor-based path falls back to a cell
+                // target instead, so the params gate has to be applied here. The describer's
+                // flags report what the params genuinely accept; a validator may narrow further,
+                // but describing the params beats misleading silence.
+                if (targetParams != null
+                    && Find.CurrentMap != null
+                    && !targetParams.CanTarget(target.ToTargetInfo(Find.CurrentMap)))
+                {
+                    string typeDesc = TargetingParametersDescriber.Describe(targetParams);
+                    string msg = string.IsNullOrEmpty(typeDesc)
+                        ? (string)"RimWorldAccess.Abilities.Item.NoTargetAtCursor".Translate()
+                        : (string)"RimWorldAccess.Combat.Target.NoValidAtCursorWithDesc".Translate(typeDesc);
+                    TolkHelper.SpeakData(msg, SpeechPriority.High);
+                    Event.current.Use();
+                    return false;
+                }
+
+                // The game's range check lives inside the action delegate, so checking first is
+                // what keeps targeting open for a retry.
+                if (hasTargetingContext && contextCasterPos.IsValid && contextRange > 0f)
+                {
+                    float distance = (cursorPosition - contextCasterPos).LengthHorizontal;
+                    if (distance > contextRange)
+                    {
+                        TolkHelper.Speak(
+                            "RimWorldAccess.Combat.Target.OutOfRange".Loc(distance.ToString("F0"), contextRange.ToString("F0")),
+                            SpeechPriority.High);
+                        Event.current.Use();
+                        return false; // Stay in targeting mode for retry
+                    }
+                }
+
+                // Per-pawn job snapshots are how the multi-select announcement below tells who
+                // actually accepted the order.
+                Dictionary<Pawn, Verse.AI.Job> jobsBeforeTarget = null;
+                Dictionary<Pawn, int> queueBeforeTarget = null;
+                bool isMultiSelect = MultiSelectState.IsMultiSelectActive;
+                List<Pawn> multiPawns = null;
+                if (isMultiSelect)
+                {
+                    multiPawns = Find.Selector.SelectedPawns.ToList();
+                    jobsBeforeTarget = new Dictionary<Pawn, Verse.AI.Job>();
+                    queueBeforeTarget = new Dictionary<Pawn, int>();
+                    foreach (var p in multiPawns)
+                    {
+                        jobsBeforeTarget[p] = p.jobs?.curJob;
+                        queueBeforeTarget[p] = p.jobs?.jobQueue?.Count ?? 0;
+                    }
+                }
+
+                // Some callbacks (CompPlantable seed planting) re-open BeginTargeting on an
+                // invalid cell to keep the player in placement mode; vanilla suppresses its own
+                // StopTargeting because every BeginTargeting overload clears
+                // needsStopTargetingCall. Snapshotting the action delegate detects that restart
+                // so neither StopTargeting nor a bogus success announcement follows — the
+                // callback already spoke the reason through Messages.Message.
+                var actionBeforeCallback = action;
+                int windowCountBeforeCallback = Find.WindowStack?.Count ?? 0;
+
+                action(target);
+
+                var actionAfterCallback = actionField?.GetValue(__instance) as Action<LocalTargetInfo>;
+                if (__instance.IsTargeting
+                    && actionAfterCallback != null
+                    && !ReferenceEquals(actionAfterCallback, actionBeforeCallback))
+                {
+                    // The callback rejected this cell and restarted targeting; stay in
+                    // placement mode so the cursor can be adjusted and retried.
+                    Event.current.Use();
+                    return false;
+                }
+
+                // A confirmation dialog opened by the callback now owns the interaction. Every
+                // dialog is a real window, so the window-count diff alone detects it.
+                int windowCountAfterCallback = Find.WindowStack?.Count ?? 0;
+                bool confirmationDialogOpened =
+                    windowCountAfterCallback > windowCountBeforeCallback;
+
+                // Capture the planting context BEFORE StopTargeting closes PlantTargetingState,
+                // so cancelling the dialog re-opens placement instead of kicking the user out.
+                if (confirmationDialogOpened && PlantTargetingState.IsActive)
+                    PlantTargetingState.NotifyConfirmationDialogOpened();
+
+                __instance.StopTargeting();
+
+                if (confirmationDialogOpened)
+                {
+                    // The dialog's own scope announces it. Marking the frame is what stops the
+                    // Enter that opened the dialog from also confirming it: Window.OnAcceptKeyPressed
+                    // is NOT blocked by Event.current.Use().
+                    TargetConfirmDialogGuard.MarkDialogOpenedThisFrame();
+                    Event.current.Use();
+                    return false;
+                }
+
+                string targetLabel = target.HasThing
+                    ? target.Thing.LabelShort
+                    : "RimWorldAccess.Combat.Target.GenericLocationLabel".Translate().ToString();
+                if (isMultiSelect && multiPawns != null && multiPawns.Count > 1)
+                {
+                    string everyone = ((string)"ConfirmAbandonHomeNegativeThoughts_Everyone".Translate()).TrimEnd(':', ' ');
+                    var succeeded = multiPawns.Where(p =>
+                        p.jobs?.curJob != jobsBeforeTarget[p] ||
+                        (p.jobs?.jobQueue?.Count ?? 0) > queueBeforeTarget[p]).ToList();
+                    var unchanged = multiPawns.Where(p =>
+                        p.jobs?.curJob == jobsBeforeTarget[p] &&
+                        (p.jobs?.jobQueue?.Count ?? 0) <= queueBeforeTarget[p]).ToList();
+
+                    if (unchanged.Count == 0)
+                    {
+                        TolkHelper.Speak("RimWorldAccess.Combat.MultiSelect.EveryoneAttacks".Loc(everyone, targetLabel));
+                    }
+                    else if (succeeded.Count == 0)
+                    {
+                        TolkHelper.Speak("RimWorldAccess.Combat.MultiSelect.NoOneCouldAttack".Loc(targetLabel));
+                    }
+                    else if (unchanged.Count <= succeeded.Count)
+                    {
+                        string names = MenuHelper.FormatNameList(unchanged.Select(p => p.LabelShort).ToList());
+                        TolkHelper.Speak("RimWorldAccess.Combat.MultiSelect.EveryoneExceptAttacks".Loc(everyone, names, targetLabel));
+                    }
+                    else
+                    {
+                        string names = MenuHelper.FormatNameList(succeeded.Select(p => p.LabelShort).ToList());
+                        string onlyKey = succeeded.Count == 1
+                            ? "RimWorldAccess.Combat.MultiSelect.OnlyOneAttacks"
+                            : "RimWorldAccess.Combat.MultiSelect.OnlyManyAttack";
+                        TolkHelper.Speak(onlyKey.Loc(names, targetLabel));
+                    }
+                }
+                else
+                {
+                    TolkHelper.Speak("RimWorldAccess.Combat.Target.Selected".Loc(targetLabel));
+                }
+
+                Event.current.Use();
+                return false;
+            }
         }
     }
 }

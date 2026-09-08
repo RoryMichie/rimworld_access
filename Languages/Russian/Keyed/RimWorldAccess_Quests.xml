@@ -41,18 +41,13 @@
 
   <!-- =================================================================
        Quest menu lifecycle (QuestMenuState.Open / Close / OpenAndSelect).
-       OpenInstructions is the one-time orientation message spoken when
-       the menu opens; it is suffixed with the first quest's announcement
-       or the empty-tab message. {0} = first quest announcement, or tab
-       summary, depending on context.
+       Title is the one-shot screen name spoken when the menu opens; the
+       shared screen machinery announces the focused row separately.
        ================================================================= -->
-  <RimWorldAccess.Quests.Menu.OpenInstructions>Меню заданий. Alt+A — принять, Alt+D — отклонить. Enter — перейти к деталям задания стрелками.</RimWorldAccess.Quests.Menu.OpenInstructions>
   <RimWorldAccess.Quests.Menu.Title>Меню заданий</RimWorldAccess.Quests.Menu.Title>
   <RimWorldAccess.Quests.Menu.Closed>Меню заданий закрыто</RimWorldAccess.Quests.Menu.Closed>
   <RimWorldAccess.Quests.Menu.QuestNoLongerAvailable>Задание больше не доступно</RimWorldAccess.Quests.Menu.QuestNoLongerAvailable>
-  <RimWorldAccess.Quests.Menu.NoQuestsInTab>В этой вкладке нет заданий</RimWorldAccess.Quests.Menu.NoQuestsInTab>
   <RimWorldAccess.Quests.Menu.NoQuestSelected>Задание не выбрано</RimWorldAccess.Quests.Menu.NoQuestSelected>
-  <RimWorldAccess.Quests.Menu.FailedToActivateButton>Не удалось активировать кнопку</RimWorldAccess.Quests.Menu.FailedToActivateButton>
 
   <!-- =================================================================
        Quest tabs. Available/Active/Historical (vanilla provides the
@@ -66,7 +61,7 @@
   <RimWorldAccess.Quests.Tab.Historical>Задания из истории</RimWorldAccess.Quests.Tab.Historical>
   <RimWorldAccess.Quests.Tab.Generic>Задания</RimWorldAccess.Quests.Tab.Generic>
   <RimWorldAccess.Quests.Tab.WithCountOne>Вкладка «{0}» — 1 задание</RimWorldAccess.Quests.Tab.WithCountOne>
-  <RimWorldAccess.Quests.Tab.WithCountMany>Вкладка «{0}» — {1} {1_numCase ? задание : задания : заданий}</RimWorldAccess.Quests.Tab.WithCountMany>
+  <RimWorldAccess.Quests.Tab.WithCountMany>Вкладка «{0}» — {1_numCase ? задание : задания : заданий}</RimWorldAccess.Quests.Tab.WithCountMany>
   <RimWorldAccess.Quests.Tab.NoQuests>Вкладка «{0}» — нет заданий</RimWorldAccess.Quests.Tab.NoQuests>
 
   <!-- =================================================================
@@ -82,7 +77,7 @@
   <RimWorldAccess.Quests.Status.Expired>Истекло</RimWorldAccess.Quests.Status.Expired>
 
   <!-- =================================================================
-       List-view announcement composition (BuildQuestAnnouncement).
+       List-view row composition (BuildQuestRowLabel).
        NameWithStatus appends a status word to the quest name; the bare
        Name case has no suffix and is spoken directly.
        StarsOne/Many is the difficulty rating; CharitySuffix is appended
@@ -92,7 +87,7 @@
        Rewards: {0} = compact reward summary string. -->
   <RimWorldAccess.Quests.List.NameWithStatus>{0}, {1}</RimWorldAccess.Quests.List.NameWithStatus>
   <RimWorldAccess.Quests.List.StarsOne>1 звезда</RimWorldAccess.Quests.List.StarsOne>
-  <RimWorldAccess.Quests.List.StarsMany>{0} {0_numCase ? звезда : звезды : звёзд}</RimWorldAccess.Quests.List.StarsMany>
+  <RimWorldAccess.Quests.List.StarsMany>{0_numCase ? звезда : звезды : звёзд}</RimWorldAccess.Quests.List.StarsMany>
   <RimWorldAccess.Quests.List.CharitySuffix>, задание милосердия</RimWorldAccess.Quests.List.CharitySuffix>
   <RimWorldAccess.Quests.List.ExpiresIn>Истекает через {0}</RimWorldAccess.Quests.List.ExpiresIn>
   <RimWorldAccess.Quests.List.AcceptedAgo>Принято {0} назад</RimWorldAccess.Quests.List.AcceptedAgo>
@@ -110,15 +105,12 @@
        Finished: {0} = ticks-since-cleanup formatted period. -->
   <RimWorldAccess.Quests.Detail.HeaderStatus>Задание: {0} ({1})</RimWorldAccess.Quests.Detail.HeaderStatus>
   <RimWorldAccess.Quests.Detail.DifficultyOne>Сложность: 1 звезда</RimWorldAccess.Quests.Detail.DifficultyOne>
-  <RimWorldAccess.Quests.Detail.DifficultyMany>Сложность: {0} {0_numCase ? звезда : звезды : звёзд}</RimWorldAccess.Quests.Detail.DifficultyMany>
+  <RimWorldAccess.Quests.Detail.DifficultyMany>Сложность: {0_numCase ? звезда : звезды : звёзд}</RimWorldAccess.Quests.Detail.DifficultyMany>
   <RimWorldAccess.Quests.Detail.CharitySuffix> (задание милосердия)</RimWorldAccess.Quests.Detail.CharitySuffix>
   <RimWorldAccess.Quests.Detail.ExpiresIn>Истекает через: {0}</RimWorldAccess.Quests.Detail.ExpiresIn>
   <RimWorldAccess.Quests.Detail.AcceptedAgo>Принято: {0} назад</RimWorldAccess.Quests.Detail.AcceptedAgo>
   <RimWorldAccess.Quests.Detail.Status>Состояние: {0}</RimWorldAccess.Quests.Detail.Status>
   <RimWorldAccess.Quests.Detail.Finished>Завершено: {0} назад</RimWorldAccess.Quests.Detail.Finished>
-  <RimWorldAccess.Quests.Detail.StartOfDetails>Начало деталей задания</RimWorldAccess.Quests.Detail.StartOfDetails>
-  <RimWorldAccess.Quests.Detail.EndOfDetails>Конец деталей задания</RimWorldAccess.Quests.Detail.EndOfDetails>
-  <RimWorldAccess.Quests.Detail.OpenFirst>Нажмите Enter, чтобы сначала открыть детали задания</RimWorldAccess.Quests.Detail.OpenFirst>
   <!-- "Choose item to inspect" lives in Common.xml as
        RimWorldAccess.InfoCard.ChooseItemToInspect. -->
 
@@ -170,6 +162,7 @@
   <RimWorldAccess.Quests.RewardChoice.Prompt>Выберите награду</RimWorldAccess.Quests.RewardChoice.Prompt>
   <RimWorldAccess.Quests.RewardChoice.NoItemsToInspect>Нет предметов для осмотра</RimWorldAccess.Quests.RewardChoice.NoItemsToInspect>
   <RimWorldAccess.Quests.RewardChoice.BackToList>Назад к списку заданий</RimWorldAccess.Quests.RewardChoice.BackToList>
+  <RimWorldAccess.Quests.RewardChoice.ItemWithCount>{0}x {1}</RimWorldAccess.Quests.RewardChoice.ItemWithCount>
 
   <!-- =================================================================
        Reward preferences panel (Tab in the quest list). Toggles
@@ -178,8 +171,6 @@
        label below; relation phrasing is also a key so translators can
        reorder "currently {amount}, {relation}". -->
   <RimWorldAccess.Quests.Pref.Title>Настройки наград</RimWorldAccess.Quests.Pref.Title>
-  <RimWorldAccess.Quests.Pref.QuestList>Список заданий</RimWorldAccess.Quests.Pref.QuestList>
-  <RimWorldAccess.Quests.Pref.None>Нет доступных настроек наград</RimWorldAccess.Quests.Pref.None>
   <RimWorldAccess.Quests.Pref.Checked>отмечено</RimWorldAccess.Quests.Pref.Checked>
   <RimWorldAccess.Quests.Pref.Unchecked>не отмечено</RimWorldAccess.Quests.Pref.Unchecked>
   <!-- Royal-favor row: {0} = faction.Name, {1} = royal favor label
@@ -193,7 +184,6 @@
   <RimWorldAccess.Quests.Pref.RelationPhrase>сейчас {0}, {1}</RimWorldAccess.Quests.Pref.RelationPhrase>
   <!-- Pref-row position suffix: {0} = built row label,
        {1} = position string from MenuHelper.FormatPosition. -->
-  <RimWorldAccess.Quests.Pref.RowWithPosition>{0}. {1}</RimWorldAccess.Quests.Pref.RowWithPosition>
 
   <!-- =================================================================
        Reward extraction (QuestRewardHelper). Builds the reward detail
@@ -202,7 +192,6 @@
        helper so each reward item line is visually grouped under its
        header line; the indent is preserved in keys here. -->
   <RimWorldAccess.Quests.Reward.NoRewards>Нет наград</RimWorldAccess.Quests.Reward.NoRewards>
-  <RimWorldAccess.Quests.Reward.MultipleChoices>Доступно несколько вариантов наград</RimWorldAccess.Quests.Reward.MultipleChoices>
   <RimWorldAccess.Quests.Reward.RewardsHeader>Награды:</RimWorldAccess.Quests.Reward.RewardsHeader>
   <RimWorldAccess.Quests.Reward.ChoicesHeader>Варианты наград (выберите один для принятия):</RimWorldAccess.Quests.Reward.ChoicesHeader>
   <!-- {0} = 1-based choice index. -->
@@ -243,10 +232,9 @@
        ================================================================= -->
   <RimWorldAccess.Notifications.Menu.None>Нет доступных уведомлений</RimWorldAccess.Notifications.Menu.None>
   <RimWorldAccess.Notifications.Menu.Closed>Меню уведомлений закрыто</RimWorldAccess.Notifications.Menu.Closed>
-  <RimWorldAccess.Notifications.Menu.NoTargetLocation>Нет доступного места назначения</RimWorldAccess.Notifications.Menu.NoTargetLocation>
+  <RimWorldAccess.Notifications.Menu.RegionName>Уведомления</RimWorldAccess.Notifications.Menu.RegionName>
   <RimWorldAccess.Notifications.Menu.TargetNotValid>Место назначения недействительно</RimWorldAccess.Notifications.Menu.TargetNotValid>
   <RimWorldAccess.Notifications.Menu.FailedToActivateButton>Не удалось активировать кнопку</RimWorldAccess.Notifications.Menu.FailedToActivateButton>
-  <RimWorldAccess.Notifications.Menu.FailedToJump>Не удалось перейти к цели</RimWorldAccess.Notifications.Menu.FailedToJump>
   <RimWorldAccess.Notifications.Menu.OnlyLettersDeletable>Удалять можно только письма</RimWorldAccess.Notifications.Menu.OnlyLettersDeletable>
   <RimWorldAccess.Notifications.Menu.CannotDeleteLetter>Невозможно удалить это письмо</RimWorldAccess.Notifications.Menu.CannotDeleteLetter>
 
@@ -271,7 +259,6 @@
   <!-- Action button labels extracted from letters and alerts. -->
   <RimWorldAccess.Notifications.Button.OpenGrowthMoment>Открыть момент взросления</RimWorldAccess.Notifications.Button.OpenGrowthMoment>
   <RimWorldAccess.Notifications.Button.ViewChoices>Посмотреть варианты</RimWorldAccess.Notifications.Button.ViewChoices>
-  <RimWorldAccess.Notifications.Button.OpenResearch>Открыть технологии</RimWorldAccess.Notifications.Button.OpenResearch>
   <RimWorldAccess.Notifications.Button.Activate>Активировать</RimWorldAccess.Notifications.Button.Activate>
   <!-- Single-target jump button: {0} = target description. -->
   <RimWorldAccess.Notifications.Button.JumpTo>Перейти к: {0}</RimWorldAccess.Notifications.Button.JumpTo>

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using RimWorld;
 using Verse;
 using Verse.Sound;
@@ -8,110 +7,31 @@ using Verse.Sound;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Editors for the ideoligion's name, adjective, member name, worship room label,
-    /// description, styles, icon, and color. Text fields use the unified modal
-    /// TextInputController; icon / color / style use the windowless float menu.
+    /// Editors for the ideoligion's description, culture, and styles — the surfaces vanilla
+    /// itself serves with page-level float menus and buttons. The symbol fields (name,
+    /// adjective, member name, worship room, icon, color) live on the real
+    /// <see cref="Dialog_ChooseIdeoSymbols"/> via <c>ChooseIdeoSymbolsScope</c>, and the
+    /// narrative editor on the real <see cref="Dialog_EditIdeoDescription"/>.
     ///
-    /// Opened from the builder hub. Each edit, on confirm, mutates the live Ideo, regenerates
-    /// any derived data (precept names, description), and asks the hub to refresh + re-announce.
+    /// Opened from the builder hub. Each edit mutates the live Ideo, regenerates any derived
+    /// data, and asks the hub to refresh + re-announce.
     /// </summary>
     public static class IdeoSymbolEditState
     {
-        // Vanilla's symbol validation: letters, digits, spaces, apostrophes, hyphens; max 40 chars.
-        private static readonly Regex ValidSymbolRegex = new Regex("^[\\p{L}0-9 '\\-]*$");
-        private const int MaxSymbolLength = 40;
-
-        private static readonly TextInputController controller = new TextInputController();
-
-        private static TextFieldSpec SymbolSpec(string labelKey) =>
-            new TextFieldSpec(labelKey, maxLength: MaxSymbolLength, minLength: 1, allowedChars: ValidSymbolRegex);
-
-        #region Text fields
-
-        public static void EditName(Ideo ideo)
-        {
-            controller.Begin(ideo.name, SymbolSpec("Name"),
-                text =>
-                {
-                    ideo.name = text.Trim();
-                    ideo.MakeMemeberNamePluralDirty();
-                    ideo.RegenerateAllPreceptNames();
-                    AfterEdit();
-                });
-        }
-
-        public static void EditAdjective(Ideo ideo)
-        {
-            controller.Begin(ideo.adjective, SymbolSpec("Adjective"),
-                text =>
-                {
-                    ideo.adjective = text.Trim();
-                    ideo.MakeMemeberNamePluralDirty();
-                    ideo.RegenerateAllPreceptNames();
-                    AfterEdit();
-                });
-        }
-
-        public static void EditMemberName(Ideo ideo)
-        {
-            controller.Begin(ideo.memberName, SymbolSpec("IdeoMembers"),
-                text =>
-                {
-                    ideo.memberName = text.Trim();
-                    ideo.MakeMemeberNamePluralDirty();
-                    ideo.RegenerateAllPreceptNames();
-                    AfterEdit();
-                });
-        }
-
         /// <summary>
-        /// Worship room has a Reset action (revert to the auto-generated default) in addition
-        /// to manual entry, mirroring Dialog_ChooseIdeoSymbols, so it opens a small menu.
-        /// </summary>
-        public static void OpenWorshipRoomMenu(Ideo ideo)
-        {
-            var options = new List<FloatMenuOption>
-            {
-                new FloatMenuOption("Edit".Translate(), () =>
-                    controller.Begin(ideo.WorshipRoomLabel, SymbolSpec("WorshipRoom"),
-                        text => { ideo.WorshipRoomLabel = text.Trim(); AfterEdit(); })),
-                new FloatMenuOption("Reset".Translate(), () =>
-                {
-                    ideo.WorshipRoomLabel = null; // reverts to the generated default
-                    AfterEdit();
-                }),
-            };
-            TolkHelper.Speak("WorshipRoom".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        /// <summary>
-        /// The narrative supports manual entry, randomization, and a lock that controls whether
-        /// it auto-regenerates when memes/precepts change — all of which vanilla exposes
-        /// (Dialog_EditIdeoDescription + the lock button in IdeoUIUtility.DoDescription).
+        /// The narrative's page surface, mirroring vanilla's own controls around the description
+        /// box: the edit button opens the real <see cref="Dialog_EditIdeoDescription"/> (which
+        /// carries Randomize itself), and the lock toggle mirrors the page's lock button.
         /// </summary>
         public static void OpenDescriptionMenu(Ideo ideo)
         {
             var options = new List<FloatMenuOption>
             {
                 new FloatMenuOption("EditNarrative".Translate(), () =>
-                    controller.Begin(ideo.description, TextFieldSpec.MultiLineUnrestricted("Description"),
-                        text =>
-                        {
-                            ideo.description = text;
-                            ideo.descriptionTemplate = null;
-                            ideo.descriptionLocked = true;
-                            AfterEdit();
-                        })),
-                new FloatMenuOption("Randomize".Translate(), () =>
-                {
-                    var result = ideo.GetNewDescription(force: true);
-                    ideo.description = result.text;
-                    ideo.descriptionTemplate = result.template;
-                    ideo.descriptionLocked = true;
-                    AfterEdit();
-                }),
-                // Lock toggle. The label states the CURRENT lock state; selecting it flips it.
+                    Find.WindowStack.Add(new Dialog_EditIdeoDescription(ideo))),
+                // Lock toggle. MUTATION-C: mirrors IdeoUIUtility's page lock button body
+                // (decompiled RimWorld/IdeoUIUtility.cs:1087-1101); the label states the CURRENT
+                // lock state and selecting it flips it.
                 new FloatMenuOption(LockStateText(ideo), () =>
                 {
                     ideo.descriptionLocked = !ideo.descriptionLocked;
@@ -120,8 +40,7 @@ namespace RimWorldAccess
                     TolkHelper.SpeakData(LockStateText(ideo), SpeechPriority.High);
                 }),
             };
-            TolkHelper.Speak("CoreNarrative".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
+            WindowlessFloatMenuState.Open(options, colonistOrders: false, titleText: "CoreNarrative".Loc().ToString());
         }
 
         private static string LockStateText(Ideo ideo)
@@ -130,52 +49,7 @@ namespace RimWorldAccess
                 .Translate("Narrative".Translate(), "NarrativeLower".Translate());
         }
 
-        #endregion
-
-        #region Icon / Color / Styles pickers
-
-        public static void OpenIconPicker(Ideo ideo)
-        {
-            var options = new List<FloatMenuOption>();
-            foreach (var iconDef in DefDatabase<IdeoIconDef>.AllDefs)
-            {
-                var captured = iconDef;
-                string label = iconDef.label.NullOrEmpty() ? iconDef.defName : iconDef.LabelCap.ToString();
-                if (iconDef == ideo.iconDef) label += ". " + "RimWorldAccess.Ideology.Builder.PreceptCurrent".Translate();
-                options.Add(new FloatMenuOption(label, () =>
-                {
-                    ideo.SetIcon(captured, ideo.colorDef);
-                    AfterEdit();
-                }));
-            }
-            if (options.Count == 0)
-                options.Add(new FloatMenuOption("NoneLower".Translate(), null));
-            TolkHelper.Speak("Icon".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        public static void OpenColorPicker(Ideo ideo)
-        {
-            var options = new List<FloatMenuOption>();
-            var colors = DefDatabase<ColorDef>.AllDefsListForReading
-                .Where(c => c.colorType == ColorType.Ideo)
-                .ToList();
-            foreach (var colorDef in colors)
-            {
-                var captured = colorDef;
-                string label = colorDef.label.NullOrEmpty() ? colorDef.defName : colorDef.LabelCap.ToString();
-                if (colorDef == ideo.colorDef) label += ". " + "RimWorldAccess.Ideology.Builder.PreceptCurrent".Translate();
-                options.Add(new FloatMenuOption(label, () =>
-                {
-                    ideo.SetIcon(ideo.iconDef, captured, clearPrimaryFactionColor: true);
-                    AfterEdit();
-                }));
-            }
-            if (options.Count == 0)
-                options.Add(new FloatMenuOption("NoneLower".Translate(), null));
-            TolkHelper.Speak("Color".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
+        #region Culture / Styles pickers
 
         public static void OpenCulturePicker(Ideo ideo)
         {
@@ -203,13 +77,27 @@ namespace RimWorldAccess
             }
             if (options.Count == 0)
                 options.Add(new FloatMenuOption("NoneLower".Translate(), null));
-            TolkHelper.Speak("ChooseCulture".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
+            WindowlessFloatMenuState.Open(options, colonistOrders: false, titleText: "ChooseCulture".Loc().ToString());
         }
 
         public static void OpenStylePicker(Ideo ideo)
         {
-            // Top-level: list current style slots + an add option, mirroring vanilla's 3-slot model.
+            OpenStylePicker(ideo, 0, "Styles".Loc().ToString());
+        }
+
+        /// <summary>
+        /// The styles submenu: one row per style-category slot plus an Add row, mirroring vanilla's
+        /// style-category slot model (see <see cref="IdeoStyleSlotLimit"/>, which mods raise).
+        /// Re-opened — never left closed — whenever the per-slot category picker below
+        /// closes, so choosing a category pops exactly ONE level (only Escape may
+        /// leave a menu we constructed). <paramref name="startIndex"/> lands the cursor on the slot
+        /// the picker's action affected, whose row label already states its new category;
+        /// <paramref name="title"/> carries what no row can state on its own (the screen name on
+        /// first open, a removal confirmation afterwards), folded into that row's announcement as a
+        /// single utterance.
+        /// </summary>
+        private static void OpenStylePicker(Ideo ideo, int startIndex, string title)
+        {
             var options = new List<FloatMenuOption>();
             var slots = ideo.thingStyleCategories;
 
@@ -221,17 +109,23 @@ namespace RimWorldAccess
                     () => OpenStyleSlotPicker(ideo, slotIndex)));
             }
 
-            if (slots.Count < 3)
+            if (slots.Count < IdeoStyleSlotLimit.Current)
                 options.Add(new FloatMenuOption("AddStyleCategory".Translate().ToString(), () => OpenStyleSlotPicker(ideo, -1)));
 
-            TolkHelper.Speak("Styles".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
+            WindowlessFloatMenuState.Open(options, colonistOrders: false, startIndex: startIndex,
+                titleText: title);
         }
 
         private static void OpenStyleSlotPicker(Ideo ideo, int slotIndex)
         {
             var slots = ideo.thingStyleCategories;
             var options = new List<FloatMenuOption>();
+
+            // Where the styles submenu lands once this picker closes, and the confirmation folded
+            // into that landing. Rewritten by whichever option runs; left untouched by Escape, so
+            // cancelling returns the cursor to the very slot the player drilled in from.
+            int landOn = slotIndex >= 0 ? slotIndex : slots.Count;
+            string confirmation = null;
 
             var available = DefDatabase<StyleCategoryDef>.AllDefs
                 .Where(s => !s.fixedIdeoOnly && !slots.Any(p => p?.category == s))
@@ -245,52 +139,84 @@ namespace RimWorldAccess
                     styleLabel += ". " + style.description;
                 options.Add(new FloatMenuOption(styleLabel, () =>
                 {
+                    // MUTATION-C: mirrors IdeoUIUtility.DoStyles's own add/replace float-menu
+                    // bodies (decompiled RimWorld/IdeoUIUtility.cs:797-846) — vanilla assigns
+                    // each new ThingStyleCategoryWithPriority priority "3 - index", where index
+                    // is the slot's position among the ideo's style-category slots;
+                    // Ideo.SortStyleCategories then uses that priority to arbitrate which
+                    // category wins when several could style the same thing.
+                    // The 3 in the priority is vanilla's own literal and is NOT the slot cap: the
+                    // mods' transpiler rewrites only the loop-bound constant, so vanilla still
+                    // assigns 3 - index at the raised slots.
                     if (slotIndex == -1)
-                        slots.Add(new ThingStyleCategoryWithPriority(captured, slots.Count == 0 ? 2 : 1));
+                        slots.Add(new ThingStyleCategoryWithPriority(captured, 3 - slots.Count));
                     else
+                    {
                         slots[slotIndex].category = captured;
+                        slots[slotIndex].priority = 3 - slotIndex;
+                    }
                     ideo.SortStyleCategories();
                     ideo.style.RecalculateAvailableStyleItems();
-                    AfterEdit();
+                    // SortStyleCategories reorders by priority, so the affected slot is found by
+                    // its category rather than assumed to still sit at the edited index.
+                    int moved = slots.FindIndex(p => p != null && p.category == captured);
+                    landOn = moved >= 0 ? moved : landOn;
+                    AfterEditSilent();
                 }));
             }
 
-            // Remove option for existing slots (keep at least one).
-            if (slotIndex >= 0 && slots.Count > 1)
+            // Remove option for existing slots. Vanilla's Remove (IdeoUIUtility.DoStyles,
+            // decompiled RimWorld/IdeoUIUtility.cs:797-802) is unconditional — no minimum-slot-
+            // count guard — so this mirrors that rather than inventing a "keep at least one"
+            // restriction.
+            if (slotIndex >= 0)
             {
                 options.Add(new FloatMenuOption("Remove".Translate().ToString(), () =>
                 {
+                    StyleCategoryDef removed = slots[slotIndex]?.category;
                     slots.RemoveAt(slotIndex);
                     ideo.SortStyleCategories();
                     ideo.style.RecalculateAvailableStyleItems();
-                    AfterEdit();
+                    // The removed row is gone: land on whichever row now occupies its position (the
+                    // Add row once the last slot goes) and say what left, since no row can state it.
+                    landOn = System.Math.Min(slotIndex, slots.Count);
+                    if (removed != null)
+                        confirmation = removed.LabelCap.ToString() + ", "
+                            + (string)"RimWorldAccess.Ideology.Builder.Status.Removed".Translate();
+                    AfterEditSilent();
                 }));
             }
 
             if (options.Count == 0)
                 options.Add(new FloatMenuOption("NoneLower".Translate(), null));
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
+            // announceSelection: false — the styles submenu re-opening below is the confirmation;
+            // the generic "<option> selected" echo on top of it would be a second utterance.
+            WindowlessFloatMenuState.Open(options, colonistOrders: false, announceSelection: false,
+                onClose: _ => OpenStylePicker(ideo, landOn, confirmation));
         }
 
         #endregion
 
+        /// <summary>
+        /// The silent twin of <see cref="AfterEdit"/>, for an edit that immediately re-opens its own
+        /// menu (the styles slot picker): the host's rows are refreshed but NOT re-announced, because
+        /// the re-opened menu's landing row is the single utterance the action gets. The host speaks
+        /// for itself again when the player Escapes out and it regains focus.
+        /// </summary>
+        private static void AfterEditSilent()
+        {
+            SoundDefOf.Tick_High.PlayOneShotOnCamera();
+            IdeoEditNotifyHub.Notify(announce: false);
+        }
+
         private static void AfterEdit()
         {
             SoundDefOf.Tick_High.PlayOneShotOnCamera();
-            // Refresh whichever builder context launched this edit.
-            if (IdeoSectionEditorState.IsActive)
-            {
-                IdeoSectionEditorState.Refresh();
-            }
-            else if (IdeoReformState.IsActive)
-            {
-                IdeoReformState.RefreshSections();
-            }
-            else
-            {
-                IdeoBuilderHubState.RebuildSections();
-                IdeoBuilderHubState.AnnounceCurrentSection();
-            }
+            // Refresh whichever ideo-editing host is currently live. See IdeoEditNotifyHub for
+            // the registration contract that
+            // replaced this method's former hardcoded IsActive-chain (IdeoSectionEditorState ->
+            // IdeoReformState -> IdeoBuilderScreenScope's static 'active' field).
+            IdeoEditNotifyHub.Notify();
         }
     }
 }

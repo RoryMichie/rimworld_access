@@ -28,21 +28,24 @@ Build a comms console and an orbital trade beacon (both require the Microelectro
 
 When the window opens, the mod announces who you are dealing with and the two keys you will reach for most, for example "Trading with Bob's Caravan (bulk goods trader). Alt+B for balance, Alt+A to accept." The game pauses while you trade.
 
-The window is organized into tabs. Move between them with **Left** and **Right**:
+There are two ways to look at the same window. The classic view is the default; press **Ctrl+Tab** (Option+Tab on macOS) to switch to the table view and back at any time. The mod remembers the view you used last, and Options > RimWorld Access has a Default Trade View setting as well.
 
-- **The trader's items** (leftmost tab, named after the trader): what they have for sale.
-- **Trade Summary**: a running list of everything queued so far, plus a balance line. This tab only appears once you have queued at least one item.
-- **Your items**: what your colony or caravan can sell.
+### The classic view
 
-Each tab remembers your cursor position when you switch away and back.
+The window is organized into sections. **Left** and **Right** move between the three goods sections, with the trade summary in the middle. **Tab** and **Shift+Tab** hop between the goods area and the toolbar, and bring you back to the section and row you left:
+
+- **The trader's items** (first section, named after the trader): what they have for sale. Entering it tells you how much silver the trader will have once the current deal goes through.
+- **Trade Summary**: a running list of everything queued so far, plus a balance line. This section only appears once you have queued at least one item.
+- **Your items**: what your colony or caravan can sell. Entering it tells you how much silver you will have after the deal.
+- **The toolbar** (Tab): the game's two sort dropdowns, then Accept, Reset, Cancel, Sellable Items, the gift toggle, and Switch to Table View. Left and Right walk the buttons here, and Enter presses one.
+
+Each section remembers your cursor position when you switch away and back. If the section you left has emptied in the meantime, you land at the top of the nearest one.
 
 ### Browsing the goods
 
 **Up** and **Down** move through the list. **Home** jumps to the first item; **End** jumps to the last. Start typing to jump to an item by name (typeahead works here as elsewhere); **Backspace** edits the search and **Escape** clears it.
 
-Each item is announced with its name, quantity available, and price. Items both sides carry show both prices at once so you can compare directions.
-
-The mod does not yet tell you whether a given price is a good deal or a bad one. In the visual window, RimWorld colors favorable prices and unfavorable ones differently, and that signal is not announced today. To judge a price for now, open the price breakdown described below, or check the wiki for typical market values.
+Each item is announced with its name and anything you have queued on it, then the counts and prices, then the description. Items both sides carry show both prices at once so you can compare directions. When RimWorld colors a price as a good or bad deal in the visual window, the announcement says so: "great deal" or "pricey" when you are buying, "good offer" or "poor offer" when you are selling. The counts, prices, and description live in the details part of the announcement, so the Configure Spoken Announcements screen can move them or turn them off.
 
 ### Reading prices and your silver
 
@@ -50,28 +53,32 @@ Silver is the currency for almost all trades. (Royal tribute collectors trade fo
 
 To hear how much silver each side has, press **Alt+B**: "You have X silver. Trader has Y silver." Worth checking before a large buy, since a trader can only pay you with the silver they are carrying.
 
-For the full reason behind a single item's price, put the cursor on the item and press **Tab**. That opens a navigable price breakdown showing the market value, trader markup, your colonist's Social bonus, and so on. **Alt+P** also opens the same breakdown. To open the full [info card](../concepts/info-card.md) for an item, press **Alt+I**.
+For the full reason behind a single item's price, put the cursor on the item and press **Alt+P**. That opens a navigable price breakdown showing the market value, trader markup, your colonist's Social bonus, and so on. In the trader's list it explains the buying price; in your list, the selling price. To open the full [info card](../concepts/info-card.md) for an item, press **Alt+I**.
 
 ## Buying and selling
 
-Each item starts at a quantity of zero. Negative quantities mean you are selling; positive quantities mean you are buying. The announcements say "Buying 10" or "Selling 5" plainly.
+Each item starts at a quantity of zero. In the trader's list, adding to the quantity buys; in your list, adding sells. The announcements say "Buying 10" or "Selling 5" plainly, followed by the running total, for example "Buying 10 Steel, value 43 silver."
 
-Press **Enter** to drop into quantity mode for the current item. In quantity mode:
+Press **Enter** to drop into the quantity chooser for the current item. Inside it:
 
 - **Up** and **Down** change the amount by one.
 - **Shift+Up / Shift+Down** change it by ten.
 - **Ctrl+Up / Ctrl+Down** change it by a hundred.
-- Type a number directly to buy that many. To sell, press **-** first, then type the quantity. **Backspace** fixes a typo.
+- Type a number to set that amount. In the trader's list a bare number buys; in your list it sells. Lead with **-** to sell or **+** to buy regardless, for example `-10` sells ten. **Backspace** fixes a typo.
 - **Home** sets the maximum sell amount; **End** sets the maximum buy amount.
-- **Enter** or **Escape** exits quantity mode and returns to the list.
+- **Enter** or **Escape** returns to the list.
 
-Without entering quantity mode, **-** decreases and **+** (or **=**) increases the current item's amount by one. The mod reads back the running total as you adjust, for example "Buying 10 Steel, value 43 silver."
+Without opening the chooser, **-** decreases and **+** (or **=**) increases the current item's amount by one, **Shift+Up / Shift+Down** by ten, **Ctrl+Up / Ctrl+Down** by a hundred, and **Shift+Home / Shift+End** jump to the maximum sell or buy.
 
 To zero out an item, press **Delete** or **Alt+R**. To wipe every pending trade and start clean, press **Shift+Alt+R**.
 
 ### Checking the running deal
 
-Once you have queued at least one item, switch to the Trade Summary tab to see the whole deal: what you are buying, what you are selling, and a balance line at the bottom. The balance reads "Net balance: Spending 50 silver," "Net balance: Receiving 100 silver," or "Net balance: Balanced trade." If you remove the last queued item, this tab empties and the mod returns you to the previous tab.
+Once you have queued at least one item, Tab to the Trade Summary section to hear the whole deal: what you are buying, what you are selling, and a balance line at the end. The balance reads "Net balance: Spending 50 silver," "Net balance: Receiving 100 silver," or "Net balance: Balanced trade," and Enter on it reads both sides' silver. If you remove the last queued item, this section empties and the mod returns you to the goods.
+
+### The table view
+
+The table view is the same window as one sortable list laid out the way the game draws it. **Up** and **Down** move through the rows, **Left** and **Right** move between the columns (name, your count, sell price, trade amount, buy price, the trader's count, mass, market value), and Enter on a column header sorts by that column. Every trading key above works here too.
 
 ## Completing the trade
 
@@ -79,17 +86,17 @@ Press **Alt+A** to accept. The mod confirms with "Trade completed successfully,"
 
 If the trader does not have enough silver to cover what you are selling, the mod warns you and asks for confirmation before proceeding. A trader can only pay with the silver they are carrying. They pay what they can, and you do not receive goods to make up the difference, so check their silver with **Alt+B** before a large sale.
 
-To leave without trading, press **Escape**. (If you are in quantity mode, the first Escape exits quantity mode; the second closes the window.) The mod announces "Trade cancelled."
+To leave without trading, press **Escape**. (If you are in the quantity chooser, the first Escape closes it; the second closes the window.) The mod announces "Trade cancelled."
 
 ### Giving gifts
 
-Press **Alt+G** to toggle gift mode. In gift mode you hand items over for goodwill rather than silver. The balance line shows the goodwill you will gain, for example "Goodwill +15." You cannot gift to a hostile faction or while trading for royal favor, and the mod will tell you if you try.
+Press **Alt+G** to toggle gift mode. In gift mode you hand items over for goodwill rather than silver, so the mod moves you to your items, and silver itself joins that list so you can gift some. The balance line shows the goodwill you will gain, for example "Goodwill +15." You cannot gift to a hostile faction or while trading for royal favor, and the mod will tell you if you try.
 
 ## Previewing what a settlement will buy
 
 Before sending a caravan on a long trip, you can check what a settlement wants. On the [world map](world-map.md), navigate to the settlement, press **G** for its gizmos, and choose Show Sellable Items. This opens a read-only list:
 
-- **Left / Right**: switch between category tabs.
+- **Tab / Shift+Tab**: switch between category tabs.
 - **Up / Down**: move through items; **Home** and **End** jump to the ends.
 - Type to search by name; **Backspace** edits the search; **Escape** clears it, then closes the window.
 

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://rimworldaccess.com
+    about: Installation, setup, and a full guide to using the mod. Most questions are answered here, so please check before filing.
+  - name: 💬 Discord
+    url: https://discord.rimworldaccess.com
+    about: The fastest place to get help, ask questions, and report problems. If you are a player, start here rather than opening an issue.
+  - name: 💡 Discussions
+    url: https://github.com/aaronr7734/rimworld_access/discussions
+    about: Share an idea or ask a question that is not a bug or a fully specified feature request.

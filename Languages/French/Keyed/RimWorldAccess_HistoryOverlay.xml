@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    New keys added for the History tab's ArchivedDialog parity fix and
+    keyboard-mode overlay localization (src/History/HistoryHelper.cs,
+    src/History/HistoryPatch.cs). Kept in a separate file rather than
+    folded into RimWorldAccess_History.xml per that file's existing
+    "archive item type nouns" and "keyboard-mode visual overlay" sections,
+    which this one extends.
+  -->
+
+  <!-- Archive item type noun for RimWorld.ArchivedDialog rows (quest
+       dialogs, caravan meetings/demands, game start/end narrative), which
+       gate on the same letters filter as Letter rows but are a distinct
+       IArchivable type. Sibling of RimWorldAccess.History.Type.Letter/
+       Message/Item in RimWorldAccess_History.xml. -->
+  <RimWorldAccess.History.Type.Dialog>Dialogue</RimWorldAccess.History.Type.Dialog>
+
+  <!-- Keyboard-mode visual overlay instruction lines (HistoryPatch.
+       DrawKeyboardModeIndicator). BaseInstructions is shown on every tab;
+       exactly one of the per-tab variants is appended after it. -->
+  <RimWorldAccess.History.Overlay.BaseInstructions>Tab/Maj+Tab : Changer d'onglet | Haut/Bas : Naviguer | Entrée : Détails</RimWorldAccess.History.Overlay.BaseInstructions>
+  <RimWorldAccess.History.Overlay.MessagesInstructions>Alt+L : Afficher/Masquer les lettres | Alt+M : Afficher/Masquer les messages | Alt+P : Épingler | Alt+J : Aller à</RimWorldAccess.History.Overlay.MessagesInstructions>
+  <RimWorldAccess.History.Overlay.GraphInstructions>Alt+G : Sélectionner le graphique | Alt+D : Changer la plage de dates | Tapez pour rechercher | Home/End : Premier/Dernier</RimWorldAccess.History.Overlay.GraphInstructions>
+  <RimWorldAccess.History.Overlay.StatisticsInstructions>Tapez pour rechercher | Home/End : Premier/Dernier</RimWorldAccess.History.Overlay.StatisticsInstructions>
+</LanguageData>

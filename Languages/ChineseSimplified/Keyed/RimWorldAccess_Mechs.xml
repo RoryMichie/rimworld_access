@@ -70,6 +70,7 @@
          {2} = position suffix. -->
   <RimWorldAccess.Mechs.Submenu.NoOverseer>无监管者</RimWorldAccess.Mechs.Submenu.NoOverseer>
   <RimWorldAccess.Mechs.Submenu.NoControlGroup>无控制组</RimWorldAccess.Mechs.Submenu.NoControlGroup>
+  <RimWorldAccess.Mechs.Submenu.AreaNotAllowed>{0} 不支持分配活动区</RimWorldAccess.Mechs.Submenu.AreaNotAllowed>
   <RimWorldAccess.Mechs.Submenu.CurrentMarker>{0}（当前）</RimWorldAccess.Mechs.Submenu.CurrentMarker>
   <RimWorldAccess.Mechs.Submenu.Option>{0}. {1}</RimWorldAccess.Mechs.Submenu.Option>
   <RimWorldAccess.Mechs.Submenu.OptionAnnounce>{0} ({1})</RimWorldAccess.Mechs.Submenu.OptionAnnounce>
@@ -87,9 +88,6 @@
        Sort feedback (Alt+S). Mirrors the Animals sort vocabulary.
        CannotSort/SortedBy: {0} = column name, {1} = direction word.
        NowAt: {0} = the rebuilt cell announcement after a resort. -->
-  <RimWorldAccess.Mechs.Sort.CannotSort>{0} 无法排序</RimWorldAccess.Mechs.Sort.CannotSort>
-  <RimWorldAccess.Mechs.Sort.Cleared>已清除排序，默认顺序</RimWorldAccess.Mechs.Sort.Cleared>
-  <RimWorldAccess.Mechs.Sort.SortedBy>按 {0} 排序（{1}）</RimWorldAccess.Mechs.Sort.SortedBy>
   <RimWorldAccess.Mechs.Sort.NowAt>当前位于 {0}</RimWorldAccess.Mechs.Sort.NowAt>
 
   <!-- =================================================================
@@ -97,6 +95,7 @@
        Allowed Area: {0} = mech name, {1} = area label, {2} = position. -->
   <RimWorldAccess.Mechs.Paint.Single.AreaAlreadySet>{0}: 已设为 {1}. {2}</RimWorldAccess.Mechs.Paint.Single.AreaAlreadySet>
   <RimWorldAccess.Mechs.Paint.Single.AreaApplied>{0}: 已应用 {1}. {2}</RimWorldAccess.Mechs.Paint.Single.AreaApplied>
+  <RimWorldAccess.Mechs.Paint.Single.AreaNotAllowed>{0}: 不支持分配活动区. {1}</RimWorldAccess.Mechs.Paint.Single.AreaNotAllowed>
 
   <!-- Single-step paint for Draft / Auto Repair checkbox columns.
        {0} = mech name, {1} = column name, {2} = value label, {3} = position.

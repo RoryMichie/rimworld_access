@@ -3,32 +3,38 @@ using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using RimWorld.Planet;
-using UnityEngine;
 using Verse;
 using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages the gear equip/swap menu for caravan gear management.
-    /// Shows list of pawns with their current equipment in the relevant slot.
+    /// The caravan gear equip/swap menu: pawns with their current equipment in the relevant slot.
+    ///
+    /// Data/mutation backend only. The rows go to <see cref="WindowlessFloatMenuState"/>, whose
+    /// visual twin draws them and whose scope owns navigation, typeahead and Escape. Each row's
+    /// action calls back into <see cref="ExecuteSelected"/>, the single execution path; a pawn who
+    /// cannot take the item gets a disabled option, so that method's CanEquip gate is reached only
+    /// through a direct call.
     /// </summary>
     public static class GearEquipMenuState
     {
-        public static bool IsActive { get; private set; } = false;
+        /// <summary>
+        /// True while OUR option list is the one the windowless menu is running. Identity, not a
+        /// retained flag, so a menu closed by any other path can never leave this stale.
+        /// </summary>
+        public static bool IsActive =>
+            menuOptions != null && ReferenceEquals(WindowlessFloatMenuState.CurrentOptions, menuOptions);
 
         private static Caravan currentCaravan = null;
         private static Thing itemToEquip = null;
         private static Pawn sourceOwner = null; // Pawn who currently has the item (null if from inventory)
         private static bool isWeapon = false;
         private static List<PawnEquipOption> options = new List<PawnEquipOption>();
-        private static int selectedIndex = 0;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
+        private static List<FloatMenuOption> menuOptions = null;
 
-        /// <summary>
-        /// Represents a pawn option in the equip menu
-        /// </summary>
-        private class PawnEquipOption
+        /// <summary>A pawn option in the equip menu.</summary>
+        internal class PawnEquipOption
         {
             public Pawn Pawn { get; set; }
             public bool CanEquip { get; set; }
@@ -52,11 +58,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Opens the equip menu for a gear item.
+        /// Opens the equip menu for a gear item. <paramref name="currentOwner"/> is null when the
+        /// item comes from caravan inventory rather than off a pawn.
         /// </summary>
-        /// <param name="caravan">The caravan</param>
-        /// <param name="item">The item to equip</param>
-        /// <param name="currentOwner">The pawn who currently has the item equipped (null if from inventory)</param>
         public static void Open(Caravan caravan, Thing item, Pawn currentOwner)
         {
             if (caravan == null || item == null)
@@ -78,29 +82,57 @@ namespace RimWorldAccess
                 return;
             }
 
-            selectedIndex = 0;
-            typeahead.ClearSearch();
-            IsActive = true;
-            SoundDefOf.TabOpen.PlayOneShotOnCamera();
+            menuOptions = BuildMenuOptions();
 
-            // Build header announcement
             string itemName = item.LabelCap;
             string actionType = currentOwner != null
                 ? "RimWorldAccess.Gear.ActionGive".Translate()
                 : "RimWorldAccess.Gear.ActionEquip".Translate();
-            TolkHelper.Speak("RimWorldAccess.Gear.OpenInstructions".Loc(actionType, itemName));
-
-            AnnounceCurrentSelection();
+            // The menu speaks its title and first row as one utterance and stays silent after an
+            // option runs: ExecuteSelected speaks the outcome.
+            WindowlessFloatMenuState.Open(
+                menuOptions,
+                colonistOrders: false,
+                announceSelection: false,
+                titleText: "RimWorldAccess.Gear.OpenInstructions".Loc(actionType, itemName).ToString());
         }
 
         /// <summary>
-        /// Builds the list of pawn options for equipping.
+        /// Wraps each built row as a float-menu option. A pawn who cannot take the item becomes a
+        /// disabled option in vanilla's own null-action shape, so the menu rejects it as it would
+        /// any unusable entry.
         /// </summary>
+        private static List<FloatMenuOption> BuildMenuOptions()
+        {
+            var built = new List<FloatMenuOption>(options.Count);
+            for (int i = 0; i < options.Count; i++)
+            {
+                PawnEquipOption option = options[i];
+                string label = option.GetDisplayLabel();
+                // Vanilla draws separate Colonists/Prisoners sections; this flat list carries the
+                // distinction on the row label instead, since reordering would change typeahead
+                // ranking and the Home/End targets.
+                if (!option.IsUnequipOption && option.Pawn != null && option.Pawn.IsPrisoner)
+                {
+                    label = "RimWorldAccess.Gear.PrisonerLabelWrapper".Translate(label);
+                }
+
+                if (!option.CanEquip)
+                {
+                    built.Add(new FloatMenuOption(label, null));
+                    continue;
+                }
+                int index = i;
+                built.Add(new FloatMenuOption(label, delegate { ExecuteSelected(index); }));
+            }
+            return built;
+        }
+
+        /// <summary>The pawn options for equipping.</summary>
         private static void BuildOptions()
         {
             options.Clear();
 
-            // If item is currently equipped, add "Unequip to inventory" as first option
             if (sourceOwner != null)
             {
                 options.Add(new PawnEquipOption
@@ -113,20 +145,20 @@ namespace RimWorldAccess
             var canEquipList = new List<PawnEquipOption>();
             var cantEquipList = new List<PawnEquipOption>();
 
-            // Get all humanlike pawns in the caravan
+            // Every pawn vanilla's Gear tab would draw a row for: IsColonist or IsPrisoner only.
+            // IsColonist excludes an insecure slave, so an unsecured slave is never a target
+            // vanilla's own UI can reach either.
             var pawns = currentCaravan.PawnsListForReading
-                .Where(p => p.RaceProps.Humanlike && !p.Dead && !p.Downed)
+                .Where(p => (p.IsColonist || p.IsPrisoner) && !p.Dead && !p.Downed)
                 .OrderBy(p => p.LabelShortCap);
 
             foreach (Pawn pawn in pawns)
             {
-                // Skip the source owner (can't give to yourself)
                 if (pawn == sourceOwner)
                     continue;
 
                 var option = new PawnEquipOption { Pawn = pawn };
 
-                // Check if pawn can equip this item
                 if (!EquipmentUtility.CanEquip(itemToEquip, pawn, out string cantReason))
                 {
                     option.CanEquip = false;
@@ -135,7 +167,6 @@ namespace RimWorldAccess
                     continue;
                 }
 
-                // Additional checks for weapons
                 if (isWeapon)
                 {
                     if (pawn.guest?.IsPrisoner == true)
@@ -168,7 +199,6 @@ namespace RimWorldAccess
                     }
                 }
 
-                // Check for apparel-specific issues
                 if (itemToEquip is Apparel apparel)
                 {
                     if (!ApparelUtility.HasPartsToWear(pawn, apparel.def))
@@ -187,7 +217,6 @@ namespace RimWorldAccess
                     }
                 }
 
-                // Pawn can equip - find what they currently have in this slot
                 option.CanEquip = true;
                 Thing currentEquip;
                 string currentLabel;
@@ -197,14 +226,11 @@ namespace RimWorldAccess
                 canEquipList.Add(option);
             }
 
-            // Add can-equip pawns first, then can't-equip pawns
             options.AddRange(canEquipList);
             options.AddRange(cantEquipList);
         }
 
-        /// <summary>
-        /// Gets the current equipment a pawn has in the slot that would be used by the item.
-        /// </summary>
+        /// <summary>What the pawn currently has in the slot this item would use.</summary>
         private static void GetCurrentEquipmentInSlot(Pawn pawn, out Thing currentEquipment, out string label)
         {
             currentEquipment = null;
@@ -212,7 +238,6 @@ namespace RimWorldAccess
 
             if (isWeapon)
             {
-                // For weapons, check primary weapon
                 var weapon = pawn.equipment?.Primary;
                 if (weapon != null)
                 {
@@ -226,7 +251,6 @@ namespace RimWorldAccess
             }
             else if (itemToEquip is Apparel apparel)
             {
-                // For apparel, find conflicting apparel
                 var conflicting = GetConflictingApparel(pawn, apparel);
                 if (conflicting != null && conflicting.Count > 0)
                 {
@@ -247,9 +271,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets apparel that would conflict with equipping the given apparel.
-        /// </summary>
+        /// <summary>Apparel that would conflict with wearing the given apparel.</summary>
         private static List<Apparel> GetConflictingApparel(Pawn pawn, Apparel newApparel)
         {
             var conflicting = new List<Apparel>();
@@ -266,74 +288,37 @@ namespace RimWorldAccess
             return conflicting;
         }
 
-        /// <summary>
-        /// Closes the equip menu.
-        /// </summary>
+        /// <summary>Closes the equip menu.</summary>
         public static void Close()
         {
-            IsActive = false;
+            // Only ours to close: after an option runs the menu has closed itself, and something
+            // else may own the windowless menu by now.
+            if (IsActive)
+            {
+                WindowlessFloatMenuState.Close();
+            }
+            menuOptions = null;
             currentCaravan = null;
             itemToEquip = null;
             sourceOwner = null;
             options.Clear();
-            selectedIndex = 0;
-            typeahead.ClearSearch();
         }
 
         /// <summary>
-        /// Handles typeahead character input from the layout-aware dispatcher.
+        /// Executes the option at <paramref name="index"/>, the single execution path every menu
+        /// row's action calls back into.
         /// </summary>
-        public static void HandleTypeahead(char c)
+        // MUTATION-C: the weapon path below defers its mutation behind
+        // EquipmentUtility.GetPersonaWeaponConfirmationText + Dialog_MessageBox, mirroring
+        // WITab_Caravan_Gear.TryEquipDraggedItem (decompiled lines 483-497) — a real
+        // confirmation may be pending when this method returns, so the close+refresh is
+        // deferred to the shared `finish` callback rather than always running inline.
+        public static void ExecuteSelected(int index)
         {
-            if (!IsActive) return;
-
-            var labels = GetItemLabels();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
-        }
-
-        /// <summary>
-        /// Selects the next option.
-        /// </summary>
-        public static void SelectNext()
-        {
-            if (options.Count == 0) return;
-            selectedIndex = MenuHelper.SelectNext(selectedIndex, options.Count);
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Selects the previous option.
-        /// </summary>
-        public static void SelectPrevious()
-        {
-            if (options.Count == 0) return;
-            selectedIndex = MenuHelper.SelectPrevious(selectedIndex, options.Count);
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Executes the currently selected option.
-        /// </summary>
-        public static void ExecuteSelected()
-        {
-            if (options.Count == 0 || selectedIndex < 0 || selectedIndex >= options.Count)
+            if (options.Count == 0 || index < 0 || index >= options.Count)
                 return;
 
-            var option = options[selectedIndex];
+            var option = options[index];
 
             if (!option.CanEquip)
             {
@@ -344,65 +329,103 @@ namespace RimWorldAccess
 
             string itemName = itemToEquip.LabelCap;
 
-            try
+            if (option.IsUnequipOption)
             {
-                // Handle "Unequip to inventory" option
-                if (option.IsUnequipOption)
+                try
                 {
-                    PerformUnequipToInventory();
-                    TolkHelper.Speak("RimWorldAccess.Gear.UnequippedToInventory".Loc(itemName));
-                    SoundDefOf.Click.PlayOneShotOnCamera();
-                }
-                else
-                {
-                    // Perform the equip/swap
-                    bool isSwap = option.CurrentEquipment != null;
-                    string targetName = option.Pawn.LabelShortCap;
-
-                    PerformEquip(option.Pawn, option.CurrentEquipment);
-
-                    // Announce result
-                    if (isSwap)
+                    if (PerformUnequipToInventory())
                     {
-                        string swappedItem = option.CurrentEquipment?.LabelCap ?? (string)"RimWorldAccess.Gear.SwappedItemFallback".Translate();
-                        if (sourceOwner != null)
-                        {
-                            // Both pawns now have each other's gear
-                            TolkHelper.Speak("RimWorldAccess.Gear.SwappedTwoOwners".Loc(targetName, itemName, sourceOwner.LabelShortCap, swappedItem));
-                        }
-                        else
-                        {
-                            // Item was from inventory, target's old item goes to inventory
-                            TolkHelper.Speak("RimWorldAccess.Gear.SwappedToInventory".Loc(targetName, itemName, swappedItem));
-                        }
+                        TolkHelper.Speak("RimWorldAccess.Gear.UnequippedToInventory".Loc(itemName));
+                        SoundDefOf.Click.PlayOneShotOnCamera();
                     }
                     else
                     {
-                        TolkHelper.Speak("RimWorldAccess.Gear.EquippedTo".Loc(itemName, targetName));
+                        SoundDefOf.ClickReject.PlayOneShotOnCamera();
                     }
-
-                    SoundDefOf.Click.PlayOneShotOnCamera();
                 }
+                catch (Exception ex)
+                {
+                    Log.Error($"[RimWorldAccess] Error equipping gear: {ex}");
+                    TolkHelper.Speak("RimWorldAccess.Gear.FailedToEquip".Loc());
+                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                }
+
+                Close();
+                CaravanInspectState.RefreshTree();
+                return;
+            }
+
+            bool isSwap = option.CurrentEquipment != null;
+            string targetName = option.Pawn.LabelShortCap;
+            Thing displacedItem = option.CurrentEquipment;
+
+            // Runs once the outcome is known: immediately for apparel or an unconfirmed weapon,
+            // else from the persona-weapon dialog's Yes callback. Announces only genuine success;
+            // PerformEquip already speaks each specific rejection.
+            void Finish(bool success)
+            {
+                try
+                {
+                    if (success)
+                    {
+                        if (isSwap)
+                        {
+                            string swappedItem = displacedItem?.LabelCap ?? (string)"RimWorldAccess.Gear.SwappedItemFallback".Translate();
+                            if (sourceOwner != null)
+                            {
+                                TolkHelper.Speak("RimWorldAccess.Gear.SwappedTwoOwners".Loc(targetName, itemName, sourceOwner.LabelShortCap, swappedItem));
+                            }
+                            else
+                            {
+                                TolkHelper.Speak("RimWorldAccess.Gear.SwappedToInventory".Loc(targetName, itemName, swappedItem));
+                            }
+                        }
+                        else
+                        {
+                            TolkHelper.Speak("RimWorldAccess.Gear.EquippedTo".Loc(itemName, targetName));
+                        }
+
+                        SoundDefOf.Click.PlayOneShotOnCamera();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[RimWorldAccess] Error equipping gear: {ex}");
+                    TolkHelper.Speak("RimWorldAccess.Gear.FailedToEquip".Loc());
+                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                }
+
+                Close();
+                CaravanInspectState.RefreshTree();
+            }
+
+            try
+            {
+                PerformEquip(option.Pawn, displacedItem, Finish);
             }
             catch (Exception ex)
             {
                 Log.Error($"[RimWorldAccess] Error equipping gear: {ex}");
                 TolkHelper.Speak("RimWorldAccess.Gear.FailedToEquip".Loc());
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                Close();
+                CaravanInspectState.RefreshTree();
             }
-
-            // Close menu and refresh caravan tree
-            Close();
-            CaravanInspectState.RefreshTree();
         }
 
         /// <summary>
-        /// Unequips the item from source owner to caravan inventory.
+        /// Unequips the item from its owner into caravan inventory. False means it did not
+        /// happen, and callers must not announce success — the rejection already spoke its reason.
         /// </summary>
-        private static void PerformUnequipToInventory()
+        // MUTATION-C: mirrors WITab_Caravan_Gear.MoveDraggedItemToInventory's locked-apparel
+        // gate (decompiled lines 384-389) -- vanilla refuses with MessageCantUnequipLockedApparel
+        // before ever moving a locked apparel item to inventory. No reusable A/B vehicle exists
+        // for this mod-invented non-drag unequip flow, so the check is hand-copied verbatim,
+        // matching the same gate PerformApparelEquip already applies below.
+        private static bool PerformUnequipToInventory()
         {
             if (sourceOwner == null)
-                return;
+                return false;
 
             if (isWeapon)
             {
@@ -410,7 +433,6 @@ namespace RimWorldAccess
                 if (weapon != null && sourceOwner.equipment?.Primary == weapon)
                 {
                     sourceOwner.equipment.Remove(weapon);
-                    // Move to inventory
                     Pawn carrier = CaravanInventoryUtility.FindPawnToMoveInventoryTo(weapon, currentCaravan.PawnsListForReading, null);
                     if (carrier != null)
                     {
@@ -422,8 +444,12 @@ namespace RimWorldAccess
             {
                 if (sourceOwner.apparel?.WornApparel?.Contains(apparel) == true)
                 {
+                    if (sourceOwner.apparel.IsLocked(apparel))
+                    {
+                        TolkHelper.Speak("RimWorldAccess.Gear.CannotRemoveLockedApparel".Loc());
+                        return false;
+                    }
                     sourceOwner.apparel.Remove(apparel);
-                    // Move to inventory
                     Pawn carrier = CaravanInventoryUtility.FindPawnToMoveInventoryTo(apparel, currentCaravan.PawnsListForReading, null);
                     if (carrier != null)
                     {
@@ -431,37 +457,74 @@ namespace RimWorldAccess
                     }
                 }
             }
+
+            return true;
         }
 
         /// <summary>
-        /// Performs the actual equip/swap operation.
+        /// Performs the equip/swap, calling <paramref name="onDone"/> once the outcome is known:
+        /// synchronously for apparel, and for weapons only after any persona/bladelink
+        /// confirmation resolves.
         /// </summary>
-        private static void PerformEquip(Pawn targetPawn, Thing targetCurrentEquipment)
+        private static void PerformEquip(Pawn targetPawn, Thing targetCurrentEquipment, Action<bool> onDone)
         {
             if (isWeapon)
             {
-                PerformWeaponEquip(targetPawn);
+                PerformWeaponEquip(targetPawn, onDone);
             }
             else if (itemToEquip is Apparel apparel)
             {
-                PerformApparelEquip(targetPawn, apparel);
+                onDone(PerformApparelEquip(targetPawn, apparel));
+            }
+            else
+            {
+                onDone(false);
             }
         }
 
-        /// <summary>
-        /// Equips a weapon to the target pawn.
-        /// </summary>
-        private static void PerformWeaponEquip(Pawn targetPawn)
+        /// <summary>Equips a weapon to the target pawn, gated by vanilla's persona/bladelink confirmation.</summary>
+        // MUTATION-C: mirrors WITab_Caravan_Gear.TryEquipDraggedItem's weapon branch
+        // (decompiled lines 483-522) verbatim. No reusable A/B vehicle exists — the vanilla
+        // method is private and coupled to the WITab's own drag-drop fields — so the
+        // persona-weapon confirmation gate (rides EquipmentUtility.GetPersonaWeaponConfirmationText
+        // + Dialog_MessageBox, Category A once opened) and the displacement handling are
+        // hand-copied here. The whole mutation is gated behind the confirmation, matching
+        // vanilla: nothing about the source pawn or the target's existing equipment is touched
+        // until the player accepts.
+        private static void PerformWeaponEquip(Pawn targetPawn, Action<bool> onDone)
         {
             ThingWithComps weaponToEquip = itemToEquip as ThingWithComps;
-            if (weaponToEquip == null) return;
+            if (weaponToEquip == null)
+            {
+                onDone(false);
+                return;
+            }
 
-            // If source owner has the item equipped, unequip it first
+            string personaWeaponConfirmationText = EquipmentUtility.GetPersonaWeaponConfirmationText(weaponToEquip, targetPawn);
+            if (!personaWeaponConfirmationText.NullOrEmpty())
+            {
+                Find.WindowStack.Add(new Dialog_MessageBox(personaWeaponConfirmationText, "Yes".Translate(), delegate
+                {
+                    DoWeaponEquip(targetPawn, weaponToEquip);
+                    onDone(true);
+                }, "No".Translate()));
+                return;
+            }
+
+            DoWeaponEquip(targetPawn, weaponToEquip);
+            onDone(true);
+        }
+
+        /// <summary>
+        /// The weapon-equip mutation itself, run once any persona/bladelink confirmation has been
+        /// accepted.
+        /// </summary>
+        private static void DoWeaponEquip(Pawn targetPawn, ThingWithComps weaponToEquip)
+        {
             if (sourceOwner != null && sourceOwner.equipment?.Primary == weaponToEquip)
             {
                 sourceOwner.equipment.Remove(weaponToEquip);
             }
-            // If item is in someone's inventory, remove it
             else
             {
                 foreach (Pawn p in currentCaravan.PawnsListForReading)
@@ -474,86 +537,95 @@ namespace RimWorldAccess
                 }
             }
 
-            // If target has a weapon, move it to inventory (or to source for swap)
-            ThingWithComps targetWeapon = targetPawn.equipment?.Primary;
-            if (targetWeapon != null)
+            // Displace every equipped item, not just Primary, mirroring vanilla's AddEquipment
+            // loop over a snapshot of AllEquipmentListForReading: a modded or mechanoid pawn can
+            // carry more than one weapon.
+            if (targetPawn.equipment != null)
             {
-                targetPawn.equipment.Remove(targetWeapon);
+                var existingEquipment = new List<ThingWithComps>(targetPawn.equipment.AllEquipmentListForReading);
+                bool grantedSwapToSource = false;
+                foreach (var displaced in existingEquipment)
+                {
+                    targetPawn.equipment.Remove(displaced);
 
-                // If this is a swap (source had a weapon), give old weapon to source
-                if (sourceOwner != null)
-                {
-                    sourceOwner.equipment.AddEquipment(targetWeapon);
-                }
-                else
-                {
-                    // Move to inventory
-                    Pawn carrier = CaravanInventoryUtility.FindPawnToMoveInventoryTo(targetWeapon, currentCaravan.PawnsListForReading, null);
+                    // The swap affordance applies to the first displaced item only. Vanilla's
+                    // drag-drop flow has no source-pawn concept — every displaced item goes to a
+                    // carrier or is destroyed — so this swap is an addition for the common
+                    // single-weapon case.
+                    if (sourceOwner != null && !grantedSwapToSource)
+                    {
+                        sourceOwner.equipment.AddEquipment(displaced);
+                        grantedSwapToSource = true;
+                        continue;
+                    }
+
+                    Pawn carrier = CaravanInventoryUtility.FindPawnToMoveInventoryTo(displaced, currentCaravan.PawnsListForReading, null);
                     if (carrier != null)
                     {
-                        carrier.inventory.innerContainer.TryAdd(targetWeapon);
+                        carrier.inventory.innerContainer.TryAdd(displaced);
+                    }
+                    else
+                    {
+                        Log.Warning("[RimWorldAccess] Could not find any pawn to move " + displaced + " to.");
+                        displaced.Destroy();
                     }
                 }
             }
 
-            // Equip the weapon to target
             targetPawn.equipment.AddEquipment(weaponToEquip);
         }
 
         /// <summary>
-        /// Equips apparel to the target pawn.
+        /// Equips apparel to the target pawn. False means it did not happen, and callers must not
+        /// announce success — the rejection already spoke its reason.
         /// </summary>
-        private static void PerformApparelEquip(Pawn targetPawn, Apparel apparel)
+        // MUTATION-C: mirrors WITab_Caravan_Gear.TryEquipDraggedItem's apparel branch
+        // (decompiled lines 438-482). Vanilla has no confirmation gate for apparel (only
+        // weapons get one), but no reusable A/B vehicle exists for this mod-invented
+        // non-drag equip flow either, so the locked-apparel checks and displacement
+        // handling are hand-copied verbatim.
+        private static bool PerformApparelEquip(Pawn targetPawn, Apparel apparel)
         {
             Apparel apparelToEquip = apparel;
 
-            // If source owner has the apparel worn, remove it first
             if (sourceOwner != null && sourceOwner.apparel?.WornApparel?.Contains(apparel) == true)
             {
-                // Check if apparel is locked (Issue 6: Locked apparel check)
                 if (sourceOwner.apparel.IsLocked(apparel))
                 {
                     TolkHelper.Speak("RimWorldAccess.Gear.CannotRemoveLockedApparel".Loc());
-                    return;
+                    return false;
                 }
                 sourceOwner.apparel.Remove(apparel);
             }
-            // If item is in someone's inventory, remove it
             else
             {
                 foreach (Pawn p in currentCaravan.PawnsListForReading)
                 {
                     if (p.inventory?.innerContainer?.Contains(apparel) == true)
                     {
-                        // Use SplitOff(1) pattern to handle stacked items correctly
-                        // (Issue 5: Matches game's WITab_Caravan_Gear.cs behavior)
+                        // SplitOff(1) handles stacked items, matching WITab_Caravan_Gear.
                         apparelToEquip = (Apparel)apparel.SplitOff(1);
                         break;
                     }
                 }
             }
 
-            // Remove conflicting apparel from target
             var conflicting = GetConflictingApparel(targetPawn, apparelToEquip);
             foreach (var worn in conflicting)
             {
-                // Check if conflicting apparel on target is locked
                 if (targetPawn.apparel.IsLocked(worn))
                 {
                     TolkHelper.Speak("RimWorldAccess.Gear.CannotRemoveLockedFromPawn".Loc(worn.LabelCap, targetPawn.LabelShortCap));
-                    // If we split off an item, put it back
                     if (apparelToEquip != apparel)
                     {
                         apparel.TryAbsorbStack(apparelToEquip, respectStackLimit: true);
                     }
-                    return;
+                    return false;
                 }
                 targetPawn.apparel.Remove(worn);
 
-                // If this is a swap and source can wear it, give to source
                 if (sourceOwner != null && ApparelUtility.HasPartsToWear(sourceOwner, worn.def))
                 {
-                    // Check if source already has conflicting apparel
                     bool sourceCanWear = true;
                     if (sourceOwner.apparel != null)
                     {
@@ -574,172 +646,29 @@ namespace RimWorldAccess
                     }
                 }
 
-                // Otherwise move to inventory
+                // Otherwise move to inventory, mirroring TryEquipDraggedItem's displacement loop:
+                // destroy the item when no caravan pawn can carry it rather than orphaning it.
                 Pawn carrier = CaravanInventoryUtility.FindPawnToMoveInventoryTo(worn, currentCaravan.PawnsListForReading, null);
                 if (carrier != null)
                 {
                     carrier.inventory.innerContainer.TryAdd(worn);
                 }
+                else
+                {
+                    Log.Warning("[RimWorldAccess] Could not find any pawn to move " + worn + " to.");
+                    worn.Destroy();
+                }
             }
 
-            // Wear the apparel (using SplitOff result if from inventory)
             targetPawn.apparel.Wear(apparelToEquip, dropReplacedApparel: false);
 
-            // Force the apparel so it doesn't get auto-removed
             if (targetPawn.outfits != null)
             {
                 targetPawn.outfits.forcedHandler.SetForced(apparel, forced: true);
             }
+
+            return true;
         }
 
-        /// <summary>
-        /// Gets labels for typeahead search.
-        /// </summary>
-        private static List<string> GetItemLabels()
-        {
-            return options.Select(o => o.GetDisplayLabel()).ToList();
-        }
-
-        /// <summary>
-        /// Announces the current selection.
-        /// </summary>
-        private static void AnnounceCurrentSelection()
-        {
-            if (options.Count == 0 || selectedIndex < 0 || selectedIndex >= options.Count)
-                return;
-
-            var option = options[selectedIndex];
-            string label = option.GetDisplayLabel();
-            string position = MenuHelper.FormatPosition(selectedIndex, options.Count);
-
-            TolkHelper.Speak("RimWorldAccess.Gear.LabelPosition".Loc(label, position));
-        }
-
-        /// <summary>
-        /// Announces with search context.
-        /// </summary>
-        private static void AnnounceWithSearch()
-        {
-            if (options.Count == 0 || selectedIndex < 0 || selectedIndex >= options.Count)
-                return;
-
-            var option = options[selectedIndex];
-            string label = option.GetDisplayLabel();
-
-            if (typeahead.HasActiveSearch)
-            {
-                TolkHelper.SpeakData(typeahead.BuildItemAnnouncement(label));
-            }
-            else
-            {
-                AnnounceCurrentSelection();
-            }
-        }
-
-        /// <summary>
-        /// Handles keyboard input.
-        /// </summary>
-        public static bool HandleInput(Event ev)
-        {
-            if (!IsActive)
-                return false;
-
-            if (ev.type != EventType.KeyDown)
-                return false;
-
-            KeyCode key = ev.keyCode;
-
-            // Handle Escape
-            if (key == KeyCode.Escape)
-            {
-                if (typeahead.HasActiveSearch)
-                {
-                    typeahead.ClearSearchAndAnnounce();
-                    AnnounceCurrentSelection();
-                    ev.Use();
-                    return true;
-                }
-                Close();
-                SoundDefOf.Click.PlayOneShotOnCamera();
-                TolkHelper.Speak("RimWorldAccess.UI.Cancelled".Loc());
-                ev.Use();
-                return true;
-            }
-
-            // Handle Backspace
-            if (key == KeyCode.Backspace && typeahead.HasActiveSearch)
-            {
-                var labels = GetItemLabels();
-                if (typeahead.ProcessBackspace(labels, out int newIndex))
-                {
-                    if (newIndex >= 0) selectedIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-                ev.Use();
-                return true;
-            }
-
-            // Handle Up arrow
-            if (key == KeyCode.UpArrow)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    int prevIndex = typeahead.GetPreviousMatch(selectedIndex);
-                    if (prevIndex >= 0)
-                    {
-                        selectedIndex = prevIndex;
-                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                        AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    SelectPrevious();
-                }
-                ev.Use();
-                return true;
-            }
-
-            // Handle Down arrow
-            if (key == KeyCode.DownArrow)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    int nextIndex = typeahead.GetNextMatch(selectedIndex);
-                    if (nextIndex >= 0)
-                    {
-                        selectedIndex = nextIndex;
-                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                        AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    SelectNext();
-                }
-                ev.Use();
-                return true;
-            }
-
-            // Handle Enter
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                ExecuteSelected();
-                ev.Use();
-                return true;
-            }
-
-            // Handle typeahead
-            bool isLetter = key >= KeyCode.A && key <= KeyCode.Z;
-            bool isNumber = key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9;
-
-            if (isLetter || isNumber)
-            {
-                ev.Use();
-                return true;
-            }
-
-            return false;
-        }
     }
 }

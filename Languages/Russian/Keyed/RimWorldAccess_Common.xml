@@ -65,22 +65,20 @@
   <RimWorldAccess.Tree.AllAlreadyExpanded>Все элементы уже развёрнуты</RimWorldAccess.Tree.AllAlreadyExpanded>
   <RimWorldAccess.Tree.NoneToExpand>Нет элементов для развёртывания</RimWorldAccess.Tree.NoneToExpand>
 
-  <!-- Two-level menu (src/UI/TwoLevelMenuHelper.cs).
-       Used by quest, history, notification, and mod-list menus.
-       ButtonAnnouncement/Disabled: {0} = button label, {1} = position suffix.
-       ButtonDisabled/Reason: {0} = button label, {1} = reason. -->
+  <!-- Two-level menu (src/UI/TwoLevelMenuHelper.cs). Used by the mod-list detail view,
+       notifications, and the History Graph sub-tab. ButtonAnnouncement/Disabled and
+       ButtonDisabled/Reason retired (Task 8 packet H): button focus now speaks through
+       the composer's own Button role + Disabled state, and the disabled-activation
+       refusal reuses the shared RimWorldAccess.Shell.GenericWindow.Disabled key. -->
   <RimWorldAccess.TwoLevel.BackToList>Назад к списку</RimWorldAccess.TwoLevel.BackToList>
   <RimWorldAccess.TwoLevel.BackToListWithSuffix>Назад к списку. {0}</RimWorldAccess.TwoLevel.BackToListWithSuffix>
-  <RimWorldAccess.TwoLevel.ButtonAnnouncement>{0}. Кнопка. {1}</RimWorldAccess.TwoLevel.ButtonAnnouncement>
-  <RimWorldAccess.TwoLevel.ButtonAnnouncementDisabled>{0} (отключено). Кнопка. {1}</RimWorldAccess.TwoLevel.ButtonAnnouncementDisabled>
-  <RimWorldAccess.TwoLevel.ButtonDisabled>{0}: отключено</RimWorldAccess.TwoLevel.ButtonDisabled>
-  <RimWorldAccess.TwoLevel.ButtonDisabledReason>{0}: отключено: {1}</RimWorldAccess.TwoLevel.ButtonDisabledReason>
 
   <!-- Menu formatting (src/UI/MenuHelper.cs).
        Position: {0} = 1-based index, {1} = total.
        LevelSuffix: {0} = indent level (1-based), appended to item announcements.
        CannotPaintColumn: tabular menus when a column cannot be paint-copied. -->
   <RimWorldAccess.Menu.Position>{0} из {1}</RimWorldAccess.Menu.Position>
+  <RimWorldAccess.Menu.TabPosition>вкладка {0} из {1}</RimWorldAccess.Menu.TabPosition>
   <RimWorldAccess.Menu.LevelSuffix> уровень {0}</RimWorldAccess.Menu.LevelSuffix>
   <RimWorldAccess.Menu.CannotPaintColumn>Этот столбец нельзя скопировать</RimWorldAccess.Menu.CannotPaintColumn>
 
@@ -125,4 +123,8 @@
   <RimWorldAccess.Common.SortAscending>по возрастанию</RimWorldAccess.Common.SortAscending>
   <RimWorldAccess.Common.SortDescending>по убыванию</RimWorldAccess.Common.SortDescending>
   <RimWorldAccess.Common.RenameLabeled>Переименовать {0}</RimWorldAccess.Common.RenameLabeled>
+
+  <!-- Where a row dragged with the mouse would land. {0} = 1-based position,
+       {1} = number of rows in the list being reordered. -->
+  <RimWorldAccess.Common.Drag.ReorderPosition>Позиция {0} из {1}</RimWorldAccess.Common.Drag.ReorderPosition>
 </LanguageData>

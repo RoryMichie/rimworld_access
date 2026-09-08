@@ -61,23 +61,6 @@
        Toggles CompFlickable. Power consumption suffixes use {0} = wattage.
        LabelPowerSwitch: {0} = building label, {1} = vanilla "On"/"Off". -->
 
-  <!-- Uninstall designation (src/Building/UninstallControlState.cs).
-       Toggles DesignationDefOf.Uninstall on minifiable buildings. Vanilla
-       "DesignatorUninstall" / "DesignatorUninstallDesc" supply the verb;
-       these keys are the announcement-shaped wrappers. -->
-  <RimWorldAccess.Building.Uninstall.NotMinifiable>Будівлю не можна демонтувати</RimWorldAccess.Building.Uninstall.NotMinifiable>
-  <RimWorldAccess.Building.Uninstall.DesignationRemoved>{0} - Позначку демонтажу знято</RimWorldAccess.Building.Uninstall.DesignationRemoved>
-  <RimWorldAccess.Building.Uninstall.InstantlyUninstalled>{0} - Миттєво демонтовано</RimWorldAccess.Building.Uninstall.InstantlyUninstalled>
-  <RimWorldAccess.Building.Uninstall.DesignatedForUninstall>{0} - Позначено для демонтажу</RimWorldAccess.Building.Uninstall.DesignatedForUninstall>
-  <RimWorldAccess.Building.Uninstall.LabelStatusDesignated>{0} - Стан: Позначено для демонтажу</RimWorldAccess.Building.Uninstall.LabelStatusDesignated>
-  <RimWorldAccess.Building.Uninstall.LabelStatusNotDesignated>{0} - Стан: Не позначено</RimWorldAccess.Building.Uninstall.LabelStatusNotDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailDesignated>Стан: Позначено для демонтажу</RimWorldAccess.Building.Uninstall.DetailDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailDisassemblerTip>Колоніст із навичкою будівництва розбере це</RimWorldAccess.Building.Uninstall.DetailDisassemblerTip>
-  <RimWorldAccess.Building.Uninstall.DetailMinifiedTip>Будівлю буде перетворено на компактний предмет, який можна переміщувати</RimWorldAccess.Building.Uninstall.DetailMinifiedTip>
-  <RimWorldAccess.Building.Uninstall.DetailNotDesignated>Стан: Не позначено для демонтажу</RimWorldAccess.Building.Uninstall.DetailNotDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailCanUninstallTip>Цю будівлю можна демонтувати, щоб створити переносний предмет</RimWorldAccess.Building.Uninstall.DetailCanUninstallTip>
-  <RimWorldAccess.Building.Uninstall.DetailHotkeyTip>Натисніть Пробіл або Enter, щоб позначити для демонтажу</RimWorldAccess.Building.Uninstall.DetailHotkeyTip>
-
   <!-- Temperature control (src/Building/TempControlMenuState.cs).
        Adjusts CompTempControl.TargetTemperature. Vanilla "PowerConsumptionOff",
        "PowerConsumptionHigh", "PowerConsumptionLow" supply the power-mode
@@ -106,10 +89,7 @@
   <RimWorldAccess.Building.Refuel.OptionViewStatus>Переглянути докладний стан палива</RimWorldAccess.Building.Refuel.OptionViewStatus>
   <RimWorldAccess.Building.Refuel.AutoRefuelOn>Автозаправка: увімкнено</RimWorldAccess.Building.Refuel.AutoRefuelOn>
   <RimWorldAccess.Building.Refuel.AutoRefuelOff>Автозаправка: вимкнено</RimWorldAccess.Building.Refuel.AutoRefuelOff>
-  <RimWorldAccess.Building.Refuel.ToggleValueOn>увімкнено</RimWorldAccess.Building.Refuel.ToggleValueOn>
-  <RimWorldAccess.Building.Refuel.ToggleValueOff>вимкнено</RimWorldAccess.Building.Refuel.ToggleValueOff>
   <RimWorldAccess.Building.Refuel.TargetFuelLevelLabel>Цільовий рівень палива: {0} / {1}</RimWorldAccess.Building.Refuel.TargetFuelLevelLabel>
-  <RimWorldAccess.Building.Refuel.AdjustHint>Використовуйте стрілки вліво та вправо для регулювання. Поточне: {0} з {1}</RimWorldAccess.Building.Refuel.AdjustHint>
   <RimWorldAccess.Building.Refuel.ClassicMortarStatus>Режим класичних мінометів, без зносу стволів</RimWorldAccess.Building.Refuel.ClassicMortarStatus>
   <RimWorldAccess.Building.Refuel.FuelStatusLine>{0}: {1} / {2}</RimWorldAccess.Building.Refuel.FuelStatusLine>
   <RimWorldAccess.Building.Refuel.RemainingTimeSuffix> ({0})</RimWorldAccess.Building.Refuel.RemainingTimeSuffix>
@@ -138,16 +118,15 @@
        Replaces the vanilla FloatMenu shown when an area designator is
        chosen from the architect tree. Delegates "No map" to Common.
        Open: {0} = the designator's own label (e.g. "Allowed area").
-       AreaWithCells: {0} = area label, {1} = cell count.
-       Position keys come from RimWorldAccess.Menu.Position. -->
+       CellCount: {0} = cell count, spoken as the composer's Extras fragment.
+       Position is now composed from ElementDescription.PositionIndex/Count. -->
   <RimWorldAccess.Building.AreaSelect.NoAreasAvailable>Немає доступних областей. Спочатку створіть область за допомогою параметра «Керування областями».</RimWorldAccess.Building.AreaSelect.NoAreasAvailable>
   <RimWorldAccess.Building.AreaSelect.OpenPrompt>{0}. Виберіть область.</RimWorldAccess.Building.AreaSelect.OpenPrompt>
   <RimWorldAccess.Building.AreaSelect.Selected>Вибрано: {0}</RimWorldAccess.Building.AreaSelect.Selected>
   <RimWorldAccess.Building.AreaSelect.Cancelled>Вибір області скасовано</RimWorldAccess.Building.AreaSelect.Cancelled>
   <RimWorldAccess.Building.AreaSelect.ManageAreas>Керування областями</RimWorldAccess.Building.AreaSelect.ManageAreas>
-  <RimWorldAccess.Building.AreaSelect.AreaWithCells>{0}, {1} клітинок</RimWorldAccess.Building.AreaSelect.AreaWithCells>
+  <RimWorldAccess.Building.AreaSelect.CellCount>{0} клітинок</RimWorldAccess.Building.AreaSelect.CellCount>
   <RimWorldAccess.Building.AreaSelect.OpenFallbackName>Область</RimWorldAccess.Building.AreaSelect.OpenFallbackName>
-  <RimWorldAccess.Building.AreaSelect.ItemWithPosition>{0}, {1}</RimWorldAccess.Building.AreaSelect.ItemWithPosition>
 
   <!-- Shape selection menu (src/Building/ShapeSelectionMenuState.cs).
        Picks a placement shape (Line / Rectangle / Oval) from the architect
@@ -156,8 +135,6 @@
        ShapeWithPosition: {0} = shape name, {1} = position, {2} = description.
        ShapeNoPosition: {0} = shape name, {1} = description. -->
   <RimWorldAccess.Building.ShapeSelect.MenuOpened>Меню форм</RimWorldAccess.Building.ShapeSelect.MenuOpened>
-  <RimWorldAccess.Building.ShapeSelect.ShapeWithPosition>{0}, {1}. {2}</RimWorldAccess.Building.ShapeSelect.ShapeWithPosition>
-  <RimWorldAccess.Building.ShapeSelect.ShapeNoPosition>{0}. {1}</RimWorldAccess.Building.ShapeSelect.ShapeNoPosition>
   <RimWorldAccess.Building.ShapeSelect.ShapeSelected>{0} вибрано</RimWorldAccess.Building.ShapeSelect.ShapeSelected>
   <RimWorldAccess.Building.ShapeSelect.Cancelled>Вибір форми скасовано</RimWorldAccess.Building.ShapeSelect.Cancelled>
 
@@ -178,20 +155,8 @@
        count, {2} = staged total (Regular only adds the dimension info). -->
   <RimWorldAccess.Building.Paint.ModeBox>Режим вибору прямокутником</RimWorldAccess.Building.Paint.ModeBox>
   <RimWorldAccess.Building.Paint.ModeSingle>Режим вибору однієї клітинки</RimWorldAccess.Building.Paint.ModeSingle>
-  <RimWorldAccess.Building.Paint.ShapeChanged>Форма: {0}</RimWorldAccess.Building.Paint.ShapeChanged>
-  <RimWorldAccess.Building.Paint.ShapeUnavailable>Форма недоступна для цього типу області</RimWorldAccess.Building.Paint.ShapeUnavailable>
-  <RimWorldAccess.Building.Paint.PromptHint>Tab для перемикання режиму. Enter для підтвердження, Escape для скасування</RimWorldAccess.Building.Paint.PromptHint>
-  <RimWorldAccess.Building.Paint.EnterExpand>Розширення області: {0}. Режим {1}. {2}</RimWorldAccess.Building.Paint.EnterExpand>
-  <RimWorldAccess.Building.Paint.EnterShrink>Звуження області: {0}. Режим {1}. {2}</RimWorldAccess.Building.Paint.EnterShrink>
   <RimWorldAccess.Building.Paint.NoShapeToConfirm>Немає форми для підтвердження</RimWorldAccess.Building.Paint.NoShapeToConfirm>
-  <RimWorldAccess.Building.Paint.PositionOutOfBounds>Позиція поза межами</RimWorldAccess.Building.Paint.PositionOutOfBounds>
   <RimWorldAccess.Building.Paint.Deselected>Знято виділення, {0}, {1}</RimWorldAccess.Building.Paint.Deselected>
-  <RimWorldAccess.Building.Paint.NoCellsSelected>Жодної клітинки не вибрано. Область без змін.</RimWorldAccess.Building.Paint.NoCellsSelected>
-  <RimWorldAccess.Building.Paint.AddedTo>{0} клітинок додано до {1}. Усього клітинок: {2}</RimWorldAccess.Building.Paint.AddedTo>
-  <RimWorldAccess.Building.Paint.RemovedFrom>{0} клітинок видалено з {1}. Усього клітинок: {2}</RimWorldAccess.Building.Paint.RemovedFrom>
-  <RimWorldAccess.Building.Paint.Cancelled>Редагування області скасовано</RimWorldAccess.Building.Paint.Cancelled>
-  <RimWorldAccess.Building.Paint.ConfirmShapeRegular>{0}, {1} клітинок додано. Усього: {2}</RimWorldAccess.Building.Paint.ConfirmShapeRegular>
-  <RimWorldAccess.Building.Paint.ConfirmShapeIrregular>{0} клітинок додано. Усього: {1}</RimWorldAccess.Building.Paint.ConfirmShapeIrregular>
 
   <!-- Zone editing (src/Building/ZoneEditingHelper.cs + GizmoZoneEditState.cs).
        Returned in ZoneEditResult.Message and announced when a cell is
@@ -203,6 +168,8 @@
   <RimWorldAccess.Building.Zone.NoZoneSelectedForEditing>Не вибрано зону для редагування</RimWorldAccess.Building.Zone.NoZoneSelectedForEditing>
   <RimWorldAccess.Building.Zone.NoZoneAtLocation>У цьому місці немає зони для редагування</RimWorldAccess.Building.Zone.NoZoneAtLocation>
   <RimWorldAccess.Building.Zone.CannotRemoveOriginalCell>Не можна видалити початкову клітинку зони під час розширення</RimWorldAccess.Building.Zone.CannotRemoveOriginalCell>
+  <RimWorldAccess.Building.Zone.NowExpanding>Розширюється {0}</RimWorldAccess.Building.Zone.NowExpanding>
+  <RimWorldAccess.Building.Zone.AdjacentZonesAmbiguous>Поруч кілька зон. Натисніть Пробіл на клітинці потрібної зони</RimWorldAccess.Building.Zone.AdjacentZonesAmbiguous>
   <RimWorldAccess.Building.Zone.WouldDisconnect>Не можна видалити клітинку, це роз'єднає зону</RimWorldAccess.Building.Zone.WouldDisconnect>
   <RimWorldAccess.Building.Zone.CellAlreadyInThisZone>Клітинка вже в цій зоні</RimWorldAccess.Building.Zone.CellAlreadyInThisZone>
   <RimWorldAccess.Building.Zone.CellInOtherZone>Клітинка в {0}</RimWorldAccess.Building.Zone.CellInOtherZone>
@@ -226,7 +193,6 @@
        CavePlantExposed: {0} = plant LabelCap. -->
   <RimWorldAccess.Building.PlantSelect.OpenPrompt>Вибір рослини. Поточна культура: {0}</RimWorldAccess.Building.PlantSelect.OpenPrompt>
   <RimWorldAccess.Building.PlantSelect.Selected>Вибрано: {0}</RimWorldAccess.Building.PlantSelect.Selected>
-  <RimWorldAccess.Building.PlantSelect.SelectionWithDetail>{0}. {1}</RimWorldAccess.Building.PlantSelect.SelectionWithDetail>
   <RimWorldAccess.Building.PlantSelect.NoColonistCanPlant>УВАГА: Жоден колоніст не може посадити {0} (потрібна навичка рослинництва {1})</RimWorldAccess.Building.PlantSelect.NoColonistCanPlant>
   <RimWorldAccess.Building.PlantSelect.CavePlantExposed>УВАГА: {0} є печерною рослиною, але зона має клітинки, відкриті світлу</RimWorldAccess.Building.PlantSelect.CavePlantExposed>
 
@@ -238,26 +204,13 @@
        AreaWithCellsAndPosition: {0} = label, {1} = cell count, {2} = position.
        AreaWithCellsNoPosition: {0} = label, {1} = cell count.
        Action.* keys are the per-action menu rows. -->
-  <RimWorldAccess.Building.AreaMgr.Closed>Керування областями закрито</RimWorldAccess.Building.AreaMgr.Closed>
   <RimWorldAccess.Building.AreaMgr.MaxAreasReached>Не можна створити область. Досягнуто максимуму в 10 областей.</RimWorldAccess.Building.AreaMgr.MaxAreasReached>
-  <RimWorldAccess.Building.AreaMgr.MaxAreasReachedCopy>Не можна скопіювати область. Досягнуто максимуму в 10 областей.</RimWorldAccess.Building.AreaMgr.MaxAreasReachedCopy>
   <RimWorldAccess.Building.AreaMgr.CreatedNewArea>Створено нову область: {0}</RimWorldAccess.Building.AreaMgr.CreatedNewArea>
   <RimWorldAccess.Building.AreaMgr.RenamePrompt>Перейменування області: {0}. Введіть нову назву та натисніть Enter.</RimWorldAccess.Building.AreaMgr.RenamePrompt>
-  <RimWorldAccess.Building.AreaMgr.Inverted>Область інвертовано: {0}. Усі клітинки перемкнено.</RimWorldAccess.Building.AreaMgr.Inverted>
+  <RimWorldAccess.Building.AreaMgr.Inverted>Область інвертовано: {0}. Тепер {1} з {2} клітинок.</RimWorldAccess.Building.AreaMgr.Inverted>
   <RimWorldAccess.Building.AreaMgr.CopiedTo>Область скопійовано до: {0}</RimWorldAccess.Building.AreaMgr.CopiedTo>
   <RimWorldAccess.Building.AreaMgr.Deleted>Область видалено: {0}</RimWorldAccess.Building.AreaMgr.Deleted>
-  <RimWorldAccess.Building.AreaMgr.AreaWithCellsAndPosition>{0} ({1} клітинок), {2}. Натисніть праву квадратну дужку для дій.</RimWorldAccess.Building.AreaMgr.AreaWithCellsAndPosition>
-  <RimWorldAccess.Building.AreaMgr.AreaWithCellsNoPosition>{0} ({1} клітинок). Натисніть праву квадратну дужку для дій.</RimWorldAccess.Building.AreaMgr.AreaWithCellsNoPosition>
-  <RimWorldAccess.Building.AreaMgr.NoAreasAvailable>Немає доступних областей. Натисніть праву квадратну дужку, щоб створити одну.</RimWorldAccess.Building.AreaMgr.NoAreasAvailable>
-  <RimWorldAccess.Building.AreaMgr.ActionWithPosition>{0}, {1}</RimWorldAccess.Building.AreaMgr.ActionWithPosition>
-  <RimWorldAccess.Building.AreaMgr.Action.NewArea>Нова область</RimWorldAccess.Building.AreaMgr.Action.NewArea>
-  <RimWorldAccess.Building.AreaMgr.Action.RenameArea>Перейменувати область</RimWorldAccess.Building.AreaMgr.Action.RenameArea>
-  <RimWorldAccess.Building.AreaMgr.Action.ExpandArea>Розширити область</RimWorldAccess.Building.AreaMgr.Action.ExpandArea>
-  <RimWorldAccess.Building.AreaMgr.Action.ShrinkArea>Звузити область</RimWorldAccess.Building.AreaMgr.Action.ShrinkArea>
-  <RimWorldAccess.Building.AreaMgr.Action.InvertArea>Інвертувати область</RimWorldAccess.Building.AreaMgr.Action.InvertArea>
-  <RimWorldAccess.Building.AreaMgr.Action.CopyArea>Копіювати область</RimWorldAccess.Building.AreaMgr.Action.CopyArea>
-  <RimWorldAccess.Building.AreaMgr.Action.DeleteArea>Видалити область</RimWorldAccess.Building.AreaMgr.Action.DeleteArea>
-  <RimWorldAccess.Building.AreaMgr.Action.Close>Закрити</RimWorldAccess.Building.AreaMgr.Action.Close>
+  <RimWorldAccess.Building.AreaMgr.ColorFixed>Колір цієї області не можна змінити.</RimWorldAccess.Building.AreaMgr.ColorFixed>
 
   <!-- Shape names + descriptions (src/Building/ShapeHelper.cs).
        Spoken by every menu that lets the user pick a placement shape
@@ -337,12 +290,33 @@
   <RimWorldAccess.Building.Place.PlacingDesignator>Розміщення {0}</RimWorldAccess.Building.Place.PlacingDesignator>
   <RimWorldAccess.Building.Place.SizeOneTile>Розмір: 1 клітинка</RimWorldAccess.Building.Place.SizeOneTile>
   <RimWorldAccess.Building.Place.SizeWxH>Розмір: {0}x{1}</RimWorldAccess.Building.Place.SizeWxH>
+  <RimWorldAccess.Building.Place.SpotScannerCategory>Місця розміщення: {0}</RimWorldAccess.Building.Place.SpotScannerCategory>
+  <RimWorldAccess.Building.Place.SpotScannerItemLabel>Місце</RimWorldAccess.Building.Place.SpotScannerItemLabel>
+  <RimWorldAccess.Building.Place.SpotFacing>обличчям до {0}</RimWorldAccess.Building.Place.SpotFacing>
+  <RimWorldAccess.Building.Place.SpacingInRange>{0} клітинок одне від одного, інтервал правильний</RimWorldAccess.Building.Place.SpacingInRange>
+  <RimWorldAccess.Building.Place.SpacingOutOfRange>{0} клітинок одне від одного, інтервал неправильний</RimWorldAccess.Building.Place.SpacingOutOfRange>
+  <RimWorldAccess.Building.Place.OutlineOkAt>Необхідна область, {0} на {1}, {2} клітинок {3}, придатна</RimWorldAccess.Building.Place.OutlineOkAt>
+  <RimWorldAccess.Building.Place.OutlineOkHere>Необхідна область, {0} на {1}, під курсором, придатна</RimWorldAccess.Building.Place.OutlineOkHere>
+  <RimWorldAccess.Building.Place.OutlineBadAt>Необхідна область, {0} на {1}, {2} клітинок {3}, непридатна</RimWorldAccess.Building.Place.OutlineBadAt>
+  <RimWorldAccess.Building.Place.OutlineBadHere>Необхідна область, {0} на {1}, під курсором, непридатна</RimWorldAccess.Building.Place.OutlineBadHere>
+  <RimWorldAccess.Building.Place.WatermillWheelOkAt>Водяне колесо, {0} на {1}, {2} клітинок {3}, на проточній воді</RimWorldAccess.Building.Place.WatermillWheelOkAt>
+  <RimWorldAccess.Building.Place.WatermillWheelOkHere>Водяне колесо, {0} на {1}, під курсором, на проточній воді</RimWorldAccess.Building.Place.WatermillWheelOkHere>
+  <RimWorldAccess.Building.Place.WatermillWheelBadAt>Водяне колесо, {0} на {1}, {2} клітинок {3}, не на проточній воді</RimWorldAccess.Building.Place.WatermillWheelBadAt>
+  <RimWorldAccess.Building.Place.WatermillWheelBadHere>Водяне колесо, {0} на {1}, під курсором, не на проточній воді</RimWorldAccess.Building.Place.WatermillWheelBadHere>
+  <RimWorldAccess.Building.Place.WatermillFlowOkAt>Зона водного потоку, {0} на {1}, {2} клітинок {3}, не використовується спільно</RimWorldAccess.Building.Place.WatermillFlowOkAt>
+  <RimWorldAccess.Building.Place.WatermillFlowOkHere>Зона водного потоку, {0} на {1}, під курсором, не використовується спільно</RimWorldAccess.Building.Place.WatermillFlowOkHere>
+  <RimWorldAccess.Building.Place.WatermillFlowSharedAt>Зона водного потоку, {0} на {1}, {2} клітинок {3}, використовується спільно з іншим водяним млином</RimWorldAccess.Building.Place.WatermillFlowSharedAt>
+  <RimWorldAccess.Building.Place.WatermillFlowSharedHere>Зона водного потоку, {0} на {1}, під курсором, використовується спільно з іншим водяним млином</RimWorldAccess.Building.Place.WatermillFlowSharedHere>
   <RimWorldAccess.Building.Place.HintManualOrder>Перейдіть до цілей, Пробіл для вибору, Enter для підтвердження, Tab для форм, Escape для скасування</RimWorldAccess.Building.Place.HintManualOrder>
   <RimWorldAccess.Building.Place.HintManualBuildRotatable>Перейдіть на позицію та натисніть Пробіл, щоб розмістити, R для обертання, Escape для скасування</RimWorldAccess.Building.Place.HintManualBuildRotatable>
   <RimWorldAccess.Building.Place.HintManualBuildFixed>Перейдіть на позицію та натисніть Пробіл, щоб розмістити, Escape для скасування</RimWorldAccess.Building.Place.HintManualBuildFixed>
   <RimWorldAccess.Building.Place.HintShape>Перейдіть до першої точки та натисніть Пробіл</RimWorldAccess.Building.Place.HintShape>
   <RimWorldAccess.Building.Place.PlacedBuild>Розміщено {0} {1}{2}</RimWorldAccess.Building.Place.PlacedBuild>
   <RimWorldAccess.Building.Place.PlacedCostSuffix> ({0} {1})</RimWorldAccess.Building.Place.PlacedCostSuffix>
+  <!-- Used per-resource when a buildable costs more than one ingredient; the results are
+       joined with a comma list and wrapped by PlacedCostSuffixMulti. -->
+  <RimWorldAccess.Building.Place.PlacedCostItem>{0} {1}</RimWorldAccess.Building.Place.PlacedCostItem>
+  <RimWorldAccess.Building.Place.PlacedCostSuffixMulti> ({0})</RimWorldAccess.Building.Place.PlacedCostSuffixMulti>
   <RimWorldAccess.Building.Place.DesignatedFor>Позначено {0} для {1}</RimWorldAccess.Building.Place.DesignatedFor>
   <RimWorldAccess.Building.Place.NoBlueprintsPlaced>Жодного проєкту не розміщено</RimWorldAccess.Building.Place.NoBlueprintsPlaced>
   <RimWorldAccess.Building.Place.NoDesignationsPlaced>Жодної позначки не розміщено</RimWorldAccess.Building.Place.NoDesignationsPlaced>
@@ -350,6 +324,9 @@
   <RimWorldAccess.Building.Place.MeditationDisableHint>Вимкніть перемикач попередження на дереві, щоб будувати тут</RimWorldAccess.Building.Place.MeditationDisableHint>
   <!-- {0} = comma-joined protecting thing labels, {1} = MeditationDisableHint. -->
   <RimWorldAccess.Building.Place.MeditationProtectedBy>Захищено {0}. {1}.</RimWorldAccess.Building.Place.MeditationProtectedBy>
+  <RimWorldAccess.Building.Place.WillReplaceSuffix>Замінить {0}</RimWorldAccess.Building.Place.WillReplaceSuffix>
+  <RimWorldAccess.Building.Place.WillReplaceItem>{0} x{1}</RimWorldAccess.Building.Place.WillReplaceItem>
+  <RimWorldAccess.Building.Place.WillReplaceConfirm>Замінить {0}. Натисніть Пробіл ще раз, щоб розмістити</RimWorldAccess.Building.Place.WillReplaceConfirm>
   <RimWorldAccess.Building.Place.Action.haul>перенесення</RimWorldAccess.Building.Place.Action.haul>
   <RimWorldAccess.Building.Place.Action.hunt>полювання</RimWorldAccess.Building.Place.Action.hunt>
   <RimWorldAccess.Building.Place.Action.mine>видобуток</RimWorldAccess.Building.Place.Action.mine>
@@ -381,51 +358,9 @@
        "zone" fallback (this is a different fallback than
        Building.Zone.FallbackName, which is for zone.label being null). -->
   <RimWorldAccess.Building.Create.CannotRemoveDisconnect>Не можна видалити, це роз'єднає виділення</RimWorldAccess.Building.Create.CannotRemoveDisconnect>
-  <RimWorldAccess.Building.Create.Deselected>Знято виділення, {0}, {1}. Усього: {2}</RimWorldAccess.Building.Create.Deselected>
-  <RimWorldAccess.Building.Create.SelectedWithTotal>{0}. Усього: {1}</RimWorldAccess.Building.Create.SelectedWithTotal>
-  <RimWorldAccess.Building.Create.CellOutOfBounds>Клітинка поза межами</RimWorldAccess.Building.Create.CellOutOfBounds>
   <RimWorldAccess.Building.Create.CellAlreadyInZone>Клітинка вже в {0}</RimWorldAccess.Building.Create.CellAlreadyInZone>
-  <RimWorldAccess.Building.Create.CannotPlaceZoneHere>Не можна розмістити зону тут</RimWorldAccess.Building.Create.CannotPlaceZoneHere>
   <RimWorldAccess.Building.Create.MustBeAdjacentToSelection>Клітинка має бути суміжною з виділенням</RimWorldAccess.Building.Create.MustBeAdjacentToSelection>
-  <RimWorldAccess.Building.Create.ShapeUnavailable>Форма недоступна для цього типу зони</RimWorldAccess.Building.Create.ShapeUnavailable>
-  <RimWorldAccess.Building.Create.ShapeInstructions>Режим {0}: Пробіл, щоб задати кути. Tab для перемикання режимів. Enter для створення, Escape для скасування.</RimWorldAccess.Building.Create.ShapeInstructions>
-  <RimWorldAccess.Building.Create.ExpandShrinkInstructions>Режим {0}: Натискайте Пробіл, щоб задати кути, Enter для підтвердження, Escape для скасування.</RimWorldAccess.Building.Create.ExpandShrinkInstructions>
-  <RimWorldAccess.Building.Create.OpenCreating>Створення {0}. {1}</RimWorldAccess.Building.Create.OpenCreating>
-  <RimWorldAccess.Building.Create.OpenExpanding>Розширення {0}. {1} клітинок зараз вибрано. {2}</RimWorldAccess.Building.Create.OpenExpanding>
-  <RimWorldAccess.Building.Create.OpenShrinking>Звуження {0}. Виберіть клітинки для видалення. {1}</RimWorldAccess.Building.Create.OpenShrinking>
-  <RimWorldAccess.Building.Create.NoZoneProvidedExpand>Не можна розширити: зону не надано</RimWorldAccess.Building.Create.NoZoneProvidedExpand>
-  <RimWorldAccess.Building.Create.NoZoneProvidedShrink>Не можна звузити: зону не надано</RimWorldAccess.Building.Create.NoZoneProvidedShrink>
-  <RimWorldAccess.Building.Create.NoCellsZoneNotCreated>Жодної клітинки не вибрано. Зону не створено.</RimWorldAccess.Building.Create.NoCellsZoneNotCreated>
-  <RimWorldAccess.Building.Create.NoCellsZoneUnchanged>Жодної клітинки не вибрано. Зона без змін.</RimWorldAccess.Building.Create.NoCellsZoneUnchanged>
-  <RimWorldAccess.Building.Create.MaxAllowedAreasReached>Не можна створити більше дозволених областей. Досягнуто максимуму в 10.</RimWorldAccess.Building.Create.MaxAllowedAreasReached>
-  <RimWorldAccess.Building.Create.HomeAreaNotFound>Помилка: Домашню область не знайдено</RimWorldAccess.Building.Create.HomeAreaNotFound>
-  <RimWorldAccess.Building.Create.NoZoneToModify>Помилка: Немає зони для зміни</RimWorldAccess.Building.Create.NoZoneToModify>
-  <RimWorldAccess.Building.Create.AllCellsRemovedZoneDeleted>Усі клітинки видалено. Зону видалено.</RimWorldAccess.Building.Create.AllCellsRemovedZoneDeleted>
-  <RimWorldAccess.Building.Create.AllCellsRemovedNamedDeleted>Усі клітинки видалено. {0} видалено.</RimWorldAccess.Building.Create.AllCellsRemovedNamedDeleted>
-  <RimWorldAccess.Building.Create.ZoneCreated>{0} створено з {1} клітинок.{2}</RimWorldAccess.Building.Create.ZoneCreated>
-  <RimWorldAccess.Building.Create.ObstaclesFoundSuffix> Знайдено {0} перешкод.</RimWorldAccess.Building.Create.ObstaclesFoundSuffix>
-  <RimWorldAccess.Building.Create.ObstaclesInNewAreaSuffix>. {0} перешкод у новій області.</RimWorldAccess.Building.Create.ObstaclesInNewAreaSuffix>
-  <RimWorldAccess.Building.Create.RemovedCellsFromZone>Видалено {0} клітинок з {1}. Залишилося {2} клітинок.</RimWorldAccess.Building.Create.RemovedCellsFromZone>
-  <RimWorldAccess.Building.Create.UpdatePrefix>Оновлено {0}: </RimWorldAccess.Building.Create.UpdatePrefix>
-  <RimWorldAccess.Building.Create.UpdateAddedAndRemoved>додано {0}, видалено {1} клітинок</RimWorldAccess.Building.Create.UpdateAddedAndRemoved>
-  <RimWorldAccess.Building.Create.UpdateAddedOnly>додано {0} клітинок</RimWorldAccess.Building.Create.UpdateAddedOnly>
-  <RimWorldAccess.Building.Create.UpdateRemovedOnly>видалено {0} клітинок</RimWorldAccess.Building.Create.UpdateRemovedOnly>
-  <RimWorldAccess.Building.Create.UpdateNoChanges>без змін</RimWorldAccess.Building.Create.UpdateNoChanges>
-  <RimWorldAccess.Building.Create.AllowedAreaName>Дозволена область '{0}'</RimWorldAccess.Building.Create.AllowedAreaName>
   <RimWorldAccess.Building.Create.ErrorCreatingZone>Помилка створення зони: {0}</RimWorldAccess.Building.Create.ErrorCreatingZone>
-  <RimWorldAccess.Building.Create.ErrorExpandingZone>Помилка розширення зони: {0}</RimWorldAccess.Building.Create.ErrorExpandingZone>
-  <RimWorldAccess.Building.Create.ErrorShrinkingZone>Помилка звуження зони: {0}</RimWorldAccess.Building.Create.ErrorShrinkingZone>
-  <RimWorldAccess.Building.Create.Cancelled>Створення зони скасовано</RimWorldAccess.Building.Create.Cancelled>
-  <RimWorldAccess.Building.Create.ZoneTypeName.Stockpile>зона складу</RimWorldAccess.Building.Create.ZoneTypeName.Stockpile>
-  <RimWorldAccess.Building.Create.ZoneTypeName.DumpingStockpile>зона звалища</RimWorldAccess.Building.Create.ZoneTypeName.DumpingStockpile>
-  <RimWorldAccess.Building.Create.ZoneTypeName.GrowingZone>зона посіву</RimWorldAccess.Building.Create.ZoneTypeName.GrowingZone>
-  <RimWorldAccess.Building.Create.ZoneTypeName.AllowedArea>дозволена область</RimWorldAccess.Building.Create.ZoneTypeName.AllowedArea>
-  <RimWorldAccess.Building.Create.ZoneTypeName.HomeZone>домашня зона</RimWorldAccess.Building.Create.ZoneTypeName.HomeZone>
-  <RimWorldAccess.Building.Create.ZoneTypeName.Default>зона</RimWorldAccess.Building.Create.ZoneTypeName.Default>
-  <RimWorldAccess.Building.Create.ZoneCapped.Stockpile>Зона складу</RimWorldAccess.Building.Create.ZoneCapped.Stockpile>
-  <RimWorldAccess.Building.Create.ZoneCapped.DumpingStockpile>Зона звалища</RimWorldAccess.Building.Create.ZoneCapped.DumpingStockpile>
-  <RimWorldAccess.Building.Create.ZoneCapped.GrowingZone>Зона посіву</RimWorldAccess.Building.Create.ZoneCapped.GrowingZone>
-  <RimWorldAccess.Building.Create.ZoneCapped.HomeZone>Домашня зона</RimWorldAccess.Building.Create.ZoneCapped.HomeZone>
 
   <!-- Viewing mode (src/Building/ViewingModeState.cs).
        Post-placement preview. Shape-name-and-description data still flows
@@ -454,6 +389,12 @@
   <RimWorldAccess.Building.View.CancelledBlueprint>Скасовано {0}</RimWorldAccess.Building.View.CancelledBlueprint>
   <RimWorldAccess.Building.View.ActionRestored>Відновлено</RimWorldAccess.Building.View.ActionRestored>
   <RimWorldAccess.Building.View.ActionRemoved>Видалено</RimWorldAccess.Building.View.ActionRemoved>
+  <!-- Zone-aware size wording for a removed/restored segment (ViewingModeAnnouncer.FormatZoneCellsSize),
+       used in place of English word-surgery on the plain Shape.Size* strings. -->
+  <RimWorldAccess.Building.View.RemovedZoneSizeZero>0 клітинок зони</RimWorldAccess.Building.View.RemovedZoneSizeZero>
+  <RimWorldAccess.Building.View.RemovedZoneSizeOne>1 клітинка зони</RimWorldAccess.Building.View.RemovedZoneSizeOne>
+  <RimWorldAccess.Building.View.RemovedZoneSizeMany>{0} клітинок зони</RimWorldAccess.Building.View.RemovedZoneSizeMany>
+  <RimWorldAccess.Building.View.RemovedZoneSizeWxH>зона {0} на {1}</RimWorldAccess.Building.View.RemovedZoneSizeWxH>
   <RimWorldAccess.Building.View.SegmentRemovedSomeRemain>{0} {1} ({2}). Залишилося {3}{4}.</RimWorldAccess.Building.View.SegmentRemovedSomeRemain>
   <RimWorldAccess.Building.View.SegmentRemovedNoneRemain>{0} {1} ({2}). Секцій не залишилося.</RimWorldAccess.Building.View.SegmentRemovedNoneRemain>
   <RimWorldAccess.Building.View.RemainingInShapeSuffix> у {0}</RimWorldAccess.Building.View.RemainingInShapeSuffix>
@@ -745,6 +686,7 @@
   <RimWorldAccess.Building.Architect.CategorySelected>Категорію {0} вибрано. Виберіть інструмент</RimWorldAccess.Building.Architect.CategorySelected>
   <RimWorldAccess.Building.Architect.SelectMaterialFor>Виберіть матеріал для {0}</RimWorldAccess.Building.Architect.SelectMaterialFor>
   <RimWorldAccess.Building.Architect.Facing>Обличчям до {0}</RimWorldAccess.Building.Architect.Facing>
+  <RimWorldAccess.Building.Architect.NowFacing>Тепер обличчям до {0}</RimWorldAccess.Building.Architect.NowFacing>
   <RimWorldAccess.Building.Architect.SizeWxH>Розмір: {0} на {1}</RimWorldAccess.Building.Architect.SizeWxH>
   <RimWorldAccess.Building.Architect.ExtendDirection>{0} {1}</RimWorldAccess.Building.Architect.ExtendDirection>
   <RimWorldAccess.Building.Architect.Extends>Простягається {0}</RimWorldAccess.Building.Architect.Extends>
@@ -826,18 +768,19 @@
   <RimWorldAccess.Building.ArchitectPlace.GravshipFacing>Гравікорабель обличчям до {0}.</RimWorldAccess.Building.ArchitectPlace.GravshipFacing>
   <RimWorldAccess.Building.ArchitectPlace.ErrorPlacing>Помилка розміщення: {0}</RimWorldAccess.Building.ArchitectPlace.ErrorPlacing>
   <RimWorldAccess.Building.ArchitectPlace.InvalidReason>Неприпустимо: {0}</RimWorldAccess.Building.ArchitectPlace.InvalidReason>
+  <RimWorldAccess.Building.ArchitectPlace.CanPlaceHere>Можна розмістити</RimWorldAccess.Building.ArchitectPlace.CanPlaceHere>
   <RimWorldAccess.Building.ArchitectPlace.GravshipPositioned>Гравікорабель розташовано на {0}, {1}. Виберіть маркер посадки та скористайтеся гізмо для підтвердження посадки.</RimWorldAccess.Building.ArchitectPlace.GravshipPositioned>
   <!-- {0} = footprint width, {1} = footprint height (cells). -->
   <RimWorldAccess.Building.ArchitectPlace.GravshipLandingPrompt>Розташуйте посадкову зону гравікорабля. Площа: {0} на {1} клітинок. Стрілки для переміщення, R для обертання, Пробіл для розміщення.</RimWorldAccess.Building.ArchitectPlace.GravshipLandingPrompt>
   <RimWorldAccess.Building.ArchitectPlace.NoZoneCellsTryAgain>У виділенні немає клітинок зони. Спробуйте ще раз.</RimWorldAccess.Building.ArchitectPlace.NoZoneCellsTryAgain>
   <RimWorldAccess.Building.ArchitectPlace.NoValidCellsTryAgain>У виділенні немає придатних клітинок. Спробуйте ще раз.</RimWorldAccess.Building.ArchitectPlace.NoValidCellsTryAgain>
   <RimWorldAccess.Building.ArchitectPlace.PlacementFailedClearing>Розміщення не вдалося. Очищення виділення.</RimWorldAccess.Building.ArchitectPlace.PlacementFailedClearing>
-  <RimWorldAccess.Building.ArchitectPlace.PlaceFirstPoint>Розмістіть першу точку Пробілом</RimWorldAccess.Building.ArchitectPlace.PlaceFirstPoint>
   <RimWorldAccess.Building.ArchitectPlace.PlaceSecondPoint>Розмістіть другу точку Пробілом</RimWorldAccess.Building.ArchitectPlace.PlaceSecondPoint>
   <RimWorldAccess.Building.ArchitectPlace.PlacementCompleted>Розміщення завершено</RimWorldAccess.Building.ArchitectPlace.PlacementCompleted>
   <RimWorldAccess.Building.ArchitectPlace.ZoneEditingCompleted>Редагування зони завершено</RimWorldAccess.Building.ArchitectPlace.ZoneEditingCompleted>
   <RimWorldAccess.Building.ArchitectPlace.SelectionCleared>Виділення очищено</RimWorldAccess.Building.ArchitectPlace.SelectionCleared>
-  <RimWorldAccess.Building.ArchitectPlace.PlacementCancelled>Розміщення скасовано</RimWorldAccess.Building.ArchitectPlace.PlacementCancelled>
+  <RimWorldAccess.Building.ArchitectPlace.ExitedPlacement>Режим розміщення закрито.</RimWorldAccess.Building.ArchitectPlace.ExitedPlacement>
+  <RimWorldAccess.Building.ArchitectPlace.ExitedZoneEditing>Редагування зони закрито.</RimWorldAccess.Building.ArchitectPlace.ExitedZoneEditing>
   <RimWorldAccess.Building.ArchitectPlace.InvalidTargetPosition>Неприпустима позиція цілі</RimWorldAccess.Building.ArchitectPlace.InvalidTargetPosition>
   <RimWorldAccess.Building.ArchitectPlace.CannotLandHere>Не можна приземлитися тут: {0}</RimWorldAccess.Building.ArchitectPlace.CannotLandHere>
   <RimWorldAccess.Building.ArchitectPlace.LandingConfirmed>Посадку підтверджено на {0}, {1}</RimWorldAccess.Building.ArchitectPlace.LandingConfirmed>
@@ -877,6 +820,7 @@
   -->
   <RimWorldAccess.Building.ArchitectTree.MenuOpened>Меню архітектора</RimWorldAccess.Building.ArchitectTree.MenuOpened>
   <RimWorldAccess.Building.ArchitectTree.NoCategories>Немає доступних категорій архітектора</RimWorldAccess.Building.ArchitectTree.NoCategories>
+  <RimWorldAccess.Building.ArchitectTree.RegionName>Архітектор</RimWorldAccess.Building.ArchitectTree.RegionName>
 
   <!-- =================================================================
        Facility link info (FacilityLinkHelper). Spoken on placement of
@@ -943,6 +887,11 @@
   <RimWorldAccess.Building.View.ItemTypeZoneCellMany>клітинок зони</RimWorldAccess.Building.View.ItemTypeZoneCellMany>
   <RimWorldAccess.Building.View.ItemTypeDesignationOne>позначка</RimWorldAccess.Building.View.ItemTypeDesignationOne>
   <RimWorldAccess.Building.View.ItemTypeDesignationMany>позначок</RimWorldAccess.Building.View.ItemTypeDesignationMany>
+
+  <!-- Area undo description (src/Building/AreaUndoTracker.cs). A single area reports its own
+       game label; an ignore-roof stroke touches the build-roof and no-roof areas together, so
+       MultipleAreas wraps the joined labels. {0} = area labels joined by vanilla ToCommaList. -->
+  <RimWorldAccess.Building.AreaUndo.MultipleAreas>області: {0}</RimWorldAccess.Building.AreaUndo.MultipleAreas>
 
   <!-- Ctrl+A / Ctrl+Shift+A select-all and undo-scope announcements
        (src/Building/ArchitectPlacementPatch.cs).

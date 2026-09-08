@@ -6,19 +6,15 @@ using Verse;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Helper methods for extracting and formatting ability targeting information.
-    /// </summary>
+    /// <summary>Extracts and formats ability targeting information.</summary>
     public static class AbilityTargetingHelper
     {
         /// <summary>
-        /// Gets the effective casting range of an ability.
-        /// Uses the verb's EffectiveRange which accounts for equipment bonuses (e.g., jump pack range).
-        /// Returns 0 for touch/melee abilities (no ranged check - game uses reachability instead).
+        /// The effective casting range, from the verb's EffectiveRange so equipment bonuses count.
+        /// 0 for touch abilities, which the game resolves by reachability instead.
         /// </summary>
         public static float GetRange(Ability ability)
         {
-            // Use verb's EffectiveRange when available (accounts for stat bonuses like JumpRange)
             if (ability?.verb is Verb_CastAbility castVerb)
                 return castVerb.EffectiveRange;
 
@@ -28,17 +24,13 @@ namespace RimWorldAccess
             return ability.def.verbProperties.range;
         }
 
-        /// <summary>
-        /// Checks if an ability uses touch/melee range (no ranged distance check).
-        /// </summary>
+        /// <summary>Whether the ability is touch range, so no distance check applies.</summary>
         public static bool IsTouchRange(Ability ability)
         {
             return ability?.verb is Verb_CastAbilityTouch || GetRange(ability) <= 0f;
         }
 
-        /// <summary>
-        /// Gets the AOE radius of an ability, or 0 if not an AOE ability.
-        /// </summary>
+        /// <summary>The AOE radius, or 0 when the ability has none.</summary>
         public static float GetAOERadius(Ability ability)
         {
             if (ability?.def == null)
@@ -47,50 +39,38 @@ namespace RimWorldAccess
             return ability.def.EffectRadius;
         }
 
-        /// <summary>
-        /// Checks if an ability has area of effect.
-        /// </summary>
+        /// <summary>Whether the ability has an area of effect.</summary>
         public static bool HasAOE(Ability ability)
         {
             return ability?.def?.HasAreaOfEffect ?? false;
         }
 
-        /// <summary>
-        /// Checks if an ability is a psycast.
-        /// </summary>
+        /// <summary>Whether the ability is a psycast.</summary>
         public static bool IsPsycast(Ability ability)
         {
             return ability is Psycast;
         }
 
-        /// <summary>
-        /// Checks if an ability can target empty locations (cells without things).
-        /// </summary>
+        /// <summary>Whether the ability can target empty cells.</summary>
         public static bool CanTargetLocations(Ability ability)
         {
             return ability?.verb?.targetParams?.canTargetLocations ?? false;
         }
 
-        /// <summary>
-        /// Checks if an ability requires a pawn target.
-        /// </summary>
+        /// <summary>Whether the ability requires a pawn target.</summary>
         public static bool RequiresPawnTarget(Ability ability)
         {
             var targetParams = ability?.verb?.targetParams;
             if (targetParams == null)
                 return false;
 
-            // If it can target locations, it doesn't require a pawn
             if (targetParams.canTargetLocations)
                 return false;
 
-            // If it can only target pawns, it requires a pawn
             return targetParams.canTargetPawns;
         }
 
-        /// <summary>
-        /// Gets a description of what kind of target the ability requires.
-        /// </summary>
+        /// <summary>What kind of target the ability requires.</summary>
         public static string GetTargetRequirementDescription(Ability ability)
         {
             var targetParams = ability?.verb?.targetParams;
@@ -115,10 +95,7 @@ namespace RimWorldAccess
             return "RimWorldAccess.Abilities.TargetKind.ValidTarget".Translate();
         }
 
-        /// <summary>
-        /// Gets the psyfocus cost of an ability as a percentage string.
-        /// Returns null if not a psycast or no psyfocus cost.
-        /// </summary>
+        /// <summary>The psyfocus cost as a percentage string, or null when there is none.</summary>
         public static string GetPsyfocusCostString(Ability ability)
         {
             if (ability?.def == null)
@@ -131,10 +108,7 @@ namespace RimWorldAccess
             return $"{(cost * 100f):F0}%";
         }
 
-        /// <summary>
-        /// Gets the entropy (neural heat) gain of an ability.
-        /// Returns null if no entropy gain.
-        /// </summary>
+        /// <summary>The entropy (neural heat) gain, or null when there is none.</summary>
         public static string GetEntropyGainString(Ability ability)
         {
             if (ability?.def == null)
@@ -147,26 +121,21 @@ namespace RimWorldAccess
             return $"{entropy:F0}";
         }
 
-        /// <summary>
-        /// Calculates the distance between two positions.
-        /// </summary>
+        /// <summary>The distance between two positions.</summary>
         public static float CalculateDistance(IntVec3 from, IntVec3 to)
         {
             return (to - from).LengthHorizontal;
         }
 
-        /// <summary>
-        /// Checks if target is within ability range.
-        /// </summary>
+        /// <summary>Whether the target is within the ability's range.</summary>
         public static bool IsInRange(Ability ability, IntVec3 casterPos, IntVec3 targetPos)
         {
-            // Touch range - game handles reachability, we skip range check
+            // The game resolves touch range by reachability.
             if (IsTouchRange(ability))
                 return true;
 
             float range = GetRange(ability);
 
-            // Range 0 means unlimited or self-only
             if (range <= float.Epsilon)
                 return true;
 
@@ -174,9 +143,7 @@ namespace RimWorldAccess
             return distance <= range;
         }
 
-        /// <summary>
-        /// Checks line of sight between caster and target.
-        /// </summary>
+        /// <summary>Whether the caster has line of sight to the target.</summary>
         public static bool HasLineOfSight(Pawn caster, IntVec3 targetPos)
         {
             if (caster?.Map == null)
@@ -185,17 +152,13 @@ namespace RimWorldAccess
             return GenSight.LineOfSight(caster.Position, targetPos, caster.Map);
         }
 
-        /// <summary>
-        /// Checks if an ability requires line of sight.
-        /// </summary>
+        /// <summary>Whether the ability requires line of sight.</summary>
         public static bool RequiresLineOfSight(Ability ability)
         {
             return ability?.def?.verbProperties?.requireLineOfSight ?? true;
         }
 
-        /// <summary>
-        /// Checks if a psycast can be applied to a target (psychic immunity check).
-        /// </summary>
+        /// <summary>Whether a psycast can be applied, given psychic immunity.</summary>
         public static bool CanApplyPsycastTo(Ability ability, LocalTargetInfo target)
         {
             if (ability is Psycast psycast)
@@ -205,9 +168,7 @@ namespace RimWorldAccess
             return true;
         }
 
-        /// <summary>
-        /// Gets the label for a target (pawn name, thing label, or cell position).
-        /// </summary>
+        /// <summary>A target's label: pawn name, thing label, or cell position.</summary>
         public static string GetTargetLabel(LocalTargetInfo target)
         {
             if (!target.IsValid)
@@ -222,9 +183,7 @@ namespace RimWorldAccess
             return target.Cell.ToString();
         }
 
-        /// <summary>
-        /// Gets pawns that would be affected by an AOE ability at a given position.
-        /// </summary>
+        /// <summary>The pawns an AOE ability would affect at a position.</summary>
         public static List<Pawn> GetAffectedPawns(Ability ability, IntVec3 center, Map map)
         {
             var affected = new List<Pawn>();
@@ -234,7 +193,6 @@ namespace RimWorldAccess
 
             if (!ability.def.HasAreaOfEffect)
             {
-                // Single target - check if there's a pawn at center
                 var pawn = center.GetFirstPawn(map);
                 if (pawn != null)
                 {
@@ -245,17 +203,14 @@ namespace RimWorldAccess
 
             float radius = ability.def.EffectRadius;
 
-            // Get all things in radius and filter to pawns
             foreach (Thing thing in GenRadial.RadialDistinctThingsAround(center, map, radius, useCenter: true))
             {
                 if (thing is Pawn pawn)
                 {
-                    // Check if ability can target this pawn type
                     var targetParams = ability.verb?.targetParams;
                     if (targetParams != null && !targetParams.CanTarget(pawn))
                         continue;
 
-                    // Check psychic immunity for psycasts
                     if (!CanApplyPsycastTo(ability, pawn))
                         continue;
 
@@ -266,10 +221,7 @@ namespace RimWorldAccess
             return affected;
         }
 
-        /// <summary>
-        /// Builds the initial targeting announcement string.
-        /// Format: "{AbilityName} targeting. Range: {range} tiles. {cost info}"
-        /// </summary>
+        /// <summary>The opening targeting announcement: ability, range, AOE, costs and key hints.</summary>
         public static string BuildTargetingStartAnnouncement(Ability ability)
         {
             if (ability?.def == null)
@@ -278,7 +230,6 @@ namespace RimWorldAccess
             var sb = new StringBuilder();
             sb.Append("RimWorldAccess.Abilities.Start.Header".Translate(ability.def.LabelCap));
 
-            // Range info
             if (IsTouchRange(ability))
             {
                 sb.Append("RimWorldAccess.Abilities.Start.TouchRange".Translate());
@@ -292,28 +243,24 @@ namespace RimWorldAccess
                 }
             }
 
-            // AOE radius
             if (HasAOE(ability))
             {
                 float aoeRadius = GetAOERadius(ability);
                 sb.Append("RimWorldAccess.Abilities.Start.AOE".Translate(aoeRadius.ToString("F0")));
             }
 
-            // Psyfocus cost
             string psyfocus = GetPsyfocusCostString(ability);
             if (psyfocus != null)
             {
                 sb.Append("RimWorldAccess.Abilities.Start.Psyfocus".Translate(psyfocus));
             }
 
-            // Neural heat gain
             string entropy = GetEntropyGainString(ability);
             if (entropy != null)
             {
                 sb.Append("RimWorldAccess.Abilities.Start.NeuralHeat".Translate(entropy));
             }
 
-            // Add keyboard hints as a separate sentence
             if (HasAOE(ability))
             {
                 sb.Append("RimWorldAccess.Abilities.Start.HintAoe".Translate());
@@ -326,10 +273,7 @@ namespace RimWorldAccess
             return sb.ToString();
         }
 
-        /// <summary>
-        /// Builds range info announcement.
-        /// Format: "Distance: {dist} tiles, IN RANGE" or "Distance: {dist} tiles, OUT OF RANGE (max {range})"
-        /// </summary>
+        /// <summary>The per-cursor range readout: distance, in or out of range, and line of sight.</summary>
         public static string BuildRangeInfoAnnouncement(Ability ability, IntVec3 casterPos, IntVec3 cursorPos, Map map)
         {
             if (ability?.def == null)
@@ -340,10 +284,9 @@ namespace RimWorldAccess
             float distance = CalculateDistance(casterPos, cursorPos);
             sb.Append("RimWorldAccess.Abilities.Range.Distance".Translate(distance.ToString("F0")));
 
-            // Check if in range
             if (IsTouchRange(ability))
             {
-                // Touch range - game uses reachability, we just report distance
+                // Touch range is resolved by reachability, so only report the distance.
                 bool adjacent = casterPos.AdjacentTo8WayOrInside(cursorPos);
                 sb.Append(adjacent
                     ? "RimWorldAccess.Abilities.Range.InRangeTouch".Translate()
@@ -365,7 +308,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Check line of sight if required and in range
             if (RequiresLineOfSight(ability) && ability.pawn != null && map != null)
             {
                 bool hasLOS = HasLineOfSight(ability.pawn, cursorPos);
@@ -375,7 +317,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Check if there's a valid target at cursor
             if (map != null && !CanTargetLocations(ability))
             {
                 var pawn = cursorPos.GetFirstPawn(map);
@@ -389,10 +330,7 @@ namespace RimWorldAccess
             return sb.ToString();
         }
 
-        /// <summary>
-        /// Builds affected targets announcement.
-        /// Format: "Affected: {count} - {names}" or "No valid targets at cursor"
-        /// </summary>
+        /// <summary>The affected-targets readout, or an explanation of what the ability needs.</summary>
         public static string BuildAffectedTargetsAnnouncement(Ability ability, IntVec3 cursorPos, Map map)
         {
             if (ability?.def == null || map == null)
@@ -402,7 +340,6 @@ namespace RimWorldAccess
 
             if (affected.Count == 0)
             {
-                // No valid targets - explain what's needed
                 if (!CanTargetLocations(ability))
                 {
                     string requirement = GetTargetRequirementDescription(ability);
@@ -416,9 +353,8 @@ namespace RimWorldAccess
                 return "RimWorldAccess.Abilities.Affected.NoPawnsInRadius".Translate();
             }
 
-            // Build the target we'll show comp warnings for. Pawn-target abilities
-            // (e.g., bloodfeed) ignore cell-only LocalTargetInfo — wrap the affected
-            // pawn directly so the comp can read target.Pawn.
+            // Pawn-target abilities ignore a cell-only LocalTargetInfo, so wrap the affected pawn
+            // directly and let the comp read target.Pawn.
             LocalTargetInfo warnTarget = affected.Count > 0
                 ? new LocalTargetInfo(affected[0])
                 : new LocalTargetInfo(cursorPos);
@@ -426,15 +362,12 @@ namespace RimWorldAccess
 
             if (!ability.def.HasAreaOfEffect)
             {
-                // Single target
                 string targetLine = "RimWorldAccess.Abilities.Affected.TargetOne".Translate(affected[0].LabelShort).ToString();
                 if (!string.IsNullOrEmpty(warnings))
                     targetLine += "RimWorldAccess.Abilities.Success.WarningsSuffix".Translate(warnings);
                 return targetLine;
             }
 
-            // AOE - list affected
-            // List first few names
             int maxNames = 5;
             var names = affected.Take(maxNames).Select(p => p.LabelShort);
             string nameList = string.Join(", ", names);
@@ -454,11 +387,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Collects mouse-attachment warnings from each of the ability's effect comps.
-        /// These are the cursor-side messages sighted players see (e.g., bloodfeed's
-        /// "Will kill" / "Will cause serious blood loss"). Returns null if no comp
-        /// returns a non-empty string. Multiple warnings are joined with periods so
-        /// they read naturally without using newlines as separators.
+        /// The cursor-side warnings sighted players see, collected from the ability's effect comps
+        /// and joined with periods. Null when no comp returns anything.
         /// </summary>
         public static string GetExtraTargetWarnings(Ability ability, LocalTargetInfo target)
         {
@@ -468,8 +398,7 @@ namespace RimWorldAccess
             var warnings = new List<string>();
             foreach (var comp in ability.comps)
             {
-                // ExtraLabelMouseAttachment is defined on CompAbilityEffect, not the
-                // base AbilityComp — only effect comps emit cursor-side warnings.
+                // ExtraLabelMouseAttachment lives on CompAbilityEffect, not the base AbilityComp.
                 if (!(comp is CompAbilityEffect effectComp)) continue;
                 string text = null;
                 try { text = effectComp.ExtraLabelMouseAttachment(target); }
@@ -487,10 +416,7 @@ namespace RimWorldAccess
             return string.Join(". ", warnings);
         }
 
-        /// <summary>
-        /// Gets an immunity message if target is immune.
-        /// Returns null if target is not immune.
-        /// </summary>
+        /// <summary>The immunity message when the target is immune, else null.</summary>
         public static string GetImmunityMessage(Ability ability, LocalTargetInfo target)
         {
             if (!target.HasThing || !(target.Thing is Pawn pawn))

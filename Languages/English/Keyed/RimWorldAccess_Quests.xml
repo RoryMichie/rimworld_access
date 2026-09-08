@@ -41,18 +41,13 @@
 
   <!-- =================================================================
        Quest menu lifecycle (QuestMenuState.Open / Close / OpenAndSelect).
-       OpenInstructions is the one-time orientation message spoken when
-       the menu opens; it is suffixed with the first quest's announcement
-       or the empty-tab message. {0} = first quest announcement, or tab
-       summary, depending on context.
+       Title is the one-shot screen name spoken when the menu opens; the
+       shared screen machinery announces the focused row separately.
        ================================================================= -->
-  <RimWorldAccess.Quests.Menu.OpenInstructions>Quest menu. Alt+A to accept, Alt+D to dismiss. Enter to arrow through quest details.</RimWorldAccess.Quests.Menu.OpenInstructions>
   <RimWorldAccess.Quests.Menu.Title>Quest menu</RimWorldAccess.Quests.Menu.Title>
   <RimWorldAccess.Quests.Menu.Closed>Quest menu closed</RimWorldAccess.Quests.Menu.Closed>
   <RimWorldAccess.Quests.Menu.QuestNoLongerAvailable>Quest no longer available</RimWorldAccess.Quests.Menu.QuestNoLongerAvailable>
-  <RimWorldAccess.Quests.Menu.NoQuestsInTab>No quests in this tab</RimWorldAccess.Quests.Menu.NoQuestsInTab>
   <RimWorldAccess.Quests.Menu.NoQuestSelected>No quest selected</RimWorldAccess.Quests.Menu.NoQuestSelected>
-  <RimWorldAccess.Quests.Menu.FailedToActivateButton>Failed to activate button</RimWorldAccess.Quests.Menu.FailedToActivateButton>
 
   <!-- =================================================================
        Quest tabs. Available/Active/Historical (vanilla provides the
@@ -82,7 +77,7 @@
   <RimWorldAccess.Quests.Status.Expired>Expired</RimWorldAccess.Quests.Status.Expired>
 
   <!-- =================================================================
-       List-view announcement composition (BuildQuestAnnouncement).
+       List-view row composition (BuildQuestRowLabel).
        NameWithStatus appends a status word to the quest name; the bare
        Name case has no suffix and is spoken directly.
        StarsOne/Many is the difficulty rating; CharitySuffix is appended
@@ -116,9 +111,6 @@
   <RimWorldAccess.Quests.Detail.AcceptedAgo>Accepted: {0} ago</RimWorldAccess.Quests.Detail.AcceptedAgo>
   <RimWorldAccess.Quests.Detail.Status>Status: {0}</RimWorldAccess.Quests.Detail.Status>
   <RimWorldAccess.Quests.Detail.Finished>Finished: {0} ago</RimWorldAccess.Quests.Detail.Finished>
-  <RimWorldAccess.Quests.Detail.StartOfDetails>Start of quest details</RimWorldAccess.Quests.Detail.StartOfDetails>
-  <RimWorldAccess.Quests.Detail.EndOfDetails>End of quest details</RimWorldAccess.Quests.Detail.EndOfDetails>
-  <RimWorldAccess.Quests.Detail.OpenFirst>Press Enter to open quest details first</RimWorldAccess.Quests.Detail.OpenFirst>
   <!-- "Choose item to inspect" lives in Common.xml as
        RimWorldAccess.InfoCard.ChooseItemToInspect. -->
 
@@ -171,6 +163,10 @@
   <RimWorldAccess.Quests.RewardChoice.NoItemsToInspect>No items to inspect</RimWorldAccess.Quests.RewardChoice.NoItemsToInspect>
   <RimWorldAccess.Quests.RewardChoice.BackToList>Back to quest list</RimWorldAccess.Quests.RewardChoice.BackToList>
 
+  <!-- Consolidated reward item entry when multiple stacks share a label
+       (e.g. 5 stacks of plasteel become one entry): {0} = stack count, {1} = item name. -->
+  <RimWorldAccess.Quests.RewardChoice.ItemWithCount>{0}x {1}</RimWorldAccess.Quests.RewardChoice.ItemWithCount>
+
   <!-- =================================================================
        Reward preferences panel (Tab in the quest list). Toggles
        per-faction acceptance of royal-favor and goodwill rewards.
@@ -178,8 +174,6 @@
        label below; relation phrasing is also a key so translators can
        reorder "currently {amount}, {relation}". -->
   <RimWorldAccess.Quests.Pref.Title>Reward preferences</RimWorldAccess.Quests.Pref.Title>
-  <RimWorldAccess.Quests.Pref.QuestList>Quest list</RimWorldAccess.Quests.Pref.QuestList>
-  <RimWorldAccess.Quests.Pref.None>No reward preferences available</RimWorldAccess.Quests.Pref.None>
   <RimWorldAccess.Quests.Pref.Checked>checked</RimWorldAccess.Quests.Pref.Checked>
   <RimWorldAccess.Quests.Pref.Unchecked>unchecked</RimWorldAccess.Quests.Pref.Unchecked>
   <!-- Royal-favor row: {0} = faction.Name, {1} = royal favor label
@@ -193,7 +187,6 @@
   <RimWorldAccess.Quests.Pref.RelationPhrase>currently {0}, {1}</RimWorldAccess.Quests.Pref.RelationPhrase>
   <!-- Pref-row position suffix: {0} = built row label,
        {1} = position string from MenuHelper.FormatPosition. -->
-  <RimWorldAccess.Quests.Pref.RowWithPosition>{0}. {1}</RimWorldAccess.Quests.Pref.RowWithPosition>
 
   <!-- =================================================================
        Reward extraction (QuestRewardHelper). Builds the reward detail
@@ -202,7 +195,6 @@
        helper so each reward item line is visually grouped under its
        header line; the indent is preserved in keys here. -->
   <RimWorldAccess.Quests.Reward.NoRewards>No rewards</RimWorldAccess.Quests.Reward.NoRewards>
-  <RimWorldAccess.Quests.Reward.MultipleChoices>Multiple reward choices available</RimWorldAccess.Quests.Reward.MultipleChoices>
   <RimWorldAccess.Quests.Reward.RewardsHeader>Rewards:</RimWorldAccess.Quests.Reward.RewardsHeader>
   <RimWorldAccess.Quests.Reward.ChoicesHeader>Reward choices (choose one to accept):</RimWorldAccess.Quests.Reward.ChoicesHeader>
   <!-- {0} = 1-based choice index. -->
@@ -243,10 +235,12 @@
        ================================================================= -->
   <RimWorldAccess.Notifications.Menu.None>No notifications available</RimWorldAccess.Notifications.Menu.None>
   <RimWorldAccess.Notifications.Menu.Closed>Notification menu closed</RimWorldAccess.Notifications.Menu.Closed>
-  <RimWorldAccess.Notifications.Menu.NoTargetLocation>No target location available</RimWorldAccess.Notifications.Menu.NoTargetLocation>
+  <!-- No vanilla MainButtonDef backs this overlay (it isn't a real tab), so
+       there is no existing translated label to borrow for the ScreenScope
+       content region name (NotificationScope.ContentRegionName). -->
+  <RimWorldAccess.Notifications.Menu.RegionName>Notifications</RimWorldAccess.Notifications.Menu.RegionName>
   <RimWorldAccess.Notifications.Menu.TargetNotValid>Target location is not valid</RimWorldAccess.Notifications.Menu.TargetNotValid>
   <RimWorldAccess.Notifications.Menu.FailedToActivateButton>Failed to activate button</RimWorldAccess.Notifications.Menu.FailedToActivateButton>
-  <RimWorldAccess.Notifications.Menu.FailedToJump>Failed to jump to target</RimWorldAccess.Notifications.Menu.FailedToJump>
   <RimWorldAccess.Notifications.Menu.OnlyLettersDeletable>Only letters can be deleted</RimWorldAccess.Notifications.Menu.OnlyLettersDeletable>
   <RimWorldAccess.Notifications.Menu.CannotDeleteLetter>Cannot delete this letter</RimWorldAccess.Notifications.Menu.CannotDeleteLetter>
 
@@ -271,7 +265,6 @@
   <!-- Action button labels extracted from letters and alerts. -->
   <RimWorldAccess.Notifications.Button.OpenGrowthMoment>Open growth moment</RimWorldAccess.Notifications.Button.OpenGrowthMoment>
   <RimWorldAccess.Notifications.Button.ViewChoices>View choices</RimWorldAccess.Notifications.Button.ViewChoices>
-  <RimWorldAccess.Notifications.Button.OpenResearch>Open Research</RimWorldAccess.Notifications.Button.OpenResearch>
   <RimWorldAccess.Notifications.Button.Activate>Activate</RimWorldAccess.Notifications.Button.Activate>
   <!-- Single-target jump button: {0} = target description. -->
   <RimWorldAccess.Notifications.Button.JumpTo>Jump to {0}</RimWorldAccess.Notifications.Button.JumpTo>

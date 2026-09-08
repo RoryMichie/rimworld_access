@@ -1,17 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using HarmonyLib;
-using UnityEngine;
 using Verse;
-using Verse.Sound;
 using RimWorld;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Defines the modes of the architect system.
-    /// </summary>
+    /// <summary>The modes of the architect system.</summary>
     public enum ArchitectMode
     {
         Inactive,           // Not in architect mode
@@ -21,19 +15,14 @@ namespace RimWorldAccess
         PlacementMode       // Placing designations on the map
     }
 
-    /// <summary>
-    /// Defines the selection mode for architect placement.
-    /// </summary>
+    /// <summary>The selection mode for architect placement.</summary>
     public enum ArchitectSelectionMode
     {
         BoxSelection,    // Space sets corners for rectangle selection
         SingleTile       // Space toggles individual tiles
     }
 
-    /// <summary>
-    /// Maintains state for the accessible architect system.
-    /// Tracks current mode, selected category, designator, and placement state.
-    /// </summary>
+    /// <summary>State for the accessible architect system: mode, selected category, designator, and placement.</summary>
     public static class ArchitectState
     {
         private static ArchitectMode currentMode = ArchitectMode.Inactive;
@@ -45,84 +34,47 @@ namespace RimWorldAccess
         private static Rot4 currentRotation = Rot4.North;
         private static ArchitectSelectionMode selectionMode = ArchitectSelectionMode.BoxSelection; // Default to box selection
 
-        // Reflection field info for accessing protected placingRot field
-        private static FieldInfo placingRotField = AccessTools.Field(typeof(Designator_Place), "placingRot");
-
-        /// <summary>
-        /// Gets the current architect mode.
-        /// </summary>
         public static ArchitectMode CurrentMode => currentMode;
 
-        /// <summary>
-        /// Gets the currently selected category.
-        /// </summary>
         public static DesignationCategoryDef SelectedCategory => selectedCategory;
 
-        /// <summary>
-        /// Gets the currently selected designator.
-        /// </summary>
         public static Designator SelectedDesignator => selectedDesignator;
 
-        /// <summary>
-        /// Gets the currently selected buildable (for construction).
-        /// </summary>
         public static BuildableDef SelectedBuildable => selectedBuildable;
 
-        /// <summary>
-        /// Gets the currently selected material (for construction).
-        /// </summary>
         public static ThingDef SelectedMaterial => selectedMaterial;
 
-        /// <summary>
-        /// Gets the list of selected cells for placement.
-        /// Returns a read-only view to prevent external mutation.
-        /// </summary>
+        /// <summary>The cells selected for placement, as a read-only view.</summary>
         public static IReadOnlyList<IntVec3> SelectedCells => selectedCells.AsReadOnly();
 
-        /// <summary>
-        /// Clears the internal selected cells list.
-        /// Used after placing a build designator at a single cell.
-        /// </summary>
+        /// <summary>Clears the selected cells, after placing a build designator at a single cell.</summary>
         public static void ClearSelectedCells()
         {
             selectedCells.Clear();
         }
 
-        /// <summary>
-        /// Gets or sets the current rotation for building placement.
-        /// </summary>
         public static Rot4 CurrentRotation
         {
             get => currentRotation;
             set => currentRotation = value;
         }
 
-        /// <summary>
-        /// Whether architect mode is currently active (any mode except Inactive).
-        /// </summary>
+        /// <summary>Whether architect mode is active (any mode except Inactive).</summary>
         public static bool IsActive => currentMode != ArchitectMode.Inactive;
 
         /// <summary>
-        /// Whether we're currently in placement mode on the map.
-        /// Defensive check: also verifies a designator is actually selected in the game.
-        /// This prevents stale state if the designator was deselected externally.
+        /// Whether placement mode is live on the map. Also verifies a designator really is selected
+        /// in the game, so an externally deselected designator cannot leave stale state.
         /// </summary>
         public static bool IsInPlacementMode =>
             currentMode == ArchitectMode.PlacementMode &&
             Find.DesignatorManager?.SelectedDesignator != null;
 
-        /// <summary>
-        /// Gets the current selection mode (BoxSelection or SingleTile).
-        /// </summary>
         public static ArchitectSelectionMode SelectionMode => selectionMode;
 
-        /// <summary>
-        /// Toggles between box selection and single tile selection modes.
-        /// Only applies to zone designators.
-        /// </summary>
+        /// <summary>Toggles box versus single-tile selection; zone designators only.</summary>
         public static void ToggleSelectionMode()
         {
-            // Only allow toggling for zone designators
             if (!IsZoneDesignator())
             {
                 TolkHelper.Speak("RimWorldAccess.Building.Architect.SelectionModeZoneOnly".Loc());
@@ -137,12 +89,10 @@ namespace RimWorldAccess
                 ? "RimWorldAccess.Building.Paint.ModeBox".Translate()
                 : "RimWorldAccess.Building.Paint.ModeSingle".Translate();
             TolkHelper.SpeakData(modeName);
-            Log.Message($"Architect placement: Switched to {modeName}");
+            ModLogger.Dev($"Architect placement: Switched to {modeName}");
         }
 
-        /// <summary>
-        /// Enters category selection mode.
-        /// </summary>
+        /// <summary>Enters category selection mode.</summary>
         public static void EnterCategorySelection()
         {
             currentMode = ArchitectMode.CategorySelection;
@@ -152,12 +102,10 @@ namespace RimWorldAccess
             selectedMaterial = null;
             selectedCells.Clear();
 
-            Log.Message("Entered architect category selection");
+            ModLogger.Dev("Entered architect category selection");
         }
 
-        /// <summary>
-        /// Enters tool selection mode for a specific category.
-        /// </summary>
+        /// <summary>Enters tool selection mode for one category.</summary>
         public static void EnterToolSelection(DesignationCategoryDef category)
         {
             currentMode = ArchitectMode.ToolSelection;
@@ -168,12 +116,10 @@ namespace RimWorldAccess
             selectedCells.Clear();
 
             TolkHelper.Speak("RimWorldAccess.Building.Architect.CategorySelected".Loc(category.LabelCap));
-            Log.Message($"Entered tool selection for category: {category.defName}");
+            ModLogger.Dev($"Entered tool selection for category: {category.defName}");
         }
 
-        /// <summary>
-        /// Enters material selection mode for a buildable that requires stuff.
-        /// </summary>
+        /// <summary>Enters material selection mode for a buildable that requires stuff.</summary>
         public static void EnterMaterialSelection(BuildableDef buildable, Designator designator)
         {
             currentMode = ArchitectMode.MaterialSelection;
@@ -183,17 +129,17 @@ namespace RimWorldAccess
             selectedCells.Clear();
 
             TolkHelper.Speak("RimWorldAccess.Building.Architect.SelectMaterialFor".Loc(buildable.label));
-            Log.Message($"Entered material selection for: {buildable.defName}");
+            ModLogger.Dev($"Entered material selection for: {buildable.defName}");
         }
 
         /// <summary>
-        /// Enters placement mode with the selected designator.
-        /// This method sets up ArchitectState and calls DesignatorManager.Select().
-        /// The DesignatorManagerPatch will handle entering ShapePlacementState or announcing manual mode.
+        /// Enters placement mode with the selected designator; DesignatorManagerPatch then enters
+        /// ShapePlacementState or announces manual mode.
         /// </summary>
-        public static void EnterPlacementMode(Designator designator, ThingDef material = null)
+        /// <param name="selectAction">A harvested vanilla option delegate that performs the Select
+        /// itself along with the mod's own side effects; when null, Select() is called directly.</param>
+        public static void EnterPlacementMode(Designator designator, ThingDef material = null, System.Action selectAction = null)
         {
-            // Close gizmo navigation when entering placement mode
             GizmoNavigationState.Close();
 
             currentMode = ArchitectMode.PlacementMode;
@@ -201,70 +147,71 @@ namespace RimWorldAccess
             selectedMaterial = material;
             selectedCells.Clear();
 
-            // Reset rotation to North when entering placement mode
             currentRotation = Rot4.North;
 
-            // Reset selection mode to box selection
             selectionMode = ArchitectSelectionMode.BoxSelection;
 
-            // If this is a place designator (build or install), set its rotation via reflection
             if (designator is Designator_Place placeDesignator)
             {
-                if (placingRotField != null)
-                {
-                    placingRotField.SetValue(placeDesignator, currentRotation);
-                }
+                BuildingReflection.SetPlacingRot(placeDesignator, currentRotation);
             }
 
             string toolName = designator.Label;
-            Log.Message($"Entered placement mode with designator: {toolName}");
+            ModLogger.Dev($"Entered placement mode with designator: {toolName}");
 
-            // First time the player reaches placement mode, teach how it works (two corners with
-            // Space, Tab to change shape, etc.). Once-per-session + knowledge guards keep it quiet after.
+            // Taught once on first reaching placement mode; the session and knowledge guards keep
+            // it quiet after.
             DocsTeacher.Teach("RWA_PlacementMode");
 
-            // Set the designator as selected in the game's DesignatorManager
-            // The DesignatorManagerPatch.Postfix will handle entering accessible placement mode
             if (Find.DesignatorManager != null)
             {
-                Find.DesignatorManager.Select(designator);
+                if (selectAction != null)
+                    selectAction();
+                else
+                    Find.DesignatorManager.Select(designator);
 
-                // Sync our tracked rotation with the designator's actual rotation
-                // (RimWorld's Selected() sets placingRot to PlacingDef.defaultPlacingRot)
-                if (designator is Designator_Place placeDesignatorForSync && placingRotField != null)
+                // Selected() sets placingRot to PlacingDef.defaultPlacingRot, so re-read it.
+                if (designator is Designator_Place placeDesignatorForSync)
                 {
-                    currentRotation = (Rot4)placingRotField.GetValue(placeDesignatorForSync);
+                    currentRotation = BuildingReflection.GetPlacingRot(placeDesignatorForSync);
                 }
             }
         }
 
-        /// <summary>
-        /// Rotates the current building in the specified direction.
-        /// Works with both Designator_Build (new construction) and Designator_Install (reinstall/install).
-        /// </summary>
+        /// <summary>Rotates the building being placed; works for Designator_Build and Designator_Install alike.</summary>
         public static void RotateBuilding(RotationDirection direction = RotationDirection.Clockwise)
         {
             if (!IsInPlacementMode || !(selectedDesignator is Designator_Place placeDesignator))
                 return;
 
-            currentRotation.Rotate(direction);
-
-            // Set rotation on the designator via reflection
-            if (placingRotField != null)
-            {
-                placingRotField.SetValue(placeDesignator, currentRotation);
-            }
-
-            // Announce new rotation and spatial info
-            string announcement = GetRotationAnnouncementForDef(placeDesignator.PlacingDef, currentRotation);
-            TolkHelper.SpeakData(announcement);
-            Log.Message($"Rotated building to: {currentRotation}");
+            Rot4 rotated = currentRotation;
+            rotated.Rotate(direction);
+            ApplyRotation(placeDesignator, rotated);
         }
 
         /// <summary>
-        /// Gets rotation announcement for any BuildableDef at a given rotation.
-        /// Shared by architect menu placement and gizmo-based placement (reinstall, etc.)
+        /// Points the building being placed at an absolute rotation, announcement included. Reads
+        /// the live selected designator rather than <see cref="selectedDesignator"/>, so
+        /// gizmo-driven placement, which never enters architect placement mode, is covered too.
         /// </summary>
+        public static void SetBuildingRotation(Rot4 rotation)
+        {
+            if (Find.DesignatorManager?.SelectedDesignator is Designator_Place placeDesignator)
+                ApplyRotation(placeDesignator, rotation);
+        }
+
+        private static void ApplyRotation(Designator_Place placeDesignator, Rot4 rotation)
+        {
+            currentRotation = rotation;
+
+            BuildingReflection.SetPlacingRot(placeDesignator, currentRotation);
+
+            string announcement = GetRotationAnnouncementForDef(placeDesignator.PlacingDef, currentRotation);
+            TolkHelper.SpeakData(announcement);
+            ModLogger.Dev($"Rotated building to: {currentRotation}");
+        }
+
+        /// <summary>The rotation announcement for any BuildableDef, shared by architect and gizmo placement.</summary>
         internal static string GetRotationAnnouncementForDef(BuildableDef def, Rot4 rotation)
         {
             string facing = "RimWorldAccess.Building.Architect.Facing".Translate(GetRotationName(rotation));
@@ -283,31 +230,21 @@ namespace RimWorldAccess
                 .Build();
         }
 
-        /// <summary>
-        /// Gets special spatial requirements for buildings like wind turbines, coolers,
-        /// beds (head position), fuel ports, TVs, and interaction cell buildings.
-        /// </summary>
+        /// <summary>Special spatial requirements: wind turbines, coolers, beds, fuel ports, TVs, interaction cells.</summary>
         private static string GetSpecialSpatialRequirements(BuildableDef def, Rot4 rotation)
         {
             if (def == null || !(def is ThingDef thingDef))
                 return null;
 
-            // Check for wind turbine (highest priority - needs clear space)
-            // Uses PlaceWorker_WindTurbine check for proper game integration
             if (IsWindTurbine(thingDef))
             {
-                return GetWindTurbineRequirements(rotation);
+                return GetWindTurbineRequirements(thingDef, rotation);
             }
 
-            // Use BuildingCellHelper for all other special position info
-            // (coolers, beds, fuel ports, TVs, vents, thrones, turrets, etc.)
             return BuildingCellHelper.GetPlacementPositionInfo(thingDef, rotation);
         }
 
-        /// <summary>
-        /// Checks if a ThingDef is a wind turbine by looking for PlaceWorker_WindTurbine.
-        /// This is the proper game API for identifying wind turbines.
-        /// </summary>
+        /// <summary>Identifies a wind turbine by its PlaceWorker_WindTurbine, the game's own marker.</summary>
         private static bool IsWindTurbine(ThingDef def)
         {
             if (def?.placeWorkers == null)
@@ -322,55 +259,50 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Wind turbine clear space requirements by rotation.
-        /// Verified against WindTurbineUtility.CalculateWindCells() in game code:
-        /// - North/East facing: 9 tiles front, 5 tiles back
-        /// - South/West facing: 5 tiles front, 9 tiles back
+        /// Wind-turbine clear space, from the game's own
+        /// <see cref="WindTurbineUtility.CalculateWindCells"/> rather than a hand-maintained
+        /// per-rotation table that could drift. Cells are requested relative to the origin, so the
+        /// result is direction and depth only, independent of any map placement.
         /// </summary>
-        private static readonly Dictionary<Rot4, (int frontTiles, string frontDirKey, int backTiles, string backDirKey)> WindTurbineDirections = new Dictionary<Rot4, (int, string, int, string)>
+        private static string GetWindTurbineRequirements(ThingDef def, Rot4 rotation)
         {
-            { Rot4.North, (9, "RimWorldAccess.Map.Direction.Lower.North", 5, "RimWorldAccess.Map.Direction.Lower.South") },
-            { Rot4.East, (9, "RimWorldAccess.Map.Direction.Lower.East", 5, "RimWorldAccess.Map.Direction.Lower.West") },
-            { Rot4.South, (5, "RimWorldAccess.Map.Direction.Lower.North", 9, "RimWorldAccess.Map.Direction.Lower.South") },
-            { Rot4.West, (5, "RimWorldAccess.Map.Direction.Lower.East", 9, "RimWorldAccess.Map.Direction.Lower.West") }
-        };
+            List<IntVec3> cells = WindTurbineUtility.CalculateWindCells(IntVec3.Zero, rotation, def.Size).ToList();
+            if (cells.Count == 0)
+                return "RimWorldAccess.Building.Architect.WindTurbineClearSpaceGeneric".Translate();
 
-        /// <summary>
-        /// Gets spatial requirements for wind turbines.
-        /// </summary>
-        private static string GetWindTurbineRequirements(Rot4 rotation)
-        {
-            if (WindTurbineDirections.TryGetValue(rotation, out var directions))
+            // The two clear-space zones fall either side of the turbine along its facing axis.
+            // Depth is the number of distinct coordinates, not the raw cell count, since each depth
+            // also spans several cells across the axis.
+            bool horizontal = rotation.IsHorizontal;
+            var positiveDepths = new HashSet<int>();
+            var negativeDepths = new HashSet<int>();
+            foreach (IntVec3 cell in cells)
             {
-                string front = "RimWorldAccess.Building.Architect.TilesDirection".Translate(directions.frontTiles, directions.frontDirKey.Translate());
-                string back = "RimWorldAccess.Building.Architect.TilesDirection".Translate(directions.backTiles, directions.backDirKey.Translate());
-                return "RimWorldAccess.Building.Architect.WindTurbineClearSpace".Translate(front, back);
+                int coord = horizontal ? cell.x : cell.z;
+                if (coord > 0) positiveDepths.Add(coord);
+                else if (coord < 0) negativeDepths.Add(coord);
             }
-            return "RimWorldAccess.Building.Architect.WindTurbineClearSpaceGeneric".Translate();
+
+            IntVec3 positiveOffset = horizontal ? new IntVec3(1, 0, 0) : new IntVec3(0, 0, 1);
+            IntVec3 negativeOffset = horizontal ? new IntVec3(-1, 0, 0) : new IntVec3(0, 0, -1);
+
+            string positiveSide = "RimWorldAccess.Building.Architect.TilesDirection".Translate(positiveDepths.Count, GetDirectionName(positiveOffset));
+            string negativeSide = "RimWorldAccess.Building.Architect.TilesDirection".Translate(negativeDepths.Count, GetDirectionName(negativeOffset));
+
+            return "RimWorldAccess.Building.Architect.WindTurbineClearSpace".Translate(positiveSide, negativeSide);
         }
 
-        // NOTE: Cooler handling moved to BuildingCellHelper.GetCoolerDirectionInfo()
-        // for consistent handling in both placement and cursor inspection.
-
-        /// <summary>
-        /// Gets a direction name from an IntVec3 offset.
-        /// Delegates to BuildingCellHelper.GetCardinalDirection for consistency.
-        /// </summary>
+        /// <summary>The direction name for an IntVec3 offset.</summary>
         private static string GetDirectionName(IntVec3 offset)
         {
             return BuildingCellHelper.GetCardinalDirection(offset) ?? "unknown";
         }
 
-        /// <summary>
-        /// Gets a human-readable description of the building size and occupied tiles.
-        /// Uses RimWorld's GenAdj.OccupiedRect to accurately calculate where the building extends.
-        /// </summary>
+        /// <summary>Describes the building's size and occupied tiles, via GenAdj.OccupiedRect.</summary>
         internal static string GetSizeDescription(IntVec2 size, Rot4 rotation)
         {
-            // Get cursor position for calculating actual occupied rect
             IntVec3 cursorPosition = MapNavigationState.CurrentCursorPosition;
 
-            // Use RimWorld's OccupiedRect to get the actual cells (accounts for rotation adjustments)
             CellRect occupiedRect = GenAdj.OccupiedRect(cursorPosition, rotation, size);
 
             int width = occupiedRect.Width;
@@ -381,16 +313,13 @@ namespace RimWorldAccess
                 return "RimWorldAccess.Building.Place.SizeOneTile".Translate();
             }
 
-            // Build relative description
             var builder = new AnnouncementBuilder();
             builder.Add("RimWorldAccess.Building.Architect.SizeWxH".Translate(width, depth));
 
-            // Calculate extends from cursor position to rect bounds
             if (width > 1 || depth > 1)
             {
                 List<string> directions = new List<string>();
 
-                // Calculate how many tiles extend in each direction from cursor
                 int northTiles = occupiedRect.maxZ - cursorPosition.z;
                 int southTiles = cursorPosition.z - occupiedRect.minZ;
                 int eastTiles = occupiedRect.maxX - cursorPosition.x;
@@ -412,9 +341,6 @@ namespace RimWorldAccess
             return builder.Build();
         }
 
-        /// <summary>
-        /// Gets a human-readable rotation name.
-        /// </summary>
         internal static string GetRotationName(Rot4 rotation)
         {
             if (rotation == Rot4.North) return "RimWorldAccess.Map.Direction.North".Translate();
@@ -424,22 +350,24 @@ namespace RimWorldAccess
             return rotation.ToString();
         }
 
-        /// <summary>
-        /// Adds a cell to the selection if valid for the current designator.
-        /// For zone designators, enforces adjacency requirements.
-        /// </summary>
+        /// <summary>Adds a cell to the selection when the designator allows it; zone designators must stay adjacent.</summary>
         public static void ToggleCell(IntVec3 cell)
         {
             if (selectedDesignator == null)
                 return;
 
-            // Check if this designator can designate this cell
+            if (RectDesignationRouter.IsRectDesignator(selectedDesignator))
+            {
+                // This designator consumes a rectangle, and Space already routed to the single-cell
+                // rect path.
+                return;
+            }
+
             AcceptanceReport report = selectedDesignator.CanDesignateCell(cell);
             bool isZone = ShapeHelper.IsZoneDesignator(selectedDesignator);
 
             if (selectedCells.Contains(cell))
             {
-                // Removing - check if it would disconnect the selection (for zones)
                 if (isZone && selectedCells.Count > 1 && WouldDisconnectSelection(cell))
                 {
                     TolkHelper.Speak("RimWorldAccess.Building.Create.CannotRemoveDisconnect".Loc());
@@ -450,13 +378,12 @@ namespace RimWorldAccess
             }
             else if (report.Accepted)
             {
-                // For zone designators, additional validation
                 if (isZone)
                 {
                     Map map = Find.CurrentMap;
                     if (map != null)
                     {
-                        // Check if cell is already in ANY zone (RimWorld's CanDesignateCell allows same-type zones)
+                        // CanDesignateCell allows same-type zones, so check every zone.
                         Zone existingZone = map.zoneManager.ZoneAt(cell);
                         if (existingZone != null)
                         {
@@ -465,7 +392,6 @@ namespace RimWorldAccess
                         }
                     }
 
-                    // Enforce adjacency (except first cell)
                     if (selectedCells.Count > 0 && !IsAdjacentToSelection(cell))
                     {
                         TolkHelper.Speak("RimWorldAccess.Building.Create.MustBeAdjacentToSelection".Loc());
@@ -477,15 +403,11 @@ namespace RimWorldAccess
             }
             else
             {
-                // Cannot designate this cell
                 string reason = report.Reason ?? "RimWorldAccess.Building.Architect.CannotDesignateHere".Translate();
                 TolkHelper.Speak("RimWorldAccess.Building.Architect.Invalid".Loc(reason));
             }
         }
 
-        /// <summary>
-        /// Checks if a cell is adjacent to any cell in the current selection.
-        /// </summary>
         private static bool IsAdjacentToSelection(IntVec3 cell)
         {
             for (int i = 0; i < 4; i++)
@@ -497,10 +419,7 @@ namespace RimWorldAccess
             return false;
         }
 
-        /// <summary>
-        /// Checks if removing a cell would disconnect the remaining selection.
-        /// Uses flood-fill algorithm.
-        /// </summary>
+        /// <summary>Whether removing a cell would disconnect the remaining selection.</summary>
         private static bool WouldDisconnectSelection(IntVec3 cellToRemove)
         {
             var remaining = new HashSet<IntVec3>(selectedCells);
@@ -509,7 +428,6 @@ namespace RimWorldAccess
             if (remaining.Count == 0)
                 return false;
 
-            // Flood-fill from first remaining cell
             var visited = new HashSet<IntVec3>();
             var queue = new Queue<IntVec3>();
             var startCell = remaining.First();
@@ -534,9 +452,7 @@ namespace RimWorldAccess
             return visited.Count < remaining.Count;
         }
 
-        /// <summary>
-        /// Executes the placement (designates all selected cells).
-        /// </summary>
+        /// <summary>Designates every selected cell.</summary>
         public static void ExecutePlacement(Map map)
         {
             if (selectedDesignator == null || selectedCells.Count == 0)
@@ -548,12 +464,11 @@ namespace RimWorldAccess
 
             try
             {
-                // Use the designator's DesignateMultiCell method
                 selectedDesignator.DesignateMultiCell(selectedCells);
 
                 string toolName = selectedDesignator.Label;
                 TolkHelper.Speak("RimWorldAccess.Building.Architect.PlacedOnCells".Loc(toolName, selectedCells.Count));
-                Log.Message($"Executed placement: {toolName} on {selectedCells.Count} cells");
+                ModLogger.Dev($"Executed placement: {toolName} on {selectedCells.Count} cells");
             }
             catch (System.Exception ex)
             {
@@ -566,41 +481,29 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Cancels the current operation and fully exits architect mode.
-        /// </summary>
+        /// <summary>Cancels the current operation and fully exits architect mode.</summary>
         public static void Cancel()
         {
             TolkHelper.Speak("RimWorldAccess.Building.Architect.MenuClosed".Loc());
 
-            // Always fully close architect mode
             Reset();
         }
 
-        /// <summary>
-        /// Checks if the current designator is a zone/area/cell-based designator.
-        /// This includes zones (stockpiles, growing zones), areas (home, roof), and other multi-cell designators.
-        /// Delegates to ShapeHelper for the type hierarchy check.
-        /// </summary>
+        /// <summary>Whether the current designator is zone-, area-, or otherwise cell-based.</summary>
         public static bool IsZoneDesignator()
         {
             return ShapeHelper.IsCellsDesignator(selectedDesignator) || ShapeHelper.IsZoneDesignator(selectedDesignator);
         }
 
-        /// <summary>
-        /// Resets the architect state completely.
-        /// Idempotent: safe to call multiple times, early exits if already inactive.
-        /// </summary>
+        /// <summary>Resets the architect state; idempotent.</summary>
         public static void Reset()
         {
-            // Early exit if already inactive - prevents redundant work and logging
             if (currentMode == ArchitectMode.Inactive)
             {
                 return;
             }
 
-            // Set mode to Inactive FIRST before calling Deselect()
-            // This prevents infinite loops with DesignatorManagerDeselectPatch
+            // Inactive BEFORE Deselect(), or DesignatorManagerDeselectPatch loops.
             currentMode = ArchitectMode.Inactive;
             selectedCategory = null;
             selectedDesignator = null;
@@ -610,20 +513,18 @@ namespace RimWorldAccess
             currentRotation = Rot4.North;
             selectionMode = ArchitectSelectionMode.BoxSelection; // Reset to default mode
 
-            // Deselect any active designator in the game
             if (Find.DesignatorManager != null)
             {
                 Find.DesignatorManager.Deselect();
             }
 
-            // Clear selection if it's a MinifiedThing (from inventory install)
-            // This prevents stale MinifiedThing selection from affecting gizmo visibility
+            // A stale MinifiedThing selection from an inventory install would skew gizmo visibility.
             if (Find.Selector?.SingleSelectedThing is MinifiedThing)
             {
                 Find.Selector.ClearSelection();
             }
 
-            Log.Message("Architect state reset");
+            ModLogger.Dev("Architect state reset");
         }
     }
 }

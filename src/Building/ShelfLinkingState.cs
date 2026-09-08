@@ -1,47 +1,32 @@
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// State for manual storage linking selection mode.
-    /// Uses the map cursor for navigation (like transport pod selection).
-    /// Space toggles storage selection at cursor, Enter confirms linking.
+    /// Manual storage linking selection mode: navigation uses the map cursor, Space toggles the
+    /// storage at the cursor, Enter confirms.
     /// </summary>
     public static class ShelfLinkingState
     {
-        /// <summary>
-        /// Whether storage linking selection mode is currently active.
-        /// </summary>
+        /// <summary>Whether storage linking selection mode is active.</summary>
         public static bool IsActive { get; private set; }
 
-        /// <summary>
-        /// The map where selection is happening.
-        /// </summary>
+        /// <summary>The map where selection is happening.</summary>
         private static Map currentMap;
 
-        /// <summary>
-        /// The source storage that initiated linking mode.
-        /// </summary>
+        /// <summary>The source storage that initiated linking mode.</summary>
         private static IStorageGroupMember sourceStorage;
 
-        /// <summary>
-        /// The storage group tag for compatibility checking.
-        /// </summary>
+        /// <summary>The storage group tag used for compatibility checks.</summary>
         private static string sourceTag;
 
-        /// <summary>
-        /// Set of storage members currently selected for linking.
-        /// </summary>
+        /// <summary>Storage members currently selected for linking.</summary>
         private static HashSet<IStorageGroupMember> selectedStorage;
 
-        /// <summary>
-        /// Opens manual storage linking selection mode.
-        /// </summary>
-        /// <param name="source">The source storage to link from</param>
+        /// <summary>Opens manual storage linking selection mode from <paramref name="source"/>.</summary>
         public static void Open(IStorageGroupMember source)
         {
             if (!GuardHelper.RequireMap(SpeechPriority.High)) return;
@@ -57,10 +42,10 @@ namespace RimWorldAccess
             sourceTag = source.StorageGroupTag;
             selectedStorage = new HashSet<IStorageGroupMember>();
 
-            // Pre-select the source storage
+            // Pre-select the source storage.
             selectedStorage.Add(source);
 
-            // Clear game selection and select source thing
+            // Clear game selection and select the source thing.
             if (source is Thing sourceThing)
             {
                 Find.Selector.ClearSelection();
@@ -74,15 +59,23 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Closes storage linking selection mode without linking.
+        /// Clears session state with no announcement and no selection mutation; Close() delegates
+        /// here for the field-clearing part. Used by StateResetRegistry at a session boundary, where
+        /// announcing a cancellation and touching Find.Selector would be wrong.
         /// </summary>
-        public static void Close()
+        public static void Reset()
         {
             IsActive = false;
             currentMap = null;
             sourceStorage = null;
             sourceTag = null;
             selectedStorage = null;
+        }
+
+        /// <summary>Closes storage linking selection mode without linking.</summary>
+        public static void Close()
+        {
+            Reset();
 
             Find.Selector.ClearSelection();
 
@@ -90,49 +83,11 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles keyboard input for storage linking mode.
-        /// Returns true if the input was handled.
+        /// Toggles selection of the storage at the current cursor position. Arrow keys are never
+        /// handled here: they fall through to map navigation, which the scope's non-modal posture
+        /// reproduces with no claim.
         /// </summary>
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!IsActive)
-                return false;
-
-            // Space - toggle storage selection at cursor
-            if (key == KeyCode.Space && !shift && !ctrl && !alt)
-            {
-                ToggleStorageAtCursor();
-                return true;
-            }
-
-            // Enter - confirm and link selected storage
-            if ((key == KeyCode.Return || key == KeyCode.KeypadEnter) && !shift && !ctrl && !alt)
-            {
-                ConfirmSelection();
-                return true;
-            }
-
-            // Escape - cancel selection mode
-            if (key == KeyCode.Escape)
-            {
-                Close();
-                return true;
-            }
-
-            // Let arrow keys pass through to map navigation
-            if (key == KeyCode.UpArrow || key == KeyCode.DownArrow ||
-                key == KeyCode.LeftArrow || key == KeyCode.RightArrow)
-            {
-                return false;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Toggles selection of storage at the current cursor position.
-        /// </summary>
-        private static void ToggleStorageAtCursor()
+        internal static void ToggleStorageAtCursor()
         {
             IntVec3 cursorPos = MapNavigationState.CurrentCursorPosition;
 
@@ -142,12 +97,11 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Find compatible storage at cursor
             var storage = ShelfLinkingHelper.GetStorageAt(cursorPos, sourceTag, currentMap);
 
             if (storage == null)
             {
-                // Check if there's any storage at all (wrong tag)
+                // Storage exists here but carries the wrong tag.
                 var anyStorage = ShelfLinkingHelper.GetAllStorageAt(cursorPos, currentMap);
                 if (anyStorage.Count > 0)
                 {
@@ -161,7 +115,7 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Don't allow deselecting the source
+            // The source may not be deselected.
             if (storage == sourceStorage)
             {
                 TolkHelper.Speak("RimWorldAccess.Building.Shelf.SourceCannotDeselect".Loc(), SpeechPriority.Normal);
@@ -172,7 +126,6 @@ namespace RimWorldAccess
 
             if (selectedStorage.Contains(storage))
             {
-                // Deselect
                 selectedStorage.Remove(storage);
                 if (storage is Thing thing)
                 {
@@ -182,7 +135,6 @@ namespace RimWorldAccess
             }
             else
             {
-                // Select
                 selectedStorage.Add(storage);
                 if (storage is Thing thing)
                 {
@@ -193,9 +145,14 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Confirms selection and links all selected storage.
+        /// Confirms selection and links all selected storage. Stays IsActive while the
+        /// already-linked-items confirmation raises a real Dialog_MessageBox — genuine coexistence,
+        /// not a close-before-open handoff. The dialog keeps the keyboard because
+        /// ShelfLinkingScopeMirror stands down while a real dialog with an attached scope is up;
+        /// stack order alone would NOT protect it, since the mirror's per-frame Push re-floats an
+        /// already-stacked scope to the top.
         /// </summary>
-        private static void ConfirmSelection()
+        internal static void ConfirmSelection()
         {
             if (selectedStorage.Count <= 1)
             {
@@ -203,13 +160,12 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Check for items already in different groups
+            // Items already in different groups need confirmation.
             var alreadyLinked = ShelfLinkingHelper.GetAlreadyLinkedItems(
                 selectedStorage.ToList(), sourceStorage.Group);
 
             if (alreadyLinked.Count > 0)
             {
-                // Show confirmation dialog
                 ShelfLinkingConfirmDialog.Show(
                     alreadyLinked,
                     onYes: () => PerformLinking(),
@@ -220,14 +176,11 @@ namespace RimWorldAccess
             }
             else
             {
-                // No conflicts, link directly
                 PerformLinking();
             }
         }
 
-        /// <summary>
-        /// Performs the actual linking operation.
-        /// </summary>
+        /// <summary>Performs the actual linking operation.</summary>
         private static void PerformLinking()
         {
             int count = selectedStorage.Count;
@@ -236,7 +189,6 @@ namespace RimWorldAccess
             bool success = ShelfLinkingHelper.LinkStorageItems(
                 sourceStorage, selectedStorage.ToList(), currentMap);
 
-            // Close the state
             IsActive = false;
             currentMap = null;
             var source = sourceStorage;
@@ -256,9 +208,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the currently selected storage items (for visual feedback).
-        /// </summary>
+        /// <summary>The currently selected storage items, for visual feedback.</summary>
         public static IEnumerable<IStorageGroupMember> GetSelectedStorage()
         {
             if (!IsActive || selectedStorage == null)
@@ -270,28 +220,19 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the source storage (for visual feedback).
-        /// </summary>
+        /// <summary>The source storage, for visual feedback.</summary>
         public static IStorageGroupMember GetSourceStorage()
         {
             return IsActive ? sourceStorage : null;
         }
 
-        /// <summary>
-        /// Gets the storage tag being used for compatibility (for external checks).
-        /// </summary>
+        /// <summary>The storage tag used for compatibility, for external checks.</summary>
         public static string GetSourceTag()
         {
             return IsActive ? sourceTag : null;
         }
 
-        /// <summary>
-        /// Checks if any selected storage occupies the given position.
-        /// Used for announcements during linking mode.
-        /// </summary>
-        /// <param name="position">The position to check</param>
-        /// <returns>True if selected storage is at this position</returns>
+        /// <summary>Whether any selected storage occupies <paramref name="position"/>.</summary>
         public static bool IsStorageSelectedAt(IntVec3 position)
         {
             if (!IsActive || selectedStorage == null || currentMap == null)

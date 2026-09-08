@@ -6,7 +6,7 @@
        the announcement composition and the markers the game has no string for.
 
        Opened: {0} = pawn short name. -->
-  <RimWorldAccess.Styling.Opened>Styling {0}. Tab switches sections. Enter applies a style and picks its color. Alt S applies all changes, right bracket resets, Escape cancels.</RimWorldAccess.Styling.Opened>
+  <RimWorldAccess.Styling.Opened>Styling {0}. Enter applies a style and picks its color. Alt S applies all changes, right bracket resets, Escape cancels.</RimWorldAccess.Styling.Opened>
 
   <!-- Tab header. TabPosition: {0} = tab number, {1} = tab count (only when position
        announcements are on). TabHeader: {0} = tab name, {1} = item count. TabEmpty: {0} = tab name. -->

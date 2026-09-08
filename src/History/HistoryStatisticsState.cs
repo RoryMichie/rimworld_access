@@ -1,341 +1,64 @@
-using System;
-using System.Collections.Generic;
-using RimWorld;
-using Verse;
-using UnityEngine;
+using RimWorldAccess.Shell;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// State management for navigating the Statistics tab in the History window.
-    /// Provides Up/Down navigation through colony statistics with typeahead search.
+    /// Thin static facade over <see cref="Shell.HistoryStatsScope"/>.
+    /// All navigation/announcement/typeahead state that
+    /// used to live here as static fields (a <see cref="FlatListCursor"/> plus the
+    /// "Shell Focus-Scope Router" region) now lives on the scope instance itself —
+    /// this class only survives because Harmony-patched, scope-unaware code still
+    /// needs static entry points: <see cref="HistoryState"/>'s tab-switch machinery
+    /// calls <see cref="Open"/>/<see cref="Close"/>, and <c>HistoryPatch</c>'s ad hoc
+    /// Cancel/Accept blockers read <see cref="IsActive"/>/<see cref="HasActiveSearch"/>
+    /// directly (both untouched by this migration; see HistorySubTabScopes.Game.cs's
+    /// class remarks for the mirror that keeps the scope in lockstep with
+    /// <see cref="IsActive"/>).
     /// </summary>
     public static class HistoryStatisticsState
     {
-        private static bool isActive = false;
-        private static List<HistoryHelper.StatisticEntry> statistics = null;
-        private static int selectedIndex = 0;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
+        private static bool isActive;
 
         /// <summary>
-        /// Gets whether the Statistics tab navigation is active.
+        /// The singleton scope instance. Reused across every open/close cycle —
+        /// see <see cref="HistoryStatsScope"/>'s own remarks for why session
+        /// state resets in <c>OnPush</c> rather than here.
+        /// </summary>
+        internal static readonly HistoryStatsScope Scope = new HistoryStatsScope();
+
+        /// <summary>
+        /// Gets whether the Statistics tab navigation is active. Read directly by
+        /// <c>HistoryPatch</c>'s ad hoc Cancel/Accept blockers and by
+        /// <see cref="MapNavigationPatch"/>'s accessibility-menu OR-list.
         /// </summary>
         public static bool IsActive => isActive;
 
         /// <summary>
-        /// Gets whether there is an active typeahead search.
+        /// Gets whether there is an active typeahead search. Read directly by
+        /// <see cref="HistoryState.HasActiveTypeahead"/>, which
+        /// <c>HistoryPatch</c>'s ad hoc Cancel blocker consults transitively.
         /// </summary>
-        public static bool HasActiveSearch => typeahead.HasActiveSearch;
+        public static bool HasActiveSearch => isActive && Scope.HasActiveSearch;
 
         /// <summary>
-        /// Gets the typeahead helper for external access (e.g., for match navigation).
-        /// </summary>
-        public static TypeaheadSearchHelper Typeahead => typeahead;
-
-        /// <summary>
-        /// Gets the current selected index.
-        /// </summary>
-        public static int CurrentIndex => selectedIndex;
-
-        /// <summary>
-        /// Opens the Statistics tab navigation.
+        /// Opens the Statistics tab navigation. Called by
+        /// <see cref="HistoryState.OpenCurrentTabState"/> on tab-switch into
+        /// Statistics. The scope itself collects a fresh snapshot and speaks the
+        /// opening announcement from its own <c>OnPush</c>/<c>OnFocus</c> —
+        /// this method only flips the facade flag the mirror reconciles against.
         /// </summary>
         public static void Open()
         {
-            statistics = HistoryHelper.CollectStatistics();
             isActive = true;
-            selectedIndex = 0;
-            typeahead.ClearSearch();
-
-            if (statistics.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.History.Statistics.None".Loc());
-                return;
-            }
-
-            AnnounceCurrentSelection();
         }
 
         /// <summary>
-        /// Closes the Statistics tab navigation.
+        /// Closes the Statistics tab navigation. Called by
+        /// <see cref="HistoryState.CloseCurrentTabState"/>/<see cref="HistoryState.Close"/>.
         /// </summary>
         public static void Close()
         {
             isActive = false;
-            statistics = null;
-            selectedIndex = 0;
-            typeahead.ClearSearch();
-        }
-
-        /// <summary>
-        /// Moves to the next statistic.
-        /// </summary>
-        public static void SelectNext()
-        {
-            if (statistics == null || statistics.Count == 0)
-                return;
-
-            selectedIndex = MenuHelper.SelectNext(selectedIndex, statistics.Count);
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Moves to the previous statistic.
-        /// </summary>
-        public static void SelectPrevious()
-        {
-            if (statistics == null || statistics.Count == 0)
-                return;
-
-            selectedIndex = MenuHelper.SelectPrevious(selectedIndex, statistics.Count);
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Jumps to the first statistic.
-        /// </summary>
-        public static void JumpToFirst()
-        {
-            if (statistics == null || statistics.Count == 0)
-                return;
-
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                selectedIndex = typeahead.GetFirstMatch();
-                AnnounceWithSearch();
-                return;
-            }
-
-            selectedIndex = MenuHelper.JumpToFirst();
-            typeahead.ClearSearch();
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Jumps to the last statistic.
-        /// </summary>
-        public static void JumpToLast()
-        {
-            if (statistics == null || statistics.Count == 0)
-                return;
-
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                selectedIndex = typeahead.GetLastMatch();
-                AnnounceWithSearch();
-                return;
-            }
-
-            selectedIndex = MenuHelper.JumpToLast(statistics.Count);
-            typeahead.ClearSearch();
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Sets the current index directly.
-        /// </summary>
-        public static void SetCurrentIndex(int index)
-        {
-            if (statistics != null && index >= 0 && index < statistics.Count)
-            {
-                selectedIndex = index;
-            }
-        }
-
-        /// <summary>
-        /// Gets labels for typeahead search.
-        /// </summary>
-        public static List<string> GetLabels()
-        {
-            return HistoryHelper.GetStatisticLabels(statistics ?? new List<HistoryHelper.StatisticEntry>());
-        }
-
-        /// <summary>
-        /// Handles typeahead character input.
-        /// </summary>
-        public static void HandleTypeahead(char c)
-        {
-            var labels = GetLabels();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
-        }
-
-        /// <summary>
-        /// Handles backspace for search.
-        /// </summary>
-        public static void HandleBackspace()
-        {
-            if (!typeahead.HasActiveSearch)
-                return;
-
-            var labels = GetLabels();
-            if (typeahead.ProcessBackspace(labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                    selectedIndex = newIndex;
-                AnnounceWithSearch();
-            }
-        }
-
-        /// <summary>
-        /// Announces the current selection.
-        /// </summary>
-        private static void AnnounceCurrentSelection()
-        {
-            if (statistics == null || statistics.Count == 0)
-                return;
-
-            if (selectedIndex < 0 || selectedIndex >= statistics.Count)
-                return;
-
-            var stat = statistics[selectedIndex];
-            string announcement = stat.ToAnnouncement();
-            string position = MenuHelper.FormatPosition(selectedIndex, statistics.Count);
-            if (!string.IsNullOrEmpty(position))
-                announcement += $" {position}";
-
-            TolkHelper.SpeakData(announcement);
-        }
-
-        /// <summary>
-        /// Announces current selection with search context.
-        /// </summary>
-        public static void AnnounceWithSearch()
-        {
-            if (statistics == null || statistics.Count == 0)
-                return;
-
-            if (selectedIndex < 0 || selectedIndex >= statistics.Count)
-                return;
-
-            var stat = statistics[selectedIndex];
-            string announcement = stat.ToAnnouncement();
-            string position = MenuHelper.FormatPosition(selectedIndex, statistics.Count);
-            if (!string.IsNullOrEmpty(position))
-                announcement += $" {position}";
-
-            if (typeahead.HasActiveSearch)
-            {
-                announcement += typeahead.BuildSearchContextSuffix();
-            }
-
-            TolkHelper.SpeakData(announcement);
-        }
-
-        /// <summary>
-        /// Handles keyboard input for the Statistics tab.
-        /// Returns true if input was handled.
-        /// </summary>
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!isActive)
-                return false;
-
-            // Let Tab key pass through to HistoryState for tab switching
-            if (key == KeyCode.Tab)
-                return false;
-
-            // Home - jump to first
-            if (key == KeyCode.Home)
-            {
-                JumpToFirst();
-                return true;
-            }
-
-            // End - jump to last
-            if (key == KeyCode.End)
-            {
-                JumpToLast();
-                return true;
-            }
-
-            // Escape - clear search first, then let parent handle close
-            if (key == KeyCode.Escape)
-            {
-                if (typeahead.HasActiveSearch)
-                {
-                    typeahead.ClearSearchAndAnnounce();
-                    AnnounceCurrentSelection();
-                    return true;
-                }
-                // Let parent (HistoryState or game) handle Escape when no search is active
-                return false;
-            }
-
-            // Backspace - handle search
-            if (key == KeyCode.Backspace)
-            {
-                if (typeahead.HasActiveSearch)
-                {
-                    HandleBackspace();
-                    return true;
-                }
-                return false;
-            }
-
-            // Down arrow
-            if (key == KeyCode.DownArrow)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    int newIndex = typeahead.GetNextMatch(selectedIndex);
-                    if (newIndex >= 0)
-                    {
-                        selectedIndex = newIndex;
-                        AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    SelectNext();
-                }
-                return true;
-            }
-
-            // Up arrow
-            if (key == KeyCode.UpArrow)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    int newIndex = typeahead.GetPreviousMatch(selectedIndex);
-                    if (newIndex >= 0)
-                    {
-                        selectedIndex = newIndex;
-                        AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    SelectPrevious();
-                }
-                return true;
-            }
-
-            // Typeahead characters (letters and numbers, NOT with Alt modifier)
-            if (!alt)
-            {
-                bool isLetter = key >= KeyCode.A && key <= KeyCode.Z;
-                bool isNumber = key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9;
-
-                if (isLetter || isNumber)
-                {
-                    return true;
-                }
-            }
-
-            // Block ALL unhandled keys to prevent game's native handlers from processing them
-            // This makes the History tab modal - it captures all keyboard input while active
-            return true;
         }
     }
 }

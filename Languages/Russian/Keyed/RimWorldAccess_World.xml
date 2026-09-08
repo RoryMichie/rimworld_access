@@ -4,7 +4,7 @@
     World module strings (src/World/). Covers the world map, settlements,
     caravan formation/split, route planning (waypoint editor for caravan
     travel), gear-equip menu (pawn-side equip/swap from Caravan Inspect),
-    settlement and quest browsers, world scanner (mirrors Map.Scanner's
+    world scanner (mirrors Map.Scanner's
     category structure), caravan multi-select, layer switching, and the
     stat-breakdown overlay.
 
@@ -18,7 +18,6 @@
       - CaravanQuantityHelper.cs       (per-stack quantity adjust feedback)
       - CaravanFormationPatch.cs / SplitCaravanPatch.cs / CaravanAnnouncementHelper.cs
       - GearEquipMenuState.cs          (equip-this-item picker)
-      - QuestLocationsBrowserState.cs / SettlementBrowserState.cs
       - StatBreakdownState.cs          (Alt+I breakdown overlay)
       - RoutePlannerState.cs           (caravan waypoint planner)
       - WorldNavigationPatch.cs / WorldObjectSelectionState.cs
@@ -91,19 +90,21 @@
   <RimWorldAccess.Caravan.Form.CannotReformEnemiesPresent>Нельзя переформировать караван, пока рядом враги</RimWorldAccess.Caravan.Form.CannotReformEnemiesPresent>
   <RimWorldAccess.Caravan.Form.CannotReformAtThisTime>Сейчас нельзя переформировать караван</RimWorldAccess.Caravan.Form.CannotReformAtThisTime>
   <RimWorldAccess.Caravan.Form.OpeningReformation>Открытие окна переформирования каравана</RimWorldAccess.Caravan.Form.OpeningReformation>
-  <RimWorldAccess.Caravan.Form.NoFormationDialog>Окно формирования каравана недоступно</RimWorldAccess.Caravan.Form.NoFormationDialog>
   <RimWorldAccess.Caravan.Form.OpenInstructions>Окно формирования каравана открыто. Tab — сводка, Alt+I — обзор, Alt+S — отправить.</RimWorldAccess.Caravan.Form.OpenInstructions>
-  <RimWorldAccess.Caravan.Form.TabHeader>Вкладка {0}, предметов: {1}</RimWorldAccess.Caravan.Form.TabHeader>
-  <RimWorldAccess.Caravan.Form.NoItemsInTab>На этой вкладке нет предметов</RimWorldAccess.Caravan.Form.NoItemsInTab>
-  <RimWorldAccess.Caravan.Form.ReturnedToTab>Возврат к вкладке {0}</RimWorldAccess.Caravan.Form.ReturnedToTab>
-  <RimWorldAccess.Caravan.Form.SummaryViewWithHint>Сводка. Вверх/вниз — навигация по показателям, Alt+I — разбор. Tab — возврат.</RimWorldAccess.Caravan.Form.SummaryViewWithHint>
-  <RimWorldAccess.Caravan.Form.SummaryView>Сводка.</RimWorldAccess.Caravan.Form.SummaryView>
-  <RimWorldAccess.Caravan.Form.NoSummaryData>Нет данных сводки</RimWorldAccess.Caravan.Form.NoSummaryData>
-  <RimWorldAccess.Caravan.Form.SummaryNoCaravanData>Данные о караване недоступны</RimWorldAccess.Caravan.Form.SummaryNoCaravanData>
+  <RimWorldAccess.Caravan.Form.RouteStillNeeded>Место назначения ещё не выбрано. Активируйте кнопку: {0}, чтобы выбрать его перед отправкой.</RimWorldAccess.Caravan.Form.RouteStillNeeded>
+  <RimWorldAccess.Caravan.Form.SummaryRegionName>Сводка</RimWorldAccess.Caravan.Form.SummaryRegionName>
   <RimWorldAccess.Caravan.Form.SummaryDestination>Назначение: {0}</RimWorldAccess.Caravan.Form.SummaryDestination>
-  <RimWorldAccess.Caravan.Form.SummaryDestinationWithEta>Назначение: {0}, прибытие через: {1} {1_numCase ? день : дня : дней}</RimWorldAccess.Caravan.Form.SummaryDestinationWithEta>
+  <RimWorldAccess.Caravan.Form.SummaryDestinationWithEta>Назначение: {0}, прибытие через: {1_numCase ? день : дня : дней}</RimWorldAccess.Caravan.Form.SummaryDestinationWithEta>
   <RimWorldAccess.Caravan.Form.SummaryDestinationNotSet>Назначение: не задано</RimWorldAccess.Caravan.Form.SummaryDestinationNotSet>
   <RimWorldAccess.Caravan.Form.SummaryStatsUnavailable>Показатели недоступны</RimWorldAccess.Caravan.Form.SummaryStatsUnavailable>
+
+  <!-- =================================================================
+       Caravan drug policy assignment (CaravanDrugPoliciesScope.Game.cs,
+       Dialog_AssignCaravanDrugPolicies). Everything else this screen
+       speaks reuses vanilla's own keys (AssignDrugPolicies,
+       ManageDrugPolicies, CloseButton).
+       ================================================================= -->
+  <RimWorldAccess.Caravan.DrugPolicies.PawnsRegion>Персонажи</RimWorldAccess.Caravan.DrugPolicies.PawnsRegion>
 
   <!-- =================================================================
        Caravan stat formatter (CaravanStatFormatter).
@@ -124,26 +125,17 @@
   <RimWorldAccess.Stat.FoodInfiniteWithDesc>Еда: {0}. {1}</RimWorldAccess.Stat.FoodInfiniteWithDesc>
   <RimWorldAccess.Stat.FoodNone>Еда: нет</RimWorldAccess.Stat.FoodNone>
   <RimWorldAccess.Stat.FoodNoneWithDesc>Еда: нет. {0}</RimWorldAccess.Stat.FoodNoneWithDesc>
-  <RimWorldAccess.Stat.FoodDays>Еда: {0} {0_numCase ? день : дня : дней}</RimWorldAccess.Stat.FoodDays>
-  <RimWorldAccess.Stat.FoodDaysWithDesc>Еда: {0} {0_numCase ? день : дня : дней}. {1}</RimWorldAccess.Stat.FoodDaysWithDesc>
-  <RimWorldAccess.Stat.FoodDaysWithSpoil>Еда: {0} {0_numCase ? день : дня : дней}, испортится через {1} {1_numCase ? день : дня : дней}</RimWorldAccess.Stat.FoodDaysWithSpoil>
-  <RimWorldAccess.Stat.FoodDaysWithSpoilWithDesc>Еда: {0} {0_numCase ? день : дня : дней}, испортится через {1} {1_numCase ? день : дня : дней}. {2}</RimWorldAccess.Stat.FoodDaysWithSpoilWithDesc>
+  <RimWorldAccess.Stat.FoodDays>Еда: {0_numCase ? день : дня : дней}</RimWorldAccess.Stat.FoodDays>
+  <RimWorldAccess.Stat.FoodDaysWithDesc>Еда: {0_numCase ? день : дня : дней}. {1}</RimWorldAccess.Stat.FoodDaysWithDesc>
+  <RimWorldAccess.Stat.FoodDaysWithSpoil>Еда: {0_numCase ? день : дня : дней}, испортится через {1_numCase ? день : дня : дней}</RimWorldAccess.Stat.FoodDaysWithSpoil>
+  <RimWorldAccess.Stat.FoodDaysWithSpoilWithDesc>Еда: {0_numCase ? день : дня : дней}, испортится через {1_numCase ? день : дня : дней}. {2}</RimWorldAccess.Stat.FoodDaysWithSpoilWithDesc>
   <RimWorldAccess.Stat.ForagingPerDay>Собирательство: {0} в день</RimWorldAccess.Stat.ForagingPerDay>
   <RimWorldAccess.Stat.ForagingPerDayWithDesc>Собирательство: {0} в день. {1}</RimWorldAccess.Stat.ForagingPerDayWithDesc>
   <RimWorldAccess.Stat.ForagingPerDayWithType>Собирательство: {0} ({1}) в день</RimWorldAccess.Stat.ForagingPerDayWithType>
   <RimWorldAccess.Stat.ForagingPerDayWithTypeWithDesc>Собирательство: {0} ({1}) в день. {2}</RimWorldAccess.Stat.ForagingPerDayWithTypeWithDesc>
   <RimWorldAccess.Stat.Visibility>Заметность: {0}</RimWorldAccess.Stat.Visibility>
   <RimWorldAccess.Stat.VisibilityWithDesc>Заметность: {0}. {1}</RimWorldAccess.Stat.VisibilityWithDesc>
-  <RimWorldAccess.Caravan.Form.ItemPosition>{0}. {1}</RimWorldAccess.Caravan.Form.ItemPosition>
   <RimWorldAccess.Caravan.Form.NoDialog>Окно недоступно</RimWorldAccess.Caravan.Form.NoDialog>
-  <RimWorldAccess.Caravan.Form.ChoosingDestination>Выбор места назначения каравана. Используйте стрелки для навигации по карте мира, Enter — выбрать назначение, Escape — отменить.</RimWorldAccess.Caravan.Form.ChoosingDestination>
-  <RimWorldAccess.Caravan.Form.FailedRoutePlanner>Не удалось открыть планировщик маршрута: {0}</RimWorldAccess.Caravan.Form.FailedRoutePlanner>
-  <RimWorldAccess.Caravan.Form.InvalidDestination>Недопустимая клетка назначения</RimWorldAccess.Caravan.Form.InvalidDestination>
-  <RimWorldAccess.Caravan.Form.FailedAccessNotifyChoseRoute>Не удалось обратиться к методу Notify_ChoseRoute</RimWorldAccess.Caravan.Form.FailedAccessNotifyChoseRoute>
-  <RimWorldAccess.Caravan.Form.DestinationSet>Назначение задано: {0}.</RimWorldAccess.Caravan.Form.DestinationSet>
-  <RimWorldAccess.Caravan.Form.FailedSetDestination>Не удалось задать назначение: {0}</RimWorldAccess.Caravan.Form.FailedSetDestination>
-  <RimWorldAccess.Caravan.Form.DestinationCancelled>Выбор назначения отменён. Возврат к окну формирования каравана.</RimWorldAccess.Caravan.Form.DestinationCancelled>
-  <RimWorldAccess.Caravan.Form.FailedCancelDestination>Не удалось отменить выбор назначения: {0}</RimWorldAccess.Caravan.Form.FailedCancelDestination>
   <RimWorldAccess.Caravan.Form.FailedSendCaravan>Не удалось отправить караван: {0}</RimWorldAccess.Caravan.Form.FailedSendCaravan>
   <RimWorldAccess.Caravan.Form.SelectionsReset>Выбор сброшен</RimWorldAccess.Caravan.Form.SelectionsReset>
   <RimWorldAccess.Caravan.Form.FailedReset>Не удалось сбросить: {0}</RimWorldAccess.Caravan.Form.FailedReset>
@@ -166,21 +158,11 @@
        {0} = tab name, {1} = item count, {2} = stat value,
        {3} = caravan name, {4} = position fragment.
        ================================================================= -->
-  <RimWorldAccess.Caravan.Split.NoDialog>Окно разделения каравана недоступно</RimWorldAccess.Caravan.Split.NoDialog>
   <RimWorldAccess.Caravan.Split.OpenInstructions>Окно разделения каравана открыто. Tab — сводка, Alt+I — обзор, Alt+S — разделить.</RimWorldAccess.Caravan.Split.OpenInstructions>
-  <RimWorldAccess.Caravan.Split.TabHeader>Вкладка {0}, предметов: {1}</RimWorldAccess.Caravan.Split.TabHeader>
-  <RimWorldAccess.Caravan.Split.BottomEdge>Конец. {0}. {1} из {2}</RimWorldAccess.Caravan.Split.BottomEdge>
-  <RimWorldAccess.Caravan.Split.TopEdge>Начало. {0}. {1} из {2}</RimWorldAccess.Caravan.Split.TopEdge>
-  <RimWorldAccess.Caravan.Split.NoItemsInTab>На этой вкладке нет предметов</RimWorldAccess.Caravan.Split.NoItemsInTab>
-  <RimWorldAccess.Caravan.Split.ReturnedToTab>Возврат к вкладке {0}</RimWorldAccess.Caravan.Split.ReturnedToTab>
-  <RimWorldAccess.Caravan.Split.SummaryViewWithHint>Сводка. Вверх/вниз — навигация по показателям, влево/вправо — переключение караванов, Alt+I — разбор. Tab — возврат.</RimWorldAccess.Caravan.Split.SummaryViewWithHint>
-  <RimWorldAccess.Caravan.Split.SummaryView>Сводка.</RimWorldAccess.Caravan.Split.SummaryView>
-  <RimWorldAccess.Caravan.Split.NoCaravanData>Данные о караване недоступны</RimWorldAccess.Caravan.Split.NoCaravanData>
+  <RimWorldAccess.Caravan.Split.SummaryRegionName>Сводка</RimWorldAccess.Caravan.Split.SummaryRegionName>
   <RimWorldAccess.Caravan.Split.NewCaravanLabel>Новый караван</RimWorldAccess.Caravan.Split.NewCaravanLabel>
   <RimWorldAccess.Caravan.Split.OriginalCaravanLabel>Исходный караван</RimWorldAccess.Caravan.Split.OriginalCaravanLabel>
   <RimWorldAccess.Caravan.Split.UnknownStatValue>Неизвестно</RimWorldAccess.Caravan.Split.UnknownStatValue>
-  <RimWorldAccess.Caravan.Split.StatPosition>{0}. {1} из {2}</RimWorldAccess.Caravan.Split.StatPosition>
-  <RimWorldAccess.Caravan.Split.StatCaravanPosition>{0}. {1}, {2} из {3}</RimWorldAccess.Caravan.Split.StatCaravanPosition>
   <RimWorldAccess.Caravan.Split.NoDialogAvailable>Окно недоступно</RimWorldAccess.Caravan.Split.NoDialogAvailable>
   <RimWorldAccess.Caravan.Split.SplitSuccessfully>Караван успешно разделён</RimWorldAccess.Caravan.Split.SplitSuccessfully>
   <RimWorldAccess.Caravan.Split.FailedToSplit>Не удалось разделить караван: {0}</RimWorldAccess.Caravan.Split.FailedToSplit>
@@ -204,6 +186,8 @@
   <RimWorldAccess.Caravan.Inspect.NoSkillsForItem>Для этого предмета нет данных о навыках</RimWorldAccess.Caravan.Inspect.NoSkillsForItem>
   <RimWorldAccess.Caravan.Inspect.NoActionAvailable>Действие недоступно</RimWorldAccess.Caravan.Inspect.NoActionAvailable>
   <RimWorldAccess.Caravan.Inspect.NoBreakdown>Разбор недоступен</RimWorldAccess.Caravan.Inspect.NoBreakdown>
+  <!-- Name of the caravan inspect tree's single navigable area, spoken on Tab. -->
+  <RimWorldAccess.Caravan.Inspect.RegionName>Караван</RimWorldAccess.Caravan.Inspect.RegionName>
 
   <!-- Caravan inspect treeview (CaravanInspectState): category labels, stat
        labels, stat values, and Alt+I stat-breakdown tooltips. Spoken while
@@ -216,9 +200,7 @@
   <RimWorldAccess.Caravan.Inspect.NotAvailable>—</RimWorldAccess.Caravan.Inspect.NotAvailable>
   <RimWorldAccess.Caravan.Inspect.CategoryCaravanStatus>Состояние каравана</RimWorldAccess.Caravan.Inspect.CategoryCaravanStatus>
   <RimWorldAccess.Caravan.Inspect.CategoryPawns>Персонажи ({0})</RimWorldAccess.Caravan.Inspect.CategoryPawns>
-  <RimWorldAccess.Caravan.Inspect.CategoryColonists>Поселенцы ({0})</RimWorldAccess.Caravan.Inspect.CategoryColonists>
-  <RimWorldAccess.Caravan.Inspect.CategoryPrisoners>Пленники ({0})</RimWorldAccess.Caravan.Inspect.CategoryPrisoners>
-  <RimWorldAccess.Caravan.Inspect.CategoryAnimals>Животные ({0})</RimWorldAccess.Caravan.Inspect.CategoryAnimals>
+  <RimWorldAccess.Caravan.Inspect.SectionWithCount>{0} ({1})</RimWorldAccess.Caravan.Inspect.SectionWithCount>
   <RimWorldAccess.Caravan.Inspect.CategoryGear>Экипировка (предметов: {0})</RimWorldAccess.Caravan.Inspect.CategoryGear>
   <RimWorldAccess.Caravan.Inspect.CategoryItems>Предметы ({0})</RimWorldAccess.Caravan.Inspect.CategoryItems>
   <RimWorldAccess.Caravan.Inspect.CategoryItemsEmpty>Предметы (пусто)</RimWorldAccess.Caravan.Inspect.CategoryItemsEmpty>
@@ -235,11 +217,11 @@
   <RimWorldAccess.Caravan.Inspect.StatVisibility>Заметность</RimWorldAccess.Caravan.Inspect.StatVisibility>
   <RimWorldAccess.Caravan.Inspect.StatBeds>Спальные места</RimWorldAccess.Caravan.Inspect.StatBeds>
   <RimWorldAccess.Caravan.Inspect.Immobile>Неподвижен</RimWorldAccess.Caravan.Inspect.Immobile>
-  <RimWorldAccess.Caravan.Inspect.DaysUntilRot>(до порчи {0} {0_numCase ? день : дня : дней})</RimWorldAccess.Caravan.Inspect.DaysUntilRot>
+  <RimWorldAccess.Caravan.Inspect.DaysUntilRot>(до порчи {0_numCase ? день : дня : дней})</RimWorldAccess.Caravan.Inspect.DaysUntilRot>
   <RimWorldAccess.Caravan.Inspect.OutOfFood>ЕДА ЗАКОНЧИЛАСЬ</RimWorldAccess.Caravan.Inspect.OutOfFood>
   <RimWorldAccess.Caravan.Inspect.FoodFallback>еда</RimWorldAccess.Caravan.Inspect.FoodFallback>
   <RimWorldAccess.Caravan.Inspect.ForagingPerDay>{0} ({1})/день</RimWorldAccess.Caravan.Inspect.ForagingPerDay>
-  <RimWorldAccess.Caravan.Inspect.BedrollsInUse>используется {0} {0_numCase ? спальный мешок : спальных мешка : спальных мешков}</RimWorldAccess.Caravan.Inspect.BedrollsInUse>
+  <RimWorldAccess.Caravan.Inspect.BedrollsInUse>используется {0_numCase ? спальный мешок : спальных мешка : спальных мешков}</RimWorldAccess.Caravan.Inspect.BedrollsInUse>
   <RimWorldAccess.Caravan.Inspect.NoBedrolls>Спальных мешков нет</RimWorldAccess.Caravan.Inspect.NoBedrolls>
   <RimWorldAccess.Caravan.Inspect.LocationCoords>Клетка {0}, {1} с. ш., {2} в. д.</RimWorldAccess.Caravan.Inspect.LocationCoords>
   <RimWorldAccess.Caravan.Inspect.MassUsageCapacity>{0} / {1} кг</RimWorldAccess.Caravan.Inspect.MassUsageCapacity>
@@ -254,7 +236,7 @@
   <RimWorldAccess.Caravan.Inspect.StatusAllMentalBreak>У всех участников каравана нервный срыв</RimWorldAccess.Caravan.Inspect.StatusAllMentalBreak>
   <RimWorldAccess.Caravan.Inspect.StatusOverloaded>Караван перегружен сверх грузоподъёмности</RimWorldAccess.Caravan.Inspect.StatusOverloaded>
   <RimWorldAccess.Caravan.Inspect.StatusNightResting>Караван отдыхает в ночные часы.</RimWorldAccess.Caravan.Inspect.StatusNightResting>
-  <RimWorldAccess.Caravan.Inspect.StatusUsingBedrolls>Для лучшего отдыха используется {0} {0_numCase ? спальный мешок : спальных мешка : спальных мешков}.</RimWorldAccess.Caravan.Inspect.StatusUsingBedrolls>
+  <RimWorldAccess.Caravan.Inspect.StatusUsingBedrolls>Для лучшего отдыха используется {0_numCase ? спальный мешок : спальных мешка : спальных мешков}.</RimWorldAccess.Caravan.Inspect.StatusUsingBedrolls>
   <RimWorldAccess.Caravan.Inspect.StatusNoBedrollsGround>Спальных мешков нет — персонажи спят на земле.</RimWorldAccess.Caravan.Inspect.StatusNoBedrollsGround>
   <RimWorldAccess.Caravan.Inspect.StatusPaused>Движение каравана приостановлено.</RimWorldAccess.Caravan.Inspect.StatusPaused>
   <RimWorldAccess.Caravan.Inspect.StatusTraveling>Караван движется к месту назначения.</RimWorldAccess.Caravan.Inspect.StatusTraveling>
@@ -306,8 +288,6 @@
   <RimWorldAccess.Caravan.Announce.XAvailable>доступно: {0}</RimWorldAccess.Caravan.Announce.XAvailable>
   <RimWorldAccess.Caravan.Announce.Wielding>(в руках: {0})</RimWorldAccess.Caravan.Announce.Wielding>
   <RimWorldAccess.Caravan.Announce.Checked>отмечено</RimWorldAccess.Caravan.Announce.Checked>
-  <RimWorldAccess.Caravan.Announce.MassKg>Масса: {0} кг</RimWorldAccess.Caravan.Announce.MassKg>
-  <RimWorldAccess.Caravan.Announce.SearchMatch>«{0}» — совпадение {1} из {2}</RimWorldAccess.Caravan.Announce.SearchMatch>
 
   <!-- =================================================================
        Gear-equip menu (GearEquipMenuState).
@@ -328,7 +308,6 @@
   <RimWorldAccess.Gear.FailedToEquip>Не удалось надеть предмет</RimWorldAccess.Gear.FailedToEquip>
   <RimWorldAccess.Gear.CannotRemoveLockedApparel>Нельзя снять заблокированную одежду</RimWorldAccess.Gear.CannotRemoveLockedApparel>
   <RimWorldAccess.Gear.CannotRemoveLockedFromPawn>Нельзя снять заблокированную одежду {0} с {1}</RimWorldAccess.Gear.CannotRemoveLockedFromPawn>
-  <RimWorldAccess.Gear.LabelPosition>{0}. {1}</RimWorldAccess.Gear.LabelPosition>
   <RimWorldAccess.Gear.UnequipToInventory>Снять в инвентарь</RimWorldAccess.Gear.UnequipToInventory>
   <RimWorldAccess.Gear.PawnCantEquip>{0} (нельзя надеть: {1})</RimWorldAccess.Gear.PawnCantEquip>
   <RimWorldAccess.Gear.PawnWithCurrent>{0} ({1})</RimWorldAccess.Gear.PawnWithCurrent>
@@ -336,55 +315,16 @@
   <RimWorldAccess.Gear.ActionEquip>Надеть</RimWorldAccess.Gear.ActionEquip>
 
   <!-- =================================================================
-       Quest locations browser (QuestLocationsBrowserState).
-       List of tiles flagged by quests; J key opens it from the world
-       map. {0} = filter or position.
-       ================================================================= -->
-  <RimWorldAccess.QuestBrowser.QuestSystemUnavailable>Система заданий недоступна</RimWorldAccess.QuestBrowser.QuestSystemUnavailable>
-  <RimWorldAccess.QuestBrowser.NoQuestLocationsFound>Места заданий не найдены</RimWorldAccess.QuestBrowser.NoQuestLocationsFound>
-  <RimWorldAccess.QuestBrowser.Closed>Обозреватель мест заданий закрыт</RimWorldAccess.QuestBrowser.Closed>
-  <RimWorldAccess.QuestBrowser.NoQuestLocationsAvailable>Места заданий недоступны</RimWorldAccess.QuestBrowser.NoQuestLocationsAvailable>
-  <RimWorldAccess.QuestBrowser.NoQuestLocationSelected>Место задания не выбрано</RimWorldAccess.QuestBrowser.NoQuestLocationSelected>
-  <RimWorldAccess.QuestBrowser.UnknownLocation>Неизвестное место</RimWorldAccess.QuestBrowser.UnknownLocation>
-  <RimWorldAccess.QuestBrowser.LocationAnnouncement>{0} — {1}, {2} {2_numCase ? клетка : клетки : клеток}. {3}. {4}</RimWorldAccess.QuestBrowser.LocationAnnouncement>
-
-  <!-- =================================================================
-       Settlement browser (SettlementBrowserState).
-       Filterable settlement list (Friendly / Hostile / Neutral / Player).
-       {0} = filter name, {1} = match count.
-       ================================================================= -->
-  <RimWorldAccess.SettlementBrowser.WorldObjectsUnavailable>Объекты мира недоступны</RimWorldAccess.SettlementBrowser.WorldObjectsUnavailable>
-  <RimWorldAccess.SettlementBrowser.NoSettlementsFound>Поселения не найдены</RimWorldAccess.SettlementBrowser.NoSettlementsFound>
-  <RimWorldAccess.SettlementBrowser.Closed>Обозреватель поселений закрыт</RimWorldAccess.SettlementBrowser.Closed>
-  <RimWorldAccess.SettlementBrowser.NoSettlementsMatchFilter>Нет поселений по этому фильтру</RimWorldAccess.SettlementBrowser.NoSettlementsMatchFilter>
-  <RimWorldAccess.SettlementBrowser.NoSettlementsAvailable>Поселения недоступны</RimWorldAccess.SettlementBrowser.NoSettlementsAvailable>
-  <RimWorldAccess.SettlementBrowser.NoSettlementSelected>Поселение не выбрано</RimWorldAccess.SettlementBrowser.NoSettlementSelected>
-  <RimWorldAccess.SettlementBrowser.FilterCount>{0}, найдено: {1}</RimWorldAccess.SettlementBrowser.FilterCount>
-  <RimWorldAccess.SettlementBrowser.FilterPlayer>Поселения игрока</RimWorldAccess.SettlementBrowser.FilterPlayer>
-  <RimWorldAccess.SettlementBrowser.FilterAllied>Союзные поселения</RimWorldAccess.SettlementBrowser.FilterAllied>
-  <RimWorldAccess.SettlementBrowser.FilterNeutral>Нейтральные поселения</RimWorldAccess.SettlementBrowser.FilterNeutral>
-  <RimWorldAccess.SettlementBrowser.FilterHostile>Враждебные поселения</RimWorldAccess.SettlementBrowser.FilterHostile>
-  <RimWorldAccess.SettlementBrowser.FilterAll>Все поселения</RimWorldAccess.SettlementBrowser.FilterAll>
-  <RimWorldAccess.SettlementBrowser.FilterUnknown>Неизвестный фильтр</RimWorldAccess.SettlementBrowser.FilterUnknown>
-  <RimWorldAccess.SettlementBrowser.RelationshipUnknown>Неизвестно</RimWorldAccess.SettlementBrowser.RelationshipUnknown>
-  <RimWorldAccess.SettlementBrowser.RelationshipPlayer>Игрок</RimWorldAccess.SettlementBrowser.RelationshipPlayer>
-  <RimWorldAccess.SettlementBrowser.RelationshipHostile>Враждебно</RimWorldAccess.SettlementBrowser.RelationshipHostile>
-  <RimWorldAccess.SettlementBrowser.SettlementAnnouncement>{0}, {1}, {2}, {3} {3_numCase ? клетка : клетки : клеток}. {4}</RimWorldAccess.SettlementBrowser.SettlementAnnouncement>
-  <RimWorldAccess.SettlementBrowser.SearchAnnouncement>{0}: {1}, {2}, {3}, {4} {4_numCase ? клетка : клетки : клеток}</RimWorldAccess.SettlementBrowser.SearchAnnouncement>
-  <RimWorldAccess.SettlementBrowser.SearchInfo>«{0}» — совпадение {1} из {2}</RimWorldAccess.SettlementBrowser.SearchInfo>
-
-  <!-- =================================================================
        Stat-breakdown overlay (StatBreakdownState).
        Tree of stat factors opened by Alt+I from a summary stat row.
-       {0} = stat name, {1} = factor count, {2} = suffix.
+       {0} = stat name, {1} = factor count. Header vs. HeaderTreeview is
+       chosen in C# by whether any factor is expandable.
        ================================================================= -->
   <RimWorldAccess.StatBreakdown.NoBreakdownFor>Для {0} разбор недоступен</RimWorldAccess.StatBreakdown.NoBreakdownFor>
   <RimWorldAccess.StatBreakdown.NoFactorsFor>Для {0} нет факторов разбора</RimWorldAccess.StatBreakdown.NoFactorsFor>
-  <RimWorldAccess.StatBreakdown.HeaderWithSuffix>Разбор: {0} (факторов: {1}){2}.</RimWorldAccess.StatBreakdown.HeaderWithSuffix>
+  <RimWorldAccess.StatBreakdown.Header>Разбор: {0} ({1_numCase ? фактор : фактора : факторов}).</RimWorldAccess.StatBreakdown.Header>
+  <RimWorldAccess.StatBreakdown.HeaderTreeview>Разбор: {0} ({1_numCase ? фактор : фактора : факторов}) древовидный список.</RimWorldAccess.StatBreakdown.HeaderTreeview>
   <RimWorldAccess.StatBreakdown.Closed>Разбор закрыт</RimWorldAccess.StatBreakdown.Closed>
-  <RimWorldAccess.StatBreakdown.NotExpandable>Не разворачивается</RimWorldAccess.StatBreakdown.NotExpandable>
-  <RimWorldAccess.StatBreakdown.AlreadyExpanded>Уже развёрнуто</RimWorldAccess.StatBreakdown.AlreadyExpanded>
-  <RimWorldAccess.StatBreakdown.TreeviewSuffix> древовидный список</RimWorldAccess.StatBreakdown.TreeviewSuffix>
 
   <!-- =================================================================
        Route planner (RoutePlannerState).
@@ -427,7 +367,8 @@
        Mirrors Map scanner pattern - same category structure,
        PgUp/PgDn for items inside categories, etc. {0} = layer,
        {1} = direction noun, {2} = distance, {3} = category name,
-       {4} = item count, {5} = position.
+       {4} = position. Category/SubcategoryAnnouncement are headings only:
+       the first item of the new category speaks right after each one.
        ================================================================= -->
   <RimWorldAccess.WorldScanner.AutoJumpEnabled>Режим автоперехода включён</RimWorldAccess.WorldScanner.AutoJumpEnabled>
   <RimWorldAccess.WorldScanner.AutoJumpDisabled>Режим автоперехода выключен</RimWorldAccess.WorldScanner.AutoJumpDisabled>
@@ -437,9 +378,9 @@
   <RimWorldAccess.WorldScanner.NoItemsInCategory>В этой категории нет элементов</RimWorldAccess.WorldScanner.NoItemsInCategory>
   <RimWorldAccess.WorldScanner.NoInstancesToNavigate>Нет объектов для навигации</RimWorldAccess.WorldScanner.NoInstancesToNavigate>
   <RimWorldAccess.WorldScanner.SwitchedToLayer>Переключено на слой: {0}.</RimWorldAccess.WorldScanner.SwitchedToLayer>
-  <RimWorldAccess.WorldScanner.DirectionDistance>{0}, {1} {1_numCase ? клетка : клетки : клеток}</RimWorldAccess.WorldScanner.DirectionDistance>
-  <RimWorldAccess.WorldScanner.CategoryAnnouncement>{0}, элементов: {1}. Категория {2} из {3}</RimWorldAccess.WorldScanner.CategoryAnnouncement>
-  <RimWorldAccess.WorldScanner.SubcategoryAnnouncement>{0}, элементов: {1}. Подкатегория {2} из {3}</RimWorldAccess.WorldScanner.SubcategoryAnnouncement>
+  <RimWorldAccess.WorldScanner.DirectionDistance>{0}, {1_numCase ? клетка : клетки : клеток}</RimWorldAccess.WorldScanner.DirectionDistance>
+  <RimWorldAccess.WorldScanner.CategoryAnnouncement>{0}, элементов: {1}.</RimWorldAccess.WorldScanner.CategoryAnnouncement>
+  <RimWorldAccess.WorldScanner.SubcategoryAnnouncement>{0}, элементов: {1}.</RimWorldAccess.WorldScanner.SubcategoryAnnouncement>
 
   <!-- =================================================================
        World object inspect (WorldObjectSelectionState + WorldNavigationPatch).
@@ -537,7 +478,7 @@
        (1 bedroll vs N bedrolls). The leading space matches the
        concatenation pattern used by GetCaravanStatus. -->
   <RimWorldAccess.World.Caravan.RestingBedsOneSuffix> (1 спальный мешок)</RimWorldAccess.World.Caravan.RestingBedsOneSuffix>
-  <RimWorldAccess.World.Caravan.RestingBedsManySuffix> ({0} {0_numCase ? спальный мешок : спальных мешка : спальных мешков})</RimWorldAccess.World.Caravan.RestingBedsManySuffix>
+  <RimWorldAccess.World.Caravan.RestingBedsManySuffix> ({0_numCase ? спальный мешок : спальных мешка : спальных мешков})</RimWorldAccess.World.Caravan.RestingBedsManySuffix>
 
   <!-- Destination suffix (GetDestinationSuffix). Two top-level shapes
        (active "to" vs paused "will") x two arrival sources (the game's
@@ -546,9 +487,8 @@
        destination name; the *Verb variants take the infinitive phrase
        like "enter Mikaelville". -->
   <RimWorldAccess.World.Caravan.SuffixActiveTo> к {0}</RimWorldAccess.World.Caravan.SuffixActiveTo>
-  <RimWorldAccess.World.Caravan.SuffixActiveVerb>, чтобы {0}</RimWorldAccess.World.Caravan.SuffixActiveVerb>
   <RimWorldAccess.World.Caravan.SuffixPausedSeparate>. К {0}</RimWorldAccess.World.Caravan.SuffixPausedSeparate>
-  <RimWorldAccess.World.Caravan.SuffixPausedVerb>, чтобы {0}</RimWorldAccess.World.Caravan.SuffixPausedVerb>
+  <RimWorldAccess.World.Caravan.SuffixReport>. {0}</RimWorldAccess.World.Caravan.SuffixReport>
 
   <!-- Caravan path announcement (GetCaravanPathAnnouncement). Used
        when a caravan's planned path passes through (or terminates at)
@@ -563,7 +503,7 @@
        compose with " - " inside the same key so the punctuation belongs
        to the phrase. -->
   <RimWorldAccess.World.Quest.DifficultyOneStar>1 звезда</RimWorldAccess.World.Quest.DifficultyOneStar>
-  <RimWorldAccess.World.Quest.DifficultyManyStars>{0} {0_numCase ? звезда : звезды : звёзд}</RimWorldAccess.World.Quest.DifficultyManyStars>
+  <RimWorldAccess.World.Quest.DifficultyManyStars>{0_numCase ? звезда : звезды : звёзд}</RimWorldAccess.World.Quest.DifficultyManyStars>
   <RimWorldAccess.World.Quest.Label>Задание: {0}</RimWorldAccess.World.Quest.Label>
   <RimWorldAccess.World.Quest.LabelWithDifficulty>Задание: {0} ({1})</RimWorldAccess.World.Quest.LabelWithDifficulty>
   <RimWorldAccess.World.Quest.LabelWithDescription>Задание: {0} — {1}</RimWorldAccess.World.Quest.LabelWithDescription>
@@ -619,7 +559,7 @@
   <RimWorldAccess.World.Tile.Health.DiseaseNone>Частота болезней: нет</RimWorldAccess.World.Tile.Health.DiseaseNone>
   <RimWorldAccess.World.Tile.Health.TilePollution>Загрязнение клетки: {0}</RimWorldAccess.World.Tile.Health.TilePollution>
   <RimWorldAccess.World.Tile.Health.NearbyPollution>Загрязнение поблизости: {0}</RimWorldAccess.World.Tile.Health.NearbyPollution>
-  <RimWorldAccess.World.Tile.Health.NoxiousHazeInterval>Интервал ядовитой дымки: {0} {0_numCase ? день : дня : дней}</RimWorldAccess.World.Tile.Health.NoxiousHazeInterval>
+  <RimWorldAccess.World.Tile.Health.NoxiousHazeInterval>Интервал ядовитой дымки: {0_numCase ? день : дня : дней}</RimWorldAccess.World.Tile.Health.NoxiousHazeInterval>
   <RimWorldAccess.World.Tile.Health.NoxiousHazeNever>Ядовитая дымка: никогда</RimWorldAccess.World.Tile.Health.NoxiousHazeNever>
 
   <!-- Number key 4: location / coordinates / time zone. -->
@@ -664,11 +604,10 @@
   <RimWorldAccess.World.River.Bends.Inline>изгибается с {0} на {1}</RimWorldAccess.World.River.Bends.Inline>
   <RimWorldAccess.World.River.Confluence.Inline>слияние: {0}</RimWorldAccess.World.River.Confluence.Inline>
 
-
   <!-- World scanner readout, categories, directions, sizes (src/World/WorldScannerState.cs). -->
-  <RimWorldAccess.WorldScanner.SizeApprox>примерно {0} {0_numCase ? клетка : клетки : клеток}</RimWorldAccess.WorldScanner.SizeApprox>
-  <RimWorldAccess.WorldScanner.SizeTiles>{0} {0_numCase ? клетка : клетки : клеток}</RimWorldAccess.WorldScanner.SizeTiles>
-  <RimWorldAccess.WorldScanner.SizeTilesLong>{0} {0_numCase ? клетка : клетки : клеток}, {1} в длину</RimWorldAccess.WorldScanner.SizeTilesLong>
+  <RimWorldAccess.WorldScanner.SizeApprox>примерно {0_numCase ? клетка : клетки : клеток}</RimWorldAccess.WorldScanner.SizeApprox>
+  <RimWorldAccess.WorldScanner.SizeTiles>{0_numCase ? клетка : клетки : клеток}</RimWorldAccess.WorldScanner.SizeTiles>
+  <RimWorldAccess.WorldScanner.SizeTilesLong>{0_numCase ? клетка : клетки : клеток}, {1} в длину</RimWorldAccess.WorldScanner.SizeTilesLong>
   <RimWorldAccess.WorldScanner.RelDir.Ahead>Впереди</RimWorldAccess.WorldScanner.RelDir.Ahead>
   <RimWorldAccess.WorldScanner.RelDir.AheadRight>Впереди-справа</RimWorldAccess.WorldScanner.RelDir.AheadRight>
   <RimWorldAccess.WorldScanner.RelDir.Right>Справа</RimWorldAccess.WorldScanner.RelDir.Right>
@@ -693,10 +632,10 @@
   <!-- RegionPosition: live proximity rank of the current patch. {0} = rank, {1} = total. -->
   <RimWorldAccess.WorldScanner.RegionPosition>Область {0} из {1}</RimWorldAccess.WorldScanner.RegionPosition>
   <!-- Direction-and-distance suffixes: {0} = compass direction, {1} = tile count. -->
-  <RimWorldAccess.WorldScanner.DirectionDistanceTiles>{0}, {1} {1_numCase ? клетка : клетки : клеток}</RimWorldAccess.WorldScanner.DirectionDistanceTiles>
+  <RimWorldAccess.WorldScanner.DirectionDistanceTiles>{0}, {1_numCase ? клетка : клетки : клеток}</RimWorldAccess.WorldScanner.DirectionDistanceTiles>
   <RimWorldAccess.WorldScanner.DirectionOverTiles>{0}, более {1} клеток</RimWorldAccess.WorldScanner.DirectionOverTiles>
   <!-- Center-jump cue: {0} = tile count, {1} = compass direction. -->
-  <RimWorldAccess.WorldScanner.JumpedTilesToCenter>Переход на {0} {0_numCase ? клетку : клетки : клеток} на {1} к центру</RimWorldAccess.WorldScanner.JumpedTilesToCenter>
+  <RimWorldAccess.WorldScanner.JumpedTilesToCenter>Переход на {0_numCase ? клетку : клетки : клеток} на {1} к центру</RimWorldAccess.WorldScanner.JumpedTilesToCenter>
   <RimWorldAccess.WorldScanner.JumpedToCenter>Переход к центру</RimWorldAccess.WorldScanner.JumpedToCenter>
   <RimWorldAccess.WorldScanner.Sub.Player>Игрок</RimWorldAccess.WorldScanner.Sub.Player>
   <RimWorldAccess.WorldScanner.Sub.Allied>Союзные</RimWorldAccess.WorldScanner.Sub.Allied>
@@ -763,6 +702,16 @@
   <RimWorldAccess.Stat.FoodUnknown>Еда: неизвестно</RimWorldAccess.Stat.FoodUnknown>
   <RimWorldAccess.Stat.ForagingUnknown>Собирательство: неизвестно</RimWorldAccess.Stat.ForagingUnknown>
   <RimWorldAccess.Stat.VisibilityUnknown>Заметность: неизвестно</RimWorldAccess.Stat.VisibilityUnknown>
-  <RimWorldAccess.World.JumpedTilesDirection>Переход на {0} {0_numCase ? клетку : клетки : клеток} на {1}</RimWorldAccess.World.JumpedTilesDirection>
-  <RimWorldAccess.World.JumpedTiles>Переход на {0} {0_numCase ? клетку : клетки : клеток}</RimWorldAccess.World.JumpedTiles>
+  <RimWorldAccess.World.JumpedTilesDirection>Переход на {0_numCase ? клетку : клетки : клеток} на {1}</RimWorldAccess.World.JumpedTilesDirection>
+  <RimWorldAccess.World.JumpedTiles>Переход на {0_numCase ? клетку : клетки : клеток}</RimWorldAccess.World.JumpedTiles>
+
+  <!-- Mouse drag readout on the planet view (src/World/WorldDragSelectSpeech.cs).
+       The world drag box is drawn in screen pixels, not tiles, so its extent is
+       given as a share of the screen. {0} = width percent, {1} = height percent. -->
+  <RimWorldAccess.World.Drag.SelectExtent>{0}% на {1}% экрана</RimWorldAccess.World.Drag.SelectExtent>
+
+  <!-- What a mouse click or drag-box release selected on the planet view
+       (src/World/WorldSelectionAnnouncer.cs). {0} = number of objects selected. -->
+  <RimWorldAccess.World.Selection.Multiple>Выбрано: {0}</RimWorldAccess.World.Selection.Multiple>
+  <RimWorldAccess.World.Selection.Cleared>Выбор сброшен</RimWorldAccess.World.Selection.Cleared>
 </LanguageData>

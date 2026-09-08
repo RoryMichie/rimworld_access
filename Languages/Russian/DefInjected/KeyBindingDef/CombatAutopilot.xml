@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RWA_GizmoEngage.label>кнопка: атаковать цель</RWA_GizmoEngage.label>
+  <RWA_GizmoSeekDestroy.label>кнопка: найти и уничтожить</RWA_GizmoSeekDestroy.label>
+  <RWA_GizmoCombatPolicy.label>кнопка: правило боя</RWA_GizmoCombatPolicy.label>
+  <RWA_GizmoPause.label>кнопка: пауза автоматизации</RWA_GizmoPause.label>
+  <RWA_GizmoHuntAnimals.label>кнопка: охота на животных</RWA_GizmoHuntAnimals.label>
+  <RWA_GizmoAutocastAll.label>кнопка: автоприменение всего</RWA_GizmoAutocastAll.label>
+  <RWA_GizmoPatrol.label>кнопка: патруль</RWA_GizmoPatrol.label>
+</LanguageData>

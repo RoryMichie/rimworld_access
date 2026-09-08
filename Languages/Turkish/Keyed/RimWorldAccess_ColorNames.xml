@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <!-- Betimleyici renk adları. Türkçede sıfatlar addan önce gelir; şablonlar buna göre
+       sıralanmıştır. -->
+
+  <RimWorldAccess.Color.Hue.Red>kırmızı</RimWorldAccess.Color.Hue.Red>
+  <RimWorldAccess.Color.Hue.Orange>turuncu</RimWorldAccess.Color.Hue.Orange>
+  <RimWorldAccess.Color.Hue.Amber>kehribar</RimWorldAccess.Color.Hue.Amber>
+  <RimWorldAccess.Color.Hue.Yellow>sarı</RimWorldAccess.Color.Hue.Yellow>
+  <RimWorldAccess.Color.Hue.Lime>limon yeşili</RimWorldAccess.Color.Hue.Lime>
+  <RimWorldAccess.Color.Hue.Green>yeşil</RimWorldAccess.Color.Hue.Green>
+  <RimWorldAccess.Color.Hue.Teal>deniz mavisi</RimWorldAccess.Color.Hue.Teal>
+  <RimWorldAccess.Color.Hue.Cyan>camgöbeği</RimWorldAccess.Color.Hue.Cyan>
+  <RimWorldAccess.Color.Hue.Azure>gök mavisi</RimWorldAccess.Color.Hue.Azure>
+  <RimWorldAccess.Color.Hue.Blue>mavi</RimWorldAccess.Color.Hue.Blue>
+  <RimWorldAccess.Color.Hue.Indigo>çivit</RimWorldAccess.Color.Hue.Indigo>
+  <RimWorldAccess.Color.Hue.Violet>menekşe</RimWorldAccess.Color.Hue.Violet>
+  <RimWorldAccess.Color.Hue.Purple>mor</RimWorldAccess.Color.Hue.Purple>
+  <RimWorldAccess.Color.Hue.Magenta>macenta</RimWorldAccess.Color.Hue.Magenta>
+  <RimWorldAccess.Color.Hue.Pink>pembe</RimWorldAccess.Color.Hue.Pink>
+  <RimWorldAccess.Color.Hue.Rose>gül kurusu</RimWorldAccess.Color.Hue.Rose>
+
+  <RimWorldAccess.Color.MidVivid>{0}</RimWorldAccess.Color.MidVivid>
+  <RimWorldAccess.Color.MidMuted>donuk {0}</RimWorldAccess.Color.MidMuted>
+  <RimWorldAccess.Color.MidPale>soluk {0}</RimWorldAccess.Color.MidPale>
+  <RimWorldAccess.Color.DarkVivid>koyu {0}</RimWorldAccess.Color.DarkVivid>
+  <RimWorldAccess.Color.DarkMuted>koyu donuk {0}</RimWorldAccess.Color.DarkMuted>
+  <RimWorldAccess.Color.DarkPale>koyu soluk {0}</RimWorldAccess.Color.DarkPale>
+  <RimWorldAccess.Color.LightVivid>açık {0}</RimWorldAccess.Color.LightVivid>
+  <RimWorldAccess.Color.LightMuted>açık donuk {0}</RimWorldAccess.Color.LightMuted>
+  <RimWorldAccess.Color.LightPale>soluk {0}</RimWorldAccess.Color.LightPale>
+
+  <RimWorldAccess.Color.Black>siyah</RimWorldAccess.Color.Black>
+  <RimWorldAccess.Color.White>beyaz</RimWorldAccess.Color.White>
+  <RimWorldAccess.Color.Gray>gri</RimWorldAccess.Color.Gray>
+  <RimWorldAccess.Color.GrayDark>koyu gri</RimWorldAccess.Color.GrayDark>
+  <RimWorldAccess.Color.GrayLight>açık gri</RimWorldAccess.Color.GrayLight>
+
+</LanguageData>

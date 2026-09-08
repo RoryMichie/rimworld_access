@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Autopilot.Engage.Label>Atacar alvo</RimWorldAccess.Autopilot.Engage.Label>
+  <RimWorldAccess.Autopilot.Engage.Desc>Ordena a {0} que ataque um alvo escolhido. {0} desloca-se até ao alvo e ataca-o segundo a sua política de combate, repelindo os inimigos que atacarem pelo caminho.</RimWorldAccess.Autopilot.Engage.Desc>
+  <RimWorldAccess.Autopilot.Engage.CurrentOrders>Ordens actuais: {0}.</RimWorldAccess.Autopilot.Engage.CurrentOrders>
+  <RimWorldAccess.Autopilot.Patrol.Label>Patrulha: {0}</RimWorldAccess.Autopilot.Patrol.Label>
+  <RimWorldAccess.Autopilot.Patrol.Desc>Ordena a {0} que percorra a área escolhida, parando para combater qualquer inimigo que entre no alcance.</RimWorldAccess.Autopilot.Patrol.Desc>
+  <RimWorldAccess.Autopilot.Patrol.NoneOption>Sem patrulha</RimWorldAccess.Autopilot.Patrol.NoneOption>
+  <RimWorldAccess.Autopilot.PatrolAssigned>{0}: a patrulhar {1}.</RimWorldAccess.Autopilot.PatrolAssigned>
+  <RimWorldAccess.Autopilot.PatrolCleared>{0}: patrulha anulada.</RimWorldAccess.Autopilot.PatrolCleared>
+  <RimWorldAccess.Autopilot.SeekDestroy.Label>Procurar e destruir</RimWorldAccess.Autopilot.SeekDestroy.Label>
+  <RimWorldAccess.Autopilot.SeekDestroy.Desc>{0} persegue os inimigos em vez de manter a posição. Os alvos marcados e ordenados vêm primeiro.</RimWorldAccess.Autopilot.SeekDestroy.Desc>
+  <RimWorldAccess.Autopilot.PickerLabel>Política de combate: {0}</RimWorldAccess.Autopilot.PickerLabel>
+  <RimWorldAccess.Autopilot.PickerDesc>A política de combate que {0} segue.</RimWorldAccess.Autopilot.PickerDesc>
+  <RimWorldAccess.Autopilot.HuntAnimals.Label>Caçar animais</RimWorldAccess.Autopilot.HuntAnimals.Label>
+  <RimWorldAccess.Autopilot.HuntAnimals.Desc>{0} caça animais selvagens enquanto estiver recrutada. Os inimigos vêm sempre primeiro. A política de caça de {0} decide que animais podem ser caçados.</RimWorldAccess.Autopilot.HuntAnimals.Desc>
+  <RimWorldAccess.Autopilot.AutocastAll.Label>Lançar todas as capacidades automaticamente</RimWorldAccess.Autopilot.AutocastAll.Label>
+  <RimWorldAccess.Autopilot.AutocastAll.Desc>Marca todas as capacidades de {0} para lançamento automático enquanto estiver recrutada. Cada capacidade também pode ser marcada ou desmarcada no seu próprio menu.</RimWorldAccess.Autopilot.AutocastAll.Desc>
+  <RimWorldAccess.Autopilot.Pause.Label>Pausar o piloto automático de combate</RimWorldAccess.Autopilot.Pause.Label>
+  <RimWorldAccess.Autopilot.Pause.Desc>Pára todo o comportamento de combate automático de {0} e devolve o controlo completo. As políticas e as ordens são mantidas, mas nada age até esta caixa ser desmarcada. Dar uma nova ordem de ataque ou de patrulha também retoma a automação.</RimWorldAccess.Autopilot.Pause.Desc>
+
+  <RimWorldAccess.Autopilot.TakeCover.Label>Procurar cobertura</RimWorldAccess.Autopilot.TakeCover.Label>
+  <RimWorldAccess.Autopilot.TakeCover.Desc>Os atiradores deslocam-se para posições de tiro com cobertura. Os combatentes corpo a corpo ignoram isto.</RimWorldAccess.Autopilot.TakeCover.Desc>
+  <RimWorldAccess.Autopilot.MeleeCharge.Label>Investida corpo a corpo</RimWorldAccess.Autopilot.MeleeCharge.Label>
+  <RimWorldAccess.Autopilot.MeleeCharge.Desc>Os combatentes corpo a corpo investem contra alvos distantes. Quando desligado, só atacam inimigos que se aproximem.</RimWorldAccess.Autopilot.MeleeCharge.Desc>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Label>Perseguir em qualquer lugar</RimWorldAccess.Autopilot.PursueAnywhere.Label>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Desc>Procurar e destruir escolhe alvos em todo o mapa e persegue-os para onde quer que fujam. Quando desligado, só são escolhidos inimigos próximos e visíveis. Não faz nada enquanto procurar e destruir estiver desligado.</RimWorldAccess.Autopilot.PursueAnywhere.Desc>
+  <RimWorldAccess.Autopilot.FightAsSquad.Label>Lutar em esquadrão</RimWorldAccess.Autopilot.FightAsSquad.Label>
+  <RimWorldAccess.Autopilot.FightAsSquad.Desc>Coordena-se com os peões convocados por perto cuja política também luta em esquadrão: distribui o fogo pelo grupo inimigo em vez de se amontoar sobre um único alvo, e mantém uma casa de distância para que um tiro perdido ou uma explosão atinja um só peão.</RimWorldAccess.Autopilot.FightAsSquad.Desc>
+  <RimWorldAccess.Autopilot.BashDoors.Label>Arrombar portas</RimWorldAccess.Autopilot.BashDoors.Label>
+  <RimWorldAccess.Autopilot.BashDoors.Desc>Arromba as portas trancadas ou hostis que bloqueiam o caminho até um alvo.</RimWorldAccess.Autopilot.BashDoors.Desc>
+  <RimWorldAccess.Autopilot.KeepDistance.Label>Manter a distância</RimWorldAccess.Autopilot.KeepDistance.Label>
+  <RimWorldAccess.Autopilot.KeepDistance.Desc>Os atiradores recuam quando um combatente corpo a corpo se aproxima demasiado.</RimWorldAccess.Autopilot.KeepDistance.Desc>
+  <RimWorldAccess.Autopilot.FallBackInjured.Label>Recuar quando ferida</RimWorldAccess.Autopilot.FallBackInjured.Label>
+  <RimWorldAccess.Autopilot.FallBackInjured.Desc>Quando gravemente ferido, recua dos inimigos que o pressionam e depois continua a lutar com cautela, a coberto e à distância, em vez de carregar.</RimWorldAccess.Autopilot.FallBackInjured.Desc>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Label>Evitar explosões</RimWorldAccess.Autopilot.AvoidBlasts.Label>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Desc>Afasta-se de explosivos activados e de explosões iminentes.</RimWorldAccess.Autopilot.AvoidBlasts.Desc>
+  <RimWorldAccess.Autopilot.AutocastMarked.Label>Lançamento automático das capacidades marcadas</RimWorldAccess.Autopilot.AutocastMarked.Label>
+  <RimWorldAccess.Autopilot.AutocastMarked.Desc>Lança as capacidades que a personagem marcou para lançamento automático. As marcas dizem quais; esta caixa diz se são lançadas. Quando desligado, as marcas mantêm-se mas são ignoradas.</RimWorldAccess.Autopilot.AutocastMarked.Desc>
+
+  <RimWorldAccess.Autopilot.AutocastOption>Lançamento automático</RimWorldAccess.Autopilot.AutocastOption>
+  <RimWorldAccess.Autopilot.AutocastOn>lançamento automático activado</RimWorldAccess.Autopilot.AutocastOn>
+
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>Activar piloto automático de combate</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>Permite que as personagens recrutadas combatam sozinhas. Acrescenta políticas de combate e de caça e novos botões às personagens recrutadas. Ao desligar, os botões são removidos e a automação pára.</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>Desalistar desliga Procurar e destruir e Caçar animais</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>Desmarca Procurar e destruir e Caçar animais sempre que uma personagem é desalistada.</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>
+
+  <RimWorldAccess.Autopilot.PolicyTitle>Políticas de combate</RimWorldAccess.Autopilot.PolicyTitle>
+  <RimWorldAccess.Autopilot.PolicyTip>Cria e gere modelos que controlam como as personagens recrutadas combatem sozinhas. Atribui políticas nos separadores Atribuir, Animais ou Mecanóides; os veículos mantêm um botão de política de combate.</RimWorldAccess.Autopilot.PolicyTip>
+  <RimWorldAccess.Autopilot.PolicyName>Política de combate</RimWorldAccess.Autopilot.PolicyName>
+  <RimWorldAccess.Autopilot.ManagePolicies>Gerir políticas de combate</RimWorldAccess.Autopilot.ManagePolicies>
+  <RimWorldAccess.Autopilot.Policy.None>Nenhuma</RimWorldAccess.Autopilot.Policy.None>
+  <RimWorldAccess.Autopilot.Policy.None.Tip>Sem política de combate. O piloto automático de combate fica totalmente desligado para esta personagem: sem procurar e destruir, sem ordens de ataque, sem lançamento automático. Caçar animais e patrulhar são à parte e continuam a funcionar.</RimWorldAccess.Autopilot.Policy.None.Tip>
+  <RimWorldAccess.Autopilot.PolicyInUse>Política de combate em uso por {0}.</RimWorldAccess.Autopilot.PolicyInUse>
+  <RimWorldAccess.Autopilot.Policy.FullControl>Controlo total</RimWorldAccess.Autopilot.Policy.FullControl>
+  <RimWorldAccess.Autopilot.Policy.FightNearby>Combater por perto</RimWorldAccess.Autopilot.Policy.FightNearby>
+  <RimWorldAccess.Autopilot.Policy.StaySafe>Manter-se em segurança</RimWorldAccess.Autopilot.Policy.StaySafe>
+
+  <RimWorldAccess.Autopilot.HuntPolicyTitle>Políticas de caça</RimWorldAccess.Autopilot.HuntPolicyTitle>
+  <RimWorldAccess.Autopilot.HuntPolicyTip>Cria e gere modelos que controlam que animais as personagens recrutadas podem caçar: uma lista de espécies permitidas, um intervalo de risco de vingança e a proteção dos animais venerados. A caça em si liga-se por personagem com o botão Caçar animais. Enquanto a personagem estiver recrutada, estas regras têm prioridade sobre as marcas de caça.</RimWorldAccess.Autopilot.HuntPolicyTip>
+  <RimWorldAccess.Autopilot.HuntPolicyName>Política de caça</RimWorldAccess.Autopilot.HuntPolicyName>
+  <RimWorldAccess.Autopilot.ManageHuntPolicies>Gerir políticas de caça</RimWorldAccess.Autopilot.ManageHuntPolicies>
+  <RimWorldAccess.Autopilot.HuntPolicyInUse>Política de caça em uso por {0}.</RimWorldAccess.Autopilot.HuntPolicyInUse>
+  <RimWorldAccess.Autopilot.HuntPolicyIsDefault>A política de caça por omissão não pode ser eliminada.</RimWorldAccess.Autopilot.HuntPolicyIsDefault>
+  <RimWorldAccess.Autopilot.HuntPolicy.SafeGame>Caça segura</RimWorldAccess.Autopilot.HuntPolicy.SafeGame>
+  <RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>Qualquer animal</RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>
+  <RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>Animais permitidos</RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.Desc>Só podem ser caçados os animais cuja probabilidade de vingança ao serem feridos esteja dentro deste intervalo.</RimWorldAccess.Autopilot.HuntRevengeRange.Desc>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>Probabilidade de vingança ao ser ferido: {0}</RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Label>Poupar os animais venerados</RimWorldAccess.Autopilot.HuntSpareVenerated.Label>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>Nunca caça animais venerados pela ideoligião da personagem.</RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>
+
+  <RimWorldAccess.Autopilot.SummaryPrefix>Activa: {0}.</RimWorldAccess.Autopilot.SummaryPrefix>
+  <RimWorldAccess.Autopilot.SummarySeparator>, </RimWorldAccess.Autopilot.SummarySeparator>
+  <RimWorldAccess.Autopilot.SummaryNothing>Não activa nada. A personagem mantém a posição e dispara à vontade.</RimWorldAccess.Autopilot.SummaryNothing>
+
+  <RimWorldAccess.Autopilot.Report.MovingToCover>a ir para cobertura em {0}, {1}.</RimWorldAccess.Autopilot.Report.MovingToCover>
+  <RimWorldAccess.Autopilot.Report.MovingToCoverBehind>a ir para cobertura atrás de {0} em {1}, {2}.</RimWorldAccess.Autopilot.Report.MovingToCoverBehind>
+  <RimWorldAccess.Autopilot.Report.MovingToEngage>a avançar para atacar {0}.</RimWorldAccess.Autopilot.Report.MovingToEngage>
+  <RimWorldAccess.Autopilot.Report.FallingBack>gravemente ferida, a recuar para {0}, {1}.</RimWorldAccess.Autopilot.Report.FallingBack>
+  <RimWorldAccess.Autopilot.Report.FleeingBlast>a afastar-se de uma explosão de {0}.</RimWorldAccess.Autopilot.Report.FleeingBlast>
+  <RimWorldAccess.Autopilot.Report.BackingAway>a recuar perante {0}.</RimWorldAccess.Autopilot.Report.BackingAway>
+  <RimWorldAccess.Autopilot.Report.Casting>a lançar {0}.</RimWorldAccess.Autopilot.Report.Casting>
+  <RimWorldAccess.Autopilot.Report.CastingOn>a lançar {0} sobre {1}.</RimWorldAccess.Autopilot.Report.CastingOn>
+  <RimWorldAccess.Autopilot.Report.VehicleAdvance>a conduzir para atacar o hostil mais próximo.</RimWorldAccess.Autopilot.Report.VehicleAdvance>
+  <RimWorldAccess.Autopilot.Report.VehicleFiringPosition>a conduzir para uma posição de tiro.</RimWorldAccess.Autopilot.Report.VehicleFiringPosition>
+  <RimWorldAccess.Autopilot.Report.VehicleHolding>a manter uma posição de tiro.</RimWorldAccess.Autopilot.Report.VehicleHolding>
+  <RimWorldAccess.Autopilot.Report.EngagingOrdered>a atacar {0} por ordem.</RimWorldAccess.Autopilot.Report.EngagingOrdered>
+  <RimWorldAccess.Autopilot.Report.EngagingMarked>a atacar o alvo marcado {0}.</RimWorldAccess.Autopilot.Report.EngagingMarked>
+  <RimWorldAccess.Autopilot.Report.ReturningToPost>a voltar ao posto em {0}, {1}.</RimWorldAccess.Autopilot.Report.ReturningToPost>
+  <RimWorldAccess.Autopilot.Report.Patrolling>a patrulhar {0}.</RimWorldAccess.Autopilot.Report.Patrolling>
+  <RimWorldAccess.Autopilot.Report.FightingOff>a repelir {0}.</RimWorldAccess.Autopilot.Report.FightingOff>
+  <RimWorldAccess.Autopilot.Report.HoldingFiring>mantém a posição e dispara.</RimWorldAccess.Autopilot.Report.HoldingFiring>
+  <RimWorldAccess.Autopilot.Report.SpreadingFire>reparte o fogo para {0}.</RimWorldAccess.Autopilot.Report.SpreadingFire>
+  <RimWorldAccess.Autopilot.Report.WoundedHolding>ferido, mantém a posição.</RimWorldAccess.Autopilot.Report.WoundedHolding>
+
+  <RimWorldAccess.Autopilot.EngageOption>Atacar {0}</RimWorldAccess.Autopilot.EngageOption>
+  <RimWorldAccess.Autopilot.EngageOption.Tip>Ataca este alvo até ele cair. Os inimigos que atacarem pelo caminho são repelidos primeiro.</RimWorldAccess.Autopilot.EngageOption.Tip>
+  <RimWorldAccess.Autopilot.EngagePawnCount>{0} personagens</RimWorldAccess.Autopilot.EngagePawnCount>
+  <RimWorldAccess.Autopilot.EngageOrdered>{0}: a atacar {1}.</RimWorldAccess.Autopilot.EngageOrdered>
+  <RimWorldAccess.Autopilot.EngageQueued>{0}: {1} acrescentado à fila.</RimWorldAccess.Autopilot.EngageQueued>
+  <RimWorldAccess.Autopilot.ClearOrders>Anular as ordens de ataque</RimWorldAccess.Autopilot.ClearOrders>
+  <RimWorldAccess.Autopilot.OrdersCleared>Ordens de ataque anuladas.</RimWorldAccess.Autopilot.OrdersCleared>
+
+  <RimWorldAccess.Autopilot.AttackDesignator.Label>marcar para ataque</RimWorldAccess.Autopilot.AttackDesignator.Label>
+  <RimWorldAccess.Autopilot.AttackDesignator.Desc>Marca alvos que as personagens em procurar e destruir atacam primeiro. As varreduras de área só marcam hostis; Shift acrescenta criaturas sem facção, Ctrl e Shift acrescentam toda a gente.</RimWorldAccess.Autopilot.AttackDesignator.Desc>
+  <RimWorldAccess.Autopilot.AttackDesignator.MustTarget>Tem de marcar uma personagem atacável.</RimWorldAccess.Autopilot.AttackDesignator.MustTarget>
+</LanguageData>

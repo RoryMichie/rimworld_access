@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    QA flight recorder (src/Shell/Compat/FlightRecorder.Game.cs). Alt (Option on macOS) plus
+    the vanilla screenshot key starts and stops a recording anywhere; stopping opens
+    Dialog_RecordingSaved with the saved path unless suppressed. The two Settings keys are the
+    suppression toggle's row in both RimWorld Access settings surfaces.
+  -->
+  <RimWorldAccess.FlightRecorder.Started>Бортовий самописець запущено.</RimWorldAccess.FlightRecorder.Started>
+  <RimWorldAccess.FlightRecorder.Stopped>Бортовий самописець зупинено.</RimWorldAccess.FlightRecorder.Stopped>
+  <RimWorldAccess.FlightRecorder.StoppedWithPath>Бортовий самописець зупинено. Запис збережено в {0}.</RimWorldAccess.FlightRecorder.StoppedWithPath>
+  <RimWorldAccess.FlightRecorder.Marker>Мітку {0} записано.</RimWorldAccess.FlightRecorder.Marker>
+  <RimWorldAccess.FlightRecorder.DialogTitle>Запис збережено</RimWorldAccess.FlightRecorder.DialogTitle>
+  <RimWorldAccess.FlightRecorder.DialogBody>Журнал бортового самописця збережено в: {0}</RimWorldAccess.FlightRecorder.DialogBody>
+  <RimWorldAccess.FlightRecorder.DontShowAgain>Більше не показувати це вікно</RimWorldAccess.FlightRecorder.DontShowAgain>
+  <RimWorldAccess.FlightRecorder.OpenFolder>Відкрити теку</RimWorldAccess.FlightRecorder.OpenFolder>
+  <RimWorldAccess.Core.Settings.ShowRecordingSavedDialog.Label>Показувати вікно після збереження запису бортового самописця</RimWorldAccess.Core.Settings.ShowRecordingSavedDialog.Label>
+  <RimWorldAccess.Core.Settings.ShowRecordingSavedDialog.Desc>Коли сеанс бортового самописця зупиняється ({0}), відкривається вікно з розташуванням збереженого файлу. Якщо вимкнено, розташування промовляється вголос.</RimWorldAccess.Core.Settings.ShowRecordingSavedDialog.Desc>
+</LanguageData>

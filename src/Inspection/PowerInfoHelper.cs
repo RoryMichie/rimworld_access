@@ -225,7 +225,7 @@ namespace RimWorldAccess
             // Flick switch status
             if (flickComp != null && !flickComp.SwitchIsOn)
             {
-                sb.Append(", Switched off");
+                sb.Append(", " + (string)"RimWorldAccess.Inspection.Power.SwitchedOff".Translate());
             }
 
             // Network status

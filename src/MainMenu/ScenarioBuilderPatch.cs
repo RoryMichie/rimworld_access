@@ -1,3 +1,4 @@
+using System;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -5,75 +6,68 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patches for the Scenario Builder (Page_ScenarioEditor).
-    /// Initializes and closes the ScenarioBuilderState when the editor opens/closes.
+    /// Harmony patches for the Scenario Builder (Page_ScenarioEditor). Initializes and
+    /// closes <see cref="ScenarioBuilderState"/> (now purely a row-data source)
+    /// when the editor opens/closes, drives the DoWindowContents-pass hook the
+    /// live text-edit sessions need, and keeps the pre-existing unsaved-changes dirty-check
+    /// on Page.DoBack. All keyboard navigation/announcement now lives in
+    /// <see cref="RimWorldAccess.Shell.ScenarioEditorScreenScope"/> — its own guard twins
+    /// (ScenarioEditorScreenScopePatch_CanDoNext/_CanDoBack, in that file) replaced the
+    /// retired ScenarioBuilderPatch_CanDoNext/_CanDoBack pair (they
+    /// referenced ScenarioBuilderPartEditState/ScenarioBuilderAddPartState/etc., which the
+    /// S3 migration deletes or narrows).
     /// </summary>
     [HarmonyPatch(typeof(Page_ScenarioEditor))]
     public static class ScenarioBuilderPatch
     {
         /// <summary>
-        /// Initialize state when the scenario editor opens.
-        /// Page_ScenarioEditor overrides PreOpen, so we patch that.
+        /// Drives the live metadata/quantity/text edit sessions' per-pass mirror (the
+        /// WorldParamsPatch/WorldParamsScreenScope.OnPageDrawPass precedent) — must run
+        /// inside the page's own GUI pass so a vanilla-drawn TextEntry/TextArea (Title/
+        /// Summary/Description/Seed) renders the live buffer and Escape keeps the typed
+        /// value rather than discarding it.
         /// </summary>
-        [HarmonyPatch("PreOpen")]
-        [HarmonyPostfix]
-        public static void PreOpen_Postfix(Page_ScenarioEditor __instance)
+        [HarmonyPatch("DoWindowContents")]
+        [HarmonyPrefix]
+        public static void DoWindowContents_Prefix()
         {
             try
             {
-                // Get the current scenario from the editor
-                Scenario scenario = (Scenario)AccessTools.Field(typeof(Page_ScenarioEditor), "curScen").GetValue(__instance);
-
-                // Initialize the scenario builder state
-                ScenarioBuilderState.Open(scenario, __instance);
+                RimWorldAccess.Shell.ScenarioEditorScreenScope.Active?.OnHostDrawPass();
             }
             catch (System.Exception ex)
             {
-                Log.Error($"[RimWorld Access] Error in ScenarioBuilderPatch PreOpen: {ex}");
+                Log.Error($"[RimWorld Access] Error in ScenarioBuilderPatch DoWindowContents prefix: {ex}");
             }
         }
     }
 
     /// <summary>
-    /// Patch Page.DoNext to block page advancement when our scenario builder states are active.
-    /// CRITICAL: This is the most direct way to block advancement because:
-    /// - OnAcceptKeyPressed calls DoNext()
-    /// - DoBottomButtons ALSO checks KeyBindingDefOf.Accept.KeyDownEvent and calls DoNext()
-    /// - Patching DoNext() catches BOTH paths
+    /// Opens the builder state at Window.PostOpen (Page_ScenarioEditor doesn't override it).
+    /// PostOpen, not PreOpen: Find.Scenario resolves the editor through the WindowStack, which
+    /// only inserts the window between the two — vanilla part helpers like
+    /// ScenPart_StartingResearch.NonRedundantResearchProjects NRE before insertion.
     /// </summary>
-    [HarmonyPatch(typeof(Page))]
-    [HarmonyPatch("DoNext")]
-    public static class ScenarioBuilderDoNextPatch
+    [HarmonyPatch(typeof(Window))]
+    [HarmonyPatch("PostOpen")]
+    public static class ScenarioBuilderOpenPatch
     {
-        [HarmonyPrefix]
-        public static bool Prefix(Page __instance)
+        [HarmonyPostfix]
+        public static void Postfix(Window __instance)
         {
-            // Only intercept for Page_ScenarioEditor
-            if (__instance is Page_ScenarioEditor)
+            if (!(__instance is Page_ScenarioEditor page))
             {
-                // Block page advancement when ANY of our scenario builder states are active
-                if (ScenarioBuilderState.IsActive ||
-                    ScenarioBuilderPartEditState.IsActive ||
-                    ScenarioBuilderAddPartState.IsActive ||
-                    WindowlessScenarioLoadState.IsActive ||
-                    WindowlessScenarioSaveState.IsActive ||
-                    WindowlessScenarioDeleteConfirmState.IsActive)
-                {
-                    return false; // Block DoNext() - stay on scenario builder
-                }
+                return;
             }
-
-            // Handle Page_SelectScenario - block DoNext when windowless dialog is active or was just closed
-            // This prevents Enter in delete confirmation from advancing to storyteller selection
-            if (__instance is Page_SelectScenario)
+            try
             {
-                if (WindowlessDialogState.IsActive || WindowlessDialogState.WasClosedThisFrame)
-                {
-                    return false; // Block DoNext()
-                }
+                Scenario scenario = (Scenario)AccessTools.Field(typeof(Page_ScenarioEditor), "curScen").GetValue(page);
+                ScenarioBuilderState.Open(scenario, page);
             }
-
-            return true; // Let original method run (advances to next page normally)
+            catch (System.Exception ex)
+            {
+                Log.Error($"[RimWorld Access] Error in ScenarioBuilderOpenPatch: {ex}");
+            }
         }
     }
 
@@ -104,111 +98,14 @@ namespace RimWorldAccess
     }
 
     /// <summary>
-    /// Patch Window.OnCancelKeyPressed to block Escape key from closing the editor.
-    /// We want Escape to be handled by our state (to close overlays first).
-    /// Also shows confirmation when there are unsaved changes.
-    /// </summary>
-    [HarmonyPatch(typeof(Window))]
-    [HarmonyPatch("OnCancelKeyPressed")]
-    public static class ScenarioBuilderCancelKeyPatch
-    {
-        [HarmonyPrefix]
-        public static bool Prefix(Window __instance)
-        {
-            // Only intercept for Page_ScenarioEditor
-            if (__instance is Page_ScenarioEditor)
-            {
-                // Block the game's Cancel handling when typeahead search is active
-                // (Escape should clear search first, not close the editor)
-                if (ScenarioBuilderState.IsActive && ScenarioBuilderState.PartsHasActiveSearch)
-                {
-                    return false; // Let UnifiedKeyboardPatch handle clearing the search
-                }
-
-                // Block the game's Cancel handling when our overlay states are active
-                if (ScenarioBuilderPartEditState.IsActive ||
-                    ScenarioBuilderAddPartState.IsActive ||
-                    WindowlessScenarioLoadState.IsActive ||
-                    WindowlessScenarioSaveState.IsActive ||
-                    WindowlessScenarioDeleteConfirmState.IsActive)
-                {
-                    return false; // Skip original method - let our overlay handle the Escape
-                }
-
-                // NOTE: We don't show unsaved changes dialog here because OnCancelKeyPressed
-                // never actually runs for Pages (closeOnCancel = false). The dialog is shown
-                // in ScenarioBuilderDoBackPatch which handles DoBack() called from DoBottomButtons.
-            }
-
-            return true; // Let original method run
-        }
-
-    }
-
-    /// <summary>
-    /// Blocks the Page.CanDoBack() method when our overlay states are active.
-    /// This prevents Page.DoBottomButtons() from calling DoBack() when Escape is pressed.
-    /// </summary>
-    [HarmonyPatch(typeof(Page))]
-    [HarmonyPatch("CanDoBack")]
-    public static class ScenarioBuilderCanDoBackPatch
-    {
-        [HarmonyPrefix]
-        public static bool Prefix(Page __instance, ref bool __result)
-        {
-            if (__instance is Page_ScenarioEditor)
-            {
-                // Block going back when windowless dialog is active or just closed
-                // This prevents DoBack() from being triggered by the same Escape that closed the dialog
-                if (WindowlessDialogState.IsActive || WindowlessDialogState.WasClosedThisFrame)
-                {
-                    __result = false;
-                    return false;
-                }
-
-                // Block going back when any overlay state is active
-                if (ScenarioBuilderAddPartState.IsActive ||
-                    ScenarioBuilderPartEditState.IsActive ||
-                    WindowlessScenarioLoadState.IsActive ||
-                    WindowlessScenarioSaveState.IsActive ||
-                    WindowlessScenarioDeleteConfirmState.IsActive)
-                {
-                    __result = false;
-                    return false;
-                }
-
-                // Block going back when ScenarioBuilderState has active typeahead
-                if (ScenarioBuilderState.IsActive && ScenarioBuilderState.PartsHasActiveSearch)
-                {
-                    __result = false;
-                    return false;
-                }
-
-                // NOTE: Do NOT block here when dirty - let DoBack() be called so it can show the dialog
-            }
-
-            // Handle Page_SelectScenario - block going back when windowless dialog is active or just closed
-            // This prevents Escape in delete confirmation from returning to main menu
-            if (__instance is Page_SelectScenario)
-            {
-                if (WindowlessDialogState.IsActive || WindowlessDialogState.WasClosedThisFrame)
-                {
-                    __result = false;
-                    return false;
-                }
-            }
-
-            return true;
-        }
-    }
-
-    /// <summary>
     /// Patches Page.DoBack() to show unsaved changes dialog for scenario builder.
     /// CRITICAL: This is the correct place to intercept Escape key for Page windows.
     /// OnCancelKeyPressed is NEVER called for Pages because closeOnCancel = false.
     /// DoBack() is called by DoBottomButtons() when Escape is pressed and CanDoBack() returns true.
     /// Since we block CanDoBack() when dirty, we also need to handle the dialog here for when
-    /// users use the Back button directly.
+    /// users use the Back button directly. ScenarioEditorScreenScope's own Back
+    /// action rides this same Page.DoBack, so the dialog
+    /// still fires for both the declared Back action and a raw vanilla mouse click.
     /// </summary>
     [HarmonyPatch(typeof(Page))]
     [HarmonyPatch("DoBack")]
@@ -220,12 +117,6 @@ namespace RimWorldAccess
             // Only intercept for Page_ScenarioEditor
             if (__instance is Page_ScenarioEditor)
             {
-                // Skip if a dialog was just closed this frame (prevent Escape from re-triggering)
-                if (WindowlessDialogState.WasClosedThisFrame)
-                {
-                    return false; // Block - dialog was just dismissed, don't show again
-                }
-
                 // Check for unsaved changes
                 if (ScenarioBuilderState.IsActive && ScenarioBuilderState.IsDirty())
                 {
@@ -249,13 +140,16 @@ namespace RimWorldAccess
                 "RimWorldAccess.ScenarioBuilder.UnsavedSave".Translate(),
                 () =>
                 {
-                    // Save then close
-                    WindowlessScenarioSaveState.Open(ScenarioBuilderState.CurrentScenario, () =>
+                    // Save then close: the real picker, with the close-out deferred until a
+                    // save actually ran (onClosed alone also fires on cancel).
+                    ScenarioSaveInteractionPatch.AfterNextSave = () =>
                     {
-                        ScenarioBuilderState.ResetDirty();
                         ScenarioBuilderState.Close();
                         editorWindow?.Close();
-                    });
+                    };
+                    Find.WindowStack.Add(new Dialog_ScenarioList_Save(
+                        ScenarioBuilderState.CurrentScenario,
+                        onClosed: ScenarioSaveInteractionPatch.ClearPendingUnlessSaving));
                 },
                 "RimWorldAccess.ScenarioBuilder.UnsavedDiscard".Translate(),
                 () =>
@@ -284,6 +178,50 @@ namespace RimWorldAccess
             dialog.buttonCClose = true;
 
             Find.WindowStack.Add(dialog);
+        }
+    }
+
+    /// <summary>
+    /// Builder-side bookkeeping for the real <see cref="Dialog_ScenarioList_Save"/>: an actual
+    /// save clears the dirty flag and runs any deferred close-out. The dialog's own onClosed
+    /// callback cannot carry these — it fires on cancel too.
+    /// </summary>
+    [HarmonyPatch(typeof(Dialog_ScenarioList_Save), "DoFileInteraction")]
+    public static class ScenarioSaveInteractionPatch
+    {
+        /// <summary>Runs once after the next save from this dialog completes; cleared on a cancel close.</summary>
+        internal static Action AfterNextSave;
+
+        private static bool saveInFlight;
+
+        /// <summary>onClosed hook: drop the deferred close-out unless this close IS the save's own.</summary>
+        internal static void ClearPendingUnlessSaving()
+        {
+            if (!saveInFlight)
+            {
+                AfterNextSave = null;
+            }
+        }
+
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            saveInFlight = true;
+        }
+
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            saveInFlight = false;
+            if (!ScenarioBuilderState.IsActive)
+            {
+                AfterNextSave = null;
+                return;
+            }
+            ScenarioBuilderState.ResetDirty();
+            Action pending = AfterNextSave;
+            AfterNextSave = null;
+            pending?.Invoke();
         }
     }
 }

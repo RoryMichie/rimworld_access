@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Quests module strings (src/Quests/). Five files contribute:
+      - QuestMenuState.cs           (windowless quest browser)
+      - NotificationMenuState.cs    (messages/letters/alerts viewer)
+      - QuestRewardHelper.cs        (reward extraction + reward prefs)
+      - NotificationAccessibilityPatch.cs  (live message/letter/alert
+                                            announcements as they arrive)
+      - QuestMenuPatch.cs           (no user strings)
+
+    The quest list and detail views, the reward-choice float menu, the
+    reward-preferences panel, and the notification menu's two-level
+    navigation all live here. Many phrasings are split into One/Many
+    pairs (1 quest vs N quests, 1 star vs N stars) so plural agreement
+    survives translation.
+
+    Shared phrases delegated elsewhere:
+      - Position / Edge / Search / InfoCard.Unavailable -> Common.xml
+      - "Jumped to {target}"                            -> Common.xml
+      - "Accept", "Delete", "Close", "Activate", "Open",
+        "Difficulty", "JumpToLocation", "ViewRelatedQuest",
+        "QuestExpiresIn", "AvailableQuests"/"ActiveQuests"/
+        "HistoricalQuests", "Goodwill"                  -> vanilla keys
+
+    Data such as quest names, faction names, reward item labels,
+    target locations, ticks-to-period strings, sign-formatted
+    numbers, and royal favor labels (faction.def.royalFavorLabel)
+    comes from the game and is NOT translated in this file.
+  -->
+
+  <!-- =================================================================
+       Live notification announcements (NotificationAccessibilityPatch).
+       Spoken when a Message, Letter, or Alert arrives in-game so screen
+       reader users hear the event without opening the notification menu.
+       {0} = the cleaned text/label of the notification.
+       ================================================================= -->
+  <RimWorldAccess.Notification.LiveMessage>Mesaj: {0}</RimWorldAccess.Notification.LiveMessage>
+  <RimWorldAccess.Notification.LiveLetter>Mektup: {0}</RimWorldAccess.Notification.LiveLetter>
+  <RimWorldAccess.Notification.LiveAlert>Uyarı: {0}</RimWorldAccess.Notification.LiveAlert>
+
+  <!-- =================================================================
+       Quest menu lifecycle (QuestMenuState.Open / Close / OpenAndSelect).
+       Title is the one-shot screen name spoken when the menu opens; the
+       shared screen machinery announces the focused row separately.
+       ================================================================= -->
+  <RimWorldAccess.Quests.Menu.Title>Görev menüsü</RimWorldAccess.Quests.Menu.Title>
+  <RimWorldAccess.Quests.Menu.Closed>Görev menüsü kapatıldı</RimWorldAccess.Quests.Menu.Closed>
+  <RimWorldAccess.Quests.Menu.QuestNoLongerAvailable>Görev artık mevcut değil</RimWorldAccess.Quests.Menu.QuestNoLongerAvailable>
+  <RimWorldAccess.Quests.Menu.NoQuestSelected>Seçili görev yok</RimWorldAccess.Quests.Menu.NoQuestSelected>
+
+  <!-- =================================================================
+       Quest tabs. Available/Active/Historical (vanilla provides the
+       short labels; we suffix "Quests" because the screen-reader
+       announcement uses the tab in a sentence).
+       Tab.WithCountOne / Many / NoQuests build the per-tab summary
+       sentence; {0} = tab label, {1} = count (Many only).
+       ================================================================= -->
+  <RimWorldAccess.Quests.Tab.Available>Mevcut görevler</RimWorldAccess.Quests.Tab.Available>
+  <RimWorldAccess.Quests.Tab.Active>Etkin görevler</RimWorldAccess.Quests.Tab.Active>
+  <RimWorldAccess.Quests.Tab.Historical>Tarihsel görevler</RimWorldAccess.Quests.Tab.Historical>
+  <RimWorldAccess.Quests.Tab.Generic>Görevler</RimWorldAccess.Quests.Tab.Generic>
+  <RimWorldAccess.Quests.Tab.WithCountOne>{0} sekmesi - 1 görev</RimWorldAccess.Quests.Tab.WithCountOne>
+  <RimWorldAccess.Quests.Tab.WithCountMany>{0} sekmesi - {1} görev</RimWorldAccess.Quests.Tab.WithCountMany>
+  <RimWorldAccess.Quests.Tab.NoQuests>{0} sekmesi - Görev yok</RimWorldAccess.Quests.Tab.NoQuests>
+
+  <!-- =================================================================
+       Status words, used both in the list-view name suffix
+       ("{name}, Dismissed") and in the detail-view header
+       ("Quest: {name} (Active)"). Available/Active spell out the
+       NotYetAccepted/Ongoing states for the screen reader. -->
+  <RimWorldAccess.Quests.Status.Available>Mevcut</RimWorldAccess.Quests.Status.Available>
+  <RimWorldAccess.Quests.Status.Active>Etkin</RimWorldAccess.Quests.Status.Active>
+  <RimWorldAccess.Quests.Status.Dismissed>Yok sayıldı</RimWorldAccess.Quests.Status.Dismissed>
+  <RimWorldAccess.Quests.Status.Completed>Tamamlandı</RimWorldAccess.Quests.Status.Completed>
+  <RimWorldAccess.Quests.Status.Failed>Başarısız</RimWorldAccess.Quests.Status.Failed>
+  <RimWorldAccess.Quests.Status.Expired>Süresi dolmuş</RimWorldAccess.Quests.Status.Expired>
+
+  <!-- =================================================================
+       List-view row composition (BuildQuestRowLabel).
+       NameWithStatus appends a status word to the quest name; the bare
+       Name case has no suffix and is spoken directly.
+       StarsOne/Many is the difficulty rating; CharitySuffix is appended
+       when quest.charity is true.
+       ExpiresIn / AcceptedAgo / AgoOnly are the short time-info phrases
+       (no colon, terse - distinct from the detail-view variants below).
+       Rewards: {0} = compact reward summary string. -->
+  <RimWorldAccess.Quests.List.NameWithStatus>{0}, {1}</RimWorldAccess.Quests.List.NameWithStatus>
+  <RimWorldAccess.Quests.List.StarsOne>1 yıldız</RimWorldAccess.Quests.List.StarsOne>
+  <RimWorldAccess.Quests.List.StarsMany>{0} yıldız</RimWorldAccess.Quests.List.StarsMany>
+  <RimWorldAccess.Quests.List.CharitySuffix>, hayır görevi</RimWorldAccess.Quests.List.CharitySuffix>
+  <RimWorldAccess.Quests.List.ExpiresIn>{0} içinde sona eriyor</RimWorldAccess.Quests.List.ExpiresIn>
+  <RimWorldAccess.Quests.List.AcceptedAgo>{0} önce kabul edildi</RimWorldAccess.Quests.List.AcceptedAgo>
+  <RimWorldAccess.Quests.List.AgoOnly>{0} önce</RimWorldAccess.Quests.List.AgoOnly>
+  <RimWorldAccess.Quests.List.RewardsSummary>Ödüller: {0}</RimWorldAccess.Quests.List.RewardsSummary>
+
+  <!-- =================================================================
+       Detail-view content lines (BuildDetailContentLines). These take
+       the same data as the list-view phrases but use a longer "label:"
+       layout because each line stands on its own.
+       DifficultyOne/Many: {0} = star count (Many only); CharitySuffix
+       is appended in the same fashion as the list view.
+       ExpiresIn / AcceptedAgo: {0} = ToStringTicksToPeriod output.
+       Status: {0} = outcome status word (Completed/Failed/Expired).
+       Finished: {0} = ticks-since-cleanup formatted period. -->
+  <RimWorldAccess.Quests.Detail.HeaderStatus>Görev: {0} ({1})</RimWorldAccess.Quests.Detail.HeaderStatus>
+  <RimWorldAccess.Quests.Detail.DifficultyOne>Zorluk: 1 yıldız</RimWorldAccess.Quests.Detail.DifficultyOne>
+  <RimWorldAccess.Quests.Detail.DifficultyMany>Zorluk: {0} yıldız</RimWorldAccess.Quests.Detail.DifficultyMany>
+  <RimWorldAccess.Quests.Detail.CharitySuffix> (Hayır görevi)</RimWorldAccess.Quests.Detail.CharitySuffix>
+  <RimWorldAccess.Quests.Detail.ExpiresIn>Sona eriyor: {0}</RimWorldAccess.Quests.Detail.ExpiresIn>
+  <RimWorldAccess.Quests.Detail.AcceptedAgo>Kabul edildi: {0} önce</RimWorldAccess.Quests.Detail.AcceptedAgo>
+  <RimWorldAccess.Quests.Detail.Status>Durum: {0}</RimWorldAccess.Quests.Detail.Status>
+  <RimWorldAccess.Quests.Detail.Finished>Sonuçlandı: {0} önce</RimWorldAccess.Quests.Detail.Finished>
+  <!-- "Choose item to inspect" lives in Common.xml as
+       RimWorldAccess.InfoCard.ChooseItemToInspect. -->
+
+
+  <!-- =================================================================
+       Detail-view button labels (PopulateQuestButtons).
+       AcceptChoice: {0} = 1-based choice index, {1} = reward description.
+       AcceptWithRewards: {0} = reward description.
+       JumpToTarget: {0} = target label (CameraJumper.CanJump returned a
+       valid label); JumpToLocation has no label and falls back. -->
+  <RimWorldAccess.Quests.Button.Accept>Kabul et</RimWorldAccess.Quests.Button.Accept>
+  <RimWorldAccess.Quests.Button.AcceptWithRewards>Kabul et: {0}</RimWorldAccess.Quests.Button.AcceptWithRewards>
+  <RimWorldAccess.Quests.Button.AcceptChoice>Kabul et: Seçenek {0}, {1}</RimWorldAccess.Quests.Button.AcceptChoice>
+  <RimWorldAccess.Quests.Button.Dismiss>Yok say</RimWorldAccess.Quests.Button.Dismiss>
+  <RimWorldAccess.Quests.Button.Resume>Geri yükle</RimWorldAccess.Quests.Button.Resume>
+  <RimWorldAccess.Quests.Button.Delete>Sil</RimWorldAccess.Quests.Button.Delete>
+  <RimWorldAccess.Quests.Button.JumpToLocation>Konuma git</RimWorldAccess.Quests.Button.JumpToLocation>
+  <RimWorldAccess.Quests.Button.JumpToTarget>Git: {0}</RimWorldAccess.Quests.Button.JumpToTarget>
+
+  <!-- =================================================================
+       Action result announcements after the user accepts/dismisses/
+       deletes a quest. {0} = quest name (StripTags applied).
+       AcceptedWithRewards: {0} = reward description string.
+       AcceptedWithPawn: {0} = colonist's LabelShort.
+       CannotAcceptReason: {0} = QuestUtility.CanAcceptQuest's report.
+       NotAvailableToAccept: spoken when the quest moved out of
+       NotYetAccepted between the user's keypress and our handler. -->
+  <RimWorldAccess.Quests.Action.CannotAccept>Görev kabul edilemez</RimWorldAccess.Quests.Action.CannotAccept>
+  <RimWorldAccess.Quests.Action.NotAvailableToAccept>Görev artık kabul edilebilir değil</RimWorldAccess.Quests.Action.NotAvailableToAccept>
+  <RimWorldAccess.Quests.Action.CannotAcceptReason>Kabul edilemez: {0}</RimWorldAccess.Quests.Action.CannotAcceptReason>
+  <RimWorldAccess.Quests.Action.AcceptedQuest>Görev kabul edildi: {0}</RimWorldAccess.Quests.Action.AcceptedQuest>
+  <RimWorldAccess.Quests.Action.AcceptedWithRewards>{0} ile görev kabul edildi</RimWorldAccess.Quests.Action.AcceptedWithRewards>
+  <RimWorldAccess.Quests.Action.AcceptedWithPawn>{0} ile görev kabul edildi</RimWorldAccess.Quests.Action.AcceptedWithPawn>
+  <RimWorldAccess.Quests.Action.DismissedQuest>Görev yok sayıldı: {0}</RimWorldAccess.Quests.Action.DismissedQuest>
+  <RimWorldAccess.Quests.Action.ResumedQuest>Görev geri yüklendi: {0}</RimWorldAccess.Quests.Action.ResumedQuest>
+  <RimWorldAccess.Quests.Action.DeletedQuest>Görev silindi: {0}</RimWorldAccess.Quests.Action.DeletedQuest>
+  <RimWorldAccess.Quests.Action.NoEligibleColonists>Bu görevi kabul edebilecek uygun kolonici yok</RimWorldAccess.Quests.Action.NoEligibleColonists>
+  <RimWorldAccess.Quests.Action.SelectColonist>Bu görevi kabul etmek için bir kolonici seç</RimWorldAccess.Quests.Action.SelectColonist>
+  <!-- Eligible-colonist label suffix when the pawn holds royalty:
+       {0} = pawn LabelShort, {1} = title label. -->
+  <RimWorldAccess.Quests.Action.PawnWithTitle>{0} ({1})</RimWorldAccess.Quests.Action.PawnWithTitle>
+
+  <!-- =================================================================
+       Reward-choice float menu (multi-choice quests). The float menu
+       is opened by Alt+A on a quest with QuestPart_Choice and 2+
+       choices; Choose announces the prompt before WindowlessFloatMenu
+       opens. NoItemsToInspect is spoken when Alt+I is pressed but the
+       chosen reward has no inspectable Things or Factions. -->
+  <RimWorldAccess.Quests.RewardChoice.Prompt>Bir ödül seç</RimWorldAccess.Quests.RewardChoice.Prompt>
+  <RimWorldAccess.Quests.RewardChoice.NoItemsToInspect>İncelenecek öğe yok</RimWorldAccess.Quests.RewardChoice.NoItemsToInspect>
+  <RimWorldAccess.Quests.RewardChoice.BackToList>Görev listesine dön</RimWorldAccess.Quests.RewardChoice.BackToList>
+
+  <!-- Consolidated reward item entry when multiple stacks share a label
+       (e.g. 5 stacks of plasteel become one entry): {0} = stack count, {1} = item name. -->
+  <RimWorldAccess.Quests.RewardChoice.ItemWithCount>{0}x {1}</RimWorldAccess.Quests.RewardChoice.ItemWithCount>
+
+  <!-- =================================================================
+       Reward preferences panel (Tab in the quest list). Toggles
+       per-faction acceptance of royal-favor and goodwill rewards.
+       Status words (checked / unchecked) compose into the per-faction
+       label below; relation phrasing is also a key so translators can
+       reorder "currently {amount}, {relation}". -->
+  <RimWorldAccess.Quests.Pref.Title>Ödül tercihleri</RimWorldAccess.Quests.Pref.Title>
+  <RimWorldAccess.Quests.Pref.Checked>işaretli</RimWorldAccess.Quests.Pref.Checked>
+  <RimWorldAccess.Quests.Pref.Unchecked>işaretsiz</RimWorldAccess.Quests.Pref.Unchecked>
+  <!-- Royal-favor row: {0} = faction.Name, {1} = royal favor label
+       (CapitalizeFirst), {2} = checked/unchecked. -->
+  <RimWorldAccess.Quests.Pref.RoyalFavorRow>{0}: {1} kabulü, {2}</RimWorldAccess.Quests.Pref.RoyalFavorRow>
+  <!-- Goodwill row: {0} = faction.Name, {1} = checked/unchecked,
+       {2} = relation phrase (built from RelationPhrase below). -->
+  <RimWorldAccess.Quests.Pref.GoodwillRow>{0}: iyi niyet kabulü, {1}, {2}</RimWorldAccess.Quests.Pref.GoodwillRow>
+  <!-- Relation phrase: {0} = signed goodwill amount, {1} = relation
+       kind label cap (Ally/Neutral/Hostile/etc., from vanilla). -->
+  <RimWorldAccess.Quests.Pref.RelationPhrase>şu anda {0}, {1}</RimWorldAccess.Quests.Pref.RelationPhrase>
+  <!-- Pref-row position suffix: {0} = built row label,
+       {1} = position string from MenuHelper.FormatPosition. -->
+
+  <!-- =================================================================
+       Reward extraction (QuestRewardHelper). Builds the reward detail
+       lines and the compact reward description used in list views and
+       button labels. The "indent" prefix ("  ") is hard-coded in the
+       helper so each reward item line is visually grouped under its
+       header line; the indent is preserved in keys here. -->
+  <RimWorldAccess.Quests.Reward.NoRewards>Ödül yok</RimWorldAccess.Quests.Reward.NoRewards>
+  <RimWorldAccess.Quests.Reward.RewardsHeader>Ödüller:</RimWorldAccess.Quests.Reward.RewardsHeader>
+  <RimWorldAccess.Quests.Reward.ChoicesHeader>Ödül seçenekleri (kabul etmek için birini seç):</RimWorldAccess.Quests.Reward.ChoicesHeader>
+  <!-- {0} = 1-based choice index. -->
+  <RimWorldAccess.Quests.Reward.ChoiceLabel>Seçenek {0}:</RimWorldAccess.Quests.Reward.ChoiceLabel>
+
+  <!-- Item formatting for both the detail-view lines and the compact
+       summary. ItemWithCount: {0} = count, {1} = capitalized label;
+       ItemSingle: {0} = capitalized label. -->
+  <RimWorldAccess.Quests.Reward.ItemWithCount>{0}x {1}</RimWorldAccess.Quests.Reward.ItemWithCount>
+  <RimWorldAccess.Quests.Reward.ItemSingle>{0}</RimWorldAccess.Quests.Reward.ItemSingle>
+  <RimWorldAccess.Quests.Reward.ItemsFallback>Eşyalar</RimWorldAccess.Quests.Reward.ItemsFallback>
+  <RimWorldAccess.Quests.Reward.ItemFallback>Eşya</RimWorldAccess.Quests.Reward.ItemFallback>
+
+  <!-- Goodwill / royal-favor reward composition. {0} = signed amount
+       (ToStringWithSign), {1} = faction.Name, {2} = favor label
+       (royal favor only; CapitalizeFirst applied at callsite). -->
+  <RimWorldAccess.Quests.Reward.Goodwill>{1} ile {0} iyi niyet</RimWorldAccess.Quests.Reward.Goodwill>
+  <RimWorldAccess.Quests.Reward.RoyalFavor>{2} ile {0} {1}</RimWorldAccess.Quests.Reward.RoyalFavor>
+
+  <!-- Pawn reward variants. PawnHidden has no name (details are
+       hidden); PawnWithName: {0} = pawn LabelShort. -->
+  <RimWorldAccess.Quests.Reward.PawnHidden>Kişi (ayrıntılar gizli)</RimWorldAccess.Quests.Reward.PawnHidden>
+  <RimWorldAccess.Quests.Reward.PawnWithName>Kişi: {0}</RimWorldAccess.Quests.Reward.PawnWithName>
+  <RimWorldAccess.Quests.Reward.PawnGeneric>Kişi</RimWorldAccess.Quests.Reward.PawnGeneric>
+
+  <!-- Total market value line, appended once per reward set if the
+       sum is positive. {0} = ToStringMoney("F0") result. -->
+  <RimWorldAccess.Quests.Reward.TotalValue>Toplam değer: {0}</RimWorldAccess.Quests.Reward.TotalValue>
+
+  <!-- Indent applied to detail-view reward item lines. Stays as a
+       key so non-English layouts can use a different prefix or none. -->
+  <RimWorldAccess.Quests.Reward.LineIndent>  </RimWorldAccess.Quests.Reward.LineIndent>
+
+  <!-- =================================================================
+       Notification menu (NotificationMenuState). List view shows all
+       active messages, letters, and alerts; detail view shows the full
+       letter content with extracted action buttons.
+       ================================================================= -->
+  <RimWorldAccess.Notifications.Menu.None>Bildirim yok</RimWorldAccess.Notifications.Menu.None>
+  <RimWorldAccess.Notifications.Menu.Closed>Bildirim menüsü kapatıldı</RimWorldAccess.Notifications.Menu.Closed>
+  <!-- No vanilla MainButtonDef backs this overlay (it isn't a real tab), so
+       there is no existing translated label to borrow for the ScreenScope
+       content region name (NotificationScope.ContentRegionName). -->
+  <RimWorldAccess.Notifications.Menu.RegionName>Bildirimler</RimWorldAccess.Notifications.Menu.RegionName>
+  <RimWorldAccess.Notifications.Menu.TargetNotValid>Geçersiz hedef konum</RimWorldAccess.Notifications.Menu.TargetNotValid>
+  <RimWorldAccess.Notifications.Menu.FailedToActivateButton>Düğme etkinleştirilemedi</RimWorldAccess.Notifications.Menu.FailedToActivateButton>
+  <RimWorldAccess.Notifications.Menu.OnlyLettersDeletable>Yalnızca mektuplar silinebilir</RimWorldAccess.Notifications.Menu.OnlyLettersDeletable>
+  <RimWorldAccess.Notifications.Menu.CannotDeleteLetter>Bu mektup silinemez</RimWorldAccess.Notifications.Menu.CannotDeleteLetter>
+
+  <!-- Type labels for notifications. Used both as the prefix of the
+       list-view announcement ("Letter: <label>") and inside the
+       detail-view header. -->
+  <RimWorldAccess.Notifications.Type.Message>Mesaj</RimWorldAccess.Notifications.Type.Message>
+  <RimWorldAccess.Notifications.Type.Letter>Mektup</RimWorldAccess.Notifications.Type.Letter>
+  <RimWorldAccess.Notifications.Type.Alert>Uyarı</RimWorldAccess.Notifications.Type.Alert>
+  <RimWorldAccess.Notifications.Type.Unknown>Bilinmeyen</RimWorldAccess.Notifications.Type.Unknown>
+
+  <!-- List-view announcement composition. {0} = type label, {1} =
+       notification label, {2} = position string. -->
+  <RimWorldAccess.Notifications.List.LineWithPosition>{0}: {1}. {2}</RimWorldAccess.Notifications.List.LineWithPosition>
+  <RimWorldAccess.Notifications.List.HeaderInDetail>{0}: {1}</RimWorldAccess.Notifications.List.HeaderInDetail>
+
+  <!-- Detail navigation markers (parallel to Quests.Detail.Start /
+       EndOfDetails - separate keys so word order can vary). -->
+  <RimWorldAccess.Notifications.Detail.StartOfLetter>Mektup başlangıcı</RimWorldAccess.Notifications.Detail.StartOfLetter>
+  <RimWorldAccess.Notifications.Detail.EndOfLetter>Mektup sonu</RimWorldAccess.Notifications.Detail.EndOfLetter>
+
+  <!-- Action button labels extracted from letters and alerts. -->
+  <RimWorldAccess.Notifications.Button.OpenGrowthMoment>Büyüme anını aç</RimWorldAccess.Notifications.Button.OpenGrowthMoment>
+  <RimWorldAccess.Notifications.Button.ViewChoices>Seçenekleri görüntüle</RimWorldAccess.Notifications.Button.ViewChoices>
+  <RimWorldAccess.Notifications.Button.Activate>Etkinleştir</RimWorldAccess.Notifications.Button.Activate>
+  <!-- Single-target jump button: {0} = target description. -->
+  <RimWorldAccess.Notifications.Button.JumpTo>Git: {0}</RimWorldAccess.Notifications.Button.JumpTo>
+  <!-- Multi-target jump button: {0} = target description, {1} = 1-based
+       index, {2} = total target count (capped at 5). -->
+  <RimWorldAccess.Notifications.Button.JumpToWithIndex>Git: {0} ({1} / {2})</RimWorldAccess.Notifications.Button.JumpToWithIndex>
+
+  <!-- Action feedback strings spoken after a button completes. {0} =
+       button label echoed back so the user hears confirmation. -->
+  <RimWorldAccess.Notifications.Action.AlertActivated>Uyarı etkinleştirildi</RimWorldAccess.Notifications.Action.AlertActivated>
+  <RimWorldAccess.Notifications.Action.ActivatedNoneRemaining>{0} etkinleştirildi. Bildirim kalmadı.</RimWorldAccess.Notifications.Action.ActivatedNoneRemaining>
+  <RimWorldAccess.Notifications.Action.ActivatedBackToList>{0} etkinleştirildi. Listeye dön.</RimWorldAccess.Notifications.Action.ActivatedBackToList>
+  <RimWorldAccess.Notifications.Action.OpeningInfoCard>{0} için bilgi kartı açılıyor</RimWorldAccess.Notifications.Action.OpeningInfoCard>
+  <!-- Delete-letter feedback. {0} = deleted letter label.
+       DeletedNoneRemaining is spoken when the deletion empties the
+       list; DeletedNextItem composes the next item announcement.
+       {1} = next type label, {2} = next item label, {3} = position. -->
+  <RimWorldAccess.Notifications.Action.DeletedNoneRemaining>{0} silindi. Bildirim kalmadı.</RimWorldAccess.Notifications.Action.DeletedNoneRemaining>
+  <RimWorldAccess.Notifications.Action.DeletedNextItem>{0} silindi. {1}: {2}. {3}</RimWorldAccess.Notifications.Action.DeletedNextItem>
+
+  <!-- Target descriptions used by Notifications.Button.JumpTo and
+       MapNavigationState.SpeakJumpedTo. Position: {0} = cell.x,
+       {1} = cell.z. -->
+  <RimWorldAccess.Notifications.Target.Generic>hedef konum</RimWorldAccess.Notifications.Target.Generic>
+  <RimWorldAccess.Notifications.Target.LocationFallback>konum</RimWorldAccess.Notifications.Target.LocationFallback>
+  <RimWorldAccess.Notifications.Target.Unknown>bilinmeyen konum</RimWorldAccess.Notifications.Target.Unknown>
+  <RimWorldAccess.Notifications.Target.WorldLocation>dünya konumu</RimWorldAccess.Notifications.Target.WorldLocation>
+  <RimWorldAccess.Notifications.Target.Thing>nesne</RimWorldAccess.Notifications.Target.Thing>
+  <RimWorldAccess.Notifications.Target.Position>konum {0}, {1}</RimWorldAccess.Notifications.Target.Position>
+
+  <!-- Localization guardrail (D.8) sweep — previously hardcoded English. -->
+</LanguageData>

@@ -6,511 +6,16 @@ using Verse;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Represents a contiguous region of terrain tiles (e.g., a patch of rich soil).
-    /// Used for adjacency-based grouping in the scanner.
-    /// </summary>
-    public class TerrainRegion
-    {
-        public IntVec3 CenterPosition { get; set; }
-        public int TileCount { get; set; }
-        public string Dimensions { get; set; } // "4x3" for rectangular shapes, null otherwise
-        public List<IntVec3> AllPositions { get; set; }
-        public float Distance { get; set; }
-        public int? TotalQuantity { get; set; }  // For deep ore deposits
-
-        /// <summary>
-        /// Gets a human-readable size description ("4x3" or "12 tiles").
-        /// </summary>
-        public string SizeDescription => Dimensions ?? (string)"RimWorldAccess.Map.Scanner.Region.SizeTiles".Translate(TileCount);
-
-        public TerrainRegion(List<IntVec3> positions, IntVec3 cursorPosition)
-        {
-            AllPositions = positions;
-            TileCount = positions.Count;
-            CenterPosition = CalculateCenter(positions);
-            Dimensions = CalculateDimensions(positions);
-            Distance = (CenterPosition - cursorPosition).LengthHorizontal;
-        }
-
-        /// <summary>
-        /// Constructor for deep ore regions that tracks quantity per cell.
-        /// </summary>
-        public TerrainRegion(List<(IntVec3 position, int count)> positionsWithCounts, IntVec3 cursorPosition)
-        {
-            AllPositions = positionsWithCounts.Select(p => p.position).ToList();
-            TileCount = AllPositions.Count;
-            TotalQuantity = positionsWithCounts.Sum(p => p.count);
-            CenterPosition = CalculateCenter(AllPositions);
-            Dimensions = CalculateDimensions(AllPositions);
-            Distance = (CenterPosition - cursorPosition).LengthHorizontal;
-        }
-
-        /// <summary>
-        /// Calculates the center of a region, preferring a position that's actually in the region.
-        /// </summary>
-        private static IntVec3 CalculateCenter(List<IntVec3> positions)
-        {
-            if (positions.Count == 0)
-                return IntVec3.Invalid;
-
-            // Calculate centroid with proper rounding (not truncation)
-            int sumX = 0, sumZ = 0;
-            foreach (var pos in positions)
-            {
-                sumX += pos.x;
-                sumZ += pos.z;
-            }
-            // Use Math.Round to avoid systematic bias from integer truncation
-            int avgX = (int)Math.Round((double)sumX / positions.Count);
-            int avgZ = (int)Math.Round((double)sumZ / positions.Count);
-            var centroid = new IntVec3(avgX, 0, avgZ);
-
-            // If centroid is in region, use it
-            if (positions.Contains(centroid))
-                return centroid;
-
-            // Otherwise find the closest position to the centroid
-            IntVec3 closest = positions[0];
-            float closestDist = float.MaxValue;
-            foreach (var pos in positions)
-            {
-                float dist = (pos - centroid).LengthHorizontal;
-                if (dist < closestDist)
-                {
-                    closestDist = dist;
-                    closest = pos;
-                }
-            }
-            return closest;
-        }
-
-        /// <summary>
-        /// Calculates dimensions if the region is rectangular ("4x3"), otherwise returns null.
-        /// </summary>
-        private static string CalculateDimensions(List<IntVec3> positions)
-        {
-            if (positions.Count == 0)
-                return null;
-
-            // Calculate bounding box
-            int minX = int.MaxValue, maxX = int.MinValue;
-            int minZ = int.MaxValue, maxZ = int.MinValue;
-
-            foreach (var pos in positions)
-            {
-                if (pos.x < minX) minX = pos.x;
-                if (pos.x > maxX) maxX = pos.x;
-                if (pos.z < minZ) minZ = pos.z;
-                if (pos.z > maxZ) maxZ = pos.z;
-            }
-
-            int width = maxX - minX + 1;
-            int height = maxZ - minZ + 1;
-
-            // If tile count equals area, it's rectangular
-            if (positions.Count == width * height)
-            {
-                // Return dimensions with larger dimension first for consistency
-                if (width >= height)
-                    return $"{width}x{height}";
-                else
-                    return $"{height}x{width}";
-            }
-
-            return null; // Irregular shape
-        }
-    }
-
-    public class ScannerItem
-    {
-        public Thing Thing { get; set; }
-        public List<Thing> BulkThings { get; set; } // For grouped items of the same type
-        public List<IntVec3> BulkTerrainPositions { get; set; } // For grouped terrain tiles
-        public Designation Designation { get; set; } // For designation items
-        public List<Designation> BulkDesignations { get; set; } // For grouped designations of the same type
-        public List<TerrainRegion> TerrainRegions { get; set; } // For adjacency-grouped terrain regions
-        public float Distance { get; set; }
-        public string Label { get; set; }
-        public IntVec3 Position { get; set; }
-        public bool IsTerrain { get; set; } // True if this represents terrain instead of a Thing
-        public bool IsDesignation => Designation != null; // True if this represents a designation
-        public Zone Zone { get; set; } // For zone items
-        public bool IsZone => Zone != null; // True if this represents a zone
-        public Room Room { get; set; } // For room items
-        public bool IsRoom => Room != null; // True if this represents a room
-        public Plan Plan { get; set; } // For plan-marker items
-        public bool IsPlan => Plan != null; // True if this represents a plan
-
-        // Holding platform reference for captured Anomaly entities. When set, Thing is the
-        // held pawn (not spawned on the map) and Position is the platform's position so
-        // navigation/jump behavior works.
-        public Building_HoldingPlatform HoldingPlatform { get; set; }
-        public bool IsCapturedEntity => HoldingPlatform != null;
-        public bool HasTerrainRegions => TerrainRegions != null && TerrainRegions.Count > 0;
-        public int RegionCount => TerrainRegions?.Count ?? 0;
-        public int TotalTileCount => TerrainRegions?.Sum(r => r.TileCount) ?? BulkTerrainPositions?.Count ?? 1;
-        public int BulkCount => BulkThings?.Count ?? (BulkTerrainPositions?.Count ?? (BulkDesignations?.Count ?? (TerrainRegions?.Count ?? 1)));
-        public bool IsBulkGroup => (BulkThings != null && BulkThings.Count > 1) ||
-                                   (BulkTerrainPositions != null && BulkTerrainPositions.Count > 1) ||
-                                   (BulkDesignations != null && BulkDesignations.Count > 1) ||
-                                   (TerrainRegions != null && TerrainRegions.Count > 1);
-
-        // Deep ore deposit properties
-        public ThingDef DeepOreDef { get; set; }
-        public int TotalQuantityAcrossRegions => TerrainRegions?
-            .Where(r => r.TotalQuantity.HasValue)
-            .Sum(r => r.TotalQuantity.Value) ?? 0;
-        public bool HasQuantityInfo => TerrainRegions?.Any(r => r.TotalQuantity.HasValue) ?? false;
-
-        // Set to true by RefreshLabel when the underlying Thing has been destroyed or despawned.
-        // Callers should check this after RefreshLabel() and skip/remove stale items.
-        public bool IsStale { get; private set; }
-
-        // Live view over BulkThings that filters out destroyed/despawned entries.
-        // Returns an empty enumerable when BulkThings is null.
-        public IEnumerable<Thing> LiveBulkThings =>
-            BulkThings?.Where(t => t != null && !t.Destroyed && t.Spawned) ?? Enumerable.Empty<Thing>();
-
-        public ScannerItem(Thing thing, IntVec3 cursorPosition)
-        {
-            Thing = thing;
-            Position = thing.Position;
-            Distance = (thing.Position - cursorPosition).LengthHorizontal;
-            IsTerrain = false;
-            Label = ScannerLabelBuilder.BuildThingLabel(thing);
-        }
-
-        // Constructor for bulk groups
-        public ScannerItem(List<Thing> things, IntVec3 cursorPosition)
-        {
-            if (things == null || things.Count == 0)
-                throw new ArgumentException("Bulk group must contain at least one thing");
-
-            BulkThings = things;
-            Thing = things[0]; // Primary thing (closest)
-            Position = Thing.Position;
-            Distance = (Thing.Position - cursorPosition).LengthHorizontal;
-            IsTerrain = false;
-            Label = ScannerLabelBuilder.BuildThingLabel(Thing);
-        }
-
-        // Constructor for terrain tiles (no actual Thing object)
-        public ScannerItem(IntVec3 cell, string label, IntVec3 cursorPosition)
-        {
-            Thing = null;
-            Position = cell;
-            Distance = (cell - cursorPosition).LengthHorizontal;
-            Label = label;
-            IsTerrain = true;
-        }
-
-        // Constructor for grouped terrain tiles (legacy - non-adjacent grouping)
-        public ScannerItem(List<IntVec3> positions, string label, IntVec3 cursorPosition)
-        {
-            if (positions == null || positions.Count == 0)
-                throw new ArgumentException("Terrain group must contain at least one position");
-
-            Thing = null;
-            BulkTerrainPositions = positions;
-            Position = positions[0]; // Primary position (closest)
-            Distance = (positions[0] - cursorPosition).LengthHorizontal;
-            Label = label;
-            IsTerrain = true;
-        }
-
-        // Constructor for adjacency-grouped terrain regions (e.g., separate patches of rich soil)
-        public ScannerItem(List<TerrainRegion> regions, string label, IntVec3 cursorPosition)
-        {
-            if (regions == null || regions.Count == 0)
-                throw new ArgumentException("Terrain regions list must contain at least one region");
-
-            Thing = null;
-            TerrainRegions = regions;
-            // Position is the center of the closest region
-            Position = regions[0].CenterPosition;
-            Distance = regions[0].Distance;
-            Label = label;
-            IsTerrain = true;
-        }
-
-        // Constructor for adjacency-grouped mineable regions (ore/rock with Thing reference)
-        public ScannerItem(List<TerrainRegion> regions, string label, IntVec3 cursorPosition, Thing primaryThing)
-        {
-            if (regions == null || regions.Count == 0)
-                throw new ArgumentException("Mineable regions list must contain at least one region");
-
-            Thing = primaryThing; // Keep reference for def info
-            TerrainRegions = regions;
-            // Position is the center of the closest region
-            Position = regions[0].CenterPosition;
-            Distance = regions[0].Distance;
-            Label = label;
-            IsTerrain = false; // Mineables are Things, not terrain
-        }
-
-        // Constructor for deep ore deposit regions with quantity tracking
-        public ScannerItem(List<TerrainRegion> regions, ThingDef oreDef, IntVec3 cursorPosition)
-        {
-            if (regions == null || regions.Count == 0)
-                throw new ArgumentException("Deep ore regions list must contain at least one region");
-
-            Thing = null;
-            DeepOreDef = oreDef;
-            TerrainRegions = regions;
-            Position = regions[0].CenterPosition;
-            Distance = regions[0].Distance;
-            Label = "RimWorldAccess.Map.Scanner.DeepOre.Deposit".Translate(oreDef.label);
-            IsTerrain = true; // Treat as terrain-like for navigation
-        }
-
-        // Constructor for captured Anomaly entities held on a holding platform. The held pawn
-        // is not spawned on the map, so we take the platform's position for navigation while
-        // keeping the pawn as Thing for label/announcement purposes.
-        public ScannerItem(Pawn heldPawn, Building_HoldingPlatform platform, IntVec3 cursorPosition)
-        {
-            Thing = heldPawn;
-            HoldingPlatform = platform;
-            Position = platform.Position;
-            Distance = (Position - cursorPosition).LengthHorizontal;
-            IsTerrain = false;
-            Label = ScannerLabelBuilder.BuildThingLabel(heldPawn);
-        }
-
-        // Constructor for designation items
-        public ScannerItem(Designation designation, IntVec3 cursorPosition)
-        {
-            Designation = designation;
-            Position = designation.target.Cell;
-            Distance = (Position - cursorPosition).LengthHorizontal;
-            IsTerrain = false;
-            Thing = designation.target.HasThing ? designation.target.Thing : null;
-            Label = ScannerLabelBuilder.BuildDesignationLabel(designation, Find.CurrentMap);
-        }
-
-        // Constructor for grouped designations (same type)
-        public ScannerItem(List<Designation> designations, IntVec3 cursorPosition)
-        {
-            if (designations == null || designations.Count == 0)
-                throw new ArgumentException("Designation group must contain at least one designation");
-
-            BulkDesignations = designations;
-            Designation = designations[0]; // Primary designation (closest)
-            Position = Designation.target.Cell;
-            Distance = (Position - cursorPosition).LengthHorizontal;
-            IsTerrain = false;
-            Thing = Designation.target.HasThing ? Designation.target.Thing : null;
-
-            // Get localized label from the Designator
-            Label = ScannerHelper.GetLocalizedDesignationLabel(Designation.def);
-        }
-
-        // Constructor for zone items
-        public ScannerItem(Zone zone, IntVec3 cursorPosition)
-        {
-            Zone = zone;
-            IsTerrain = false;
-
-            // Calculate center position of zone, ensuring it's within the zone for irregular shapes
-            if (zone.cells != null && zone.cells.Count > 0)
-            {
-                int sumX = 0, sumZ = 0;
-                foreach (var c in zone.cells) { sumX += c.x; sumZ += c.z; }
-                int avgX = (int)Math.Round((double)sumX / zone.cells.Count);
-                int avgZ = (int)Math.Round((double)sumZ / zone.cells.Count);
-                var centerCandidate = new IntVec3(avgX, 0, avgZ);
-                if (zone.cells.Contains(centerCandidate))
-                {
-                    Position = centerCandidate;
-                }
-                else
-                {
-                    IntVec3 closest = zone.cells[0];
-                    float closestDist = float.MaxValue;
-                    foreach (var c in zone.cells)
-                    {
-                        float dist = (c - centerCandidate).LengthHorizontal;
-                        if (dist < closestDist) { closestDist = dist; closest = c; }
-                    }
-                    Position = closest;
-                }
-            }
-            else
-            {
-                Position = zone.Position; // Fallback to first cell
-            }
-
-            Distance = (Position - cursorPosition).LengthHorizontal;
-            Label = ScannerLabelBuilder.BuildZoneLabel(zone);
-        }
-
-        // Constructor for room items
-        public ScannerItem(Room room, IntVec3 cursorPosition)
-        {
-            Room = room;
-            IsTerrain = false;
-
-            // Calculate center position of room, ensuring it's within the room for irregular shapes
-            var cells = room.Cells.ToList();
-            if (cells.Count > 0)
-            {
-                int sumX = 0, sumZ = 0;
-                foreach (var c in cells) { sumX += c.x; sumZ += c.z; }
-                int avgX = (int)Math.Round((double)sumX / cells.Count);
-                int avgZ = (int)Math.Round((double)sumZ / cells.Count);
-                var centerCandidate = new IntVec3(avgX, 0, avgZ);
-                if (cells.Contains(centerCandidate))
-                {
-                    Position = centerCandidate;
-                }
-                else
-                {
-                    IntVec3 closest = cells[0];
-                    float closestDist = float.MaxValue;
-                    foreach (var c in cells)
-                    {
-                        float dist = (c - centerCandidate).LengthHorizontal;
-                        if (dist < closestDist) { closestDist = dist; closest = c; }
-                    }
-                    Position = closest;
-                }
-            }
-            else
-            {
-                Position = IntVec3.Zero;
-            }
-
-            Distance = (Position - cursorPosition).LengthHorizontal;
-            Label = ScannerLabelBuilder.BuildRoomLabel(room);
-        }
-
-        // Constructor for plan-marker items. Each Plan is already a single contiguous, single-color
-        // region (the game splits non-contiguous pieces into separate Plan objects on edit), so we
-        // wrap its cells in one TerrainRegion. That lets a plan ride the same Home edge/center clump
-        // navigation and "NxM / N tiles" announcements as natural terrain patches.
-        public ScannerItem(Plan plan, IntVec3 cursorPosition)
-        {
-            Plan = plan;
-            IsTerrain = false;
-            var region = new TerrainRegion(plan.Cells.ToList(), cursorPosition);
-            TerrainRegions = new List<TerrainRegion> { region };
-            Position = region.CenterPosition;
-            Distance = region.Distance;
-            Label = ScannerLabelBuilder.BuildPlanLabel(plan);
-        }
-
-        /// <summary>
-        /// Re-derives the label from the live game object.
-        /// Call before announcing to get fresh labels without a full scanner refresh.
-        /// Sets IsStale = true if the underlying Thing has been destroyed or despawned.
-        /// </summary>
-        public void RefreshLabel()
-        {
-            IsStale = false;
-
-            if (IsCapturedEntity)
-            {
-                // Captured entity is not Spawned itself — its liveness is tied to the platform
-                // still existing on the map and still holding this same pawn.
-                if (HoldingPlatform == null || HoldingPlatform.Destroyed || !HoldingPlatform.Spawned
-                    || HoldingPlatform.HeldPawn != Thing)
-                {
-                    IsStale = true;
-                    return;
-                }
-
-                Label = ScannerLabelBuilder.BuildThingLabel(Thing);
-            }
-            else if (Thing != null)
-            {
-                if (Thing.Destroyed || !Thing.Spawned)
-                {
-                    IsStale = true;
-                    return;
-                }
-
-                Label = ScannerLabelBuilder.BuildThingLabel(Thing);
-            }
-            else if (Zone != null)
-            {
-                Label = ScannerLabelBuilder.BuildZoneLabel(Zone);
-            }
-            else if (Room != null)
-            {
-                Label = ScannerLabelBuilder.BuildRoomLabel(Room);
-            }
-            else if (Plan != null)
-            {
-                Label = ScannerLabelBuilder.BuildPlanLabel(Plan);
-            }
-            // Terrain and designations: labels derived from defs, don't change
-        }
-
-    }
-
-    public class ScannerSubcategory
-    {
-        public string Name { get; set; }
-        public List<ScannerItem> Items { get; set; }
-
-        public ScannerSubcategory(string name)
-        {
-            Name = name;
-            Items = new List<ScannerItem>();
-        }
-
-        public bool IsEmpty => Items == null || Items.Count == 0;
-    }
-
-    public class ScannerCategory
-    {
-        public string Name { get; set; }
-        public List<ScannerSubcategory> Subcategories { get; set; }
-
-        public ScannerCategory(string name)
-        {
-            Name = name;
-            Subcategories = new List<ScannerSubcategory>();
-        }
-
-        /// <summary>
-        /// Creates a ScannerCategory with an "All" subcategory pre-inserted at index 0.
-        /// Items added to any specialized subcategory should also be added to Subcategories[0]
-        /// (via the AddTo helper in ScannerHelper) so the "All" subcategory mirrors the whole category.
-        /// </summary>
-        public static ScannerCategory Create(string name)
-        {
-            var cat = new ScannerCategory(name);
-            cat.Subcategories.Add(new ScannerSubcategory($"{name}-All"));
-            return cat;
-        }
-
-        /// <summary>
-        /// The "All" subcategory (convention: Subcategories[0]). Returns null if the category was
-        /// built without Create() and has no All subcategory yet.
-        /// </summary>
-        public ScannerSubcategory AllSubcategory =>
-            Subcategories != null && Subcategories.Count > 0 ? Subcategories[0] : null;
-
-        public bool IsEmpty => Subcategories == null || Subcategories.All(sc => sc.IsEmpty);
-
-        public int TotalItemCount => AllSubcategory?.Items.Count ?? 0;
-    }
-
     public static class ScannerHelper
     {
-        // Shared label for fog-of-war items in the Unexplored category. Search excludes items
-        // with this label since every fog region carries the same name and would dominate
-        // results. Used by both CollectMapItems (when emitting fog items) and the search
-        // filter so they stay in sync. Returned as a localized property so comparisons in
-        // ScannerSearchState remain correct across all languages.
+        // Search excludes this label: every fog region carries it and would dominate results.
+        // Localized property so emission and the search filter compare equal in every language.
         public static string UnexploredAreaLabel => (string)"RimWorldAccess.Map.Scanner.UnexploredArea".Translate();
         public static string PollutedAreaLabel => (string)"RimWorldAccess.Map.Scanner.PollutedArea".Translate();
 
         /// <summary>
-        /// Adds a ScannerItem to both its specialized subcategory AND the category's "All"
-        /// subcategory (convention: Subcategories[0]). This is the standard pattern used by
-        /// CollectMapItems so the "All" subcategory mirrors every specialized subcategory.
+        /// Adds a ScannerItem to its specialized subcategory and to the category's "All"
+        /// subcategory (Subcategories[0]), which mirrors every specialized subcategory.
         /// </summary>
         private static void AddTo(ScannerCategory category, ScannerSubcategory specialized, ScannerItem item)
         {
@@ -518,67 +23,39 @@ namespace RimWorldAccess
             category.Subcategories[0].Items.Add(item);
         }
 
-        public static List<ScannerCategory> CollectMapItems(Map map, IntVec3 cursorPosition)
+        /// <summary>
+        /// Builds the scanner's category list from the live map.
+        ///
+        /// <paramref name="onlyCategory"/> restricts the build to ONE schema category: blocks that
+        /// cannot feed it are skipped and the return is that category alone, or an empty list when
+        /// it came back empty. "All" and "Uncategorized" are whole-map aggregates and must never be
+        /// passed here — send those down the full-build path.
+        /// </summary>
+        public static List<ScannerCategory> CollectMapItems(Map map, IntVec3 cursorPosition, string onlyCategory = null)
         {
-            // Track all things that get categorized
             var categorizedThings = new HashSet<Thing>();
 
-            // Build all scanner categories + subcategories from the declarative schema in
-            // ScannerCategorySchemas.All. Every category gets an "All" subcategory at index 0.
+            // Every schema category gets an "All" subcategory at index 0.
             var buckets = ScannerBuckets.BuildFromSchema();
 
-            // Extract named references for the specialized subcategories used during categorization.
-            // These are one-shot dictionary lookups; the per-item work below uses these local refs.
-            var pawnsCategory = buckets.Cat("Pawns");
-            var pawnsColonistsSubcat = buckets.Sub("Pawns-Colonists");
-            var pawnsPrisonersSubcat = buckets.Sub("Pawns-Prisoners");
-            var pawnsSlavesSubcat = buckets.Sub("Pawns-Slaves");
-            var pawnsGuestsSubcat = buckets.Sub("Pawns-Guests");
-            var pawnsHostileSubcat = buckets.Sub("Pawns-Hostile");
-            var pawnsPlayerMechSubcat = buckets.Sub("Pawns-Player Mechs");
-            var pawnsHostileMechSubcat = buckets.Sub("Pawns-Hostile Mechs");
+            // Categories the single pass over map things can feed.
+            bool wantThings = onlyCategory == null
+                || onlyCategory == "Pawns" || onlyCategory == "Entities"
+                || onlyCategory == "Tame" || onlyCategory == "Wild"
+                || onlyCategory == "Hazards" || onlyCategory == "Buildings"
+                || onlyCategory == "Trees" || onlyCategory == "Plants"
+                || onlyCategory == "Items" || onlyCategory == "Mineable"
+                || onlyCategory == "Orders";
+            bool wantCells = onlyCategory == null
+                || onlyCategory == "Terrain" || onlyCategory == "Roofs"
+                || onlyCategory == "Mineable" || onlyCategory == "Unexplored";
+            Func<string, bool> want = name => onlyCategory == null || onlyCategory == name;
 
+            // One-shot lookups for the cell/designation/zone/room/plan sweeps below. The per-thing
+            // dispatch loop resolves its own subcategories inside the Classify* helpers instead, so
+            // a new per-thing category needs no entry here.
             var entitiesCategory = buckets.Cat("Entities");
-            var entitiesHostileSubcat = buckets.Sub("Entities-Hostile");
             var entitiesCapturedSubcat = buckets.Sub("Entities-Captured");
-
-            var tameAnimalsCategory = buckets.Cat("Tame");
-            var tamePenSubcat = buckets.Sub("Tame-Pen");
-            var tameNonPenSubcat = buckets.Sub("Tame-NonPen");
-
-            var wildAnimalsCategory = buckets.Cat("Wild");
-            var wildHostileSubcat = buckets.Sub("Wild-Hostile");
-            var wildPassiveSubcat = buckets.Sub("Wild-Passive");
-
-            var hazardsCategory = buckets.Cat("Hazards");
-            var fireSubcat = buckets.Sub("Hazards-Fire");
-            var blightSubcat = buckets.Sub("Hazards-Blight");
-
-            var buildingsCategory = buckets.Cat("Buildings");
-            var structureSubcat = buckets.Sub("Buildings-Structure");
-            var productionSubcat = buckets.Sub("Buildings-Production");
-            var furnitureSubcat = buckets.Sub("Buildings-Furniture");
-            var powerSubcat = buckets.Sub("Buildings-Power");
-            var securitySubcat = buckets.Sub("Buildings-Security");
-            var miscBuildingsSubcat = buckets.Sub("Buildings-Misc");
-            var recreationSubcat = buckets.Sub("Buildings-Recreation");
-            var shipSubcat = buckets.Sub("Buildings-Ship");
-            var temperatureSubcat = buckets.Sub("Buildings-Temperature");
-            var travelingSubcat = buckets.Sub("Buildings-Traveling");
-
-            var treesCategory = buckets.Cat("Trees");
-            var harvestableTreesSubcat = buckets.Sub("Trees-Harvestable");
-            var nonHarvestableTreesSubcat = buckets.Sub("Trees-NonHarvestable");
-
-            var plantsCategory = buckets.Cat("Plants");
-            var harvestablePlantsSubcat = buckets.Sub("Plants-Harvestable");
-            var debrisSubcat = buckets.Sub("Plants-Debris");
-
-            var itemsCategory = buckets.Cat("Items");
-            var itemsStoredSubcat = buckets.Sub("Items-Stored");
-            var itemsFurnitureSubcat = buckets.Sub("Items-Furniture");
-            var itemsScatteredSubcat = buckets.Sub("Items-Scattered");
-            var itemsForbiddenSubcat = buckets.Sub("Items-Forbidden");
 
             var terrainCategory = buckets.Cat("Terrain");
             var terrainNaturalSubcat = buckets.Sub("Terrain-Natural");
@@ -592,7 +69,6 @@ namespace RimWorldAccess
             var mineableCategory = buckets.Cat("Mineable");
             var mineableRareSubcat = buckets.Sub("Mineable-Rare");
             var mineableStoneSubcat = buckets.Sub("Mineable-Stone");
-            var mineableChunksSubcat = buckets.Sub("Mineable-Chunks");
             var mineableScannedSubcat = buckets.Sub("Mineable-Scanned Ore");
 
             var ordersCategory = buckets.Cat("Orders");
@@ -618,687 +94,670 @@ namespace RimWorldAccess
             var roomsCategory = buckets.Cat("Rooms");
             var unexploredCategory = buckets.Cat("Unexplored");
 
-            // Uncategorized category — dict of per-def subcategories. The "All" subcategory
-            // at index 0 was inserted by BuildFromSchema.
+            // Uncategorized gets per-def subcategories built on demand below.
             var uncategorizedCategory = buckets.Cat("Uncategorized");
             var uncategorizedByDef = new Dictionary<string, ScannerSubcategory>();
 
-            // Collect all things from the map
-            var allThings = map.listerThings.AllThings;
-            var playerFaction = Faction.OfPlayer;
             var fogGrid = map.fogGrid;
 
-            foreach (var thing in allThings)
+            if (wantThings)
             {
-                if (!thing.Spawned || !thing.Position.IsValid)
-                    continue;
+                var allThings = map.listerThings.AllThings;
+                var playerFaction = Faction.OfPlayer;
 
-                // Skip items in fog of war (unseen tiles)
-                if (fogGrid.IsFogged(thing.Position))
-                    continue;
-
-                var item = new ScannerItem(thing, cursorPosition);
-
-                if (thing is Pawn pawn)
+                foreach (var thing in allThings)
                 {
-                    // IsHiddenFromPlayer exempts player-faction pawns, so invisibility psycasts
-                    // on colonists still surface in the scanner; only hostile stealth is filtered.
-                    if (pawn.IsHiddenFromPlayer())
+                    if (!thing.Spawned || !thing.Position.IsValid)
                         continue;
 
-                    // Anomaly entities are permanent enemies of all non-Insect factions, so any
-                    // loose entity on the map is hostile by definition.
-                    if (pawn.RaceProps.IsAnomalyEntity)
-                    {
-                        AddTo(entitiesCategory, entitiesHostileSubcat, item);
-                        categorizedThings.Add(thing);
-                    }
-                    // Categorize pawns by faction relationship (7-bucket scheme).
-                    else if (pawn.RaceProps.IsMechanoid)
-                    {
-                        if (pawn.Faction == playerFaction)
-                        {
-                            AddTo(pawnsCategory, pawnsPlayerMechSubcat, item);
-                        }
-                        else if (pawn.HostileTo(Faction.OfPlayer))
-                        {
-                            AddTo(pawnsCategory, pawnsHostileMechSubcat, item);
-                        }
-                        else
-                        {
-                            // Neutral mechs fold into Guests alongside other helpful neutrals.
-                            AddTo(pawnsCategory, pawnsGuestsSubcat, item);
-                        }
-                        categorizedThings.Add(thing);
-                    }
-                    else if (pawn.RaceProps.Humanlike)
-                    {
-                        // Dispatch by relationship role so raids don't get jumbled with friendly visitors.
-                        if (pawn.IsColonist)
-                            AddTo(pawnsCategory, pawnsColonistsSubcat, item);
-                        else if (pawn.IsPrisonerOfColony)
-                            AddTo(pawnsCategory, pawnsPrisonersSubcat, item);
-                        else if (pawn.IsSlaveOfColony)
-                            AddTo(pawnsCategory, pawnsSlavesSubcat, item);
-                        else if (pawn.HostileTo(Faction.OfPlayer))
-                            AddTo(pawnsCategory, pawnsHostileSubcat, item);
-                        else
-                            // Visitors, traders, quest lodgers, allied raid help, neutral factions.
-                            AddTo(pawnsCategory, pawnsGuestsSubcat, item);
-
-                        categorizedThings.Add(thing);
-                    }
-                    else if (pawn.RaceProps.Animal)
-                    {
-                        // Animals
-                        if (pawn.Faction == playerFaction)
-                        {
-                            // Tame animals - check if pen animal (roamer = needs to be managed by rope)
-                            if (pawn.Roamer)
-                            {
-                                AddTo(tameAnimalsCategory, tamePenSubcat, item);
-                                categorizedThings.Add(thing);
-                            }
-                            else
-                            {
-                                AddTo(tameAnimalsCategory, tameNonPenSubcat, item);
-                                categorizedThings.Add(thing);
-                            }
-                        }
-                        else
-                        {
-                            // Wild animals - check if hostile
-                            if (pawn.HostileTo(playerFaction))
-                            {
-                                AddTo(wildAnimalsCategory, wildHostileSubcat, item);
-                                categorizedThings.Add(thing);
-                            }
-                            else
-                            {
-                                AddTo(wildAnimalsCategory, wildPassiveSubcat, item);
-                                categorizedThings.Add(thing);
-                            }
-                        }
-                    }
-                }
-                else if (thing is Fire)
-                {
-                    // Fire hazard
-                    AddTo(hazardsCategory, fireSubcat, item);
-                    categorizedThings.Add(thing);
-                }
-                else if (thing is Plant plant)
-                {
-                    // Blighted plants ALSO appear in Hazards-Blight (and Hazards-All).
-                    // The plant's primary "All" is Plants/Trees, added via AddTo below.
-                    if (plant.Blighted)
-                    {
-                        blightSubcat.Items.Add(item);
-                        hazardsCategory.Subcategories[0].Items.Add(item);
-                    }
-
-                    if (plant.def.plant.IsTree)
-                    {
-                        // Trees: only "Harvestable" if fully mature and ready to harvest
-                        if (plant.HarvestableNow && plant.LifeStage == PlantLifeStage.Mature)
-                        {
-                            AddTo(treesCategory, harvestableTreesSubcat, item);
-                            categorizedThings.Add(thing);
-                        }
-                        else
-                        {
-                            AddTo(treesCategory, nonHarvestableTreesSubcat, item);
-                            categorizedThings.Add(thing);
-                        }
-                    }
-                    else
-                    {
-                        // Non-tree plants: only "Harvestable" if fully mature and ready to harvest
-                        if (plant.HarvestableNow && plant.LifeStage == PlantLifeStage.Mature)
-                        {
-                            AddTo(plantsCategory, harvestablePlantsSubcat, item);
-                            categorizedThings.Add(thing);
-                        }
-                        else
-                        {
-                            // Not fully mature (includes grass, immature crops, etc.)
-                            AddTo(plantsCategory, debrisSubcat, item);
-                            categorizedThings.Add(thing);
-                        }
-                    }
-                }
-                else if (thing is Blueprint || thing is Frame)
-                {
-                    // Blueprints and frames (construction projects) go to Orders-Construction
-                    AddTo(ordersCategory, ordersConstructionSubcat, item);
-                    categorizedThings.Add(thing);
-                }
-                else if (thing is Building building)
-                {
-                    // Skip natural rock/ore (these are handled as mineable tiles below)
-                    if (building.def.building != null && building.def.building.isNaturalRock)
+                    if (fogGrid.IsFogged(thing.Position))
                         continue;
 
-                    // Check for travel-related buildings first (before designation category)
-                    if (IsTravelingBuilding(building))
+                    var item = new ScannerItem(thing, cursorPosition);
+
+                    // The two `continue`s stay inline rather than moving into a classifier: they
+                    // must also skip the uncategorized fallback below, because a hidden pawn or a
+                    // natural-rock building is invisible to the scanner entirely.
+                    if (thing is Pawn pawn)
                     {
-                        AddTo(buildingsCategory, travelingSubcat, item);
+                        // IsHiddenFromPlayer exempts player-faction pawns, so invisibility psycasts
+                        // on colonists still surface; only hostile stealth is filtered.
+                        if (pawn.IsHiddenFromPlayer())
+                            continue;
+
+                        ClassifyPawn(pawn, item, buckets, playerFaction, categorizedThings);
+                    }
+                    else if (thing is Fire)
+                    {
+                        AddTo(buckets.Cat("Hazards"), buckets.Sub("Hazards-Fire"), item);
                         categorizedThings.Add(thing);
                     }
-                    else
+                    else if (thing is Plant plant)
                     {
-                        // Categorize buildings by designation category
-                        var designationCategory = building.def.designationCategory;
-                        ScannerSubcategory targetBuildingSub = structureSubcat; // default
-                        if (designationCategory != null)
+                        ClassifyPlant(plant, item, buckets, categorizedThings);
+                    }
+                    else if (thing is Blueprint || thing is Frame)
+                    {
+                        AddTo(ordersCategory, ordersConstructionSubcat, item);
+                        categorizedThings.Add(thing);
+                    }
+                    else if (thing is Building building)
+                    {
+                        // Natural rock/ore is collected as mineable tiles in the cell sweep below.
+                        if (building.def.building != null && building.def.building.isNaturalRock)
+                            continue;
+
+                        ClassifyBuilding(building, item, buckets, categorizedThings);
+                    }
+                    else if (IsStoneChunk(thing))
+                    {
+                        AddTo(mineableCategory, buckets.Sub("Mineable-Chunks"), item);
+                        categorizedThings.Add(thing);
+                    }
+                    else if (!IsDebrisItem(thing))
+                    {
+                        ClassifyItem(thing, item, map, buckets, categorizedThings);
+                    }
+
+                    // Anything still uncategorized lands in a per-def subcategory, mirrored into
+                    // Uncategorized-All.
+                    if (onlyCategory == null && !categorizedThings.Contains(thing) && thing.def.selectable)
+                    {
+                        string subcatName = thing.def.label ?? thing.def.defName;
+                        if (!uncategorizedByDef.ContainsKey(subcatName))
                         {
-                            switch (designationCategory.defName)
-                            {
-                                case "Structure": targetBuildingSub = structureSubcat; break;
-                                case "Production": targetBuildingSub = productionSubcat; break;
-                                case "Furniture": targetBuildingSub = furnitureSubcat; break;
-                                case "Power": targetBuildingSub = powerSubcat; break;
-                                case "Security": targetBuildingSub = securitySubcat; break;
-                                case "Misc": targetBuildingSub = miscBuildingsSubcat; break;
-                                case "Joy": targetBuildingSub = recreationSubcat; break;
-                                case "Ship": targetBuildingSub = shipSubcat; break;
-                                case "Temperature": targetBuildingSub = temperatureSubcat; break;
-                                default: targetBuildingSub = structureSubcat; break;
-                            }
+                            var newSubcat = new ScannerSubcategory($"Uncategorized-{subcatName}");
+                            uncategorizedByDef[subcatName] = newSubcat;
+                            uncategorizedCategory.Subcategories.Add(newSubcat);
                         }
-                        AddTo(buildingsCategory, targetBuildingSub, item);
-                        categorizedThings.Add(thing);
+                        uncategorizedByDef[subcatName].Items.Add(item);
+                        uncategorizedCategory.Subcategories[0].Items.Add(item); // "All"
                     }
-                }
-                else if (IsStoneChunk(thing))
-                {
-                    // Stone chunks go to mineable chunks subcategory
-                    AddTo(mineableCategory, mineableChunksSubcat, item);
-                    categorizedThings.Add(thing);
-                }
-                else if (!IsDebrisItem(thing))
-                {
-                    // Regular items - categorize by storage state
-                    if (thing.IsForbidden(Faction.OfPlayer))
-                    {
-                        AddTo(itemsCategory, itemsForbiddenSubcat, item);
-                        categorizedThings.Add(thing);
-                    }
-                    else if (IsUninstalledFurniture(thing))
-                    {
-                        // Uninstalled furniture
-                        AddTo(itemsCategory, itemsFurnitureSubcat, item);
-                        categorizedThings.Add(thing);
-                    }
-                    else if (IsInStorage(thing, map))
-                    {
-                        // Items in stockpiles/shelves
-                        AddTo(itemsCategory, itemsStoredSubcat, item);
-                        categorizedThings.Add(thing);
-                    }
-                    else
-                    {
-                        // Scattered items not in storage
-                        AddTo(itemsCategory, itemsScatteredSubcat, item);
-                        categorizedThings.Add(thing);
-                    }
-                }
-
-                // If we reach here without categorizing, this is an uncategorized item.
-                // Uncategorized-All mirrors every per-def subcategory.
-                if (!categorizedThings.Contains(thing) && thing.def.selectable)
-                {
-                    string subcatName = thing.def.label ?? thing.def.defName;
-                    if (!uncategorizedByDef.ContainsKey(subcatName))
-                    {
-                        var newSubcat = new ScannerSubcategory($"Uncategorized-{subcatName}");
-                        uncategorizedByDef[subcatName] = newSubcat;
-                        uncategorizedCategory.Subcategories.Add(newSubcat);
-                    }
-                    uncategorizedByDef[subcatName].Items.Add(item);
-                    uncategorizedCategory.Subcategories[0].Items.Add(item); // "All"
                 }
             }
 
-            // Collect captured Anomaly entities from holding platforms. Held pawns live inside
-            // the platform's innerContainer and are not in map.listerThings.AllThings, so we walk
-            // platforms explicitly. AllBuildingsColonistOfClass catches both HoldingPlatform and
-            // HoldingSpot variants (both derive from Building_HoldingPlatform).
-            foreach (var holdingPlatform in map.listerBuildings.AllBuildingsColonistOfClass<Building_HoldingPlatform>())
+            if (want("Entities"))
             {
-                if (!holdingPlatform.Spawned || fogGrid.IsFogged(holdingPlatform.Position))
-                    continue;
-
-                var heldPawn = holdingPlatform.HeldPawn;
-                if (heldPawn == null || !heldPawn.RaceProps.IsAnomalyEntity)
-                    continue;
-
-                var capturedItem = new ScannerItem(heldPawn, holdingPlatform, cursorPosition);
-                AddTo(entitiesCategory, entitiesCapturedSubcat, capturedItem);
-            }
-
-            // Collect mineable tiles, terrain, deep ore, and fog cells in a single pass
-            // over all cells. The cache is invalidated on building changes (cell hash) OR on
-            // any fog state change — fog collection shares this walk, so all four categories
-            // refresh together.
-            int currentCellHash = map.listerThings.StateHashOfGroup(ThingRequestGroup.BuildingArtificial);
-
-            // Pollution (Biotech) is a per-cell grid overlay, not a TerrainDef, and changes
-            // independently of building/fog state. TotalPollution (BoolGrid.TrueCount) is an
-            // O(1) counter, so fold it into the cache key to refresh polluted patches without
-            // forcing rescans for non-Biotech maps (count stays 0).
-            int currentPollutionCount = ModsConfig.BiotechActive ? map.pollutionGrid.TotalPollution : 0;
-
-            if (cachedTerrainNatural != null && currentCellHash == lastCellHash && !fogDirty
-                && currentPollutionCount == lastPollutionCount)
-            {
-                // Reuse cached cell data — skip 60K+ cell iteration entirely.
-                // Also mirror every cached item into the category's "All" subcategory.
-                terrainNaturalSubcat.Items.AddRange(cachedTerrainNatural);
-                terrainConstructedSubcat.Items.AddRange(cachedTerrainConstructed);
-                terrainPollutedSubcat.Items.AddRange(cachedPollutedItems);
-                mineableRareSubcat.Items.AddRange(cachedMineableRare);
-                mineableStoneSubcat.Items.AddRange(cachedMineableStone);
-                mineableScannedSubcat.Items.AddRange(cachedMineableScanned);
-                unexploredCategory.Subcategories[0].Items.AddRange(cachedFogItems);
-
-                terrainCategory.Subcategories[0].Items.AddRange(cachedTerrainNatural);
-                terrainCategory.Subcategories[0].Items.AddRange(cachedTerrainConstructed);
-                terrainCategory.Subcategories[0].Items.AddRange(cachedPollutedItems);
-                mineableCategory.Subcategories[0].Items.AddRange(cachedMineableRare);
-                mineableCategory.Subcategories[0].Items.AddRange(cachedMineableStone);
-                mineableCategory.Subcategories[0].Items.AddRange(cachedMineableScanned);
-
-                roofsThickSubcat.Items.AddRange(cachedRoofsThick);
-                roofsThinSubcat.Items.AddRange(cachedRoofsThin);
-                roofsCategory.Subcategories[0].Items.AddRange(cachedRoofsThick);
-                roofsCategory.Subcategories[0].Items.AddRange(cachedRoofsThin);
-            }
-            else
-            {
-                var allCells = map.AllCells;
-                bool hasDeepScanner = map.deepResourceGrid.AnyActiveDeepScannersOnMap();
-                var deepOreByDef = new Dictionary<string, List<(IntVec3 position, int count, ThingDef oreDef)>>();
-
-                // Collect mineables by def type for later adjacency grouping
-                var mineableRareByDef = new Dictionary<string, List<(IntVec3 position, Thing thing)>>();
-                var mineableStoneByDef = new Dictionary<string, List<(IntVec3 position, Thing thing)>>();
-                var fogPositions = new List<IntVec3>();
-                var pollutedPositions = new List<IntVec3>();
-
-                // Natural roof cells grouped by RoofDef so each clump carries one roof label.
-                // Constructed roofs are excluded; thick (overhead mountain) vs thin (rock) is
-                // decided per def at grouping time via RoofDef.isThickRoof.
-                var roofCellsByDef = new Dictionary<RoofDef, List<IntVec3>>();
-
-                foreach (var cell in allCells)
+                // Held pawns live in the platform's innerContainer, not in listerThings, so walk
+                // platforms explicitly. AllBuildingsColonistOfClass catches HoldingPlatform and
+                // HoldingSpot alike.
+                foreach (var holdingPlatform in map.listerBuildings.AllBuildingsColonistOfClass<Building_HoldingPlatform>())
                 {
-                    // Fog-dependent collection: mineables and terrain
-                    if (!fogGrid.IsFogged(cell))
+                    if (!holdingPlatform.Spawned || fogGrid.IsFogged(holdingPlatform.Position))
+                        continue;
+
+                    var heldPawn = holdingPlatform.HeldPawn;
+                    if (heldPawn == null || !heldPawn.RaceProps.IsAnomalyEntity)
+                        continue;
+
+                    var capturedItem = new ScannerItem(heldPawn, holdingPlatform, cursorPosition);
+                    AddTo(entitiesCategory, entitiesCapturedSubcat, capturedItem);
+                }
+            }
+
+            if (wantCells)
+            {
+                // Mineables, terrain, deep ore and fog all come out of one AllCells walk, so they
+                // share a cache key and refresh together.
+                int currentCellHash = map.listerThings.StateHashOfGroup(ThingRequestGroup.BuildingArtificial);
+
+                // Pollution (Biotech) is a per-cell overlay that changes independently of building
+                // and fog state. TotalPollution is an O(1) counter and stays 0 without Biotech.
+                int currentPollutionCount = ModsConfig.BiotechActive ? map.pollutionGrid.TotalPollution : 0;
+
+                if (cachedTerrainNatural != null && currentCellHash == lastCellHash && !fogDirty
+                    && currentPollutionCount == lastPollutionCount)
+                {
+                    // Reuse cached cell data, mirroring each list into the category's "All".
+                    terrainNaturalSubcat.Items.AddRange(cachedTerrainNatural);
+                    terrainConstructedSubcat.Items.AddRange(cachedTerrainConstructed);
+                    terrainPollutedSubcat.Items.AddRange(cachedPollutedItems);
+                    mineableRareSubcat.Items.AddRange(cachedMineableRare);
+                    mineableStoneSubcat.Items.AddRange(cachedMineableStone);
+                    mineableScannedSubcat.Items.AddRange(cachedMineableScanned);
+                    unexploredCategory.Subcategories[0].Items.AddRange(cachedFogItems);
+
+                    terrainCategory.Subcategories[0].Items.AddRange(cachedTerrainNatural);
+                    terrainCategory.Subcategories[0].Items.AddRange(cachedTerrainConstructed);
+                    terrainCategory.Subcategories[0].Items.AddRange(cachedPollutedItems);
+                    mineableCategory.Subcategories[0].Items.AddRange(cachedMineableRare);
+                    mineableCategory.Subcategories[0].Items.AddRange(cachedMineableStone);
+                    mineableCategory.Subcategories[0].Items.AddRange(cachedMineableScanned);
+
+                    roofsThickSubcat.Items.AddRange(cachedRoofsThick);
+                    roofsThinSubcat.Items.AddRange(cachedRoofsThin);
+                    roofsCategory.Subcategories[0].Items.AddRange(cachedRoofsThick);
+                    roofsCategory.Subcategories[0].Items.AddRange(cachedRoofsThin);
+                }
+                else
+                {
+                    var allCells = map.AllCells;
+                    bool hasDeepScanner = map.deepResourceGrid.AnyActiveDeepScannersOnMap();
+                    var deepOreByDef = new Dictionary<string, List<(IntVec3 position, int count, ThingDef oreDef)>>();
+
+                    var mineableRareByDef = new Dictionary<string, List<(IntVec3 position, Thing thing)>>();
+                    var mineableStoneByDef = new Dictionary<string, List<(IntVec3 position, Thing thing)>>();
+                    var fogPositions = new List<IntVec3>();
+                    var pollutedPositions = new List<IntVec3>();
+
+                    // Natural roofs only; thick vs thin is decided per def at grouping time.
+                    var roofCellsByDef = new Dictionary<RoofDef, List<IntVec3>>();
+
+                    foreach (var cell in allCells)
                     {
-                        var terrain = map.terrainGrid.TerrainAt(cell);
-
-                        // Polluted cells (Biotech) — a per-cell overlay independent of the
-                        // terrain def, gathered here for adjacency grouping below so the
-                        // player can jump to each contaminated patch and clean it.
-                        if (ModsConfig.BiotechActive && map.pollutionGrid.IsPolluted(cell))
-                            pollutedPositions.Add(cell);
-
-                        // Check for mineable rocks (both ore and plain stone)
-                        var edifice = cell.GetEdifice(map);
-                        if (edifice != null && edifice.def.building != null && edifice.def.building.isNaturalRock)
+                        if (!fogGrid.IsFogged(cell))
                         {
-                            string defKey = edifice.def.defName;
+                            var terrain = map.terrainGrid.TerrainAt(cell);
 
-                            // Separate rare minerals (ore) from plain stone
-                            if (edifice.def.building.isResourceRock && edifice.def.building.mineableYield > 0)
-                            {
-                                // Rare minerals (steel, gold, plasteel, uranium, etc.)
-                                if (!mineableRareByDef.ContainsKey(defKey))
-                                    mineableRareByDef[defKey] = new List<(IntVec3, Thing)>();
-                                mineableRareByDef[defKey].Add((cell, edifice));
-                                categorizedThings.Add(edifice);
-                            }
-                            else
-                            {
-                                // Plain stone (granite, marble, slate, limestone, sandstone)
-                                if (!mineableStoneByDef.ContainsKey(defKey))
-                                    mineableStoneByDef[defKey] = new List<(IntVec3, Thing)>();
-                                mineableStoneByDef[defKey].Add((cell, edifice));
-                                categorizedThings.Add(edifice);
-                            }
-                        }
+                            if (ModsConfig.BiotechActive && map.pollutionGrid.IsPolluted(cell))
+                                pollutedPositions.Add(cell);
 
-                        // Collect terrain tiles
-                        if (terrain != null)
-                        {
-                            // Natural terrain — include anything that is NOT plain default soil.
-                            // Property-based detection: plain soil (Soil, GrasslandSoil, GlowforestSoil)
-                            // has fertility=1.0 AND pathCost<=2. Anything with non-default fertility
-                            // (mud=0, rich=1.4, gravel=0.7, sand=0.1, etc.) or elevated path cost
-                            // (mud=14, sand=4, water=30/300, moss=3) is interesting. This catches
-                            // mud, moss, riverbank, volcanic rock, lava, flesh, space, and all
-                            // DLC natural terrain variants without fragile defName string-matching.
-                            if (!terrain.layerable && terrain.natural)
+                            var edifice = cell.GetEdifice(map);
+                            if (edifice != null && edifice.def.building != null && edifice.def.building.isNaturalRock)
                             {
-                                bool isInteresting =
-                                    terrain.fertility != 1.0f ||
-                                    terrain.pathCost > 2;
-                                if (isInteresting)
+                                string defKey = edifice.def.defName;
+
+                                if (edifice.def.building.isResourceRock && edifice.def.building.mineableYield > 0)
                                 {
-                                    var terrainItem = new ScannerItem(cell, terrain.label, cursorPosition);
-                                    AddTo(terrainCategory, terrainNaturalSubcat, terrainItem);
+                                    if (!mineableRareByDef.ContainsKey(defKey))
+                                        mineableRareByDef[defKey] = new List<(IntVec3, Thing)>();
+                                    mineableRareByDef[defKey].Add((cell, edifice));
+                                    categorizedThings.Add(edifice);
+                                }
+                                else
+                                {
+                                    if (!mineableStoneByDef.ContainsKey(defKey))
+                                        mineableStoneByDef[defKey] = new List<(IntVec3, Thing)>();
+                                    mineableStoneByDef[defKey].Add((cell, edifice));
+                                    categorizedThings.Add(edifice);
                                 }
                             }
-                            // Constructed floors
-                            else if (terrain.layerable || !terrain.natural)
+
+                            if (terrain != null)
                             {
-                                // Only include actually constructed floors (not natural dirt/soil)
-                                if (!terrain.natural)
+                                // Natural terrain is anything but plain default soil, detected by
+                                // property rather than defName: plain soil is fertility 1.0 with
+                                // pathCost <= 2, so any other fertility or an elevated path cost
+                                // marks terrain worth announcing (mud, moss, water, lava, ...).
+                                if (!terrain.layerable && terrain.natural)
                                 {
-                                    var terrainItem = new ScannerItem(cell, terrain.label, cursorPosition);
-                                    AddTo(terrainCategory, terrainConstructedSubcat, terrainItem);
+                                    bool isInteresting =
+                                        terrain.fertility != 1.0f ||
+                                        terrain.pathCost > 2;
+                                    if (isInteresting)
+                                    {
+                                        var terrainItem = new ScannerItem(cell, terrain.label, cursorPosition);
+                                        AddTo(terrainCategory, terrainNaturalSubcat, terrainItem);
+                                    }
+                                }
+                                else if (terrain.layerable || !terrain.natural)
+                                {
+                                    // Constructed floors only, never layered natural dirt.
+                                    if (!terrain.natural)
+                                    {
+                                        var terrainItem = new ScannerItem(cell, terrain.label, cursorPosition);
+                                        AddTo(terrainCategory, terrainConstructedSubcat, terrainItem);
+                                    }
+                                }
+                            }
+
+                            // Fog-gated like terrain so undiscovered roofs aren't revealed.
+                            var roof = map.roofGrid.RoofAt(cell);
+                            if (roof != null && roof.isNatural)
+                            {
+                                if (!roofCellsByDef.TryGetValue(roof, out var roofList))
+                                {
+                                    roofList = new List<IntVec3>();
+                                    roofCellsByDef[roof] = roofList;
+                                }
+                                roofList.Add(cell);
+                            }
+                        }
+                        else
+                        {
+                            fogPositions.Add(cell);
+                        }
+
+                        // Deep ore is underground, so vanilla shows it regardless of fog.
+                        if (hasDeepScanner)
+                        {
+                            var oreDef = map.deepResourceGrid.ThingDefAt(cell);
+                            if (oreDef != null)
+                            {
+                                int count = map.deepResourceGrid.CountAt(cell);
+                                if (count > 0)
+                                {
+                                    string defKey = oreDef.defName;
+                                    if (!deepOreByDef.ContainsKey(defKey))
+                                        deepOreByDef[defKey] = new List<(IntVec3, int, ThingDef)>();
+                                    deepOreByDef[defKey].Add((cell, count, oreDef));
                                 }
                             }
                         }
-
-                        // Collect natural roofs (overhead mountain / thick, and thin rock).
-                        // Fog-gated like terrain above so undiscovered roofs aren't revealed.
-                        var roof = map.roofGrid.RoofAt(cell);
-                        if (roof != null && roof.isNatural)
-                        {
-                            if (!roofCellsByDef.TryGetValue(roof, out var roofList))
-                            {
-                                roofList = new List<IntVec3>();
-                                roofCellsByDef[roof] = roofList;
-                            }
-                            roofList.Add(cell);
-                        }
                     }
-                    else
+
+                    foreach (var kvp in mineableRareByDef)
                     {
-                        fogPositions.Add(cell);
+                        var positions = kvp.Value.Select(x => x.position).ToList();
+                        var regions = GroupTerrainByAdjacency(positions, cursorPosition);
+                        var primaryThing = kvp.Value[0].thing;
+                        string label = primaryThing.def.label ?? (string)"RimWorldAccess.Map.Label.Unknown".Translate();
+
+                        var item = new ScannerItem(regions, label, cursorPosition, primaryThing);
+                        AddTo(mineableCategory, mineableRareSubcat, item);
                     }
 
-                    // Collect deep ore in same pass (only if active scanner exists)
-                    // Deep ore is underground - no fog check needed (matches RimWorld's behavior)
+                    foreach (var kvp in mineableStoneByDef)
+                    {
+                        var positions = kvp.Value.Select(x => x.position).ToList();
+                        var regions = GroupTerrainByAdjacency(positions, cursorPosition);
+                        var primaryThing = kvp.Value[0].thing;
+                        string label = primaryThing.def.label ?? (string)"RimWorldAccess.Map.Label.Unknown".Translate();
+
+                        var item = new ScannerItem(regions, label, cursorPosition, primaryThing);
+                        AddTo(mineableCategory, mineableStoneSubcat, item);
+                    }
+
                     if (hasDeepScanner)
                     {
-                        var oreDef = map.deepResourceGrid.ThingDefAt(cell);
-                        if (oreDef != null)
+                        foreach (var kvp in deepOreByDef)
                         {
-                            int count = map.deepResourceGrid.CountAt(cell);
-                            if (count > 0)
+                            var positionsWithCounts = kvp.Value.Select(x => (x.position, x.count)).ToList();
+                            var oreDef = kvp.Value[0].oreDef;
+                            var regions = GroupDeepOreByAdjacency(positionsWithCounts, cursorPosition);
+
+                            if (regions.Count > 0)
                             {
-                                string defKey = oreDef.defName;
-                                if (!deepOreByDef.ContainsKey(defKey))
-                                    deepOreByDef[defKey] = new List<(IntVec3, int, ThingDef)>();
-                                deepOreByDef[defKey].Add((cell, count, oreDef));
+                                var item = new ScannerItem(regions, oreDef, cursorPosition);
+                                AddTo(mineableCategory, mineableScannedSubcat, item);
                             }
                         }
                     }
-                }
 
-                // Group rare mineables (ore) by adjacency
-                foreach (var kvp in mineableRareByDef)
-                {
-                    var positions = kvp.Value.Select(x => x.position).ToList();
-                    var regions = GroupTerrainByAdjacency(positions, cursorPosition);
-                    var primaryThing = kvp.Value[0].thing;
-                    string label = primaryThing.def.label ?? (string)"RimWorldAccess.Map.Label.Unknown".Translate();
-
-                    // Create item with regions (like terrain does)
-                    var item = new ScannerItem(regions, label, cursorPosition, primaryThing);
-                    AddTo(mineableCategory, mineableRareSubcat, item);
-                }
-
-                // Group stone mineables by adjacency
-                foreach (var kvp in mineableStoneByDef)
-                {
-                    var positions = kvp.Value.Select(x => x.position).ToList();
-                    var regions = GroupTerrainByAdjacency(positions, cursorPosition);
-                    var primaryThing = kvp.Value[0].thing;
-                    string label = primaryThing.def.label ?? (string)"RimWorldAccess.Map.Label.Unknown".Translate();
-
-                    // Create item with regions (like terrain does)
-                    var item = new ScannerItem(regions, label, cursorPosition, primaryThing);
-                    AddTo(mineableCategory, mineableStoneSubcat, item);
-                }
-
-                // Group deep ore by adjacency and create scanner items (collected during cell loop above)
-                if (hasDeepScanner)
-                {
-                    foreach (var kvp in deepOreByDef)
+                    // Each contiguous fog region is its own navigable item. Unexplored has only an
+                    // "All" subcategory, so add directly — AddTo would double-add.
+                    var fogRegions = GroupTerrainByAdjacency(fogPositions, cursorPosition);
+                    foreach (var region in fogRegions)
                     {
-                        var positionsWithCounts = kvp.Value.Select(x => (x.position, x.count)).ToList();
-                        var oreDef = kvp.Value[0].oreDef;
-                        var regions = GroupDeepOreByAdjacency(positionsWithCounts, cursorPosition);
+                        var fogItem = new ScannerItem(
+                            new List<TerrainRegion> { region }, UnexploredAreaLabel, cursorPosition);
+                        unexploredCategory.Subcategories[0].Items.Add(fogItem);
+                    }
 
-                        if (regions.Count > 0)
-                        {
-                            var item = new ScannerItem(regions, oreDef, cursorPosition);
-                            AddTo(mineableCategory, mineableScannedSubcat, item);
-                        }
+                    // pollutedPositions is empty without Biotech.
+                    foreach (var region in GroupTerrainByAdjacency(pollutedPositions, cursorPosition))
+                    {
+                        var pollutedItem = new ScannerItem(
+                            new List<TerrainRegion> { region }, PollutedAreaLabel, cursorPosition);
+                        AddTo(terrainCategory, terrainPollutedSubcat, pollutedItem);
+                    }
+
+                    // One item per RoofDef carrying all its patches as regions.
+                    foreach (var kvp in roofCellsByDef)
+                    {
+                        var roofDef = kvp.Key;
+                        var subcat = roofDef.isThickRoof ? roofsThickSubcat : roofsThinSubcat;
+                        var regions = GroupTerrainByAdjacency(kvp.Value, cursorPosition);
+                        var roofItem = new ScannerItem(regions, roofDef.label, cursorPosition);
+                        AddTo(roofsCategory, subcat, roofItem);
+                    }
+
+                    cachedTerrainNatural = new List<ScannerItem>(terrainNaturalSubcat.Items);
+                    cachedTerrainConstructed = new List<ScannerItem>(terrainConstructedSubcat.Items);
+                    cachedPollutedItems = new List<ScannerItem>(terrainPollutedSubcat.Items);
+                    cachedMineableRare = new List<ScannerItem>(mineableRareSubcat.Items);
+                    cachedMineableStone = new List<ScannerItem>(mineableStoneSubcat.Items);
+                    cachedMineableScanned = new List<ScannerItem>(mineableScannedSubcat.Items);
+                    cachedRoofsThick = new List<ScannerItem>(roofsThickSubcat.Items);
+                    cachedRoofsThin = new List<ScannerItem>(roofsThinSubcat.Items);
+                    cachedFogItems = new List<ScannerItem>(unexploredCategory.Subcategories[0].Items);
+                    fogDirty = false;
+
+                    lastCellHash = currentCellHash;
+                    lastPollutionCount = currentPollutionCount;
+                }
+            }
+
+            if (want("Orders"))
+            {
+                var allDesignations = map.designationManager.AllDesignations;
+                foreach (var designation in allDesignations)
+                {
+                    if (designation == null || designation.def == null)
+                        continue;
+
+                    IntVec3 targetCell = designation.target.Cell;
+                    if (!targetCell.IsValid || fogGrid.IsFogged(targetCell))
+                        continue;
+
+                    if (designation.target.HasThing && !designation.target.Thing.Spawned)
+                        continue;
+
+                    var item = new ScannerItem(designation, cursorPosition);
+
+                    ScannerSubcategory orderSub;
+                    if (designation.def == DesignationDefOf.Haul)
+                        orderSub = ordersHaulSubcat;
+                    else if (designation.def == DesignationDefOf.Hunt)
+                        orderSub = ordersHuntSubcat;
+                    else if (designation.def == DesignationDefOf.Mine || designation.def == DesignationDefOf.MineVein)
+                        orderSub = ordersMineSubcat;
+                    else if (designation.def == DesignationDefOf.Deconstruct)
+                        orderSub = ordersDeconstructSubcat;
+                    else if (designation.def == DesignationDefOf.Uninstall)
+                        orderSub = ordersUninstallSubcat;
+                    else if (designation.def == DesignationDefOf.CutPlant || designation.def == DesignationDefOf.ExtractTree)
+                        orderSub = ordersCutSubcat;
+                    else if (designation.def == DesignationDefOf.HarvestPlant)
+                        orderSub = ordersHarvestSubcat;
+                    else if (designation.def == DesignationDefOf.SmoothFloor || designation.def == DesignationDefOf.SmoothWall)
+                        orderSub = ordersSmoothSubcat;
+                    else if (designation.def == DesignationDefOf.Tame)
+                        orderSub = ordersTameSubcat;
+                    else if (designation.def == DesignationDefOf.Slaughter)
+                        orderSub = ordersSlaughterSubcat;
+                    else
+                        orderSub = ordersOtherSubcat;
+
+                    AddTo(ordersCategory, orderSub, item);
+                }
+            }
+
+            if (want("Zones"))
+            {
+                var validZones = map.zoneManager.AllZones.Where(zone =>
+                    zone != null && zone.cells != null && zone.cells.Count > 0);
+
+                foreach (var zone in validZones)
+                {
+                    var item = new ScannerItem(zone, cursorPosition);
+
+                    ScannerSubcategory zoneSub;
+                    if (zone is Zone_Growing)
+                        zoneSub = zonesGrowingSubcat;
+                    else if (zone is Zone_Stockpile)
+                        zoneSub = zonesStockpileSubcat;
+                    else if (zone is Zone_Fishing)
+                        zoneSub = zonesFishingSubcat;
+                    else
+                        zoneSub = zonesOtherSubcat;
+
+                    AddTo(zonesCategory, zoneSub, item);
+                }
+            }
+
+            if (want("Rooms"))
+            {
+                var visibleIndoorRooms = map.regionGrid.AllRooms.Where(room =>
+                    !room.PsychologicallyOutdoors &&
+                    room.ProperRoom &&
+                    room.Cells.Any(cell => !fogGrid.IsFogged(cell)));
+
+                // Rooms has only an "All" subcategory, so add directly to it.
+                roomsCategory.Subcategories[0].Items.AddRange(
+                    visibleIndoorRooms.Select(room => new ScannerItem(room, cursorPosition)));
+            }
+
+            if (want("Plans"))
+            {
+                // Each Plan is one contiguous single-color region, so it becomes one clump item.
+                // Color subcategories are created only for colors actually present.
+                var plansCategory = buckets.Cat("Plans");
+                var plansByColorSuffix = new Dictionary<string, List<ScannerItem>>();
+                foreach (var plan in map.planManager.AllPlans)
+                {
+                    if (plan == null || plan.CellCount == 0)
+                        continue;
+                    var item = new ScannerItem(plan, cursorPosition);
+                    plansCategory.Subcategories[0].Items.Add(item); // "All"
+
+                    string suffix = PlanColorHelper.ColorSuffix(plan.Color);
+                    if (!plansByColorSuffix.TryGetValue(suffix, out var list))
+                        plansByColorSuffix[suffix] = list = new List<ScannerItem>();
+                    list.Add(item);
+                }
+                // Game palette order first, then any modded color outside it.
+                foreach (var colorDef in Designator_Plan_Add.Colors)
+                {
+                    string suffix = PlanColorHelper.ColorSuffix(colorDef);
+                    if (plansByColorSuffix.TryGetValue(suffix, out var list))
+                    {
+                        var sub = new ScannerSubcategory("Plans-" + suffix);
+                        sub.Items.AddRange(list);
+                        buckets.RegisterDynamicSubcategory(plansCategory, sub);
+                        plansByColorSuffix.Remove(suffix);
                     }
                 }
-
-                // Group unexplored fog cells by adjacency. Each contiguous fog region becomes
-                // its own scanner item so users can navigate region-by-region. This matches the
-                // game's data model: FogGrid is a sibling of TerrainGrid on Map, not a property
-                // of terrain, so each fog blob is treated as a first-class navigable item.
-                // Unexplored has only an "All" subcategory, so add directly (AddTo would
-                // double-add since specialized == Subcategories[0]).
-                var fogRegions = GroupTerrainByAdjacency(fogPositions, cursorPosition);
-                foreach (var region in fogRegions)
+                foreach (var kvp in plansByColorSuffix)
                 {
-                    var fogItem = new ScannerItem(
-                        new List<TerrainRegion> { region }, UnexploredAreaLabel, cursorPosition);
-                    unexploredCategory.Subcategories[0].Items.Add(fogItem);
-                }
-
-                // Group polluted cells into contiguous patches (Biotech). Each patch becomes a
-                // navigable item under Terrain > Polluted so the player can jump to it and place
-                // a pollution removal area. pollutedPositions is empty without Biotech.
-                foreach (var region in GroupTerrainByAdjacency(pollutedPositions, cursorPosition))
-                {
-                    var pollutedItem = new ScannerItem(
-                        new List<TerrainRegion> { region }, PollutedAreaLabel, cursorPosition);
-                    AddTo(terrainCategory, terrainPollutedSubcat, pollutedItem);
-                }
-
-                // Group each natural roof type's cells into contiguous patches, clumped like
-                // terrain. One scanner item per RoofDef carries all its patches as regions, routed
-                // to the thick (overhead mountain) or thin (rock) subcategory by isThickRoof.
-                foreach (var kvp in roofCellsByDef)
-                {
-                    var roofDef = kvp.Key;
-                    var subcat = roofDef.isThickRoof ? roofsThickSubcat : roofsThinSubcat;
-                    var regions = GroupTerrainByAdjacency(kvp.Value, cursorPosition);
-                    var roofItem = new ScannerItem(regions, roofDef.label, cursorPosition);
-                    AddTo(roofsCategory, subcat, roofItem);
-                }
-
-                // Save results to cell cache
-                cachedTerrainNatural = new List<ScannerItem>(terrainNaturalSubcat.Items);
-                cachedTerrainConstructed = new List<ScannerItem>(terrainConstructedSubcat.Items);
-                cachedPollutedItems = new List<ScannerItem>(terrainPollutedSubcat.Items);
-                cachedMineableRare = new List<ScannerItem>(mineableRareSubcat.Items);
-                cachedMineableStone = new List<ScannerItem>(mineableStoneSubcat.Items);
-                cachedMineableScanned = new List<ScannerItem>(mineableScannedSubcat.Items);
-                cachedRoofsThick = new List<ScannerItem>(roofsThickSubcat.Items);
-                cachedRoofsThin = new List<ScannerItem>(roofsThinSubcat.Items);
-                cachedFogItems = new List<ScannerItem>(unexploredCategory.Subcategories[0].Items);
-                fogDirty = false;
-
-                lastCellHash = currentCellHash;
-                lastPollutionCount = currentPollutionCount;
-            }
-
-            // Collect all designations/orders
-            var allDesignations = map.designationManager.AllDesignations;
-            foreach (var designation in allDesignations)
-            {
-                // Skip designations without valid targets
-                if (designation == null || designation.def == null)
-                    continue;
-
-                // Skip if target cell is invalid or fogged
-                IntVec3 targetCell = designation.target.Cell;
-                if (!targetCell.IsValid || fogGrid.IsFogged(targetCell))
-                    continue;
-
-                // Skip if thing target is not spawned
-                if (designation.target.HasThing && !designation.target.Thing.Spawned)
-                    continue;
-
-                var item = new ScannerItem(designation, cursorPosition);
-
-                // Categorize by designation type
-                ScannerSubcategory orderSub;
-                if (designation.def == DesignationDefOf.Haul)
-                    orderSub = ordersHaulSubcat;
-                else if (designation.def == DesignationDefOf.Hunt)
-                    orderSub = ordersHuntSubcat;
-                else if (designation.def == DesignationDefOf.Mine || designation.def == DesignationDefOf.MineVein)
-                    orderSub = ordersMineSubcat;
-                else if (designation.def == DesignationDefOf.Deconstruct)
-                    orderSub = ordersDeconstructSubcat;
-                else if (designation.def == DesignationDefOf.Uninstall)
-                    orderSub = ordersUninstallSubcat;
-                else if (designation.def == DesignationDefOf.CutPlant || designation.def == DesignationDefOf.ExtractTree)
-                    orderSub = ordersCutSubcat;
-                else if (designation.def == DesignationDefOf.HarvestPlant)
-                    orderSub = ordersHarvestSubcat;
-                else if (designation.def == DesignationDefOf.SmoothFloor || designation.def == DesignationDefOf.SmoothWall)
-                    orderSub = ordersSmoothSubcat;
-                else if (designation.def == DesignationDefOf.Tame)
-                    orderSub = ordersTameSubcat;
-                else if (designation.def == DesignationDefOf.Slaughter)
-                    orderSub = ordersSlaughterSubcat;
-                else
-                    // All other designations (Strip, Open, Flick, RemoveFloor, etc.)
-                    orderSub = ordersOtherSubcat;
-
-                AddTo(ordersCategory, orderSub, item);
-            }
-
-            // Collect all zones - filter to non-empty zones
-            var validZones = map.zoneManager.AllZones.Where(zone =>
-                zone != null && zone.cells != null && zone.cells.Count > 0);
-
-            foreach (var zone in validZones)
-            {
-                var item = new ScannerItem(zone, cursorPosition);
-
-                ScannerSubcategory zoneSub;
-                if (zone is Zone_Growing)
-                    zoneSub = zonesGrowingSubcat;
-                else if (zone is Zone_Stockpile)
-                    zoneSub = zonesStockpileSubcat;
-                else if (zone.GetType().Name == "Zone_Fishing")
-                    zoneSub = zonesFishingSubcat;
-                else
-                    zoneSub = zonesOtherSubcat;
-
-                AddTo(zonesCategory, zoneSub, item);
-            }
-
-            // Collect all rooms - filter to indoor, proper rooms with at least one visible cell
-            var visibleIndoorRooms = map.regionGrid.AllRooms.Where(room =>
-                !room.PsychologicallyOutdoors &&
-                room.ProperRoom &&
-                room.Cells.Any(cell => !fogGrid.IsFogged(cell)));
-
-            // Rooms only has an "All" subcategory (no specialized buckets), so add directly to it.
-            roomsCategory.Subcategories[0].Items.AddRange(
-                visibleIndoorRooms.Select(room => new ScannerItem(room, cursorPosition)));
-
-            // Collect all plan markers. Each Plan is one contiguous single-color region, so it
-            // becomes one navigable clump item (color + name announced, edge/center Home nav).
-            // Beyond the "All" subcategory, plans are bucketed by color so the user can browse a
-            // single color at a time (e.g. all the red plans). Color subcategories are dynamic —
-            // only colors actually present get one — and are ordered to match the game's palette.
-            var plansCategory = buckets.Cat("Plans");
-            var plansByColorSuffix = new Dictionary<string, List<ScannerItem>>();
-            foreach (var plan in map.planManager.AllPlans)
-            {
-                if (plan == null || plan.CellCount == 0)
-                    continue;
-                var item = new ScannerItem(plan, cursorPosition);
-                plansCategory.Subcategories[0].Items.Add(item); // "All"
-
-                string suffix = PlanColorHelper.ColorSuffix(plan.Color);
-                if (!plansByColorSuffix.TryGetValue(suffix, out var list))
-                    plansByColorSuffix[suffix] = list = new List<ScannerItem>();
-                list.Add(item);
-            }
-            // Create per-color subcategories in the game's color display order, then any leftover
-            // (e.g. modded planning colors outside the standard palette).
-            foreach (var colorDef in Designator_Plan_Add.Colors)
-            {
-                string suffix = PlanColorHelper.ColorSuffix(colorDef);
-                if (plansByColorSuffix.TryGetValue(suffix, out var list))
-                {
-                    var sub = new ScannerSubcategory("Plans-" + suffix);
-                    sub.Items.AddRange(list);
+                    var sub = new ScannerSubcategory("Plans-" + kvp.Key);
+                    sub.Items.AddRange(kvp.Value);
                     buckets.RegisterDynamicSubcategory(plansCategory, sub);
-                    plansByColorSuffix.Remove(suffix);
                 }
             }
-            foreach (var kvp in plansByColorSuffix)
-            {
-                var sub = new ScannerSubcategory("Plans-" + kvp.Key);
-                sub.Items.AddRange(kvp.Value);
-                buckets.RegisterDynamicSubcategory(plansCategory, sub);
-            }
 
-            // Build the top-level "All" category by flattening every other category's "-All"
-            // subcategory, deduplicating by ScannerItem reference. Items that span multiple
-            // categories (e.g., a blighted plant that appears in both Plants-All and Hazards-All)
-            // appear only once in All-All.
-            var allCategory = buckets.Cat("All");
-            var allSubcat = allCategory.Subcategories[0];
-            var seenInAll = new HashSet<ScannerItem>();
-            foreach (var category in buckets.Categories)
+            if (onlyCategory == null)
             {
-                if (category == allCategory) continue;
-                if (category.Subcategories.Count == 0) continue;
-                foreach (var item in category.Subcategories[0].Items) // Subcategories[0] == "{Name}-All"
+                // Flatten every other category's "-All" subcategory, deduplicating by reference so
+                // an item filed under two categories appears once.
+                var allCategory = buckets.Cat("All");
+                var allSubcat = allCategory.Subcategories[0];
+                var seenInAll = new HashSet<ScannerItem>();
+                foreach (var category in buckets.Categories)
                 {
-                    if (seenInAll.Add(item))
-                        allSubcat.Items.Add(item);
+                    if (category == allCategory) continue;
+                    if (category.Subcategories.Count == 0) continue;
+                    foreach (var item in category.Subcategories[0].Items) // Subcategories[0] == "{Name}-All"
+                    {
+                        if (seenInAll.Add(item))
+                            allSubcat.Items.Add(item);
+                    }
                 }
             }
 
-            // Group identical items and sort all subcategories by distance.
-            // Iterates every category from the schema-built bucket list (including Uncategorized).
             foreach (var category in buckets.Categories)
             {
+                if (onlyCategory != null && category.Name != onlyCategory)
+                    continue;
+
                 foreach (var subcat in category.Subcategories)
                 {
-                    // First sort by distance
                     subcat.Items = subcat.Items.OrderBy(i => i.Distance).ToList();
-
-                    // Then group identical items (but not pawns - they're always unique)
                     subcat.Items = GroupIdenticalItems(subcat.Items, cursorPosition);
                 }
             }
 
-            // Remove empty categories — schema-declared categories that have no items on this map.
+            if (onlyCategory != null)
+            {
+                ScannerCategory only = buckets.Cat(onlyCategory);
+                return only.IsEmpty
+                    ? new List<ScannerCategory>()
+                    : new List<ScannerCategory> { only };
+            }
+
+            // Drop schema categories with no items on this map.
             var finalCategories = buckets.Categories;
             finalCategories.RemoveAll(c => c.IsEmpty);
 
             return finalCategories;
         }
 
+        /// <summary>
+        /// Categorizes a pawn by race and faction relationship. The caller has already filtered out
+        /// hidden pawns.
+        /// </summary>
+        private static void ClassifyPawn(Pawn pawn, ScannerItem item, ScannerBuckets buckets, Faction playerFaction, HashSet<Thing> categorizedThings)
+        {
+            var pawnsCategory = buckets.Cat("Pawns");
+
+            // Anomaly entities are permanent enemies of every non-Insect faction, so a loose
+            // entity is hostile by definition.
+            if (pawn.RaceProps.IsAnomalyEntity)
+            {
+                AddTo(buckets.Cat("Entities"), buckets.Sub("Entities-Hostile"), item);
+                categorizedThings.Add(pawn);
+            }
+            else if (pawn.RaceProps.IsMechanoid)
+            {
+                if (pawn.Faction == playerFaction)
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Player Mechs"), item);
+                else if (pawn.HostileTo(Faction.OfPlayer))
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Hostile Mechs"), item);
+                else
+                    // Neutral mechs fold into Guests alongside other helpful neutrals.
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Guests"), item);
+                categorizedThings.Add(pawn);
+            }
+            else if (pawn.RaceProps.Humanlike)
+            {
+                if (pawn.IsColonist)
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Colonists"), item);
+                else if (pawn.IsPrisonerOfColony)
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Prisoners"), item);
+                else if (pawn.IsSlaveOfColony)
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Slaves"), item);
+                else if (pawn.HostileTo(Faction.OfPlayer))
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Hostile"), item);
+                else
+                    // Visitors, traders, quest lodgers, allied raid help, neutral factions.
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Guests"), item);
+                categorizedThings.Add(pawn);
+            }
+            else if (pawn.RaceProps.Animal)
+            {
+                if (pawn.Faction == playerFaction)
+                {
+                    // Roamers need rope management, so they get the pen bucket.
+                    var tameSub = pawn.Roamer ? buckets.Sub("Tame-Pen") : buckets.Sub("Tame-NonPen");
+                    AddTo(buckets.Cat("Tame"), tameSub, item);
+                }
+                else
+                {
+                    var wildSub = pawn.HostileTo(playerFaction) ? buckets.Sub("Wild-Hostile") : buckets.Sub("Wild-Passive");
+                    AddTo(buckets.Cat("Wild"), wildSub, item);
+                }
+                categorizedThings.Add(pawn);
+            }
+            else if (PlayerControllables.IsOtherControllable(pawn))
+            {
+                // Drafter-bearing player pawns that are neither colonists nor mechs: vehicles and
+                // similar modded units.
+                AddTo(pawnsCategory, buckets.Sub("Pawns-Controllable"), item);
+                categorizedThings.Add(pawn);
+            }
+            else
+            {
+                // A modded race can match none of the RaceProps shapes above and carry no draft
+                // controller (RimWorld of Magic golems answer false to all four). File them by
+                // relationship so they don't fall through to the uncategorized bucket.
+                if (pawn.Faction == playerFaction)
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Other"), item);
+                else if (pawn.HostileTo(Faction.OfPlayer))
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Hostile"), item);
+                else
+                    AddTo(pawnsCategory, buckets.Sub("Pawns-Guests"), item);
+                categorizedThings.Add(pawn);
+            }
+        }
+
+        /// <summary>
+        /// Categorizes a plant into Trees or Plants, split by harvestable-now. Blight adds a
+        /// Hazards-Blight entry on top of that placement rather than replacing it.
+        /// </summary>
+        private static void ClassifyPlant(Plant plant, ScannerItem item, ScannerBuckets buckets, HashSet<Thing> categorizedThings)
+        {
+            if (plant.Blighted)
+            {
+                buckets.Sub("Hazards-Blight").Items.Add(item);
+                buckets.Cat("Hazards").Subcategories[0].Items.Add(item);
+            }
+
+            bool harvestableNow = plant.HarvestableNow && plant.LifeStage == PlantLifeStage.Mature;
+            if (plant.def.plant.IsTree)
+            {
+                var subKey = harvestableNow ? "Trees-Harvestable" : "Trees-NonHarvestable";
+                AddTo(buckets.Cat("Trees"), buckets.Sub(subKey), item);
+            }
+            else
+            {
+                // Anything not yet mature (grass, immature crops) counts as debris.
+                var subKey = harvestableNow ? "Plants-Harvestable" : "Plants-Debris";
+                AddTo(buckets.Cat("Plants"), buckets.Sub(subKey), item);
+            }
+
+            categorizedThings.Add(plant);
+        }
+
+        /// <summary>
+        /// Categorizes a non-natural-rock building: travel-related buildings first, then everything
+        /// else by its def's designation category, defaulting to Structure.
+        /// </summary>
+        private static void ClassifyBuilding(Building building, ScannerItem item, ScannerBuckets buckets, HashSet<Thing> categorizedThings)
+        {
+            var buildingsCategory = buckets.Cat("Buildings");
+
+            if (IsTravelingBuilding(building))
+            {
+                AddTo(buildingsCategory, buckets.Sub("Buildings-Traveling"), item);
+            }
+            else
+            {
+                var designationCategory = building.def.designationCategory;
+                string subKey = "Buildings-Structure"; // default
+                if (designationCategory != null)
+                {
+                    // Production is the only relevant category with a DesignationCategoryDefOf
+                    // member; the rest have none, so they stay defName comparisons.
+                    if (designationCategory == DesignationCategoryDefOf.Production)
+                        subKey = "Buildings-Production";
+                    else
+                    {
+                        switch (designationCategory.defName)
+                        {
+                            case "Structure": subKey = "Buildings-Structure"; break;
+                            case "Furniture": subKey = "Buildings-Furniture"; break;
+                            case "Power": subKey = "Buildings-Power"; break;
+                            case "Security": subKey = "Buildings-Security"; break;
+                            case "Misc": subKey = "Buildings-Misc"; break;
+                            case "Joy": subKey = "Buildings-Recreation"; break;
+                            case "Ship": subKey = "Buildings-Ship"; break;
+                            case "Temperature": subKey = "Buildings-Temperature"; break;
+                            default: subKey = "Buildings-Structure"; break;
+                        }
+                    }
+                }
+                AddTo(buildingsCategory, buckets.Sub(subKey), item);
+            }
+
+            categorizedThings.Add(building);
+        }
+
+        /// <summary>
+        /// Categorizes a regular (non-chunk, non-debris) item by storage state: forbidden,
+        /// uninstalled furniture, stored (stockpile/shelf), or scattered.
+        /// </summary>
+        private static void ClassifyItem(Thing thing, ScannerItem item, Map map, ScannerBuckets buckets, HashSet<Thing> categorizedThings)
+        {
+            var itemsCategory = buckets.Cat("Items");
+
+            if (thing.IsForbidden(Faction.OfPlayer))
+                AddTo(itemsCategory, buckets.Sub("Items-Forbidden"), item);
+            else if (IsUninstalledFurniture(thing))
+                AddTo(itemsCategory, buckets.Sub("Items-Furniture"), item);
+            else if (IsInStorage(thing, map))
+                AddTo(itemsCategory, buckets.Sub("Items-Stored"), item);
+            else
+                AddTo(itemsCategory, buckets.Sub("Items-Scattered"), item);
+
+            categorizedThings.Add(thing);
+        }
+
         private static bool IsInStorage(Thing thing, Map map)
         {
-            // Check if thing is in a stockpile zone
             var zone = map.zoneManager.ZoneAt(thing.Position);
             if (zone is Zone_Stockpile)
                 return true;
 
-            // Check if thing is on a storage building (shelf, rack, etc.)
             var storageBuilding = thing.Position.GetThingList(map)
                 .OfType<Building_Storage>()
                 .FirstOrDefault();
@@ -1307,65 +766,49 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Checks if a building is travel-related (transport pods, launchers, hitching spots, shuttles).
-        /// Fueling ports are only included if they don't have a pod connected (to avoid redundancy).
+        /// Checks whether a building is travel-related (transport pods, launchers, hitching spots,
+        /// shuttles). A fueling port counts only while no pod is connected to it.
         /// </summary>
         private static bool IsTravelingBuilding(Building building)
         {
             if (building == null)
                 return false;
 
+            // Detect by comp, not defName, so modded variants reusing the comps are caught.
+            if (building is ThingWithComps twc)
+            {
+                if (twc.GetComp<CompTransporter>() != null || twc.GetComp<CompLaunchable>() != null || twc.GetComp<CompShuttle>() != null)
+                    return true;
+            }
+
             string defName = building.def.defName;
 
-            // Transport pods and launchers
-            if (defName.Contains("TransportPod") || defName.Contains("DropPod"))
-                return true;
-
-            // Pod launcher / fueling port - only if no pod is connected
             if (building.def.building != null && building.def.building.hasFuelingPort)
             {
-                // Check if this fueling port has a connected transport pod
-                // If it does, skip it (the pod will be listed instead)
+                // A connected pod is listed instead of its port.
                 IntVec3 fuelingCell = FuelingPortUtility.GetFuelingPortCell(building);
                 if (fuelingCell.IsValid && building.Map != null)
                 {
-                    // Check if there's a launchable (transport pod) at the fueling cell
                     CompLaunchable launchable = FuelingPortUtility.LaunchableAt(fuelingCell, building.Map);
                     if (launchable != null)
                     {
-                        // Pod is connected - don't list the fueling port separately
                         return false;
                     }
                 }
-                // No pod connected - list the empty fueling port
                 return true;
             }
 
-            // Caravan hitching/packing spot
             if (defName.Contains("CaravanPackingSpot") || defName.Contains("HitchingSpot"))
                 return true;
-
-            // Shuttles (Royalty DLC)
-            if (defName.Contains("Shuttle"))
-                return true;
-
-            // Check for CompTransporter or CompLaunchable components (catches modded variants)
-            if (building is ThingWithComps twc2)
-            {
-                if (twc2.GetComp<CompTransporter>() != null || twc2.GetComp<CompLaunchable>() != null)
-                    return true;
-            }
 
             return false;
         }
 
         private static bool IsUninstalledFurniture(Thing thing)
         {
-            // Check if it's a minified (uninstalled) building
             if (thing is MinifiedThing)
                 return true;
 
-            // Check if the thing def is a building that can be reinstalled
             if (thing.def.Minifiable)
                 return true;
 
@@ -1374,46 +817,21 @@ namespace RimWorldAccess
 
         private static bool IsStoneChunk(Thing thing)
         {
-            // Check if this is a stone chunk (mineable resource lying on ground)
-            if (thing.def.defName.Contains("Chunk"))
-                return true;
-
-            // Also check thingCategories for StoneChunks
-            if (thing.def.thingCategories != null)
-            {
-                foreach (var cat in thing.def.thingCategories)
-                {
-                    if (cat.defName.Contains("Chunk"))
-                        return true;
-                }
-            }
-
-            return false;
+            // Chunks is the parent of StoneChunks, so this one check covers stone, slag and
+            // modded chunk defs alike.
+            return thing.def.IsWithinCategory(ThingCategoryDefOf.Chunks);
         }
 
         private static bool IsDebrisItem(Thing thing)
         {
-            // Check for common debris types
-            if (thing.def.category == ThingCategory.Filth)
-                return true;
-
-            // Note: Chunks are now handled by IsStoneChunk, not filtered as debris
-
-            if (thing.def.defName == "Slag")
-                return true;
-
-            // Check for rubble-like items
-            var label = thing.def.label?.ToLower() ?? "";
-            if (label.Contains("rubble") || label.Contains("slag"))
-                return true;
-
-            return false;
+            // Everything else that reads as debris is already routed away: slag chunks by
+            // IsStoneChunk, RubblePile by the building branch. Filth is what's left.
+            return thing.def.category == ThingCategory.Filth;
         }
 
         /// <summary>
-        /// Yields the 8 cardinal + diagonal neighbors of a cell on the square map grid. The shared
-        /// <see cref="Clump"/> flood-fill gates each neighbor on the valid-position set, so this
-        /// only needs to enumerate candidate offsets.
+        /// Yields the 8 cardinal and diagonal neighbors of a cell. <see cref="Clump"/> gates each
+        /// candidate against the valid-position set, so no bounds check is needed here.
         /// </summary>
         private static IEnumerable<IntVec3> EightWayNeighbors(IntVec3 cell)
         {
@@ -1428,28 +846,20 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Performs a flood fill to find all contiguous positions starting from a given position.
-        /// Uses 8-way adjacency (cardinal + diagonal). Delegates to the shared coordinate-agnostic
-        /// <see cref="Clump.Fill{TTile}"/> so the local and world scanners share one implementation.
+        /// Flood-fills the contiguous 8-way region of <paramref name="validPositions"/> reachable
+        /// from <paramref name="startPos"/>, via the shared <see cref="Clump.Fill{TTile}"/>.
         /// </summary>
-        /// <param name="startPos">The starting position for the flood fill</param>
-        /// <param name="validPositions">Set of all valid positions to consider (must be of same terrain type)</param>
-        /// <returns>Set of all contiguous positions found</returns>
         internal static HashSet<IntVec3> FloodFillTerrainRegion(IntVec3 startPos, HashSet<IntVec3> validPositions)
         {
             return Clump.Fill(startPos, validPositions, EightWayNeighbors);
         }
 
         /// <summary>
-        /// Groups terrain positions by adjacency into separate regions.
+        /// Groups same-label terrain positions into contiguous regions, sorted by distance from the
+        /// cursor.
         /// </summary>
-        /// <param name="positions">All positions with the same terrain label</param>
-        /// <param name="cursorPosition">Current cursor position for distance calculation</param>
-        /// <returns>List of TerrainRegion objects sorted by distance from cursor</returns>
         internal static List<TerrainRegion> GroupTerrainByAdjacency(List<IntVec3> positions, IntVec3 cursorPosition)
         {
-            // Group contiguous tiles via the shared flood-fill, wrap each set into a TerrainRegion
-            // (which computes its center/dimensions/distance), then sort by distance from cursor.
             return Clump.GroupByAdjacency(positions, EightWayNeighbors)
                 .Select(set => new TerrainRegion(set.ToList(), cursorPosition))
                 .OrderBy(r => r.Distance)
@@ -1457,11 +867,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Groups deep ore positions by adjacency into separate regions, tracking quantity per region.
+        /// Groups deep ore positions into contiguous regions with TotalQuantity populated, sorted by
+        /// distance from the cursor.
         /// </summary>
-        /// <param name="positionsWithCounts">All positions with their ore counts</param>
-        /// <param name="cursorPosition">Current cursor position for distance calculation</param>
-        /// <returns>List of TerrainRegion objects with TotalQuantity populated, sorted by distance</returns>
         private static List<TerrainRegion> GroupDeepOreByAdjacency(
             List<(IntVec3 position, int count)> positionsWithCounts,
             IntVec3 cursorPosition)
@@ -1472,13 +880,11 @@ namespace RimWorldAccess
 
             while (remaining.Count > 0)
             {
-                // Start flood fill from the first remaining position
                 var startPos = remaining.First();
                 var regionPositions = FloodFillTerrainRegion(startPos, remaining);
 
                 if (regionPositions.Count > 0)
                 {
-                    // Build list with counts for this region
                     var regionWithCounts = regionPositions
                         .Select(pos => (pos, positionToCount[pos]))
                         .ToList();
@@ -1486,48 +892,40 @@ namespace RimWorldAccess
                     var region = new TerrainRegion(regionWithCounts, cursorPosition);
                     regions.Add(region);
 
-                    // Remove processed positions
                     foreach (var pos in regionPositions)
                         remaining.Remove(pos);
                 }
             }
 
-            // Sort regions by distance from cursor
             return regions.OrderBy(r => r.Distance).ToList();
         }
 
         /// <summary>
-        /// Groups identical items together (same def, quality, stuff).
-        /// Pawns are never grouped - they're unique individuals.
-        /// Terrain tiles are grouped by adjacency into separate regions.
-        /// Designations are grouped by designation type.
+        /// Groups items that share a def, stuff and quality; terrain by adjacency and designations
+        /// by def. Pawns, zones and rooms are unique and pass through ungrouped.
         /// </summary>
         private static List<ScannerItem> GroupIdenticalItems(List<ScannerItem> items, IntVec3 cursorPosition)
         {
             var grouped = new List<ScannerItem>();
 
-            // Separate items by type for dictionary-based grouping
             var terrainByLabel = new Dictionary<string, List<ScannerItem>>();
             var designationsByDef = new Dictionary<DesignationDef, List<ScannerItem>>();
             var thingsByKey = new Dictionary<(ThingDef def, ThingDef stuff, QualityCategory? quality), List<ScannerItem>>();
-            var passthrough = new List<ScannerItem>(); // items that don't get grouped
+            var passthrough = new List<ScannerItem>();
 
-            // Single pass: categorize all items into buckets
             foreach (var item in items)
             {
-                // Items with terrain regions are already grouped - pass through
+                // Terrain-region items arrive already grouped.
                 if (item.HasTerrainRegions)
                 {
                     passthrough.Add(item);
                 }
-                // Terrain items: group by label
                 else if (item.IsTerrain)
                 {
                     if (!terrainByLabel.ContainsKey(item.Label))
                         terrainByLabel[item.Label] = new List<ScannerItem>();
                     terrainByLabel[item.Label].Add(item);
                 }
-                // Designation items: group by designation def
                 else if (item.IsDesignation)
                 {
                     var def = item.Designation.def;
@@ -1535,17 +933,14 @@ namespace RimWorldAccess
                         designationsByDef[def] = new List<ScannerItem>();
                     designationsByDef[def].Add(item);
                 }
-                // Zones and rooms are unique - pass through
                 else if (item.IsZone || item.IsRoom)
                 {
                     passthrough.Add(item);
                 }
-                // Pawns are unique individuals - pass through
                 else if (item.Thing is Pawn)
                 {
                     passthrough.Add(item);
                 }
-                // Regular things: group by (def, stuff, quality)
                 else if (item.Thing != null)
                 {
                     var actualThing = GetActualThing(item.Thing);
@@ -1561,7 +956,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Process terrain groups: adjacency grouping per label
             foreach (var kvp in terrainByLabel)
             {
                 var positions = kvp.Value.Select(i => i.Position).ToList();
@@ -1577,7 +971,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Process designation groups
             foreach (var kvp in designationsByDef)
             {
                 if (kvp.Value.Count > 1)
@@ -1592,7 +985,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Process thing groups
             foreach (var kvp in thingsByKey)
             {
                 if (kvp.Value.Count > 1)
@@ -1607,15 +999,13 @@ namespace RimWorldAccess
                 }
             }
 
-            // Add all passthrough items
             grouped.AddRange(passthrough);
 
             return grouped;
         }
 
         /// <summary>
-        /// Unwraps a MinifiedThing to get the actual inner item, or returns the thing as-is.
-        /// Handles MinifiedThing and MinifiedTree (which extends MinifiedThing).
+        /// Unwraps a MinifiedThing to its inner item, or returns the thing as-is.
         /// </summary>
         private static Thing GetActualThing(Thing thing)
         {
@@ -1625,24 +1015,20 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Checks if two things are identical (same def, quality, stuff, etc.)
-        /// HP differences are ignored to prevent duplicate entries for damaged items.
+        /// Checks whether two things share def, stuff and quality. HP is ignored so damaged items
+        /// still group with their undamaged twins.
         /// </summary>
         private static bool AreThingsIdentical(Thing a, Thing b)
         {
-            // Unwrap minified things to compare actual items
             var actualA = GetActualThing(a);
             var actualB = GetActualThing(b);
 
-            // Must be the same def
             if (actualA.def != actualB.def)
                 return false;
 
-            // Must have same stuff (material)
             if (actualA.Stuff != actualB.Stuff)
                 return false;
 
-            // Check quality if applicable
             var qualityA = actualA.TryGetComp<CompQuality>();
             var qualityB = actualB.TryGetComp<CompQuality>();
 
@@ -1653,15 +1039,13 @@ namespace RimWorldAccess
             }
             else if (qualityA != null || qualityB != null)
             {
-                // One has quality, the other doesn't
                 return false;
             }
 
-            // HP is now ignored - damaged trees, walls, etc. are grouped together
             return true;
         }
 
-        // Cell-based collection cache (terrain, mineables, deep ore)
+        // Cell-walk cache: terrain, mineables, deep ore, roofs, fog.
         private static List<ScannerItem> cachedTerrainNatural = null;
         private static List<ScannerItem> cachedTerrainConstructed = null;
         private static List<ScannerItem> cachedMineableRare = null;
@@ -1676,16 +1060,14 @@ namespace RimWorldAccess
         private static int lastPollutionCount = 0;
 
         /// <summary>
-        /// Invalidates the fog portion of the cell-walk cache. Called by FogChangePatch
-        /// whenever a cell's fog state changes. The next CollectMapItems will rebuild the
-        /// Unexplored category — and, because fog collection shares the AllCells walk with
-        /// terrain/mineables/deep ore, those caches are rebuilt at the same time.
+        /// Invalidates the fog portion of the cell-walk cache. Because fog shares the AllCells walk,
+        /// the terrain, mineable and deep-ore caches rebuild with it.
         /// </summary>
         public static void MarkFogDirty() => fogDirty = true;
 
         /// <summary>
-        /// Invalidates all cell-based caches. Call when the map state changes
-        /// in ways not captured by StateHashOfGroup (e.g., map change, mod reload).
+        /// Invalidates all cell-based caches. Call when map state changes in ways StateHashOfGroup
+        /// does not capture, such as a map switch or mod reload.
         /// </summary>
         public static void InvalidateCache()
         {
@@ -1705,8 +1087,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets the localized label for a DesignationDef by finding its Designator.
-        /// Uses a static cache built on first call to avoid repeated reflection lookups.
+        /// Designator labels by DesignationDef, built on first use to avoid repeated reflection.
         /// </summary>
         private static Dictionary<DesignationDef, string> designatorLabelCache = null;
 
@@ -1715,7 +1096,6 @@ namespace RimWorldAccess
             if (def == null)
                 return "RimWorldAccess.Map.Label.Unknown".Translate();
 
-            // Build cache on first call
             if (designatorLabelCache == null)
             {
                 designatorLabelCache = new Dictionary<DesignationDef, string>();
@@ -1742,7 +1122,6 @@ namespace RimWorldAccess
             if (designatorLabelCache.TryGetValue(def, out string label))
                 return label;
 
-            // Fallback: use LabelCap if available, otherwise format defName
             label = def.LabelCap;
             if (string.IsNullOrEmpty(label))
             {

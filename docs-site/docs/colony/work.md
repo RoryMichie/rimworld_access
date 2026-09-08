@@ -20,17 +20,21 @@ Press **Alt+M** to toggle between the two assignment modes:
 
 ## Setting priorities in manual mode (focused view)
 
-In manual mode, in the focused view, jobs are organized by priority column:
+In manual mode, in the focused view, jobs are organized by priority level:
 
-- **Up/Down** move between priority levels (columns 1 through 4, plus Disabled).
+- **Up/Down** move between priority levels (1 through 4, plus Disabled).
 - **Left/Right** move between jobs within the current priority level.
 - **Tab/Shift+Tab** move to the next or previous pawn.
+
+You can also start typing a job's name to jump straight to it, wherever it currently sits. While a search is running, **Up/Down** step through the matches, and **Enter** or **Shift+Enter** settles on the one you are hearing without closing the menu.
 
 To set a priority, press a number key:
 
 - **1** is the highest priority.
 - **2**, **3**, and **4** step down from there.
 - **0** turns the job off entirely.
+
+**Enter** and **Escape** both save and close the tab.
 
 As you arrow left and right through a priority level, the mod announces each job's name, skill level, passion, a description, and the specific sub-tasks it includes, in the order the pawn performs them. Some of those sub-tasks are spoken with an "E" in front. The "E" is a spoken marker, not a key you press: it flags a task the game treats as an emergency (such as firefighting or rescuing a downed colonist), which a pawn will drop other work to attend to.
 
@@ -43,6 +47,15 @@ These keys work the same in both the focused view and the table view.
 Add **Shift** to apply the same cycle to every eligible colonist at once: **Shift+`[`** raises the priority for every pawn, **Shift+`]`** lowers it for every pawn.
 
 **Shift+number** (0 through 4) sets that job to the chosen priority for every eligible colonist at once.
+
+## Copying a colonist's priorities
+
+Once one colonist's jobs are set the way you want them, you can hand the whole set to someone else. These keys work in the focused view and the table view alike, and they use the same clipboard as the copy and paste buttons a sighted player clicks.
+
+- **Ctrl+C** copies the priorities of the colonist you are on.
+- **Ctrl+V** pastes them onto the colonist you are on.
+
+Paste needs a copy first, so pressing **Ctrl+V** before anything has been copied just says so. Jobs a colonist can never do are left alone.
 
 ## How execution order works
 

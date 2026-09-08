@@ -2,6 +2,9 @@
 
 This page walks through what you need to do before the mod will work, including turning off the Steam overlay and installing the mod files.
 
+!!! tip "Having trouble?"
+    If you get stuck on any step here, join the official [RimWorld Access Discord server](https://discord.rimworldaccess.com). Ask in the help channel and we will be happy to walk you through it.
+
 ## Turn off the Steam in-game overlay
 
 Do this before anything else, for your sanity. This will benefit all your Steam games, not just RimWorld.

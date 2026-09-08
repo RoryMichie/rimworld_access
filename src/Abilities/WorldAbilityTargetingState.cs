@@ -10,11 +10,24 @@ namespace RimWorldAccess
     /// <summary>
     /// State management for world map ability targeting (e.g., Farskip).
     /// Follows the pattern from TransportPodLaunchState.
+    ///
+    /// Two entry points. <see cref="Open"/> takes a vanilla
+    /// <see cref="RimWorld.Ability"/> and can therefore offer per-tile validity
+    /// from the ability itself. <see cref="OpenExternal"/> serves an ability
+    /// framework that is not vanilla's — it calls Find.WorldTargeter.BeginTargeting
+    /// directly, so there is no Ability to consult and the caller supplies only a
+    /// spoken label. Confirm and cancel are identical for both: the destination is
+    /// committed by invoking WorldTargeter's own callback, never by
+    /// reimplementing what that callback does.
     /// </summary>
     public static class WorldAbilityTargetingState
     {
         private static bool isActive = false;
         private static Ability currentAbility = null;
+
+        // Set only by OpenExternal: the caster to return the camera to on cancel,
+        // for sessions that carry no vanilla Ability to read it from.
+        private static Pawn externalCaster = null;
 
         /// <summary>
         /// Gets whether world ability targeting mode is currently active.
@@ -64,59 +77,52 @@ namespace RimWorldAccess
         }
 
         /// <summary>
+        /// Opens world ability targeting for a session started outside vanilla's
+        /// Ability system — a mod verb that calls Find.WorldTargeter.BeginTargeting
+        /// itself, where no <see cref="RimWorld.Ability"/> exists to describe the
+        /// session. Confirm, cancel and the TargetingScope claims are shared with
+        /// <see cref="Open"/>; only the per-tile validity clause is unavailable,
+        /// because that clause comes from the vanilla ability's own
+        /// WorldMapExtraLabel/ValidateGlobalTarget.
+        /// </summary>
+        internal static void OpenExternal(string label, Pawn caster)
+        {
+            currentAbility = null;
+            externalCaster = caster;
+            isActive = true;
+
+            var sb = new System.Text.StringBuilder();
+            if (!string.IsNullOrEmpty(label))
+                sb.Append("RimWorldAccess.Abilities.World.TargetingStart".Translate(label));
+            sb.Append("RimWorldAccess.Abilities.World.SelectDestination".Translate());
+            TolkHelper.SpeakData(sb.ToString(), SpeechPriority.Normal);
+        }
+
+        /// <summary>
         /// Closes world ability targeting state.
         /// </summary>
         public static void Close()
         {
             isActive = false;
             currentAbility = null;
-        }
-
-        /// <summary>
-        /// Handles keyboard input during world ability targeting.
-        /// Returns true if input was handled.
-        /// </summary>
-        public static bool HandleInput(UnityEngine.KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!isActive)
-                return false;
-
-            // If WorldTargeter stopped, close our state
-            if (Find.WorldTargeter == null || !Find.WorldTargeter.IsTargeting)
-            {
-                Close();
-                return false;
-            }
-
-            // Enter - confirm current destination
-            if ((key == UnityEngine.KeyCode.Return || key == UnityEngine.KeyCode.KeypadEnter) && !shift && !ctrl && !alt)
-            {
-                // If a float menu is showing, let it handle Enter
-                if (WindowlessFloatMenuState.IsActive)
-                    return false;
-
-                ConfirmCurrentDestination();
-                return true;
-            }
-
-            // Escape - cancel targeting
-            if (key == UnityEngine.KeyCode.Escape)
-            {
-                // If a float menu is showing, let it close first
-                if (WindowlessFloatMenuState.IsActive)
-                    return false;
-
-                CancelTargeting();
-                return true;
-            }
-
-            return false;
+            externalCaster = null;
         }
 
         /// <summary>
         /// Confirms the currently selected world tile as the destination.
+        /// Internal: called from TargetingScope's
+        /// worldAbilityTargeting.confirm claim, which replaces the legacy
+        /// handler's Enter branch. That branch's own "skip if
+        /// WindowlessFloatMenuState is active" guard is now redundant —
+        /// ShellDispatcherPatch's blanket LegacyKeyboardOverlayActive
+        /// stand-down already keeps the whole shell (this claim included)
+        /// from dispatching while a float menu is up. The legacy handler's own
+        /// WorldTargeter staleness self-close does not need a mirror-reconcile
+        /// replacement — this state already has a dedicated
+        /// WorldTargeter.StopTargeting postfix (AbilityTargetingPatch.cs)
+        /// that closes it properly.
         /// </summary>
-        private static void ConfirmCurrentDestination()
+        internal static void ConfirmCurrentDestination()
         {
             if (!WorldNavigationState.IsActive)
             {
@@ -187,12 +193,13 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Cancels world ability targeting and returns to map.
+        /// Cancels world ability targeting and returns to map. Internal:
+        /// called from TargetingScope's worldAbilityTargeting.cancel claim.
         /// </summary>
-        private static void CancelTargeting()
+        internal static void CancelTargeting()
         {
             // Cache the return target
-            Pawn caster = currentAbility?.pawn;
+            Pawn caster = currentAbility?.pawn ?? externalCaster;
             Map returnMap = caster?.Map;
 
             // Stop world targeting

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Autopilot.Engage.Label>Атакувати ціль</RimWorldAccess.Autopilot.Engage.Label>
+  <RimWorldAccess.Autopilot.Engage.Desc>Наказує {0} атакувати обрану ціль. Персонаж іде до цілі й атакує її згідно з призначеним правилом бою, відбиваючись від ворогів, що нападають дорогою.</RimWorldAccess.Autopilot.Engage.Desc>
+  <RimWorldAccess.Autopilot.Engage.CurrentOrders>Поточні накази: {0}.</RimWorldAccess.Autopilot.Engage.CurrentOrders>
+  <RimWorldAccess.Autopilot.Patrol.Label>Патруль: {0}</RimWorldAccess.Autopilot.Patrol.Label>
+  <RimWorldAccess.Autopilot.Patrol.Desc>Наказує {0} обходити обрану зону, зупиняючись для бою з будь-яким ворогом у радіусі ураження.</RimWorldAccess.Autopilot.Patrol.Desc>
+  <RimWorldAccess.Autopilot.Patrol.NoneOption>Без патруля</RimWorldAccess.Autopilot.Patrol.NoneOption>
+  <RimWorldAccess.Autopilot.PatrolAssigned>{0}: патруль — {1}.</RimWorldAccess.Autopilot.PatrolAssigned>
+  <RimWorldAccess.Autopilot.PatrolCleared>{0}: патруль скасовано.</RimWorldAccess.Autopilot.PatrolCleared>
+  <RimWorldAccess.Autopilot.SeekDestroy.Label>Знайти і знищити</RimWorldAccess.Autopilot.SeekDestroy.Label>
+  <RimWorldAccess.Autopilot.SeekDestroy.Desc>{0} переслідує ворогів замість утримання позиції. Позначені та наказані цілі мають пріоритет.</RimWorldAccess.Autopilot.SeekDestroy.Desc>
+  <RimWorldAccess.Autopilot.PickerLabel>Правило бою: {0}</RimWorldAccess.Autopilot.PickerLabel>
+  <RimWorldAccess.Autopilot.PickerDesc>Правило бою, за яким б'ється {0}.</RimWorldAccess.Autopilot.PickerDesc>
+  <RimWorldAccess.Autopilot.HuntAnimals.Label>Полювати на тварин</RimWorldAccess.Autopilot.HuntAnimals.Label>
+  <RimWorldAccess.Autopilot.HuntAnimals.Desc>{0} полює на диких тварин, поки мобілізований. Вороги завжди мають пріоритет. Правило полювання {0} визначає, на яких тварин можна полювати.</RimWorldAccess.Autopilot.HuntAnimals.Desc>
+  <RimWorldAccess.Autopilot.AutocastAll.Label>Автозастосування всіх здібностей</RimWorldAccess.Autopilot.AutocastAll.Label>
+  <RimWorldAccess.Autopilot.AutocastAll.Desc>Позначає всі здібності {0} для автоматичного застосування, поки він мобілізований. Кожну здібність можна також позначити чи зняти позначку в її власному меню.</RimWorldAccess.Autopilot.AutocastAll.Desc>
+  <RimWorldAccess.Autopilot.Pause.Label>Призупинити бойовий автопілот</RimWorldAccess.Autopilot.Pause.Label>
+  <RimWorldAccess.Autopilot.Pause.Desc>Зупиняє всю автоматичну бойову поведінку {0} і повертає повний контроль. Правила та накази зберігаються, але ніщо не виконується, поки прапорець не знято. Новий наказ атакувати чи патрулювати теж відновлює автоматику.</RimWorldAccess.Autopilot.Pause.Desc>
+
+  <RimWorldAccess.Autopilot.TakeCover.Label>Ховатися в укриття</RimWorldAccess.Autopilot.TakeCover.Label>
+  <RimWorldAccess.Autopilot.TakeCover.Desc>Стрільці займають вогневі позиції з укриттям. Бійці ближнього бою це ігнорують.</RimWorldAccess.Autopilot.TakeCover.Desc>
+  <RimWorldAccess.Autopilot.MeleeCharge.Label>Наскок у ближній бій</RimWorldAccess.Autopilot.MeleeCharge.Label>
+  <RimWorldAccess.Autopilot.MeleeCharge.Desc>Бійці ближнього бою кидаються на віддалені цілі. Якщо вимкнено, вони атакують лише ворогів, що підійшли.</RimWorldAccess.Autopilot.MeleeCharge.Desc>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Label>Переслідувати будь-де</RimWorldAccess.Autopilot.PursueAnywhere.Label>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Desc>«Знайти і знищити» обирає цілі по всій мапі та переслідує їх, хоч би як далеко вони тікали. Якщо вимкнено, обираються лише видимі вороги поблизу. Нічого не робить, поки «Знайти і знищити» вимкнено.</RimWorldAccess.Autopilot.PursueAnywhere.Desc>
+  <RimWorldAccess.Autopilot.FightAsSquad.Label>Битися загоном</RimWorldAccess.Autopilot.FightAsSquad.Label>
+  <RimWorldAccess.Autopilot.FightAsSquad.Desc>Узгоджує дії з найближчими призваними персонажами, чия політика теж б'ється загоном: розподіляє вогонь по групі ворогів замість того, щоб усім бити по одній цілі, і тримає клітинку відстані, щоб випадкова куля чи вибух зачепили одного, а не всіх разом.</RimWorldAccess.Autopilot.FightAsSquad.Desc>
+  <RimWorldAccess.Autopilot.BashDoors.Label>Виламувати двері</RimWorldAccess.Autopilot.BashDoors.Label>
+  <RimWorldAccess.Autopilot.BashDoors.Desc>Виламує замкнені або ворожі двері, що перегороджують шлях до цілі.</RimWorldAccess.Autopilot.BashDoors.Desc>
+  <RimWorldAccess.Autopilot.KeepDistance.Label>Тримати дистанцію</RimWorldAccess.Autopilot.KeepDistance.Label>
+  <RimWorldAccess.Autopilot.KeepDistance.Desc>Стрільці відходять від бійців ближнього бою, що підійшли надто близько.</RimWorldAccess.Autopilot.KeepDistance.Desc>
+  <RimWorldAccess.Autopilot.FallBackInjured.Label>Відступати при пораненні</RimWorldAccess.Autopilot.FallBackInjured.Label>
+  <RimWorldAccess.Autopilot.FallBackInjured.Desc>При тяжкому пораненні відступає від ворогів, що насідають, а потім продовжує обережно битися з укриття на відстані замість того, щоб кидатися в атаку.</RimWorldAccess.Autopilot.FallBackInjured.Desc>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Label>Уникати вибухів</RimWorldAccess.Autopilot.AvoidBlasts.Label>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Desc>Тікає від підпаленої вибухівки та неминучих вибухів.</RimWorldAccess.Autopilot.AvoidBlasts.Desc>
+  <RimWorldAccess.Autopilot.AutocastMarked.Label>Автозастосування позначених здібностей</RimWorldAccess.Autopilot.AutocastMarked.Label>
+  <RimWorldAccess.Autopilot.AutocastMarked.Desc>Застосовує здібності, які персонаж позначив для автозастосування. Позначки визначають які, цей прапорець — чи застосовувати взагалі. Якщо вимкнено, позначки зберігаються, але ігноруються.</RimWorldAccess.Autopilot.AutocastMarked.Desc>
+
+  <RimWorldAccess.Autopilot.AutocastOption>Автозастосування</RimWorldAccess.Autopilot.AutocastOption>
+  <RimWorldAccess.Autopilot.AutocastOn>автозастосування ввімкнено</RimWorldAccess.Autopilot.AutocastOn>
+
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>Увімкнути бойовий автопілот</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>Дозволяє мобілізованим персонажам битися самостійно. Додає правила бою та полювання і нові кнопки мобілізованим персонажам. Вимкнення прибирає кнопки й зупиняє автоматизацію.</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>Вільний режим вимикає «Знайти і знищити» та «Полювати на тварин»</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>Знімає прапорці «Знайти і знищити» та «Полювати на тварин» щоразу, коли персонажа переводять у вільний режим.</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>
+
+  <RimWorldAccess.Autopilot.PolicyTitle>Правила бою</RimWorldAccess.Autopilot.PolicyTitle>
+  <RimWorldAccess.Autopilot.PolicyTip>Створюйте шаблони, що визначають, як мобілізовані персонажі б'ються самостійно, та керуйте ними. Призначайте правила на вкладках «Призначення», «Тварини» або «Механоїди»; у транспорту лишається кнопка правила бою.</RimWorldAccess.Autopilot.PolicyTip>
+  <RimWorldAccess.Autopilot.PolicyName>Правило бою</RimWorldAccess.Autopilot.PolicyName>
+  <RimWorldAccess.Autopilot.ManagePolicies>Керувати правилами бою</RimWorldAccess.Autopilot.ManagePolicies>
+  <RimWorldAccess.Autopilot.Policy.None>Немає</RimWorldAccess.Autopilot.Policy.None>
+  <RimWorldAccess.Autopilot.Policy.None.Tip>Без правила бою. Бойова автоматика для цього персонажа повністю вимкнена: ні «Знайти і знищити», ні наказів атакувати, ні автозастосування здібностей. Полювання на тварин і патрулювання — окремі функції й далі працюють.</RimWorldAccess.Autopilot.Policy.None.Tip>
+  <RimWorldAccess.Autopilot.PolicyInUse>Правило бою використовує {0}.</RimWorldAccess.Autopilot.PolicyInUse>
+  <RimWorldAccess.Autopilot.Policy.FullControl>Повний контроль</RimWorldAccess.Autopilot.Policy.FullControl>
+  <RimWorldAccess.Autopilot.Policy.FightNearby>Бій поблизу</RimWorldAccess.Autopilot.Policy.FightNearby>
+  <RimWorldAccess.Autopilot.Policy.StaySafe>Берегти себе</RimWorldAccess.Autopilot.Policy.StaySafe>
+
+  <RimWorldAccess.Autopilot.HuntPolicyTitle>Правила полювання</RimWorldAccess.Autopilot.HuntPolicyTitle>
+  <RimWorldAccess.Autopilot.HuntPolicyTip>Створюйте шаблони, що визначають, на яких тварин можуть полювати мобілізовані персонажі: список дозволених видів, діапазон шансу помсти та захист шанованих тварин. Саме полювання вмикається для кожного персонажа кнопкою «Полювати на тварин». Поки персонаж мобілізований, ці правила мають пріоритет над позначками для полювання.</RimWorldAccess.Autopilot.HuntPolicyTip>
+  <RimWorldAccess.Autopilot.HuntPolicyName>Правило полювання</RimWorldAccess.Autopilot.HuntPolicyName>
+  <RimWorldAccess.Autopilot.ManageHuntPolicies>Керувати правилами полювання</RimWorldAccess.Autopilot.ManageHuntPolicies>
+  <RimWorldAccess.Autopilot.HuntPolicyInUse>Правило полювання використовує {0}.</RimWorldAccess.Autopilot.HuntPolicyInUse>
+  <RimWorldAccess.Autopilot.HuntPolicyIsDefault>Стандартне правило полювання не можна видалити.</RimWorldAccess.Autopilot.HuntPolicyIsDefault>
+  <RimWorldAccess.Autopilot.HuntPolicy.SafeGame>Безпечна дичина</RimWorldAccess.Autopilot.HuntPolicy.SafeGame>
+  <RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>Будь-яка тварина</RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>
+  <RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>Дозволені тварини</RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.Desc>Полювати можна лише на тварин, чий шанс помсти при пораненні потрапляє в цей діапазон.</RimWorldAccess.Autopilot.HuntRevengeRange.Desc>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>Шанс помсти при пораненні: {0}</RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Label>Щадити шанованих тварин</RimWorldAccess.Autopilot.HuntSpareVenerated.Label>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>Ніколи не полювати на тварин, яких шанує ідеолігія персонажа.</RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>
+
+  <RimWorldAccess.Autopilot.SummaryPrefix>Вмикає: {0}.</RimWorldAccess.Autopilot.SummaryPrefix>
+  <RimWorldAccess.Autopilot.SummarySeparator>, </RimWorldAccess.Autopilot.SummarySeparator>
+  <RimWorldAccess.Autopilot.SummaryNothing>Нічого не вмикає. Персонаж тримає позицію та стріляє за готовністю.</RimWorldAccess.Autopilot.SummaryNothing>
+
+  <RimWorldAccess.Autopilot.Report.MovingToCover>іде в укриття на {0}, {1}.</RimWorldAccess.Autopilot.Report.MovingToCover>
+  <RimWorldAccess.Autopilot.Report.MovingToCoverBehind>іде в укриття на {1}, {2}: {0}.</RimWorldAccess.Autopilot.Report.MovingToCoverBehind>
+  <RimWorldAccess.Autopilot.Report.MovingToEngage>іде на зближення: {0}.</RimWorldAccess.Autopilot.Report.MovingToEngage>
+  <RimWorldAccess.Autopilot.Report.FallingBack>через тяжкі рани відступає до {0}, {1}.</RimWorldAccess.Autopilot.Report.FallingBack>
+  <RimWorldAccess.Autopilot.Report.FleeingBlast>виходить із зони вибуху: {0}.</RimWorldAccess.Autopilot.Report.FleeingBlast>
+  <RimWorldAccess.Autopilot.Report.BackingAway>відходить від {0}.</RimWorldAccess.Autopilot.Report.BackingAway>
+  <RimWorldAccess.Autopilot.Report.Casting>застосовує {0}.</RimWorldAccess.Autopilot.Report.Casting>
+  <RimWorldAccess.Autopilot.Report.CastingOn>застосовує {0} на {1}.</RimWorldAccess.Autopilot.Report.CastingOn>
+  <RimWorldAccess.Autopilot.Report.VehicleAdvance>їде на зближення з найближчим ворогом.</RimWorldAccess.Autopilot.Report.VehicleAdvance>
+  <RimWorldAccess.Autopilot.Report.VehicleFiringPosition>їде на вогневу позицію.</RimWorldAccess.Autopilot.Report.VehicleFiringPosition>
+  <RimWorldAccess.Autopilot.Report.VehicleHolding>утримує вогневу позицію.</RimWorldAccess.Autopilot.Report.VehicleHolding>
+  <RimWorldAccess.Autopilot.Report.EngagingOrdered>атакує за наказом: {0}.</RimWorldAccess.Autopilot.Report.EngagingOrdered>
+  <RimWorldAccess.Autopilot.Report.EngagingMarked>атакує позначену ціль: {0}.</RimWorldAccess.Autopilot.Report.EngagingMarked>
+  <RimWorldAccess.Autopilot.Report.ReturningToPost>повертається на пост у {0}, {1}.</RimWorldAccess.Autopilot.Report.ReturningToPost>
+  <RimWorldAccess.Autopilot.Report.Patrolling>патрулює: {0}.</RimWorldAccess.Autopilot.Report.Patrolling>
+  <RimWorldAccess.Autopilot.Report.FightingOff>відбивається від {0}.</RimWorldAccess.Autopilot.Report.FightingOff>
+  <RimWorldAccess.Autopilot.Report.HoldingFiring>тримає позицію і веде вогонь.</RimWorldAccess.Autopilot.Report.HoldingFiring>
+  <RimWorldAccess.Autopilot.Report.SpreadingFire>переносить вогонь на {0}.</RimWorldAccess.Autopilot.Report.SpreadingFire>
+  <RimWorldAccess.Autopilot.Report.WoundedHolding>поранений, тримає позицію.</RimWorldAccess.Autopilot.Report.WoundedHolding>
+
+  <RimWorldAccess.Autopilot.EngageOption>Атакувати: {0}</RimWorldAccess.Autopilot.EngageOption>
+  <RimWorldAccess.Autopilot.EngageOption.Tip>Атакує цю ціль, поки вона не впаде. Від ворогів, що нападають дорогою, персонаж спершу відбивається.</RimWorldAccess.Autopilot.EngageOption.Tip>
+  <RimWorldAccess.Autopilot.EngagePawnCount>{0} персонажів</RimWorldAccess.Autopilot.EngagePawnCount>
+  <RimWorldAccess.Autopilot.EngageOrdered>{0}: ціль — {1}.</RimWorldAccess.Autopilot.EngageOrdered>
+  <RimWorldAccess.Autopilot.EngageQueued>{0}: {1} у черзі.</RimWorldAccess.Autopilot.EngageQueued>
+  <RimWorldAccess.Autopilot.ClearOrders>Скасувати накази атаки</RimWorldAccess.Autopilot.ClearOrders>
+  <RimWorldAccess.Autopilot.OrdersCleared>Накази атаки скасовано.</RimWorldAccess.Autopilot.OrdersCleared>
+
+  <RimWorldAccess.Autopilot.AttackDesignator.Label>позначити для атаки</RimWorldAccess.Autopilot.AttackDesignator.Label>
+  <RimWorldAccess.Autopilot.AttackDesignator.Desc>Позначає цілі, які персонажі в режимі «Знайти і знищити» атакують першими. Виділення області позначає лише ворогів; Shift додає істот без фракції, Ctrl і Shift додають усіх.</RimWorldAccess.Autopilot.AttackDesignator.Desc>
+  <RimWorldAccess.Autopilot.AttackDesignator.MustTarget>Треба позначити персонажа, якого можна атакувати.</RimWorldAccess.Autopilot.AttackDesignator.MustTarget>
+</LanguageData>

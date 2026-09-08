@@ -17,6 +17,11 @@ namespace RimWorldAccess.DevBridge
         {
             DevBridgeServer.EnsureStarted();
             MainThreadDispatcher.DrainPending();
+
+            // Ticks the multi-frame sequence engine once per real frame, after any /inject arm request
+            // queued this pass has had a chance to run — so a "wait N" between two steps is N real
+            // frames, not zero (see ShellDev.Sequence.Game.cs's header for why that matters).
+            RimWorldAccess.Shell.ShellDev.AdvanceSequence();
         }
     }
 }

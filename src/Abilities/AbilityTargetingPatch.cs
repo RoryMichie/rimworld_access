@@ -109,8 +109,8 @@ namespace RimWorldAccess
         /// Patch the callback-based BeginTargeting overload (TargetingParameters + Action + Pawn + ...).
         /// Used by float-menu actions like "Force [pawn] to wear [apparel]" that open a targeter
         /// without an ITargetingSource. We capture the option's localized label from
-        /// PendingTargetingContext (set by WindowlessFloatMenuState / UnifiedKeyboardPatch
-        /// before invoking option.Chosen).
+        /// PendingTargetingContext (set by WindowlessFloatMenuState before invoking
+        /// option.Chosen).
         /// </summary>
         [HarmonyPatch(typeof(Targeter), "BeginTargeting", new Type[] {
             typeof(TargetingParameters),

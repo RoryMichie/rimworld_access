@@ -41,18 +41,13 @@
 
   <!-- =================================================================
        Quest menu lifecycle (QuestMenuState.Open / Close / OpenAndSelect).
-       OpenInstructions is the one-time orientation message spoken when
-       the menu opens; it is suffixed with the first quest's announcement
-       or the empty-tab message. {0} = first quest announcement, or tab
-       summary, depending on context.
+       Title is the one-shot screen name spoken when the menu opens; the
+       shared screen machinery announces the focused row separately.
        ================================================================= -->
-  <RimWorldAccess.Quests.Menu.OpenInstructions>任务菜单。Alt+A 接受，Alt+D 取消。回车键逐条浏览任务详情。</RimWorldAccess.Quests.Menu.OpenInstructions>
   <RimWorldAccess.Quests.Menu.Title>任务菜单</RimWorldAccess.Quests.Menu.Title>
   <RimWorldAccess.Quests.Menu.Closed>任务菜单已关闭</RimWorldAccess.Quests.Menu.Closed>
   <RimWorldAccess.Quests.Menu.QuestNoLongerAvailable>任务已不可接受</RimWorldAccess.Quests.Menu.QuestNoLongerAvailable>
-  <RimWorldAccess.Quests.Menu.NoQuestsInTab>此选项卡中没有任务</RimWorldAccess.Quests.Menu.NoQuestsInTab>
   <RimWorldAccess.Quests.Menu.NoQuestSelected>未选择任务</RimWorldAccess.Quests.Menu.NoQuestSelected>
-  <RimWorldAccess.Quests.Menu.FailedToActivateButton>激活按钮失败</RimWorldAccess.Quests.Menu.FailedToActivateButton>
 
   <!-- =================================================================
        Quest tabs. Available/Active/Historical (vanilla provides the
@@ -82,7 +77,7 @@
   <RimWorldAccess.Quests.Status.Expired>已过期</RimWorldAccess.Quests.Status.Expired>
 
   <!-- =================================================================
-       List-view announcement composition (BuildQuestAnnouncement).
+       List-view row composition (BuildQuestRowLabel).
        NameWithStatus appends a status word to the quest name; the bare
        Name case has no suffix and is spoken directly.
        StarsOne/Many is the difficulty rating; CharitySuffix is appended
@@ -116,9 +111,6 @@
   <RimWorldAccess.Quests.Detail.AcceptedAgo>已接受: {0}前</RimWorldAccess.Quests.Detail.AcceptedAgo>
   <RimWorldAccess.Quests.Detail.Status>状态: {0}</RimWorldAccess.Quests.Detail.Status>
   <RimWorldAccess.Quests.Detail.Finished>完成于: {0}前</RimWorldAccess.Quests.Detail.Finished>
-  <RimWorldAccess.Quests.Detail.StartOfDetails>任务详情开始</RimWorldAccess.Quests.Detail.StartOfDetails>
-  <RimWorldAccess.Quests.Detail.EndOfDetails>任务详情结束</RimWorldAccess.Quests.Detail.EndOfDetails>
-  <RimWorldAccess.Quests.Detail.OpenFirst>请先按回车键打开任务详情</RimWorldAccess.Quests.Detail.OpenFirst>
   <!-- "Choose item to inspect" lives in Common.xml as
        RimWorldAccess.InfoCard.ChooseItemToInspect. -->
 
@@ -170,6 +162,7 @@
   <RimWorldAccess.Quests.RewardChoice.Prompt>选择一项奖励</RimWorldAccess.Quests.RewardChoice.Prompt>
   <RimWorldAccess.Quests.RewardChoice.NoItemsToInspect>没有可查看的物品</RimWorldAccess.Quests.RewardChoice.NoItemsToInspect>
   <RimWorldAccess.Quests.RewardChoice.BackToList>返回任务列表</RimWorldAccess.Quests.RewardChoice.BackToList>
+  <RimWorldAccess.Quests.RewardChoice.ItemWithCount>{0}x {1}</RimWorldAccess.Quests.RewardChoice.ItemWithCount>
 
   <!-- =================================================================
        Reward preferences panel (Tab in the quest list). Toggles
@@ -178,8 +171,6 @@
        label below; relation phrasing is also a key so translators can
        reorder "currently {amount}, {relation}". -->
   <RimWorldAccess.Quests.Pref.Title>奖励偏好</RimWorldAccess.Quests.Pref.Title>
-  <RimWorldAccess.Quests.Pref.QuestList>任务列表</RimWorldAccess.Quests.Pref.QuestList>
-  <RimWorldAccess.Quests.Pref.None>没有可用的奖励偏好</RimWorldAccess.Quests.Pref.None>
   <RimWorldAccess.Quests.Pref.Checked>已勾选</RimWorldAccess.Quests.Pref.Checked>
   <RimWorldAccess.Quests.Pref.Unchecked>未勾选</RimWorldAccess.Quests.Pref.Unchecked>
   <!-- Royal-favor row: {0} = faction.Name, {1} = royal favor label
@@ -193,7 +184,6 @@
   <RimWorldAccess.Quests.Pref.RelationPhrase>当前 {0}, {1}</RimWorldAccess.Quests.Pref.RelationPhrase>
   <!-- Pref-row position suffix: {0} = built row label,
        {1} = position string from MenuHelper.FormatPosition. -->
-  <RimWorldAccess.Quests.Pref.RowWithPosition>{0}. {1}</RimWorldAccess.Quests.Pref.RowWithPosition>
 
   <!-- =================================================================
        Reward extraction (QuestRewardHelper). Builds the reward detail
@@ -202,7 +192,6 @@
        helper so each reward item line is visually grouped under its
        header line; the indent is preserved in keys here. -->
   <RimWorldAccess.Quests.Reward.NoRewards>无奖励</RimWorldAccess.Quests.Reward.NoRewards>
-  <RimWorldAccess.Quests.Reward.MultipleChoices>有多项奖励可供选择</RimWorldAccess.Quests.Reward.MultipleChoices>
   <RimWorldAccess.Quests.Reward.RewardsHeader>奖励:</RimWorldAccess.Quests.Reward.RewardsHeader>
   <RimWorldAccess.Quests.Reward.ChoicesHeader>奖励选项（选择一项接受）:</RimWorldAccess.Quests.Reward.ChoicesHeader>
   <!-- {0} = 1-based choice index. -->
@@ -243,10 +232,9 @@
        ================================================================= -->
   <RimWorldAccess.Notifications.Menu.None>没有可用的通知</RimWorldAccess.Notifications.Menu.None>
   <RimWorldAccess.Notifications.Menu.Closed>通知菜单已关闭</RimWorldAccess.Notifications.Menu.Closed>
-  <RimWorldAccess.Notifications.Menu.NoTargetLocation>没有可用的目标位置</RimWorldAccess.Notifications.Menu.NoTargetLocation>
+  <RimWorldAccess.Notifications.Menu.RegionName>通知</RimWorldAccess.Notifications.Menu.RegionName>
   <RimWorldAccess.Notifications.Menu.TargetNotValid>目标位置无效</RimWorldAccess.Notifications.Menu.TargetNotValid>
   <RimWorldAccess.Notifications.Menu.FailedToActivateButton>激活按钮失败</RimWorldAccess.Notifications.Menu.FailedToActivateButton>
-  <RimWorldAccess.Notifications.Menu.FailedToJump>跳转到目标失败</RimWorldAccess.Notifications.Menu.FailedToJump>
   <RimWorldAccess.Notifications.Menu.OnlyLettersDeletable>只有信件可以删除</RimWorldAccess.Notifications.Menu.OnlyLettersDeletable>
   <RimWorldAccess.Notifications.Menu.CannotDeleteLetter>无法删除此信件</RimWorldAccess.Notifications.Menu.CannotDeleteLetter>
 
@@ -271,7 +259,6 @@
   <!-- Action button labels extracted from letters and alerts. -->
   <RimWorldAccess.Notifications.Button.OpenGrowthMoment>打开成长阶段</RimWorldAccess.Notifications.Button.OpenGrowthMoment>
   <RimWorldAccess.Notifications.Button.ViewChoices>查看选项</RimWorldAccess.Notifications.Button.ViewChoices>
-  <RimWorldAccess.Notifications.Button.OpenResearch>打开研究</RimWorldAccess.Notifications.Button.OpenResearch>
   <RimWorldAccess.Notifications.Button.Activate>激活</RimWorldAccess.Notifications.Button.Activate>
   <!-- Single-target jump button: {0} = target description. -->
   <RimWorldAccess.Notifications.Button.JumpTo>跳转到{0}</RimWorldAccess.Notifications.Button.JumpTo>

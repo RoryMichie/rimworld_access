@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.History.Type.Dialog>Диалог</RimWorldAccess.History.Type.Dialog>
+  <RimWorldAccess.History.Overlay.BaseInstructions>Tab/Shift+Tab: смена вкладок | Up/Down: навигация | Enter: подробности</RimWorldAccess.History.Overlay.BaseInstructions>
+  <RimWorldAccess.History.Overlay.MessagesInstructions>Alt+L: письма вкл/выкл | Alt+M: сообщения вкл/выкл | Alt+P: закрепить | Alt+J: перейти</RimWorldAccess.History.Overlay.MessagesInstructions>
+  <RimWorldAccess.History.Overlay.GraphInstructions>Alt+G: выбрать график | Alt+D: диапазон дат | Печатайте для поиска | Home/End: первый/последний</RimWorldAccess.History.Overlay.GraphInstructions>
+  <RimWorldAccess.History.Overlay.StatisticsInstructions>Печатайте для поиска | Home/End: первый/последний</RimWorldAccess.History.Overlay.StatisticsInstructions>
+</LanguageData>

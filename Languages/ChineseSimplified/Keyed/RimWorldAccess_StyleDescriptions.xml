@@ -46,6 +46,7 @@
   <RimWorldAccess.StyleDesc.Hair_Locks>一款齐肩的丰盈发型，沿中线柔和地分缝，发顶轻盈而略显蓬乱。头发向两侧外扬而下，散开成圆润的发尾，在下颌和颈下附近朝外指。它带有适度的蓬度，质感松散而有层次，整体形状大致对称。</RimWorldAccess.StyleDesc.Hair_Locks>
   <RimWorldAccess.StyleDesc.Hair_Savage>一束又厚又弯的头发，形如逗号或卷曲的犄角，上部丰满，向下逐渐收成尖端。它从圆润的发顶向下卷绕，绕向一侧，形成一道大胆而雕塑般的卷曲。整体造型不对称且粗壮，给人一种狂野的后掠鳍状感，而非均匀的覆盖。</RimWorldAccess.StyleDesc.Hair_Savage>
   <RimWorldAccess.StyleDesc.Hair_Sticky>一款松散的鬃毛状发型，发顶高耸而蓬乱，在额前下凹成柔和的V形，并从两侧框住脸庞。头发以厚实、略显参差的层次垂落到下颌附近，发尾外扬，带有被风吹乱的凌乱质感。整体大致对称，鬓角附近蓬度明显。</RimWorldAccess.StyleDesc.Hair_Sticky>
+  <RimWorldAccess.StyleDesc.Hair_Bald>完全没有绘制头发：头部整个裸露，头皮上任何地方都没有发丝、胡渣或生长轮廓。这与光头造型不同，光头仍会显示一层淡淡的剃过的头皮；秃头则什么都不画。</RimWorldAccess.StyleDesc.Hair_Bald>
   <RimWorldAccess.StyleDesc.Hair_Shaved>一颗光裸平滑的头皮，完全没有任何头发覆盖，只显示出秃头淡淡的圆形轮廓。没有刘海，没有两侧，也没有任何蓬度。整个轮廓是一个干净无发的圆顶。</RimWorldAccess.StyleDesc.Hair_Shaved>
   <RimWorldAccess.StyleDesc.Hair_Tuft>一小撮尖刺状的头发聚集在头顶正中，短而参差的尖角向外发散，呈星芒状的冠突。覆盖区域极小且不规则，其余头皮都裸露在外。质感读起来僵硬而粗硬，是一小块带刺的发片，而非一整款发型。</RimWorldAccess.StyleDesc.Hair_Tuft>
   <RimWorldAccess.StyleDesc.Hair_ScorpionTail>一顶圆润的头发盖住发顶，并在后脑汇聚成一条又长又分节的尾巴。从侧面看，这条尾巴一目了然，是一排球状如珠子般的分节，向下弧垂，又像蝎尾一样向前卷曲，最后收成尖端。前部和顶部贴合而平滑，因此所有的长度和张力都集中在头后那条独特的弯曲尾巴上。</RimWorldAccess.StyleDesc.Hair_ScorpionTail>
@@ -80,6 +81,7 @@
   <RimWorldAccess.StyleDesc.Hair_Ghoul_Vengeful>两片独立的弯曲发簇框住一颗原本光秃的头，两侧各一片，头顶与中央空无一物。每片发簇都是一道厚实、钩状的薄片，向下、向内扫去，像一弯弯曲的獠牙或利爪，渐细收成尖点。左右两片大致互相对称，但都短而稀疏，位置在耳朵高度附近。整体显得破烂而极简，更像黏附的侧发，而非满头的头发。</RimWorldAccess.StyleDesc.Hair_Ghoul_Vengeful>
   <RimWorldAccess.StyleDesc.Hair_Ghoul_Warped>头发只以两团锯齿状的发簇出现在头部两侧，头顶完全光秃。每团发簇顶部宽阔、呈羽状，向下碎裂成几缕尖锐的刺状发丝，笔直垂过下颌。这些发丝看上去撕裂而参差，更像被狂风吹打过的发簇，而非梳理整齐的发缕。两侧大致对称，以尖锐、碎裂的尖端框住面庞。</RimWorldAccess.StyleDesc.Hair_Ghoul_Warped>
   <RimWorldAccess.StyleDesc.Hair_Ghoul_Wicked>两缕长长的、镰刀状的发束垂在头部两侧，而头顶保持光秃。左侧那缕是一道平滑、渐细的新月形，轻柔地向内弯曲收成尖点。右侧那缕更厚重、顶部更破烂，带一个小缺口般的翘起，随后向下扫成一道长长弯曲、刀刃般的尖端。这一对发束不对称地框住面庞，勾勒出一道尖锐、钩状的轮廓。</RimWorldAccess.StyleDesc.Hair_Ghoul_Wicked>
+  <RimWorldAccess.StyleDesc.Beard_NoBeard>完全没有绘制面部毛发。下颌、下巴和上唇完全干净，连胡渣的淡淡阴影都没有。</RimWorldAccess.StyleDesc.Beard_NoBeard>
   <RimWorldAccess.StyleDesc.Beard_Anchor>这款胡须位置低而宽，像船锚的爪。一小撮髭须紧贴在鼻下，往下隔着一段光秃的空隙，胡须铺展成一个宽阔的形状，其下方两角向上、向外卷起成尖锐的尖端。下颌线边缘干净利落，下巴区域填得实心。两侧上翘的尖端赋予它一种独特的船锚或新月轮廓。</RimWorldAccess.StyleDesc.Beard_Anchor>
   <RimWorldAccess.StyleDesc.Beard_Bushy>一款浓密丰满的大胡子，将脸颊、下颌和下巴覆盖成一整片密实的发块。上方两角在耳旁升起成两个尖峰，两侧向外张开，随后渐细收向一条宽阔、略显破烂的底边。一道髭须横跨上唇拱起，下方的嘴留出空当。整体给人的印象是厚重、蓬松而圆润，脸颊处宽阔、下颌处沉重。</RimWorldAccess.StyleDesc.Beard_Bushy>
   <RimWorldAccess.StyleDesc.Beard_Norse>一款厚实、雕琢精致的大胡子，分成一层层圆润的段落，看上去像编成辫子或绞成绳束。两个尖簇在上方两侧、耳旁升起，中央的发块隆起成一块沉重圆润的下巴部分。弯曲的接缝将各束分隔开来，营造出层叠、编织般的质感。整体形状密实而对称，体量宽阔、方正厚实。</RimWorldAccess.StyleDesc.Beard_Norse>
@@ -120,6 +122,8 @@
   <RimWorldAccess.StyleDesc.Beard_BeardFurskinSideChops>两条分开的竖直须带只长在两侧，沿着每只耳朵前方向下延伸，像长长的羊排络腮胡，下巴和中间的小胡子处都没有须发相连。每条络腮胡又高又略带弯曲，在脸颊处较宽，向下颌方向收成一个尖，内缘参差不齐。脸部正中完全裸露，使两片须发明显分开。效果是醒目的两鬓胡须，却没有相连的胡子。</RimWorldAccess.StyleDesc.Beard_BeardFurskinSideChops>
   <RimWorldAccess.StyleDesc.Beard_BeardFurskinSideTufts>一把稀疏的胡须只勾勒下颌线，呈一条狭窄弯曲的须带，从一侧扫向另一侧，下巴区域很浅，中间敞开。须带两端各向上张成一小簇尖须，立在脸颊旁。长度很短，下巴处没有须团，因此看起来像勾勒下颌的一道淡淡须缘，而非完整的胡子。形状对称而低矮，紧贴脸的下边缘。</RimWorldAccess.StyleDesc.Beard_BeardFurskinSideTufts>
   <RimWorldAccess.StyleDesc.Beard_BeardFurskinStrongChops>一把醒目的马蹄形胡须，盖住两颊并完整地顺着下颌两侧垂下，中央下巴下方留出一大片裸露空隙。每侧在颧骨附近翘成一簇厚实向上弯曲的须丛，须发浓密宽厚，并不稀疏。两侧在上颊处相连，在下方张开成一个U形，露出下巴尖。整体是一套强壮浓密、分量十足的络腮胡。</RimWorldAccess.StyleDesc.Beard_BeardFurskinStrongChops>
+  <RimWorldAccess.StyleDesc.Tattoo_NoTattoo_Face>无面部纹身。面部未做任何标记，脸颊、眉毛或下巴上没有绘制任何图案。</RimWorldAccess.StyleDesc.Tattoo_NoTattoo_Face>
+  <RimWorldAccess.StyleDesc.Tattoo_NoTattoo_Body>无身体纹身。躯干和手臂未做任何标记，皮肤上没有绘制任何图案。</RimWorldAccess.StyleDesc.Tattoo_NoTattoo_Body>
   <RimWorldAccess.StyleDesc.Tattoo_Face_Tiger>一幅不对称的面部图案，由粗壮弯曲的笔触构成，形似一只风格化的生物或爪痕。上方一笔在一侧的眉与颊附近形成钩形或爪形，一道尖锐渐细的笔触向外侧甩出。下方较低处另有一道弯曲的鳍状或鱼尾状笔触。各笔触粗厚、富有动感，左右参差不齐，给人狂野挥砍的观感。</RimWorldAccess.StyleDesc.Tattoo_Face_Tiger>
   <RimWorldAccess.StyleDesc.Tattoo_Face_Cobweb>一幅蜘蛛网图案铺展在脸的一侧。它填满一块大致呈三角形的区域，锚在脸的一角并向外散开，由蛛网的放射状辐条和环绕的丝线构成，而非实心色块。效果是一张细密的线状网，覆盖在脸颊和太阳穴上。</RimWorldAccess.StyleDesc.Tattoo_Face_Cobweb>
   <RimWorldAccess.StyleDesc.Tattoo_Face_Eclipse>一个醒目的实心整块覆盖上半张脸，像一道宽阔的穹顶或半圆盘，底部平直，顶部柔和地隆起。它大幅铺展在眉毛和额头一带，将整条区域填成一团沉重的色块。没有精细的细节或线条，只有一大块平滑的方块状形体。看起来像一道覆盖双眼和额头的日食般的带状色块。</RimWorldAccess.StyleDesc.Tattoo_Face_Eclipse>

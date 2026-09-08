@@ -87,6 +87,24 @@ namespace RimWorldAccess
                 headline = "RimWorldAccess.Combat.ShotReport.HeadlineGeneric".Translate(target.LabelShortCap);
             }
 
+            // Vanilla appends a manhunter-per-hit chance line for faction-less, non-aggro
+            // animals/wild men (TooltipUtility.ShotCalculationTipString, Verse/TooltipUtility.cs
+            // ~34-42). Mirror the same gate and value source.
+            if (target is Pawn targetPawn
+                && targetPawn.Faction == null
+                && !targetPawn.InAggroMentalState
+                && targetPawn.AnimalOrWildMan())
+            {
+                float manhunterChance = verb.IsMeleeAttack
+                    ? PawnUtility.GetManhunterOnDamageChance(targetPawn, shooter, 0f)
+                    : PawnUtility.GetManhunterOnDamageChance(targetPawn, shooter);
+                if (manhunterChance > 0f)
+                {
+                    lines.Add("RimWorldAccess.Combat.ShotReport.ManhunterPerHit"
+                        .Translate("ManhunterPerHit".Translate(), manhunterChance.ToStringPercent()));
+                }
+            }
+
             return lines.Count > 0 ? headline + ". " + string.Join(", ", lines) : headline;
         }
     }

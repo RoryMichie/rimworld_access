@@ -63,6 +63,14 @@
   <RimWorldAccess.Inspection.Category.Error>Error al obtener información de {0}: {1}</RimWorldAccess.Inspection.Category.Error>
   <RimWorldAccess.Inspection.Category.NoFallback>No hay información disponible para '{0}'.</RimWorldAccess.Inspection.Category.NoFallback>
   <RimWorldAccess.Inspection.Category.NotFound>Categoría no encontrada.</RimWorldAccess.Inspection.Category.NotFound>
+  <RimWorldAccess.Inspection.Category.WorkPriorities>Prioridades de trabajo</RimWorldAccess.Inspection.Category.WorkPriorities>
+  <RimWorldAccess.Inspection.Category.JobQueue>Cola de trabajos</RimWorldAccess.Inspection.Category.JobQueue>
+  <RimWorldAccess.Inspection.Category.BedAssignment>Asignación de cama</RimWorldAccess.Inspection.Category.BedAssignment>
+  <RimWorldAccess.Inspection.Category.OwnerAssignment>Asignación de propietario</RimWorldAccess.Inspection.Category.OwnerAssignment>
+  <RimWorldAccess.Inspection.Category.MeditationFocus>Foco de meditación</RimWorldAccess.Inspection.Category.MeditationFocus>
+  <RimWorldAccess.Inspection.Category.PlantSelection>Selección de planta</RimWorldAccess.Inspection.Category.PlantSelection>
+  <RimWorldAccess.Inspection.Category.LinkedFacilities>Instalaciones vinculadas</RimWorldAccess.Inspection.Category.LinkedFacilities>
+  <RimWorldAccess.Inspection.Category.PlantInfo>Información de planta</RimWorldAccess.Inspection.Category.PlantInfo>
 
   <!-- =================================================================
        Pawn overview / mood / character / gene-holder readouts.
@@ -171,12 +179,6 @@
        handles categories whose summary cannot be computed; {0} = label,
        {1} = expand state. ItemAllowState applies to ThingDef and
        SpecialFilter rows; {0} = label, {1} = the lowercase state. -->
-  <RimWorldAccess.Inspection.Storage.ToggleResultAllowed>{0}: Permitido</RimWorldAccess.Inspection.Storage.ToggleResultAllowed>
-  <RimWorldAccess.Inspection.Storage.ToggleResultDisallowed>{0}: No permitido</RimWorldAccess.Inspection.Storage.ToggleResultDisallowed>
-  <RimWorldAccess.Inspection.Storage.CategoryWithSummary>{0}. {1}, {2}</RimWorldAccess.Inspection.Storage.CategoryWithSummary>
-  <RimWorldAccess.Inspection.Storage.LabelWithExpandState>{0} {1}</RimWorldAccess.Inspection.Storage.LabelWithExpandState>
-  <RimWorldAccess.Inspection.Storage.ItemAllowed>{0}. permitido</RimWorldAccess.Inspection.Storage.ItemAllowed>
-  <RimWorldAccess.Inspection.Storage.ItemDisallowed>{0}. no permitido</RimWorldAccess.Inspection.Storage.ItemDisallowed>
 
   <!-- Category summary phrases (ThingFilterHelper.FormatCategorySummary).
        Spoken as the {1} placeholder of CategoryWithSummary above and
@@ -192,31 +194,17 @@
        so the comma + "except: " glue can vary per language and the
        except-list / except-count distinction does not have to share
        wording. -->
-  <RimWorldAccess.Inspection.Storage.Summary.AllAllowed>permitido</RimWorldAccess.Inspection.Storage.Summary.AllAllowed>
-  <RimWorldAccess.Inspection.Storage.Summary.AllDisallowed>no permitido</RimWorldAccess.Inspection.Storage.Summary.AllDisallowed>
   <RimWorldAccess.Inspection.Storage.Summary.AllowedExceptList>permitido, excepto: {0}</RimWorldAccess.Inspection.Storage.Summary.AllowedExceptList>
   <RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptList>no permitido, excepto: {0}</RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptList>
   <RimWorldAccess.Inspection.Storage.Summary.AllowedExceptCount>permitido, excepto {0} objetos</RimWorldAccess.Inspection.Storage.Summary.AllowedExceptCount>
   <RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptCount>no permitido, excepto {0} objetos</RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptCount>
 
   <!-- No info card available for the selected item. -->
-  <RimWorldAccess.Inspection.Storage.NoInfoCard>No hay ficha de información disponible</RimWorldAccess.Inspection.Storage.NoInfoCard>
 
   <!-- Bulk action results. -->
 
   <!-- Expand-all-siblings results when * is pressed. AllAlreadyExpanded /
        NoneToExpand cover the edge cases where the action is a no-op. -->
-
-  <!-- Range editing announcements (StorageSettingsMenuPatch). Spoken
-       after Enter applies the new range or Escape discards it.
-       PressEnterEditRange is spoken by ThingFilterMenuState when the
-       user presses Right/Left on a range row (instead of expanding
-       since ranges have no children). -->
-  <RimWorldAccess.Inspection.Storage.RangeApplied>Cambios de rango aplicados</RimWorldAccess.Inspection.Storage.RangeApplied>
-  <RimWorldAccess.Inspection.Storage.RangeCancelled>Edición de rango cancelada</RimWorldAccess.Inspection.Storage.RangeCancelled>
-  <!-- Spoken when Right is pressed on a range row (ranges have no children
-       to expand; Enter opens the range editor). -->
-  <RimWorldAccess.Inspection.Storage.PressEnterEditRange>Presiona Enter para editar el rango</RimWorldAccess.Inspection.Storage.PressEnterEditRange>
 
   <!-- Submenu close fallbacks (used by InspectionReturnHelper when no
        parent inspection menu is active). -->
@@ -242,12 +230,7 @@
        when switching parts via Up/Down.
        ================================================================= -->
   <!-- Cannot-expand rejection (ThingFilterNavigationState). -->
-  <RimWorldAccess.Inspection.ThingFilter.CannotExpand>No se puede ampliar este elemento.</RimWorldAccess.Inspection.ThingFilter.CannotExpand>
 
-  <RimWorldAccess.Inspection.ThingFilter.SliderPart.Min>Mínimo</RimWorldAccess.Inspection.ThingFilter.SliderPart.Min>
-  <RimWorldAccess.Inspection.ThingFilter.SliderPart.Max>Máximo</RimWorldAccess.Inspection.ThingFilter.SliderPart.Max>
-  <RimWorldAccess.Inspection.ThingFilter.SliderEdit.Announcement>{0} - {1}: {2}. Usa Izquierda/Derecha para ajustar, Arriba/Abajo para cambiar entre Mínimo y Máximo, Enter para confirmar.</RimWorldAccess.Inspection.ThingFilter.SliderEdit.Announcement>
-  <RimWorldAccess.Inspection.ThingFilter.SliderEdit.PartWithValue>{0}: {1}</RimWorldAccess.Inspection.ThingFilter.SliderEdit.PartWithValue>
 
   <!-- =================================================================
        Colony inventory menu (WindowlessInventoryState). Triggered with
@@ -293,6 +276,10 @@
   <RimWorldAccess.Inspection.Inventory.OpenedSummaryOne>Inventario de la colonia abierto. {0} tipo de objeto. {1} categorías.</RimWorldAccess.Inspection.Inventory.OpenedSummaryOne>
   <RimWorldAccess.Inspection.Inventory.OpenedSummaryMany>Inventario de la colonia abierto. {0} tipos de objeto. {1} categorías.</RimWorldAccess.Inspection.Inventory.OpenedSummaryMany>
   <RimWorldAccess.Inspection.Inventory.Closed>Menú de inventario cerrado.</RimWorldAccess.Inspection.Inventory.Closed>
+
+  <!-- RegionName is the inventory menu's one navigable area, spoken by Tab and
+       by the empty announcement when the colony holds nothing. -->
+  <RimWorldAccess.Inspection.Inventory.RegionName>Inventario</RimWorldAccess.Inspection.Inventory.RegionName>
 
   <RimWorldAccess.Inspection.Inventory.Expand.NoneToExpand>No hay categorías para ampliar.</RimWorldAccess.Inspection.Inventory.Expand.NoneToExpand>
   <RimWorldAccess.Inspection.Inventory.Expand.AllAlreadyExpanded>Todas las categorías ya están ampliadas.</RimWorldAccess.Inspection.Inventory.Expand.AllAlreadyExpanded>
@@ -366,13 +353,28 @@
 
        SearchLabel.* are stable typeahead lookup keys (separate from
        the spoken row label so translators can localize each
-       independently). Status.Detail: {0} = fish-type label, {1} =
-       current population, {2} = max population, {3} = status word.
-       Label.MinimumPopulation: {0} = pct, {1} = fish-at-threshold.
-       Label.FishSpecies: {0} = count, {1} = expanded/collapsed word.
-       Action.ExpandedFishSpecies*: {0} = species count (One/Many
-       split for subject-verb agreement). Action.OpeningInfoCard: {0}
-       = fish label. Numeric.* govern the numeric-input overlay.
+       independently) AND, since the campaign 8 packet C2 announcement
+       retrofit, the bare row Label the composer speaks (Value/Check/
+       Expanded now carry what used to be baked into Label.*). Status.Detail:
+       {0} = fish-type label, {1} = current population, {2} = max
+       population, {3} = status word. Label.MinimumPopulation: {0} = pct,
+       {1} = fish-at-threshold (still used to keep the tree's own cached
+       item label in sync; the composer gets its Value from
+       Label.MinimumPopulationValue directly). Label.FishSpecies: {0} =
+       count, {1} = expanded/collapsed word (same "still used for the cached
+       item label" note; the composer speaks the count via the new
+       Label.FishSpeciesCount and the expanded state via Role.TreeItem's own
+       Expanded field instead). Action.OpeningInfoCard: {0} = fish label.
+       Numeric.* govern the numeric-input overlay.
+
+       Orphaned by the same retrofit (removed): Action.FishingAllowed,
+       Action.FishingForbidden, Action.PauseEnabled, Action.PauseDisabled,
+       Action.ExpandedFishSpeciesOne, Action.ExpandedFishSpeciesMany,
+       Action.Collapsed — each was a distinct post-toggle/expand/collapse
+       phrase spoken AS WELL AS a full row re-announcement; the row
+       re-announcement now carries the same state (checked/unchecked,
+       expanded/collapsed) through the shared composer vocabulary, so the
+       separate phrase would only double-speak it.
        ================================================================= -->
   <RimWorldAccess.Inspection.Fishing.NotAvailable>Los ajustes de zona de pesca no están disponibles - puede que el DLC Odyssey no esté instalado</RimWorldAccess.Inspection.Fishing.NotAvailable>
 
@@ -390,52 +392,23 @@
   <RimWorldAccess.Inspection.Fishing.Status.NoWaterBody>Información de la zona: No se encontró ningún cuerpo de agua</RimWorldAccess.Inspection.Fishing.Status.NoWaterBody>
   <RimWorldAccess.Inspection.Fishing.Status.UnableToRead>Información de la zona: No se pudo leer</RimWorldAccess.Inspection.Fishing.Status.UnableToRead>
   <RimWorldAccess.Inspection.Fishing.Status.Detail>Información de la zona: {0}, {1}/{2} peces ({3})</RimWorldAccess.Inspection.Fishing.Status.Detail>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationVeryLow>muy baja</RimWorldAccess.Inspection.Fishing.Status.PopulationVeryLow>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationLow>baja</RimWorldAccess.Inspection.Fishing.Status.PopulationLow>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationModerate>moderada</RimWorldAccess.Inspection.Fishing.Status.PopulationModerate>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationHealthy>saludable</RimWorldAccess.Inspection.Fishing.Status.PopulationHealthy>
   <RimWorldAccess.Inspection.Fishing.Status.UnknownFishType>Desconocido</RimWorldAccess.Inspection.Fishing.Status.UnknownFishType>
 
-  <RimWorldAccess.Inspection.Fishing.Label.AllowFishing>Permitir pesca: {0}</RimWorldAccess.Inspection.Fishing.Label.AllowFishing>
-  <RimWorldAccess.Inspection.Fishing.Label.RepeatMode>Modo de repetición: {0}</RimWorldAccess.Inspection.Fishing.Label.RepeatMode>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeDoForever>Hacer siempre</RimWorldAccess.Inspection.Fishing.Label.RepeatModeDoForever>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeRepeatCount>Cantidad de repeticiones</RimWorldAccess.Inspection.Fishing.Label.RepeatModeRepeatCount>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeTargetCount>Cantidad objetivo</RimWorldAccess.Inspection.Fishing.Label.RepeatModeTargetCount>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeUnknown>Desconocido</RimWorldAccess.Inspection.Fishing.Label.RepeatModeUnknown>
-  <RimWorldAccess.Inspection.Fishing.Label.RepeatCount>Cantidad de repeticiones: {0}</RimWorldAccess.Inspection.Fishing.Label.RepeatCount>
-  <RimWorldAccess.Inspection.Fishing.Label.TargetCount>Cantidad objetivo: {0}</RimWorldAccess.Inspection.Fishing.Label.TargetCount>
-  <RimWorldAccess.Inspection.Fishing.Label.CurrentlyHave>Cantidad actual: {0}</RimWorldAccess.Inspection.Fishing.Label.CurrentlyHave>
-  <RimWorldAccess.Inspection.Fishing.Label.PauseWhenSatisfied>Pausar al alcanzar: {0}</RimWorldAccess.Inspection.Fishing.Label.PauseWhenSatisfied>
-  <RimWorldAccess.Inspection.Fishing.Label.UnpauseAt>Reanudar en: {0}</RimWorldAccess.Inspection.Fishing.Label.UnpauseAt>
-  <RimWorldAccess.Inspection.Fishing.Label.MinimumPopulation>Población mínima: {0}% ({1} peces)</RimWorldAccess.Inspection.Fishing.Label.MinimumPopulation>
   <RimWorldAccess.Inspection.Fishing.Label.MinimumPopulationValue>{0}% ({1} peces)</RimWorldAccess.Inspection.Fishing.Label.MinimumPopulationValue>
-  <RimWorldAccess.Inspection.Fishing.Label.FishSpecies>Especies de peces ({0}), {1}</RimWorldAccess.Inspection.Fishing.Label.FishSpecies>
+  <RimWorldAccess.Inspection.Fishing.Label.FishSpeciesCount>{0} disponibles</RimWorldAccess.Inspection.Fishing.Label.FishSpeciesCount>
   <RimWorldAccess.Inspection.Fishing.Label.UncommonSuffix> (poco común)</RimWorldAccess.Inspection.Fishing.Label.UncommonSuffix>
 
-  <RimWorldAccess.Inspection.Fishing.Action.AlreadyExpanded>Ya está ampliado</RimWorldAccess.Inspection.Fishing.Action.AlreadyExpanded>
-  <RimWorldAccess.Inspection.Fishing.Action.AlreadyCollapsed>Ya está reducido</RimWorldAccess.Inspection.Fishing.Action.AlreadyCollapsed>
-  <RimWorldAccess.Inspection.Fishing.Action.PressAltIToViewFishInfo>Presiona Alt+I para ver la información del pez</RimWorldAccess.Inspection.Fishing.Action.PressAltIToViewFishInfo>
-  <RimWorldAccess.Inspection.Fishing.Action.UseEnterToActivate>Usa Enter para activar</RimWorldAccess.Inspection.Fishing.Action.UseEnterToActivate>
-  <RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesOne>Ampliado, {0} especie de pez</RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesOne>
-  <RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesMany>Ampliado, {0} especies de peces</RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesMany>
-  <RimWorldAccess.Inspection.Fishing.Action.Collapsed>Reducido</RimWorldAccess.Inspection.Fishing.Action.Collapsed>
-  <RimWorldAccess.Inspection.Fishing.Action.UseRightLeftToExpand>Usa la flecha Derecha para ampliar, Izquierda para reducir</RimWorldAccess.Inspection.Fishing.Action.UseRightLeftToExpand>
   <RimWorldAccess.Inspection.Fishing.Action.UseLeftRightToAdjust>Usa las flechas izquierda/derecha para ajustar</RimWorldAccess.Inspection.Fishing.Action.UseLeftRightToAdjust>
   <RimWorldAccess.Inspection.Fishing.Action.NotAdjustable>Este elemento no se puede ajustar</RimWorldAccess.Inspection.Fishing.Action.NotAdjustable>
   <RimWorldAccess.Inspection.Fishing.Action.FieldNotAdjustable>Este campo no se puede ajustar</RimWorldAccess.Inspection.Fishing.Action.FieldNotAdjustable>
   <RimWorldAccess.Inspection.Fishing.Action.NoMaximumLimit>Sin límite máximo. Usa la entrada numérica para valores grandes.</RimWorldAccess.Inspection.Fishing.Action.NoMaximumLimit>
-  <RimWorldAccess.Inspection.Fishing.Action.FishingAllowed>Pesca permitida</RimWorldAccess.Inspection.Fishing.Action.FishingAllowed>
-  <RimWorldAccess.Inspection.Fishing.Action.FishingForbidden>Pesca prohibida</RimWorldAccess.Inspection.Fishing.Action.FishingForbidden>
-  <RimWorldAccess.Inspection.Fishing.Action.PauseEnabled>Pausar al alcanzar activado</RimWorldAccess.Inspection.Fishing.Action.PauseEnabled>
-  <RimWorldAccess.Inspection.Fishing.Action.PauseDisabled>Pausar al alcanzar desactivado</RimWorldAccess.Inspection.Fishing.Action.PauseDisabled>
   <RimWorldAccess.Inspection.Fishing.Action.SelectFishSpeciesFirst>Selecciona primero una especie de pez</RimWorldAccess.Inspection.Fishing.Action.SelectFishSpeciesFirst>
   <RimWorldAccess.Inspection.Fishing.Action.OpeningInfoCard>Abriendo la ficha de información de {0}</RimWorldAccess.Inspection.Fishing.Action.OpeningInfoCard>
 
-  <RimWorldAccess.Inspection.Fishing.Numeric.Prompt>Escribe un número y luego presiona Enter para confirmar o Escape para cancelar</RimWorldAccess.Inspection.Fishing.Numeric.Prompt>
-  <RimWorldAccess.Inspection.Fishing.Numeric.Empty>Vacío</RimWorldAccess.Inspection.Fishing.Numeric.Empty>
-  <RimWorldAccess.Inspection.Fishing.Numeric.InvalidNumber>Número no válido</RimWorldAccess.Inspection.Fishing.Numeric.InvalidNumber>
-  <RimWorldAccess.Inspection.Fishing.Numeric.Cancelled>Cancelado</RimWorldAccess.Inspection.Fishing.Numeric.Cancelled>
-  <RimWorldAccess.Inspection.Fishing.Numeric.NotApplicable>No se puede aplicar un valor numérico a este campo</RimWorldAccess.Inspection.Fishing.Numeric.NotApplicable>
 
   <!-- =================================================================
        Bill configuration menu (BillConfigState). Opened from
@@ -514,12 +487,11 @@
   <RimWorldAccess.Inspection.BillConfig.Label.LabelWithRangeQuality>{0}: {1} - {2}</RimWorldAccess.Inspection.BillConfig.Label.LabelWithRangeQuality>
   <RimWorldAccess.Inspection.BillConfig.Label.IncompatibleSuffix> ({0})</RimWorldAccess.Inspection.BillConfig.Label.IncompatibleSuffix>
   <RimWorldAccess.Inspection.BillConfig.Label.WorkerWithLabel>Trabajador: {0}</RimWorldAccess.Inspection.BillConfig.Label.WorkerWithLabel>
+  <RimWorldAccess.Inspection.BillConfig.Label.StoreModeWithLabel>Almacenaje del producto: {0}</RimWorldAccess.Inspection.BillConfig.Label.StoreModeWithLabel>
   <RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMin>{0}: {1} {2}</RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMin>
   <RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMax>{0}: {1} {2}</RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMax>
   <RimWorldAccess.Inspection.BillConfig.Label.RenameWithCustom>{0}: {1} (original: {2})</RimWorldAccess.Inspection.BillConfig.Label.RenameWithCustom>
-  <RimWorldAccess.Inspection.BillConfig.Label.PawnWithSkillSuffix>{0} (Habilidad: {1})</RimWorldAccess.Inspection.BillConfig.Label.PawnWithSkillSuffix>
 
-  <RimWorldAccess.Inspection.BillConfig.Action.FinishEditingFirst>Termina de editar primero (presiona Enter o Escape)</RimWorldAccess.Inspection.BillConfig.Action.FinishEditingFirst>
   <RimWorldAccess.Inspection.BillConfig.Action.NotAdjustable>Este elemento no se puede ajustar</RimWorldAccess.Inspection.BillConfig.Action.NotAdjustable>
   <RimWorldAccess.Inspection.BillConfig.Action.UseEnterToOpenSubmenu>Usa Enter para abrir el submenú</RimWorldAccess.Inspection.BillConfig.Action.UseEnterToOpenSubmenu>
   <RimWorldAccess.Inspection.BillConfig.Action.UseLeftRightToAdjust>Usa las flechas izquierda/derecha para ajustar</RimWorldAccess.Inspection.BillConfig.Action.UseLeftRightToAdjust>
@@ -527,15 +499,8 @@
   <RimWorldAccess.Inspection.BillConfig.Action.FieldNotAdjustable>Este campo no se puede ajustar</RimWorldAccess.Inspection.BillConfig.Action.FieldNotAdjustable>
   <RimWorldAccess.Inspection.BillConfig.Action.RenamedTo>Tarea renombrada a {0}</RimWorldAccess.Inspection.BillConfig.Action.RenamedTo>
   <RimWorldAccess.Inspection.BillConfig.Action.RenameCancelled>Cambio de nombre cancelado</RimWorldAccess.Inspection.BillConfig.Action.RenameCancelled>
-  <RimWorldAccess.Inspection.BillConfig.Action.HitPointsApplied>Puntos de golpe: {0} a {1}</RimWorldAccess.Inspection.BillConfig.Action.HitPointsApplied>
-  <RimWorldAccess.Inspection.BillConfig.Action.QualityApplied>Calidad: {0} a {1}</RimWorldAccess.Inspection.BillConfig.Action.QualityApplied>
   <RimWorldAccess.Inspection.BillConfig.Action.DeletedBill>Tarea eliminada: {0}</RimWorldAccess.Inspection.BillConfig.Action.DeletedBill>
 
-  <RimWorldAccess.Inspection.BillConfig.Numeric.Prompt>Escribe un número y luego presiona Enter para confirmar o Escape para cancelar</RimWorldAccess.Inspection.BillConfig.Numeric.Prompt>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.Empty>Vacío</RimWorldAccess.Inspection.BillConfig.Numeric.Empty>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.InvalidNumber>Número no válido</RimWorldAccess.Inspection.BillConfig.Numeric.InvalidNumber>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.Cancelled>Cancelado</RimWorldAccess.Inspection.BillConfig.Numeric.Cancelled>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.NotApplicable>No se puede aplicar un valor numérico a este campo</RimWorldAccess.Inspection.BillConfig.Numeric.NotApplicable>
 
   <!-- IngredientFilter window title (passed to ThingFilterMenuState.Open). -->
   <RimWorldAccess.Inspection.BillConfig.IngredientFilterTitle>Filtro de ingredientes</RimWorldAccess.Inspection.BillConfig.IngredientFilterTitle>
@@ -580,10 +545,9 @@
 
   <!-- Command_Toggle / state-bearing gizmos. ON/OFF suffix: {0} should be
        picked from StateOn/StateOff (separate keys so word order can vary
-       per language). LabelWithState: {0} = label, {1} = state phrase. -->
+       per language). -->
   <RimWorldAccess.Inspection.Gizmo.StateOn>: ENCENDIDO</RimWorldAccess.Inspection.Gizmo.StateOn>
   <RimWorldAccess.Inspection.Gizmo.StateOff>: APAGADO</RimWorldAccess.Inspection.Gizmo.StateOff>
-  <RimWorldAccess.Inspection.Gizmo.LabelWithState>{0}: {1}</RimWorldAccess.Inspection.Gizmo.LabelWithState>
   <RimWorldAccess.Inspection.Gizmo.NeuralHeatLimiter>Limitador de calor neural: {0}</RimWorldAccess.Inspection.Gizmo.NeuralHeatLimiter>
   <RimWorldAccess.Inspection.Gizmo.LimiterStateOn>ENCENDIDO</RimWorldAccess.Inspection.Gizmo.LimiterStateOn>
   <RimWorldAccess.Inspection.Gizmo.LimiterStateOff>APAGADO</RimWorldAccess.Inspection.Gizmo.LimiterStateOff>
@@ -611,12 +575,7 @@
        current value (already formatted as percent). Read* and
        CouldNotAdjust are the rare fallbacks fired when reflection
        can't reach the underlying field. -->
-  <RimWorldAccess.Inspection.Gizmo.SliderEnterPrompt>Ajustando {0}. Objetivo actual: {1}. Izquierda y Derecha para ajustar, Shift para pasos más grandes, Escape para terminar.</RimWorldAccess.Inspection.Gizmo.SliderEnterPrompt>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadSliderValue>No se pudo leer el valor del control deslizante</RimWorldAccess.Inspection.Gizmo.CouldNotReadSliderValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadPsyfocusValue>No se pudo leer el valor de psicofoco</RimWorldAccess.Inspection.Gizmo.CouldNotReadPsyfocusValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadPruningValue>No se pudo leer el valor de poda</RimWorldAccess.Inspection.Gizmo.CouldNotReadPruningValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadCarrierValue>No se pudo leer el valor del portador</RimWorldAccess.Inspection.Gizmo.CouldNotReadCarrierValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotAdjustControl>No se pudo ajustar este control</RimWorldAccess.Inspection.Gizmo.CouldNotAdjustControl>
+  <RimWorldAccess.Inspection.Gizmo.SliderUseArrows>Usa las flechas izquierda y derecha para ajustar.</RimWorldAccess.Inspection.Gizmo.SliderUseArrows>
   <!-- Hemogen toggle failure (GeneGizmo_ResourceHemogen). -->
   <RimWorldAccess.Inspection.Gizmo.CouldNotToggleHemogen>No se pudo alternar el ajuste de packs de hemógeno</RimWorldAccess.Inspection.Gizmo.CouldNotToggleHemogen>
   <!-- Activity suppression toggle failure (ActivityGizmo). -->
@@ -624,17 +583,41 @@
   <!-- Shift+key with no matching command. {0} = key name. -->
   <RimWorldAccess.Inspection.Gizmo.NoCommandForShiftPlus>No hay comando para Shift más {0}</RimWorldAccess.Inspection.Gizmo.NoCommandForShiftPlus>
 
+  <!-- G menu: the owning object's name, spoken only when it changes from one
+       command to the next. {0} = owner name, {1} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.OwnerPrefix>{0}: {1}</RimWorldAccess.Inspection.Gizmo.OwnerPrefix>
+
+  <!-- Reverse-designation gizmo activation report. {0} = count, {1} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.DesignatedCount>Designados {0} para {1}.</RimWorldAccess.Inspection.Gizmo.DesignatedCount>
+  <!-- {0} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.DesignatedNone>No se designó nada para {0}.</RimWorldAccess.Inspection.Gizmo.DesignatedNone>
+  <!-- Reverse designator with no designation def of its own (e.g. Select Similar). {0} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.CommandApplied>{0} aplicado.</RimWorldAccess.Inspection.Gizmo.CommandApplied>
+
+  <!-- Row wrappers for the Shift+hotkey disambiguation float menu. Those rows
+       are single strings rather than navigable elements, so each piece is
+       appended to the row text: the owner and the hotkey in brackets, then the
+       command's status readout, its on/off state, and its description. Keep any
+       leading space or colon that a language needs; RimWorld preserves them. -->
+  <RimWorldAccess.Inspection.Gizmo.MenuOwnerSuffix> ({0})</RimWorldAccess.Inspection.Gizmo.MenuOwnerSuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuHotkeySuffix> ({0})</RimWorldAccess.Inspection.Gizmo.MenuHotkeySuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuStatusSuffix>: {0}</RimWorldAccess.Inspection.Gizmo.MenuStatusSuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuStateSuffix>: {0}</RimWorldAccess.Inspection.Gizmo.MenuStateSuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuDescriptionSuffix>: {0}</RimWorldAccess.Inspection.Gizmo.MenuDescriptionSuffix>
+
   <!-- Hint suffixes appended to AnnounceCurrentGizmo for interactive
        gizmos. RightClickHint and EnterAdjustHint are the standard
        cases; PsychicEntropyHints describes both actions for that
        specific gizmo (Enter toggles limiter, ] adjusts psyfocus). -->
   <RimWorldAccess.Inspection.Gizmo.HintRightClickOptions>. Presiona el corchete derecho para más opciones</RimWorldAccess.Inspection.Gizmo.HintRightClickOptions>
-  <RimWorldAccess.Inspection.Gizmo.HintEnterToAdjust>. Presiona Enter para ajustar</RimWorldAccess.Inspection.Gizmo.HintEnterToAdjust>
-  <RimWorldAccess.Inspection.Gizmo.HintPsychicEntropy>. Presiona Enter para alternar el limitador, corchete derecho para fijar el objetivo de psicofoco</RimWorldAccess.Inspection.Gizmo.HintPsychicEntropy>
-  <!-- GeneGizmo_ResourceHemogen mirrors PsychicEntropy: Enter toggles hemogen packs allowed, ] sets the target. -->
-  <RimWorldAccess.Inspection.Gizmo.HintHemogen>. Presiona Enter para alternar si se permiten packs de hemógeno, corchete derecho para fijar el objetivo</RimWorldAccess.Inspection.Gizmo.HintHemogen>
-  <!-- ActivityGizmo (Anomaly) mirrors PsychicEntropy: Enter toggles auto-suppression, ] sets the suppression threshold. -->
-  <RimWorldAccess.Inspection.Gizmo.HintActivitySuppression>. Presiona Enter para alternar la supresión automática, corchete derecho para fijar el umbral de supresión</RimWorldAccess.Inspection.Gizmo.HintActivitySuppression>
+  <RimWorldAccess.Inspection.Gizmo.HintArrowsToAdjust>. Flechas izquierda y derecha para ajustar, Shift para pasos más grandes</RimWorldAccess.Inspection.Gizmo.HintArrowsToAdjust>
+  <RimWorldAccess.Inspection.Gizmo.HintPsychicEntropyArrows>. Presiona Enter para alternar el limitador, flechas izquierda y derecha para ajustar el objetivo de psicofoco</RimWorldAccess.Inspection.Gizmo.HintPsychicEntropyArrows>
+  <!-- GeneGizmo_ResourceHemogen mirrors PsychicEntropy: Enter toggles hemogen packs allowed, arrows adjust the target. -->
+  <RimWorldAccess.Inspection.Gizmo.HintHemogenArrows>. Presiona Enter para alternar si se permiten packs de hemógeno, flechas izquierda y derecha para ajustar el objetivo</RimWorldAccess.Inspection.Gizmo.HintHemogenArrows>
+  <RimWorldAccess.Inspection.Gizmo.HintFuelAutoRefuelArrows>. Presiona Enter para alternar el reabastecimiento automático, flechas izquierda y derecha para ajustar el nivel de combustible objetivo</RimWorldAccess.Inspection.Gizmo.HintFuelAutoRefuelArrows>
+  <RimWorldAccess.Inspection.Gizmo.AutoRefuelToggle>Reabastecimiento automático {0}</RimWorldAccess.Inspection.Gizmo.AutoRefuelToggle>
+  <!-- ActivityGizmo (Anomaly) mirrors PsychicEntropy: Enter toggles auto-suppression, arrows adjust the suppression threshold. -->
+  <RimWorldAccess.Inspection.Gizmo.HintActivitySuppressionArrows>. Presiona Enter para alternar la supresión automática, flechas izquierda y derecha para ajustar el umbral de supresión</RimWorldAccess.Inspection.Gizmo.HintActivitySuppressionArrows>
 
   <!-- =================================================================
        Gizmo type labels (GetNonCommandGizmoLabel and helpers). These
@@ -659,13 +642,15 @@
   <RimWorldAccess.Inspection.Gizmo.Type.PsychicEntropy>Calor neural y psicofoco</RimWorldAccess.Inspection.Gizmo.Type.PsychicEntropy>
   <RimWorldAccess.Inspection.Gizmo.Type.MechanitorBandwidth>Ancho de banda de mecanista</RimWorldAccess.Inspection.Gizmo.Type.MechanitorBandwidth>
   <RimWorldAccess.Inspection.Gizmo.Type.MechPowerCell>Celda de energía mecánica</RimWorldAccess.Inspection.Gizmo.Type.MechPowerCell>
+  <RimWorldAccess.Inspection.Gizmo.Status.PowerCellPercentHours>{0}%, quedan {1}{2}</RimWorldAccess.Inspection.Gizmo.Status.PowerCellPercentHours>
+  <RimWorldAccess.Inspection.Gizmo.Status.GuardianShipPayment>Pago vence en {0}</RimWorldAccess.Inspection.Gizmo.Status.GuardianShipPayment>
   <RimWorldAccess.Inspection.Gizmo.Type.ResurrectionCharges>Cargas de resurrección</RimWorldAccess.Inspection.Gizmo.Type.ResurrectionCharges>
   <RimWorldAccess.Inspection.Gizmo.Type.ShieldHitPoints>Puntos de golpe del escudo</RimWorldAccess.Inspection.Gizmo.Type.ShieldHitPoints>
   <RimWorldAccess.Inspection.Gizmo.Type.PruningConfig>Configuración de poda</RimWorldAccess.Inspection.Gizmo.Type.PruningConfig>
   <RimWorldAccess.Inspection.Gizmo.Type.GuardianShip>Nave guardiana</RimWorldAccess.Inspection.Gizmo.Type.GuardianShip>
   <RimWorldAccess.Inspection.Gizmo.Type.CaravanInfo>Información de la caravana</RimWorldAccess.Inspection.Gizmo.Type.CaravanInfo>
   <RimWorldAccess.Inspection.Gizmo.Type.DeathrestCapacity>Capacidad de mortisueño</RimWorldAccess.Inspection.Gizmo.Type.DeathrestCapacity>
-  <RimWorldAccess.Inspection.Gizmo.Type.Activity>Actividad</RimWorldAccess.Inspection.Gizmo.Type.Activity>
+  <RimWorldAccess.Inspection.Gizmo.DeathrestBoundBuildings>Edificios vinculados: {0}</RimWorldAccess.Inspection.Gizmo.DeathrestBoundBuildings>
   <RimWorldAccess.Inspection.Gizmo.Type.RoomStatsFallback>Estadísticas de la habitación</RimWorldAccess.Inspection.Gizmo.Type.RoomStatsFallback>
   <RimWorldAccess.Inspection.Gizmo.Type.StatusDisplayFallback>Indicador de estado</RimWorldAccess.Inspection.Gizmo.Type.StatusDisplayFallback>
 
@@ -710,7 +695,6 @@
   <RimWorldAccess.Inspection.Gizmo.Status.UsedTotal>{0} / {1}</RimWorldAccess.Inspection.Gizmo.Status.UsedTotal>
   <RimWorldAccess.Inspection.Gizmo.Status.PercentEnergy>{0}% ({1} / {2})</RimWorldAccess.Inspection.Gizmo.Status.PercentEnergy>
   <RimWorldAccess.Inspection.Gizmo.Status.HitPoints>{0} / {1} de durabilidad</RimWorldAccess.Inspection.Gizmo.Status.HitPoints>
-  <RimWorldAccess.Inspection.Gizmo.Status.Charges>{0} / {1} cargas</RimWorldAccess.Inspection.Gizmo.Status.Charges>
   <RimWorldAccess.Inspection.Gizmo.Status.Percent>{0}%</RimWorldAccess.Inspection.Gizmo.Status.Percent>
 
   <RimWorldAccess.Inspection.Gizmo.Status.SliderTargetWithLabel>Objetivo: {0}%, {1}</RimWorldAccess.Inspection.Gizmo.Status.SliderTargetWithLabel>
@@ -754,8 +738,6 @@
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsCurrentOfNext>{0} de {1} puntos</RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsCurrentOfNext>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsPerDaySuffix> (+{0})</RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsPerDaySuffix>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthLearningProgress>Aprendizaje {0}</RimWorldAccess.Inspection.Gizmo.Status.GrowthLearningProgress>
-  <RimWorldAccess.Inspection.Gizmo.Status.GrowthNextMomentLine>{0}: {1}</RimWorldAccess.Inspection.Gizmo.Status.GrowthNextMomentLine>
-  <RimWorldAccess.Inspection.Gizmo.Status.GrowthNextTierHeader>Si se alcanza el nivel de crecimiento {0}</RimWorldAccess.Inspection.Gizmo.Status.GrowthNextTierHeader>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthTierRewardsLine>{0}: {1}</RimWorldAccess.Inspection.Gizmo.Status.GrowthTierRewardsLine>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthRewardsAnd> y </RimWorldAccess.Inspection.Gizmo.Status.GrowthRewardsAnd>
 
@@ -841,51 +823,24 @@
        Failure forms cover the cases where TryAssignPawn /
        TryUnassignPawn does not actually move the pawn into / out of the
        owner list. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.MainMenu.AssignOwner>Asignar propietario</RimWorldAccess.Inspection.OwnerAssignment.MainMenu.AssignOwner>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainMenu.UnassignOwner>Quitar propietario</RimWorldAccess.Inspection.OwnerAssignment.MainMenu.UnassignOwner>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainMenu.CloseMenu>Cerrar menú</RimWorldAccess.Inspection.OwnerAssignment.MainMenu.CloseMenu>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Assigned>{0}. Asignada a: {1}. {2}</RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Assigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Unassigned>{0}. Sin asignar. {1}</RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Unassigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.MenuClosed>Menú de asignación cerrado</RimWorldAccess.Inspection.OwnerAssignment.MenuClosed>
 
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignBuilding>No se pueden asignar propietarios a esta construcción</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignBuilding>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignBuilding>No se pueden quitar propietarios de esta construcción</RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignBuilding>
-  <RimWorldAccess.Inspection.OwnerAssignment.NoCandidates>No hay personajes disponibles para asignar</RimWorldAccess.Inspection.OwnerAssignment.NoCandidates>
-  <RimWorldAccess.Inspection.OwnerAssignment.NoneAssigned>No hay personajes asignados a esta construcción</RimWorldAccess.Inspection.OwnerAssignment.NoneAssigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignOwner>No se puede asignar propietario</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignOwner>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignOwner>No se puede quitar propietario</RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignOwner>
 
   <!-- AssignReason suffixes are appended to the candidate row label.
        The leading space is part of the value. CannotAssignWithReason:
        {0} = StripTags(report.Reason). -->
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssign> (No se puede asignar)</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssign>
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssignWithReason> ({0})</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssignWithReason>
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.IdeologyForbids> (La ideoligión lo prohíbe)</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.IdeologyForbids>
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.HasOtherAssignment> (Tiene otra asignación)</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.HasOtherAssignment>
 
   <!-- Submenu announcements ("Assign owner - first option"). The first
        form lists the picker's first option immediately so screen reader
        users know the submenu opened. {0} = first candidate / first
        assigned pawn label. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Announce>Asignar propietario - {0}</RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Announce>
-  <RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Announce>Quitar propietario - {0}</RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Announce>
   <!-- Item announcements while inside the submenus. {0} = pawn label. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Item>Asignar: {0}</RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Item>
-  <RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Item>Quitar: {0}</RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Item>
 
   <!-- Cannot-assign rejection messages (when the user actually tries to
        assign a flagged candidate). {0} = pawn label, {1} = stripped
        reason. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawn>No se puede asignar a {0} a esta construcción</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawn>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawnWithReason>No se puede asignar a {0}: {1}</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawnWithReason>
-  <RimWorldAccess.Inspection.OwnerAssignment.IdeologyForbidsPawn>La ideoligión impide que {0} use esta construcción</RimWorldAccess.Inspection.OwnerAssignment.IdeologyForbidsPawn>
 
   <!-- Result announcements after the assignment actually changed (or
        failed to change). {0} = pawn label, {1} = building label. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultAssigned>{0} asignado a {1}</RimWorldAccess.Inspection.OwnerAssignment.ResultAssigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultUnassigned>{0} quitado de {1}</RimWorldAccess.Inspection.OwnerAssignment.ResultUnassigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultAssignFailed>No se pudo asignar a {0}</RimWorldAccess.Inspection.OwnerAssignment.ResultAssignFailed>
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultUnassignFailed>No se pudo quitar a {0}</RimWorldAccess.Inspection.OwnerAssignment.ResultUnassignFailed>
 
   <!-- Meditation focus. NoMeditationFocus: {0} = search-radius cells. -->
   <RimWorldAccess.Inspection.Building.NoMeditationInfo>No hay información de foco de meditación disponible.</RimWorldAccess.Inspection.Building.NoMeditationInfo>
@@ -946,7 +901,6 @@
   <!-- Suffix appended to a row's label when the entry is disabled.
        Includes the leading space so it joins onto whatever label
        precedes it. -->
-  <RimWorldAccess.Inspection.Bills.UnavailableSuffix> (no disponible)</RimWorldAccess.Inspection.Bills.UnavailableSuffix>
 
   <!-- Action result announcements. {0} = bill or recipe label, {1} =
        new position (MovedUp / MovedDown only). Each verb gets its own
@@ -965,8 +919,6 @@
   <RimWorldAccess.Inspection.Bills.CopiedToClipboard>Copiada al portapapeles: {0}</RimWorldAccess.Inspection.Bills.CopiedToClipboard>
   <RimWorldAccess.Inspection.Bills.AddedBill>Tarea añadida: {0}</RimWorldAccess.Inspection.Bills.AddedBill>
   <RimWorldAccess.Inspection.Bills.PastedBill>Tarea pegada: {0}</RimWorldAccess.Inspection.Bills.PastedBill>
-  <RimWorldAccess.Inspection.Bills.RecipeRequiresMechanitor>La receta requiere un mecanista: {0}</RimWorldAccess.Inspection.Bills.RecipeRequiresMechanitor>
-  <RimWorldAccess.Inspection.Bills.RecipeRequiresSkills>Ningún personaje tiene las habilidades requeridas para: {0}</RimWorldAccess.Inspection.Bills.RecipeRequiresSkills>
   <!-- {0} = full type name of the unsupported Bill subclass. -->
   <RimWorldAccess.Inspection.Bills.UnsupportedType>El tipo de tarea {0} aún no es compatible</RimWorldAccess.Inspection.Bills.UnsupportedType>
 
@@ -989,6 +941,7 @@
        StateCollapsed; the leading period+space is composed in C# since
        it is typographic punctuation, not a translatable particle.
        ================================================================= -->
+  <RimWorldAccess.Inspection.Panel.RegionName>Inspección</RimWorldAccess.Inspection.Panel.RegionName>
   <RimWorldAccess.Inspection.Panel.NoItems>No hay elementos para inspeccionar aquí.</RimWorldAccess.Inspection.Panel.NoItems>
   <RimWorldAccess.Inspection.Panel.NoObject>No hay objeto para inspeccionar.</RimWorldAccess.Inspection.Panel.NoObject>
   <RimWorldAccess.Inspection.Panel.PanelClosed>Panel de inspección cerrado.</RimWorldAccess.Inspection.Panel.PanelClosed>
@@ -1019,6 +972,7 @@
   <RimWorldAccess.Inspection.InfoCard.CannotExpand>No se puede ampliar este elemento.</RimWorldAccess.Inspection.InfoCard.CannotExpand>
   <RimWorldAccess.Inspection.InfoCard.MenuClosed>Menú cerrado</RimWorldAccess.Inspection.InfoCard.MenuClosed>
   <RimWorldAccess.Inspection.InfoCard.InfoCardClosed>Ficha de información cerrada.</RimWorldAccess.Inspection.InfoCard.InfoCardClosed>
+  <RimWorldAccess.Inspection.InfoCard.RegionName>Ficha de información</RimWorldAccess.Inspection.InfoCard.RegionName>
 
   <!-- =================================================================
        Info Card tree builder (InfoCardTreeBuilder). Section names
@@ -1095,6 +1049,7 @@
   <RimWorldAccess.Inspection.InfoCardTree.PermitNoLongerAvailable>El permiso ya no está disponible.</RimWorldAccess.Inspection.InfoCardTree.PermitNoLongerAvailable>
   <RimWorldAccess.Inspection.InfoCardTree.PermitReturnAllResult>{0}. {1}: {2}</RimWorldAccess.Inspection.InfoCardTree.PermitReturnAllResult>
   <RimWorldAccess.Inspection.InfoCardTree.PermitGranted>{0} concedido. {1}: {2}</RimWorldAccess.Inspection.InfoCardTree.PermitGranted>
+  <RimWorldAccess.Inspection.InfoCardTree.TitleRenounced>{0}: {1}.</RimWorldAccess.Inspection.InfoCardTree.TitleRenounced>
 
   <!-- =================================================================
        BuildingInspectPatch fallback announcements. Each phrase is the
@@ -1104,17 +1059,11 @@
        the inspection flow, e.g. from the scanner). One whole-phrase
        key per submenu so the verb (Closed / Cancelled) and the menu
        noun can vary per language without sentence-templating.
-       AppliedRangeChanges is announced after the user confirms the
-       hit-points / quality range editor; it is a TolkHelper.Speak
-       (not a fallback) since the user always lands back in the thing
-       filter menu after applying.
        ================================================================= -->
   <RimWorldAccess.Inspection.Patch.ClosedTemperatureControl>Menú de control de temperatura cerrado</RimWorldAccess.Inspection.Patch.ClosedTemperatureControl>
   <RimWorldAccess.Inspection.Patch.ClosedBillsMenu>Menú de tareas cerrado</RimWorldAccess.Inspection.Patch.ClosedBillsMenu>
   <RimWorldAccess.Inspection.Patch.ClosedBillConfiguration>Configuración de tarea cerrada</RimWorldAccess.Inspection.Patch.ClosedBillConfiguration>
   <RimWorldAccess.Inspection.Patch.ClosedThingFilterMenu>Menú de filtro de objetos cerrado</RimWorldAccess.Inspection.Patch.ClosedThingFilterMenu>
-  <RimWorldAccess.Inspection.Patch.CancelledRangeEditing>Edición de rango cancelada</RimWorldAccess.Inspection.Patch.CancelledRangeEditing>
-  <RimWorldAccess.Inspection.Patch.AppliedRangeChanges>Cambios de rango aplicados</RimWorldAccess.Inspection.Patch.AppliedRangeChanges>
   <RimWorldAccess.Inspection.Patch.ClosedFuelSettings>Menú de ajustes de combustible cerrado</RimWorldAccess.Inspection.Patch.ClosedFuelSettings>
   <RimWorldAccess.Inspection.Patch.ClosedDoorControls>Controles de puerta cerrados</RimWorldAccess.Inspection.Patch.ClosedDoorControls>
   <RimWorldAccess.Inspection.Patch.ClosedForbidControls>Controles de prohibición cerrados</RimWorldAccess.Inspection.Patch.ClosedForbidControls>
@@ -1142,6 +1091,11 @@
        - BookEjected: {0} = vanilla EjectBookTooltip header,
          {1} = book label (capitalized). Spoken after a book is
          dropped onto an adjacent walkable cell.
+
+       Outfit stand (BuildContentsApparelChildren):
+       - ApparelEjected: {0} = vanilla EjectApparelTooltip header,
+         {1} = apparel label (capitalized). Spoken after apparel is
+         dropped onto an adjacent walkable cell.
        ================================================================= -->
   <RimWorldAccess.Inspection.Tree.JobCancelled>Cancelado: {0}</RimWorldAccess.Inspection.Tree.JobCancelled>
   <RimWorldAccess.Inspection.Tree.PenRemovedExample>Ejemplo eliminado: {0}</RimWorldAccess.Inspection.Tree.PenRemovedExample>
@@ -1149,6 +1103,7 @@
   <RimWorldAccess.Inspection.Tree.PenAutoCutToggleAnnouncement>Corte automático {0}</RimWorldAccess.Inspection.Tree.PenAutoCutToggleAnnouncement>
   <RimWorldAccess.Inspection.Tree.PenDesignatedPlantsForCutting>Plantas designadas para cortar</RimWorldAccess.Inspection.Tree.PenDesignatedPlantsForCutting>
   <RimWorldAccess.Inspection.Tree.BookEjected>{0}. {1}</RimWorldAccess.Inspection.Tree.BookEjected>
+  <RimWorldAccess.Inspection.Tree.ApparelEjected>{0}. {1}</RimWorldAccess.Inspection.Tree.ApparelEjected>
 
   <!-- =================================================================
        InspectionTreeBuilder tree-item labels paired with the actions
@@ -1262,11 +1217,35 @@
          translated by the game), {1} = entry text.
        ================================================================= -->
   <RimWorldAccess.Inspection.Tree.Root>Inspección</RimWorldAccess.Inspection.Tree.Root>
+  <RimWorldAccess.Inspection.Tree.AlsoShown>También se muestra en esta pestaña</RimWorldAccess.Inspection.Tree.AlsoShown>
+  <!-- Hotel/restaurant wave: a captured row standing in for a mod's own
+       ThingFilterUI panel (e.g. Gastronomy's Menu, Storefront's stock
+       filter) — activating it opens our full filter screen instead of the
+       mod's own scroll-culled tree. FilterPanelTitle is the generic
+       fallback title when the owning tab's own display name is
+       unavailable. -->
+  <RimWorldAccess.Inspection.Tree.EditFilterList>Editar lista de filtros</RimWorldAccess.Inspection.Tree.EditFilterList>
+  <RimWorldAccess.Inspection.Tree.FilterPanelTitle>Filtro</RimWorldAccess.Inspection.Tree.FilterPanelTitle>
+  <!-- Hotel/restaurant wave: qualifies a captured button whose only name is
+       punctuation (a mod's "×"/"+" icon button) with the text of the row it
+       belongs to, so it reads as "No one: ×" rather than a bare glyph.
+       {0} = the row's own text, {1} = the glyph name. -->
+  <RimWorldAccess.Inspection.Tree.GlyphButtonQualifiedName>{0}: {1}</RimWorldAccess.Inspection.Tree.GlyphButtonQualifiedName>
+  <RimWorldAccess.Inspection.Parity.NoLongerShown>{0} ya no se muestra en esta pestaña.</RimWorldAccess.Inspection.Parity.NoLongerShown>
+  <RimWorldAccess.Inspection.Parity.ActivateFailed>No se pudo activar {0}.</RimWorldAccess.Inspection.Parity.ActivateFailed>
+  <RimWorldAccess.Inspection.Parity.Disabled>{0}: desactivado.</RimWorldAccess.Inspection.Parity.Disabled>
+  <RimWorldAccess.Inspection.Parity.Increase>Aumentar</RimWorldAccess.Inspection.Parity.Increase>
+  <RimWorldAccess.Inspection.Parity.Decrease>Disminuir</RimWorldAccess.Inspection.Parity.Decrease>
+  <RimWorldAccess.Inspection.Parity.SetValue>Establecer valor</RimWorldAccess.Inspection.Parity.SetValue>
+  <RimWorldAccess.Inspection.Parity.NotANumber>{0} no es un número.</RimWorldAccess.Inspection.Parity.NotANumber>
   <RimWorldAccess.Inspection.Tree.MeditationFocusNoFocus>Foco de meditación - No hay objetos de foco al alcance</RimWorldAccess.Inspection.Tree.MeditationFocusNoFocus>
   <RimWorldAccess.Inspection.Tree.NoTabInfo>No hay información disponible para esta pestaña.</RimWorldAccess.Inspection.Tree.NoTabInfo>
   <RimWorldAccess.Inspection.Tree.TabNoKeyboardContent>La pestaña '{0}' no tiene contenido accesible por teclado.</RimWorldAccess.Inspection.Tree.TabNoKeyboardContent>
   <RimWorldAccess.Inspection.Tree.UnrecognizedTab>Esta es una pestaña no reconocida de un mod o DLC.</RimWorldAccess.Inspection.Tree.UnrecognizedTab>
   <RimWorldAccess.Inspection.Tree.NoFacilityInfo>No hay información de vinculación de instalaciones.</RimWorldAccess.Inspection.Tree.NoFacilityInfo>
+  <!-- Shown when the inspect tree's Gizmos category expands on an object the game
+       currently offers no commands for. -->
+  <RimWorldAccess.Inspection.Tree.NoCommands>No hay comandos disponibles.</RimWorldAccess.Inspection.Tree.NoCommands>
 
   <RimWorldAccess.Inspection.Tree.NoNeedsToDisplay>No hay necesidades para mostrar.</RimWorldAccess.Inspection.Tree.NoNeedsToDisplay>
   <RimWorldAccess.Inspection.Tree.NoTrainableSkills>No hay habilidades entrenables</RimWorldAccess.Inspection.Tree.NoTrainableSkills>
@@ -1280,6 +1259,8 @@
   <RimWorldAccess.Inspection.Tree.HealthSettings>Ajustes de salud</RimWorldAccess.Inspection.Tree.HealthSettings>
   <RimWorldAccess.Inspection.Tree.Capacities>Capacidades</RimWorldAccess.Inspection.Tree.Capacities>
   <RimWorldAccess.Inspection.Tree.BreakThresholds>Umbrales de crisis</RimWorldAccess.Inspection.Tree.BreakThresholds>
+  <RimWorldAccess.Inspection.Tree.JoyKindsOnMap>Fuentes de recreación en el mapa</RimWorldAccess.Inspection.Tree.JoyKindsOnMap>
+  <RimWorldAccess.Inspection.Tree.ActiveLearningDesires>Deseos de aprendizaje activos</RimWorldAccess.Inspection.Tree.ActiveLearningDesires>
   <RimWorldAccess.Inspection.Tree.CombatLog>Registro de combate</RimWorldAccess.Inspection.Tree.CombatLog>
   <RimWorldAccess.Inspection.Tree.SocialLog>Registro social</RimWorldAccess.Inspection.Tree.SocialLog>
 
@@ -1410,16 +1391,6 @@
   <RimWorldAccess.Inspection.Gizmo.WeaponVerbLabel>{0} - {1}</RimWorldAccess.Inspection.Gizmo.WeaponVerbLabel>
   <RimWorldAccess.Inspection.Gizmo.UnknownCommand>Comando desconocido</RimWorldAccess.Inspection.Gizmo.UnknownCommand>
 
-  <!-- Info Card skin-color shade descriptors (src/Inspection/InfoCardDataExtractor.cs), keyed off luminance. -->
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.VeryLight>muy claro</RimWorldAccess.Inspection.InfoCard.SkinShade.VeryLight>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Light>claro</RimWorldAccess.Inspection.InfoCard.SkinShade.Light>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Fair>pálido</RimWorldAccess.Inspection.InfoCard.SkinShade.Fair>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Medium>medio</RimWorldAccess.Inspection.InfoCard.SkinShade.Medium>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Tan>bronceado</RimWorldAccess.Inspection.InfoCard.SkinShade.Tan>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Brown>moreno</RimWorldAccess.Inspection.InfoCard.SkinShade.Brown>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.DarkBrown>moreno oscuro</RimWorldAccess.Inspection.InfoCard.SkinShade.DarkBrown>
-  <RimWorldAccess.Inspection.InfoCard.SkinColorShade>Color de piel ({0})</RimWorldAccess.Inspection.InfoCard.SkinColorShade>
-
   <!-- Training tab status words for tree labels (src/Inspection/InspectionTreeBuilder.cs). -->
   <RimWorldAccess.Inspection.Training.CannotTrain>No se puede entrenar</RimWorldAccess.Inspection.Training.CannotTrain>
   <RimWorldAccess.Inspection.Training.StatusLearned>Aprendido</RimWorldAccess.Inspection.Training.StatusLearned>
@@ -1433,6 +1404,8 @@
   <!-- Inspection category display names (src/Inspection/InspectionCategoryLocalizer.cs).
        English identifiers stay as internal dispatch keys; these are display only. -->
   <RimWorldAccess.Inspection.CategoryName.Overview>Resumen</RimWorldAccess.Inspection.CategoryName.Overview>
+  <!-- The object's commands: the same list the G key opens, as tree rows. -->
+  <RimWorldAccess.Inspection.CategoryName.Gizmos>Comandos</RimWorldAccess.Inspection.CategoryName.Gizmos>
   <RimWorldAccess.Inspection.CategoryName.Health>Salud</RimWorldAccess.Inspection.CategoryName.Health>
   <RimWorldAccess.Inspection.CategoryName.Needs>Necesidades</RimWorldAccess.Inspection.CategoryName.Needs>
   <RimWorldAccess.Inspection.CategoryName.Mood>Humor</RimWorldAccess.Inspection.CategoryName.Mood>

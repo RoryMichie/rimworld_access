@@ -7,20 +7,14 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patches for Dialog_BeginLordJob and its subclasses (Dialog_BeginRitual,
-    /// Dialog_BeginPsychicRitual, Dialog_BeginGravshipLaunch). Keeps LordJobDialogState
-    /// synchronized with the dialog lifecycle and blocks the game's default Accept/Cancel
-    /// handling while our keyboard navigation is active.
+    /// Harmony patches for Dialog_BeginLordJob and its subclasses (ritual, psychic ritual, gravship
+    /// launch): keeps LordJobDialogState synchronized with the dialog lifecycle and blocks vanilla's
+    /// Accept/Cancel handling while our keyboard navigation is active.
     /// </summary>
     public static class RitualPatch
     {
-        // ===== Open hooks =====
-
-        /// <summary>
-        /// Dialog_BeginRitual overrides PostOpen and runs assignments.FillPawns + the per-comp
-        /// notify loop before returning. Our Postfix here catches that completed state for
-        /// ideology rituals AND gravship launches (gravship inherits the same PostOpen).
-        /// </summary>
+        /// <summary>Dialog_BeginRitual finishes FillPawns and the per-comp notify loop inside PostOpen,
+        /// so a postfix sees completed state. Gravship launch inherits this PostOpen.</summary>
         [HarmonyPatch(typeof(Dialog_BeginRitual), "PostOpen")]
         public static class Dialog_BeginRitual_PostOpen_Patch
         {
@@ -38,11 +32,8 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Dialog_BeginPsychicRitual does not override PostOpen, so we patch the base
-        /// Window.PostOpen and filter. The psychic dialog's constructor populates assignments
-        /// fully before PostOpen fires, so our state can read them safely here.
-        /// </summary>
+        /// <summary>Dialog_BeginPsychicRitual does not override PostOpen, so patch base Window.PostOpen
+        /// and filter. Its constructor fills assignments before PostOpen fires.</summary>
         [HarmonyPatch(typeof(Window), "PostOpen")]
         public static class Window_PostOpen_PsychicRitual_Patch
         {
@@ -61,13 +52,8 @@ namespace RimWorldAccess
             }
         }
 
-        // ===== Close hook =====
-
-        /// <summary>
-        /// Fires regardless of HOW the dialog closes (Cancel, Start, click outside, etc.).
-        /// Our state MUST close when the game's dialog closes, and we announce via the
-        /// adapter's localized closing text so each dialog type gets the right phrase.
-        /// </summary>
+        /// <summary>Fires however the dialog closes (Cancel, Start, click outside): our state must
+        /// follow. The closing phrase comes from the adapter, one wording per dialog type.</summary>
         [HarmonyPatch(typeof(Window), "PostClose")]
         public static class Window_PostClose_LordJob_Patch
         {
@@ -92,14 +78,10 @@ namespace RimWorldAccess
             }
         }
 
-        // ===== Start prefixes =====
-        //
-        // Start() is virtual on Dialog_BeginLordJob and overridden by each subclass. Harmony
-        // patches on virtual methods only intercept calls dispatched through the patched
-        // method itself, so we patch each concrete subclass separately. The shared prefix
-        // returns false (skip original) while LordJobDialogState is active, so Enter / OK
-        // button presses don't begin the job behind the user's back; Alt+S sets IsActive=false
-        // before invoking OnAcceptKeyPressed → Start so the prefix lets it through.
+        // Start() is overridden by each subclass and Harmony only intercepts the declaring type, so
+        // each concrete subclass is patched separately. The shared prefix skips the original while
+        // LordJobDialogState is active so Enter never begins the job behind the player; Alt+S clears
+        // IsActive first so its own Start gets through.
 
         public static bool LordJobStartPrefix()
         {
@@ -114,36 +96,30 @@ namespace RimWorldAccess
             public static bool Prefix() => LordJobStartPrefix();
         }
 
-        // Dialog_BeginPsychicRitual.Start and Dialog_BeginGravshipLaunch.Start are patched
-        // manually in Core/rimworld_access.cs via AccessTools.TypeByName so the mod loads
-        // cleanly when the relevant DLC types are present (they ship in RimWorld.dll, but
-        // applying the patches lazily lets us keep DLC handling consistent with EntityCodex).
-
-        // ===== OnAcceptKeyPressed / OnCancelKeyPressed =====
+        // Dialog_BeginPsychicRitual.Start and Dialog_BeginGravshipLaunch.Start are patched manually in
+        // Core/rimworld_access.cs via AccessTools.TypeByName, keeping the DLC typerefs lazy.
 
         /// <summary>
-        /// Catches Enter at the Window level BEFORE it reaches the dialog. Without this,
-        /// RimWorld's KeyBindingDefOf.Accept.KeyDownEvent triggers Window.OnAcceptKeyPressed
-        /// independently of UnifiedKeyboardPatch, which can fire Start().
+        /// Catches Enter before it reaches Start(): KeyBindingDefOf.Accept.KeyDownEvent triggers
+        /// OnAcceptKeyPressed independently of our handling, and Event.current.Use() does not stop it.
+        /// Patched on Dialog_BeginLordJob, NOT Window: the dialog overrides OnAcceptKeyPressed with no
+        /// base call, so virtual dispatch never enters a Window-declared patch body.
         /// </summary>
-        [HarmonyPatch(typeof(Window), "OnAcceptKeyPressed")]
-        public static class Window_OnAcceptKeyPressed_LordJob_Patch
+        [HarmonyPatch(typeof(Dialog_BeginLordJob), "OnAcceptKeyPressed")]
+        public static class Dialog_BeginLordJob_OnAcceptKeyPressed_Patch
         {
             [HarmonyPrefix]
-            public static bool Prefix(Window __instance)
+            public static bool Prefix()
             {
-                if (!(__instance is Dialog_BeginLordJob)) return true;
-
                 if (LordJobDialogState.IsActive) return false;
-                if (StatBreakdownState.IsActive || WindowlessInspectionState.IsActive) return false;
+                // Deliberately the only term: StatBreakdown stamps MarkAcceptConsumed (honored by
+                // WindowAcceptKeyRouterPatch) and inspection stands down beneath a window-attached
+                // dialog, so adding either back kills Enter for the opened-from-inspection flow.
                 return true;
             }
         }
 
-        /// <summary>
-        /// Block Cancel handling while we're in a submenu (pawn selection / quality stats)
-        /// or while overlay states like StatBreakdown are open over the dialog.
-        /// </summary>
+        /// <summary>Blocks vanilla Cancel while a submenu (pawn selection, quality stats) owns Escape.</summary>
         [HarmonyPatch(typeof(Window), "OnCancelKeyPressed")]
         public static class Window_OnCancelKeyPressed_LordJob_Patch
         {
@@ -152,7 +128,9 @@ namespace RimWorldAccess
             {
                 if (!(__instance is Dialog_BeginLordJob)) return true;
 
-                if (StatBreakdownState.IsActive || WindowlessInspectionState.IsActive) return false;
+                // StatBreakdown and inspection terms are deliberately absent: StatBreakdown stamps
+                // MarkCancelConsumed for WindowCancelKeyRouterPatch and inspection stands down beneath
+                // this dialog. Either term leaves Escape dead in the Roles region.
 
                 if (LordJobDialogState.IsActive)
                 {
@@ -164,12 +142,8 @@ namespace RimWorldAccess
             }
         }
 
-        // ===== Visual indicator =====
-
-        /// <summary>
-        /// Draw a small "Keyboard Mode Active" badge in the dialog when our state is driving
-        /// it. Patches Dialog_BeginLordJob.DoWindowContents so all subclasses share it.
-        /// </summary>
+        /// <summary>Draws the keyboard-mode badge while our state drives the dialog; patched on
+        /// Dialog_BeginLordJob.DoWindowContents so every subclass shares it.</summary>
         [HarmonyPatch(typeof(Dialog_BeginLordJob), "DoWindowContents")]
         public static class Dialog_BeginLordJob_DoWindowContents_Patch
         {

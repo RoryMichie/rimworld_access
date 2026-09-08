@@ -80,6 +80,10 @@ namespace RimWorldAccess
 
         /// <summary>
         /// Gets the category name for the targets scanner based on the active designator.
+        /// Classifies by the designator's actual runtime type instead of Contains-matching
+        /// hardcoded English keywords against its (possibly translated) type name - same
+        /// technique as ShapePlacementState.GetActionFromDesignator - so this works in every
+        /// language and can't misfire on an incidental substring.
         /// </summary>
         /// <param name="activeDesignator">The active designator</param>
         /// <returns>A descriptive category name for the targets</returns>
@@ -90,26 +94,24 @@ namespace RimWorldAccess
 
             string label = activeDesignator.Label ?? (string)"RimWorldAccess.Building.Scanner.FallbackOrder".Translate();
 
-            // Common designator types get specific names
-            string defName = activeDesignator.GetType().Name;
-
-            if (defName.Contains("Hunt"))
+            // Designator_MineVein extends Designator_Mine, so `is Designator_Mine` covers both.
+            if (activeDesignator is Designator_Hunt)
                 return (string)"RimWorldAccess.Building.Scanner.HuntTargets".Translate();
-            if (defName.Contains("Mine"))
+            if (activeDesignator is Designator_Mine)
                 return (string)"RimWorldAccess.Building.Scanner.MineTargets".Translate();
-            if (defName.Contains("Cancel"))
+            if (activeDesignator is Designator_Cancel)
                 return (string)"RimWorldAccess.Building.Scanner.CanceledOrders".Translate();
-            if (defName.Contains("Haul"))
+            if (activeDesignator is Designator_Haul)
                 return (string)"RimWorldAccess.Building.Scanner.HaulTargets".Translate();
-            if (defName.Contains("Cut") || defName.Contains("Chop"))
+            if (activeDesignator is Designator_PlantsCut)
                 return (string)"RimWorldAccess.Building.Scanner.CutTargets".Translate();
-            if (defName.Contains("Harvest"))
+            if (activeDesignator is Designator_PlantsHarvest)
                 return (string)"RimWorldAccess.Building.Scanner.HarvestTargets".Translate();
-            if (defName.Contains("Tame"))
+            if (activeDesignator is Designator_Tame)
                 return (string)"RimWorldAccess.Building.Scanner.TameTargets".Translate();
-            if (defName.Contains("Slaughter"))
+            if (activeDesignator is Designator_Slaughter)
                 return (string)"RimWorldAccess.Building.Scanner.SlaughterTargets".Translate();
-            if (defName.Contains("Deconstruct"))
+            if (activeDesignator is Designator_Deconstruct)
                 return (string)"RimWorldAccess.Building.Scanner.DeconstructTargets".Translate();
 
             return (string)"RimWorldAccess.Building.Scanner.GenericTargets".Translate(label);

@@ -3,7 +3,6 @@ using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using RimWorld.Planet;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
@@ -39,36 +38,27 @@ namespace RimWorldAccess
             IsActive = false;
         }
 
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
+        /// <summary>
+        /// Escape handler: PickNewColonyTile sets allowEscape: false, so the
+        /// player genuinely cannot cancel. Make that audible instead of silent.
+        /// Internal: called from TargetingScope's
+        /// newColonyTile.cancel claim, which replaces the legacy handler's
+        /// Escape branch verbatim.
+        /// </summary>
+        internal static void AnnounceCannotCancel()
         {
-            if (!IsActive) return false;
-
-            // If the TilePicker stopped (tile chosen elsewhere, or quest cancelled
-            // by some other path), tear down our state.
-            if (Find.TilePicker == null || !Find.TilePicker.Active)
-            {
-                Close();
-                return false;
-            }
-
-            if ((key == KeyCode.Return || key == KeyCode.KeypadEnter) && !shift && !ctrl && !alt)
-            {
-                ConfirmCurrentTile();
-                return true;
-            }
-
-            if (key == KeyCode.Escape && !shift && !ctrl && !alt)
-            {
-                // PickNewColonyTile sets allowEscape: false; the player genuinely
-                // cannot cancel. Make that audible instead of silent.
-                TolkHelper.Speak("RimWorldAccess.Archonexus.TilePick.MustChooseValid".Loc(), SpeechPriority.High);
-                return true;
-            }
-
-            return false;
+            TolkHelper.Speak("RimWorldAccess.Archonexus.TilePick.MustChooseValid".Loc(), SpeechPriority.High);
         }
 
-        private static void ConfirmCurrentTile()
+        /// <summary>
+        /// Internal: called from TargetingScope's
+        /// newColonyTile.confirm claim. The legacy handler's own TilePicker
+        /// staleness check (self-close when Find.TilePicker stops) moved into
+        /// TargetingScopeMirror.Reconcile — the mirror-reconcile-liveness
+        /// pattern, which runs every frame instead of only on
+        /// keypress.
+        /// </summary>
+        internal static void ConfirmCurrentTile()
         {
             if (!WorldNavigationState.IsActive)
             {
@@ -91,8 +81,8 @@ namespace RimWorldAccess
 
             try
             {
-                if (validatorField == null) validatorField = AccessTools.Field(typeof(TilePicker), "validator");
-                if (tileChosenField == null) tileChosenField = AccessTools.Field(typeof(TilePicker), "tileChosen");
+                if (validatorField == null) validatorField = VanillaAccess.GetField(typeof(TilePicker), "validator");
+                if (tileChosenField == null) tileChosenField = VanillaAccess.GetField(typeof(TilePicker), "tileChosen");
 
                 var validator = validatorField?.GetValue(Find.TilePicker) as Func<PlanetTile, bool>;
                 var tileChosen = tileChosenField?.GetValue(Find.TilePicker) as Action<PlanetTile>;
@@ -107,7 +97,7 @@ namespace RimWorldAccess
                 if (!validator(tile))
                     return;
 
-                var stopIntMethod = AccessTools.Method(typeof(TilePicker), "StopTargetingInt");
+                var stopIntMethod = VanillaAccess.GetMethod(typeof(TilePicker), "StopTargetingInt");
                 stopIntMethod?.Invoke(Find.TilePicker, null);
 
                 tileChosen(tile);

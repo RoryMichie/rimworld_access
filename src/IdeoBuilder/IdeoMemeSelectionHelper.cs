@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -8,15 +7,22 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Helpers for the meme picker: reflection accessors into Dialog_ChooseMemes private state,
-    /// tree building (impact tier -> memes for Normal; a single flat list for Structure), and
-    /// label formatting that includes selection state, impact, description, and unlocked
-    /// roles/rituals.
+    /// Helpers for the meme picker: reflection accessors into Dialog_ChooseMemes private state, the
+    /// available-memes filter, the navigation tree (impact tier -> memes for Normal, a single flat
+    /// meme list for Structure; hosted by <see cref="RimWorldAccess.Shell.IdeoMemeScreenScope"/>),
+    /// and the validation/impact status line.
+    ///
+    /// The tree carries only what is STABLE for the dialog's life: bare meme names, bare impact-tier
+    /// names, and vanilla's own tooltip lines as detail children. Selection markers, child counts and
+    /// cannot-remove reasons are composed live in the scope's DescribeTreeNode, which is why a toggle
+    /// never rebuilds anything — <c>Dialog_ChooseMemes.CanUseMeme</c> (decompiled :627-660) depends
+    /// on defs, dev mode, scenario and factions, never on the current selection, so the row set is
+    /// fixed once the dialog opens.
     ///
     /// Note on MemeGroupDef: the game's meme groups carry no label (only layout offsets such as
     /// drawOffset / maxRows used to arrange boxes on screen), so they convey nothing to a screen
-    /// reader. We therefore ignore them for navigation and keep the list flat, ordering by the
-    /// same key vanilla sorts on so related memes stay adjacent.
+    /// reader — the tree orders memes by the same key vanilla sorts on instead, so related memes
+    /// stay adjacent.
     /// </summary>
     public static class IdeoMemeSelectionHelper
     {
@@ -119,12 +125,16 @@ namespace RimWorldAccess
         /// <summary>
         /// Builds the navigation tree for the meme picker.
         ///
-        /// For Structure memes: a single flat list (single-select, one shared impact level, and
-        /// the meme groups have no labels — see class note).
+        /// Structure memes: a flat list of meme nodes under the root (single-select, one shared
+        /// impact level, and the meme groups have no labels — see the class note), ordered on
+        /// <c>DoStructureMemeSelector</c>'s own sort key (decompiled :411) so memes that render
+        /// adjacent in the grid stay adjacent here too.
         ///
-        /// For Normal memes: top level is impact tier (Low/Medium/High); each tier holds a flat
-        /// list of its memes. We keep the meaningful impact grouping but drop the nameless
-        /// MemeGroupDef sub-grouping that vanilla only uses for box layout.
+        /// Normal memes: one node per non-empty impact tier (Low/Medium/High — vanilla's own outer
+        /// 1..3 loop in <c>DoNormalMemeSelector</c>, decompiled :467), each holding its tier's memes
+        /// ordered on <c>NormalMemeSorter</c>'s key (group render order, then meme render order). A
+        /// tier node's Label is the bare tier name; the child count rides the shared expansion
+        /// suffix the scope appends, so it is spoken through exactly one channel.
         /// </summary>
         public static InspectionTreeItem BuildTree(Dialog_ChooseMemes dialog)
         {
@@ -137,153 +147,83 @@ namespace RimWorldAccess
                 Type = InspectionTreeItem.ItemType.Category,
             };
 
-            var available = GetAvailableMemes(dialog);
-            var category = GetMemeCategory(dialog);
+            List<MemeDef> available = GetAvailableMemes(dialog);
 
-            if (category == MemeCategory.Structure)
+            if (GetMemeCategory(dialog) == MemeCategory.Structure)
             {
-                BuildStructureTree(dialog, root, available);
+                foreach (MemeDef meme in available
+                    .OrderBy(m => m.groupDef != null)
+                    .ThenBy(m => m.renderOrder))
+                {
+                    root.Children.Add(MakeMemeNode(dialog, meme, root, indent: 0));
+                }
+                return root;
             }
-            else
-            {
-                BuildNormalTree(dialog, root, available);
-            }
-            return root;
-        }
 
-        private static void BuildStructureTree(Dialog_ChooseMemes dialog, InspectionTreeItem root, List<MemeDef> available)
-        {
-            AddMemesFlat(dialog, root, available, indent: 0);
-        }
-
-        private static void BuildNormalTree(Dialog_ChooseMemes dialog, InspectionTreeItem root, List<MemeDef> available)
-        {
-            // Impact tiers 1..3 (Low / Medium / High); only emit tiers with memes.
             for (int impact = 1; impact <= 3; impact++)
             {
-                var inTier = available.Where(m => m.impact == impact).ToList();
+                List<MemeDef> inTier = available.Where(m => m.impact == impact).ToList();
                 if (inTier.Count == 0) continue;
 
-                var impactNode = new InspectionTreeItem
+                var tierNode = new InspectionTreeItem
                 {
                     Label = IdeoImpactUtility.MemeImpactLabel(impact).ToString().CapitalizeFirst()
-                            + " " + "IdeoImpact".Translate().ToString().ToLower()
-                            + ". " + inTier.Count + " " + "Memes".Translate().ToString().ToLower(),
+                            + " " + ((string)"IdeoImpact".Translate()).ToLower(),
                     IndentLevel = 0,
                     IsExpandable = true,
                     IsExpanded = false,
                     Type = InspectionTreeItem.ItemType.Category,
+                    // The boxed tier number is the node's identity: TreeStatePreserve matches Data by
+                    // ReferenceEquals-or-Equals, so a boxed int survives a rebuild, and the scope's
+                    // DescribeTreeNode branches on it to pick the parent grammar.
+                    Data = impact,
                     Parent = root,
                 };
 
-                AddMemesFlat(dialog, impactNode, inTier, indent: 1);
-                root.Children.Add(impactNode);
+                foreach (MemeDef meme in inTier
+                    .OrderBy(m => m.groupDef?.renderOrder ?? int.MaxValue)
+                    .ThenBy(m => m.renderOrder))
+                {
+                    tierNode.Children.Add(MakeMemeNode(dialog, meme, tierNode, indent: 1));
+                }
+                root.Children.Add(tierNode);
             }
+            return root;
         }
 
         /// <summary>
-        /// Adds <paramref name="memes"/> as a flat list of leaf nodes under <paramref name="parent"/>.
-        /// MemeGroupDef is layout-only (no label), so we don't create group nodes; instead we order
-        /// by the same key vanilla sorts on (group render order, then per-meme render order) so memes
-        /// that vanilla draws together stay adjacent in the list.
-        /// </summary>
-        private static void AddMemesFlat(Dialog_ChooseMemes dialog, InspectionTreeItem parent, List<MemeDef> memes, int indent)
-        {
-            var ordered = memes
-                .OrderBy(m => m.groupDef?.renderOrder ?? int.MaxValue)
-                .ThenBy(m => m.renderOrder)
-                .ToList();
-            foreach (var meme in ordered)
-                parent.Children.Add(MakeMemeNode(dialog, meme, parent, indent));
-        }
-
-        /// <summary>
-        /// Each meme is both a checkbox (Space/Enter toggles selection) and an expandable tree
-        /// node. Collapsed, it reads its full details inline (name + impact + description + …);
-        /// expanded, it reads just the short label (name [+ "Selected"]) and its details become
-        /// child nodes, one line apiece, so a screen-reader user can step through them instead of
-        /// hearing one wall of text. Same pattern as the info card / read-only ideology tree.
+        /// One meme node: a selectable row (the scope composes the RadioButton/Checkbox state live)
+        /// that is also expandable, its details becoming one child line apiece so a screen-reader
+        /// user can step through them instead of hearing one wall of text. The Label stays the bare
+        /// name in both states — collapsed, the scope folds the same detail lines in itself.
         /// </summary>
         private static InspectionTreeItem MakeMemeNode(Dialog_ChooseMemes dialog, MemeDef meme, InspectionTreeItem parent, int indent)
         {
+            List<string> detailLines = GetMemeTipDetailLines(dialog, meme);
             var node = new InspectionTreeItem
             {
+                Label = meme.LabelCap.ToString(),
                 IndentLevel = indent,
-                IsExpandable = true,
+                IsExpandable = detailLines.Count > 0,
                 IsExpanded = false,
                 Type = InspectionTreeItem.ItemType.Item,
                 Data = meme,
-                LinkedDef = meme,
+                // No LinkedDef: vanilla opens no Dialog_InfoCard for a MemeDef (see
+                // IdeoMemeScreenScope.OnInfo's remarks for the citation).
                 Parent = parent,
             };
-            PopulateMemeNode(dialog, node);
-            return node;
-        }
-
-        /// <summary>
-        /// Builds (first call) or refreshes (later calls) a meme node's labels from current state.
-        /// The detail-line children are static (built once); only the short/full labels — which
-        /// carry the live "Selected" marker and any cannot-remove reason — are recomputed on a
-        /// refresh, so toggling selection never disturbs the expanded child list or the cursor.
-        /// </summary>
-        public static void PopulateMemeNode(Dialog_ChooseMemes dialog, InspectionTreeItem node)
-        {
-            if (!(node.Data is MemeDef meme)) return;
-
-            var newMemes = GetNewMemes(dialog);
-            bool selected = newMemes != null && newMemes.Contains(meme);
-
-            string shortLabel = BuildMemeShortLabel(dialog, meme);
-            node.ExpandedLabel = shortLabel;
-
-            var detailLines = GetMemeTipDetailLines(dialog, meme);
-
-            var sb = new StringBuilder(shortLabel);
-            foreach (var line in detailLines)
-                sb.Append(". ").Append(line);
-
-            // Cannot-remove reason (e.g. a faction-required meme) only ever applies to a selected
-            // meme; surface it on the collapsed label, not as a child line.
-            if (selected)
+            foreach (string line in detailLines)
             {
-                var report = CanRemoveMeme(dialog, meme);
-                if (!report.Accepted && !string.IsNullOrEmpty(report.Reason))
-                    sb.Append(". ").Append(report.Reason);
-            }
-            node.Label = sb.ToString();
-
-            if (node.Children.Count == 0)
-            {
-                int childIndent = node.IndentLevel + 1;
-                foreach (var line in detailLines)
+                node.Children.Add(new InspectionTreeItem
                 {
-                    node.Children.Add(new InspectionTreeItem
-                    {
-                        Label = line,
-                        IndentLevel = childIndent,
-                        IsExpandable = false,
-                        Type = InspectionTreeItem.ItemType.Item,
-                        Parent = node,
-                    });
-                }
+                    Label = line,
+                    IndentLevel = node.IndentLevel + 1,
+                    IsExpandable = false,
+                    Type = InspectionTreeItem.ItemType.DetailText,
+                    Parent = node,
+                });
             }
-        }
-
-        #endregion
-
-        #region Meme label
-
-        /// <summary>
-        /// The short, speakable label for a meme: its name, plus ", Selected" only when it is
-        /// currently selected. We never announce "Not selected" — silence means unselected, which
-        /// keeps multi-select lists fast to scan and matches how the user asked to hear it.
-        /// </summary>
-        public static string BuildMemeShortLabel(Dialog_ChooseMemes dialog, MemeDef meme)
-        {
-            var newMemes = GetNewMemes(dialog);
-            bool selected = newMemes != null && newMemes.Contains(meme);
-            string name = meme.LabelCap.ToString();
-            return selected ? name + ", " + (string)"RimWorldAccess.Ideology.Builder.Status.Selected".Translate() : name;
+            return node;
         }
 
         /// <summary>
@@ -292,11 +232,19 @@ namespace RimWorldAccess
         /// precepts, unlocked roles/rituals, applied styles, prevented precepts, agreeable/
         /// disagreeable traits, starting research/buildings — is presented and stays localized.
         /// Rich-text tags are stripped; the leading line (the meme name) is dropped because it is
-        /// already the node's short label. Each remaining line becomes one detail node.
+        /// already the node's own label. Each remaining line becomes one detail node.
         /// </summary>
         public static List<string> GetMemeTipDetailLines(Dialog_ChooseMemes dialog, MemeDef meme)
         {
-            var ideo = GetIdeo(dialog);
+            return GetMemeTipDetailLines(GetIdeo(dialog), meme);
+        }
+
+        /// <summary>
+        /// The same lines for a surface that already holds the ideoligion rather than the
+        /// picker dialog (the ideoligion details tree).
+        /// </summary>
+        public static List<string> GetMemeTipDetailLines(Ideo ideo, MemeDef meme)
+        {
             string tip = GetMemeTipMethod != null
                 ? GetMemeTipMethod.Invoke(null, new object[] { meme, ideo }) as string
                 : null;
@@ -307,7 +255,7 @@ namespace RimWorldAccess
                     .Select(IdeoBuilderHelper.CleanGameText)
                     .Where(l => !string.IsNullOrEmpty(l))
                     .ToList();
-                // Skip the first line (the meme name — already the short label).
+                // Skip the first line (the meme name — already the node's label).
                 return lines.Skip(1).ToList();
             }
 

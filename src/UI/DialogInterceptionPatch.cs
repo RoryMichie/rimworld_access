@@ -1,12 +1,14 @@
 using HarmonyLib;
 using Verse;
-using RimWorld;
-using UnityEngine;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Intercepts dialog windows and replaces them with windowless keyboard-accessible versions.
+    /// Redirects a small set of game-spawned FloatMenus into the accessible
+    /// windowless float menu before they reach the window stack. Dialogs are
+    /// no longer intercepted anywhere: message boxes, node trees, renames,
+    /// naming dialogs and owner assignment are all real windows driven by
+    /// their FocusScope shells via the ScopeForWindow mirror (waves A/B).
     /// </summary>
     [HarmonyPatch(typeof(WindowStack), "Add")]
     public static class DialogInterceptionPatch
@@ -18,6 +20,21 @@ namespace RimWorldAccess
             // Skip if no window
             if (window == null)
                 return true;
+
+            // A material-menu harvest is running: capture the designator's stuff menu
+            // instead of letting it open (see MaterialMenuHarvest).
+            if (window is FloatMenu harvestedMenu && MaterialMenuHarvest.InFlight)
+            {
+                MaterialMenuHarvest.NotifyIntercepted(harvestedMenu);
+                return false;
+            }
+
+            // A gizmo handler is listing a mod's right-click menu as options (see FloatMenuHarvest).
+            if (window is FloatMenu capturedMenu && FloatMenuHarvest.InFlight)
+            {
+                FloatMenuHarvest.NotifyIntercepted(capturedMenu);
+                return false;
+            }
 
             // Redirect FloatMenus spawned by the ideoligion builder's typed-precept "Add"
             // flow (and any nested grouping menus) into the accessible windowless menu.
@@ -37,8 +54,26 @@ namespace RimWorldAccess
             // Special handling for FloatMenu when:
             // 1. Executing a gizmo (e.g., long-range scanner mineral selection)
             // 2. Confirming a transport pod destination (arrival options)
+            // 3. Running a windowless menu option that opens its own vanilla FloatMenu
+            //    (e.g. Vehicle Framework's turret reload ammo picker)
+            // 4. Confirming an external world-targeting destination (e.g. Vehicle
+            //    Framework aerial launch arrival options — see ExternalWorldTargeting)
+            // 5. Activating a captured inspect-tab control: the armed pass runs a
+            //    vanilla tab handler offscreen, and a FloatMenu it opens must ride
+            //    the windowless path like every other inspection-origin menu.
+            // 6. Activating a main-menu option whose captured vanilla delegate opens
+            //    its own FloatMenu (e.g. BuySoundtrack's soundtrack picker).
+            // 7. A Character Editor keyboard action invoking one of that mod's own
+            //    delegates, which other mods patch to open FloatMenus (Vanilla
+            //    Skills Expanded's passion picker) — a real FloatMenu far from the
+            //    mouse self-closes before a keyboard user can reach it.
+            // 8. A compat scope reflectively invoking a mod delegate that may open its
+            //    own FloatMenu (e.g. RimTalk-family Discuss buttons) — see ScopeDelegateGuard.
             if (window is FloatMenu floatMenu &&
-                (GizmoNavigationState.IsExecutingGizmo || TransportPodLaunchState.IsConfirmingDestination))
+                (GizmoNavigationState.IsExecutingGizmo || TransportPodLaunchState.IsConfirmingDestination
+                    || WindowlessFloatMenuState.IsExecutingOption || ExternalWorldTargeting.IsConfirming
+                    || InspectTabCaptureService.ActivationInFlight || MenuNavigationState.IsExecutingOption
+                    || CharEditorCompat.DelegateInFlight || RimWorldAccess.Shell.ScopeDelegateGuard.InFlight))
             {
                 // Extract options from the FloatMenu and open windowless version
                 var optionsField = typeof(FloatMenu).GetField("options",
@@ -48,225 +83,24 @@ namespace RimWorldAccess
                     var options = optionsField.GetValue(floatMenu) as System.Collections.Generic.List<FloatMenuOption>;
                     if (options != null && options.Count > 0)
                     {
-                        // Clear the confirming flag since we're handling it now
+                        // Clear the confirming flags since we're handling it now
                         TransportPodLaunchState.ClearConfirmingFlag();
+                        ExternalWorldTargeting.IsConfirming = false;
 
                         WindowlessFloatMenuState.Open(options, floatMenu.givesColonistOrders, playOpenSound: false);
                         return false; // Prevent FloatMenu from being added
                     }
                 }
 
-                // Clear flag even if we couldn't extract options
+                // Clear flags even if we couldn't extract options
                 TransportPodLaunchState.ClearConfirmingFlag();
+                ExternalWorldTargeting.IsConfirming = false;
 
                 // Fallback: let it through if we couldn't extract options
                 return true;
             }
 
-            // Special handling for Dialog_AssignBuildingOwner (bed/throne owner assignment)
-            if (window is Dialog_AssignBuildingOwner assignDialog)
-            {
-                // Extract the assignable component via reflection
-                var assignableField = typeof(Dialog_AssignBuildingOwner).GetField("assignable",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (assignableField != null)
-                {
-                    var assignable = assignableField.GetValue(assignDialog) as CompAssignableToPawn;
-                    if (assignable?.parent is Building_Bed bed)
-                    {
-                        BedAssignmentState.Open(bed);
-                        return false; // Prevent dialog from being added
-                    }
-                    else if (assignable?.parent is ThingWithComps building)
-                    {
-                        BuildingOwnerAssignmentState.Open(building, assignable);
-                        return false; // Prevent dialog from being added
-                    }
-                }
-                // Fallback: let it through if couldn't extract
-                return true;
-            }
-
-            // Check if this dialog should be intercepted
-            if (!ShouldInterceptDialog(window))
-                return true; // Allow normal behavior
-
-            Log.Message($"RimWorld Access: Intercepting dialog {window.GetType().Name}");
-
-            // Open windowless version
-            WindowlessDialogState.Open(window);
-
-            // The window is already in the stack (added by WindowStack.Add before PostOpen),
-            // but our system handles modality via SuppressMapNavigation and WindowsForcePausePatch.
-            // Clear preventCameraMotion so the window doesn't redundantly block arrow keys.
-            window.preventCameraMotion = false;
-
-            // Prevent the original PostOpen from running
-            return false;
-        }
-
-        private static bool ShouldInterceptDialog(Window window)
-        {
-            System.Type windowType = window.GetType();
-            string typeName = windowType.Name;
-
-            // Exclude Dialog_Trade - it's already working with keyboard navigation
-            if (typeName == "Dialog_Trade")
-                return false;
-
-            // Exclude specific windows that don't need interception
-            // These are complex UI windows that need custom handling
-            if (typeName == "Dialog_BillConfig" ||
-                typeName == "Dialog_MechBillConfig" ||
-                typeName == "Dialog_FormCaravan" ||
-                typeName == "Dialog_InfoCard" ||
-                typeName == "Dialog_ManageDrugPolicies" ||
-                typeName == "Dialog_ManageApparelPolicies" ||
-                typeName == "Dialog_ManageFoodPolicies" ||
-                typeName == "Dialog_ManageReadingPolicies" ||
-                typeName == "Dialog_AutoSlaughter")
-            {
-                return false;
-            }
-
-            // Intercept Dialog_MessageBox (confirmations, warnings)
-            if (window is Dialog_MessageBox)
-                return true;
-
-            // Intercept Dialog_NodeTree and all subclasses (quest dialogs, research completion, etc.)
-            // Walk up the type hierarchy to check for Dialog_NodeTree in the inheritance chain
-            if (IsDialogNodeTreeOrSubclass(windowType))
-                return true;
-
-            // Intercept all Dialog_Rename subclasses (zone rename, area rename, etc.)
-            if (windowType.BaseType != null && windowType.BaseType.Name.StartsWith("Dialog_Rename"))
-                return true;
-
-            // Intercept all Dialog_GiveName subclasses (colony name, settlement name, etc.)
-            if (windowType.BaseType != null && windowType.BaseType.Name == "Dialog_GiveName")
-                return true;
-
-            // Intercept Dialog_GiveName itself
-            if (typeName == "Dialog_GiveName")
-                return true;
-
-            // Intercept Dialog_NamePawn (baby naming, animal naming, mech naming)
-            if (typeName == "Dialog_NamePawn")
-                return true;
-
-            // Don't intercept other windows by default
-            return false;
-        }
-
-        /// <summary>
-        /// Checks if the given type is Dialog_NodeTree or a subclass of it.
-        /// Walks up the entire type hierarchy to catch indirect subclasses.
-        /// </summary>
-        private static bool IsDialogNodeTreeOrSubclass(System.Type type)
-        {
-            if (type == null)
-                return false;
-
-            // Check current type name
-            if (type.Name == "Dialog_NodeTree")
-                return true;
-
-            // Walk up the inheritance chain
-            System.Type currentType = type.BaseType;
-            while (currentType != null)
-            {
-                if (currentType.Name == "Dialog_NodeTree")
-                    return true;
-                currentType = currentType.BaseType;
-            }
-
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Handles keyboard input for windowless dialogs at the UIRoot level.
-    /// </summary>
-    [HarmonyPatch(typeof(UIRoot), "UIRootOnGUI")]
-    public static class WindowlessDialogInputPatch
-    {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.VeryHigh)]
-        public static bool Prefix()
-        {
-            // Only process if windowless dialog is active
-            if (!WindowlessDialogState.IsActive)
-                return true;
-
-            // Handle keyboard input
-            Event current = Event.current;
-            if (current.type == EventType.KeyDown)
-            {
-                bool consumed = WindowlessDialogState.HandleInput(current);
-                if (consumed)
-                {
-                    // Prevent other systems from processing this event
-                    return false;
-                }
-            }
-
             return true;
-        }
-    }
-
-    /// <summary>
-    /// Draw visual overlay for windowless dialogs to show the user what's happening.
-    /// </summary>
-    [HarmonyPatch(typeof(UIRoot), "UIRootOnGUI")]
-    public static class WindowlessDialogDrawPatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix()
-        {
-            if (!WindowlessDialogState.IsActive)
-                return;
-
-            // Draw a simple overlay to indicate keyboard mode is active
-            Rect overlayRect = new Rect(10f, 10f, 300f, 60f);
-
-            // Background
-            Color prevColor = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.8f);
-            GUI.DrawTexture(overlayRect, BaseContent.WhiteTex);
-
-            // Text
-            GUI.color = Color.white;
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.MiddleCenter;
-
-            string overlayText = "Keyboard Dialog Mode Active\nUse arrow keys to navigate";
-            Widgets.Label(overlayRect, overlayText);
-
-            Text.Anchor = TextAnchor.UpperLeft;
-            GUI.color = prevColor;
-        }
-    }
-
-    /// <summary>
-    /// Patches WindowStack.WindowsForcePause to account for windowless dialogs.
-    /// This fixes a bug where the game would repeatedly try to open automatic letters
-    /// because it didn't know a forcePause dialog was active (since we intercept and
-    /// don't add them to the window stack).
-    /// </summary>
-    [HarmonyPatch(typeof(WindowStack))]
-    [HarmonyPatch("WindowsForcePause", MethodType.Getter)]
-    public static class WindowsForcePausePatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(ref bool __result)
-        {
-            // If our windowless dialog system has an active forcePause dialog,
-            // report that the windows force pause even though the dialog isn't
-            // in the actual window stack
-            if (WindowlessDialogState.ShouldForcePause)
-            {
-                __result = true;
-            }
         }
     }
 }

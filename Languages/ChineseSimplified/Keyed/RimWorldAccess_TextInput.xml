@@ -16,6 +16,8 @@
 
   <RimWorldAccess.TextInput.EditingField>正在编辑 {0}: {1}。输入新值，回车确认，Esc 取消。</RimWorldAccess.TextInput.EditingField>
   <RimWorldAccess.TextInput.EditingMultiLineField>正在编辑多行字段 {0}: {1}。输入内容，Shift+回车换行，上/下方向键切换行，回车确认，Esc 取消。</RimWorldAccess.TextInput.EditingMultiLineField>
+  <RimWorldAccess.TextInput.BrowsingField>正在浏览 {0}，只读: {1}。</RimWorldAccess.TextInput.BrowsingField>
+  <RimWorldAccess.TextInput.ReadOnlyField>此文本为只读</RimWorldAccess.TextInput.ReadOnlyField>
   <RimWorldAccess.TextInput.Empty>空</RimWorldAccess.TextInput.Empty>
   <RimWorldAccess.TextInput.Deleted>已删除 {0}</RimWorldAccess.TextInput.Deleted>
   <RimWorldAccess.TextInput.FieldSet>{0} 已设为 {1}</RimWorldAccess.TextInput.FieldSet>

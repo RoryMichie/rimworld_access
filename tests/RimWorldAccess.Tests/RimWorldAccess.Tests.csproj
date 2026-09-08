@@ -4,12 +4,20 @@
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <!-- The linked production sources target net472 / C# 7.3, which cannot carry
+         nullable annotations, so the nullable context stays off project-wide. -->
+    <Nullable>disable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <!-- Tests are linked source, not a reference to the mod DLL (which targets
          net472 and depends on Verse/Unity). Disable default globbing so we only
          pull in the explicitly linked game-free files below. -->
+    <!-- Adding a file under test: confirm it imports no Verse/UnityEngine/
+         RimWorld namespace, add a linked Compile entry below, and add a
+         matching <Name>Tests.cs. If the logic is tangled with game types,
+         extract the pure part into its own class first - that extraction is
+         the point. Game-coupled shell sources carry the .Game.cs suffix,
+         which this project must keep excluding. -->
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
@@ -23,9 +31,10 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <!-- Test sources in this project. -->
+  <!-- Test sources in this project (obj/bin excluded: the SDK already adds its
+       generated files there, and re-globbing them trips CS2002). -->
   <ItemGroup>
-    <Compile Include="**/*.cs" />
+    <Compile Include="**/*.cs" Exclude="obj/**;bin/**" />
   </ItemGroup>
 
   <!--
@@ -38,6 +47,109 @@
   <ItemGroup>
     <Compile Include="..\..\src\ScreenReader\SpeechSanitizer.cs"
              Link="UnderTest\SpeechSanitizer.cs" />
+    <!-- The Prism AVX-512 kernel workaround's gate. Only the decision is pure;
+         the CPU probe and the environment write are exercised in-game. -->
+    <Compile Include="..\..\src\ScreenReader\SimdutfKernelWorkaround.cs"
+             Link="UnderTest\SimdutfKernelWorkaround.cs" />
+    <!-- Speech mods campaign, S1: the Narrative Feed's pure ring-buffer/dedupe/
+         announce-decision core. The game-facing funnel (NarrativeFeed.Game.cs)
+         stays out, per the *.Game.cs exclusion convention. -->
+    <Compile Include="..\..\src\Narrative\NarrativeFeedCore.cs"
+             Link="UnderTest\NarrativeFeedCore.cs" />
+    <!-- Speech mods campaign, S15: the stable-read rule's pure wait-for-settled state machine
+         (blueprint §5). The game-facing facade (AsyncTextStability.Game.cs) stays out. -->
+    <Compile Include="..\..\src\Narrative\AsyncTextStability.cs"
+             Link="UnderTest\AsyncTextStability.cs" />
+    <!-- Shell/Models/TypeaheadMatcher shares the diacritic normalization. -->
+    <Compile Include="..\..\src\Util\TextNormalization.cs"
+             Link="UnderTest\TextNormalization.cs" />
+    <!-- The caret arithmetic every text buffer is read with (character, word and
+         line stepping). TextInputController itself speaks and stays out. -->
+    <Compile Include="..\..\src\Input\TextInput\TextCursor.cs"
+             Link="UnderTest\TextCursor.cs" />
+    <!-- SafeTypeSweep's pure per-type guard (poisoned-mod-assembly hardening,
+         2026-08-02). The Verse.GenTypes-backed convenience wrappers live in
+         SafeTypeSweep.Game.cs and stay out per the *.Game.cs convention. -->
+    <Compile Include="..\..\src\Util\SafeTypeSweep.cs"
+             Link="UnderTest\SafeTypeSweep.cs" />
+    <!-- The Shell's pure layers (blueprint §4.1/§4.3/§4.5). Their only Unity
+         dependency is the KeyCode enum, supplied by Shims/UnityKeyCode.cs.
+         Game-coupled shell files use the *.Game.cs suffix and stay out. -->
+    <Compile Include="..\..\src\Shell\Actions\**\*.cs"
+             Exclude="..\..\src\Shell\Actions\**\*.Game.cs"
+             LinkBase="UnderTest\Shell\Actions" />
+    <Compile Include="..\..\src\Shell\Models\**\*.cs"
+             Exclude="..\..\src\Shell\Models\**\*.Game.cs"
+             LinkBase="UnderTest\Shell\Models" />
+    <Compile Include="..\..\src\Shell\Elements\**\*.cs"
+             Exclude="..\..\src\Shell\Elements\**\*.Game.cs"
+             LinkBase="UnderTest\Shell\Elements" />
+    <Compile Include="..\..\src\Shell\Focus\**\*.cs"
+             Exclude="..\..\src\Shell\Focus\**\*.Game.cs"
+             LinkBase="UnderTest\Shell\Focus" />
+    <!-- ScreenScope's captured-extras row-expansion engine (
+         new-game retrofit Slice 0). Most of Shell/Screens predates the
+         *.Game.cs suffix convention and is still game-coupled despite
+         lacking it, so this links the one pure file by name rather than
+         globbing the directory. -->
+    <Compile Include="..\..\src\Shell\Screens\CapturedExtrasRows.cs"
+             LinkBase="UnderTest\Shell\Screens" />
+    <!-- The hover service's target-identity key (hover-following speech, phase
+         one). Pure by design so the no-dedupe property it enforces is testable;
+         the service itself is HoverSpeech.Game.cs and stays out. -->
+    <Compile Include="..\..\src\Shell\Sync\HoverTargetKey.cs"
+             LinkBase="UnderTest\Shell\Sync" />
+    <!-- The shared reading of Widgets.HorizontalSlider's caption parameters,
+         used by the capture pass and by the mouse-drag reader. Pure so the
+         bound-marker case can be pinned down without the game. -->
+    <Compile Include="..\..\src\Shell\Sync\SliderCaption.cs"
+             LinkBase="UnderTest\Shell\Sync" />
+    <!-- The tooltip hover gate's IL eligibility analyzer (tooltip wave, slice A).
+         Pure so every census call-site shape is covered without the game; the
+         Harmony bridge and the installer are *.Game.cs and stay out. -->
+    <Compile Include="..\..\src\Shell\Sync\TooltipGateAnalysis.cs"
+             LinkBase="UnderTest\Shell\Sync" />
+    <!-- The live-tooltip channel's pure join rules (hover-following speech,
+         phase two). The channel itself reads TooltipHandler and stays out. -->
+    <Compile Include="..\..\src\Shell\Sync\TooltipTextJoin.cs"
+             LinkBase="UnderTest\Shell\Sync" />
+    <!-- The rect-designation path's bounding-box arithmetic (Allow Tool S1). The router
+         and its handlers take Verse.Designator and stay out. -->
+    <Compile Include="..\..\src\Building\CellBounds.cs"
+             LinkBase="UnderTest\Building" />
+    <!-- The placement announcement merge's decision function and the footprint-part
+         vocabulary (placement help wave). The harvest, the Harmony brackets and the cell-set
+         identification are game-coupled and live in PlacementHelpSpeech.Game.cs. -->
+    <Compile Include="..\..\src\Building\PlacementHelpMerge.cs"
+             LinkBase="UnderTest\Building" />
+    <Compile Include="..\..\src\Building\PlacementFootprintNames.cs"
+             LinkBase="UnderTest\Building" />
+    <!-- The placement-spot scanner's cap, ordering and facing choice. The map sweep that feeds
+         it is PlacementSpotScanner.Game.cs and stays out. -->
+    <Compile Include="..\..\src\Building\PlacementSpotRanking.cs"
+             LinkBase="UnderTest\Building" />
+    <!-- Colony Manager Redux's group-shortcut tri-state arithmetic (CMR S1). The
+         compat facade and the row providers are game-coupled *.Game.cs and stay out. -->
+    <Compile Include="..\..\src\Compat\ColonyManagerRedux\CmrSubsetToggle.cs"
+             LinkBase="UnderTest\Compat\ColonyManagerRedux" />
+    <!-- GizmoHandlerRegistry's pure resolution engine and announcement-fragment
+         carrier. Game-coupled handler classes use the
+         *.Game.cs suffix and stay out. -->
+    <Compile Include="..\..\src\Inspection\GizmoHandlers\**\*.cs"
+             Exclude="..\..\src\Inspection\GizmoHandlers\**\*.Game.cs"
+             LinkBase="UnderTest\Inspection\GizmoHandlers" />
+    <!-- The inspection tree adapter layer. Pure
+         text/resolution helpers are plain .cs; game-coupled adapters use the
+         *.Game.cs suffix and stay out. -->
+    <Compile Include="..\..\src\Inspection\Adapters\**\*.cs"
+             Exclude="..\..\src\Inspection\Adapters\**\*.Game.cs"
+             LinkBase="UnderTest\Inspection\Adapters" />
+    <!-- The IMGUI capture backend. The row
+         banding core is pure geometry; the harness/service/folder are
+         game-coupled *.Game.cs and stay out. -->
+    <Compile Include="..\..\src\Inspection\Capture\**\*.cs"
+             Exclude="..\..\src\Inspection\Capture\**\*.Game.cs"
+             LinkBase="UnderTest\Inspection\Capture" />
   </ItemGroup>
 
 </Project>

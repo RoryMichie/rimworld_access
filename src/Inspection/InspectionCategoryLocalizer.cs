@@ -25,6 +25,7 @@ namespace RimWorldAccess
         private static readonly Dictionary<string, string> categoryKeys = new Dictionary<string, string>
         {
             { "Overview", "RimWorldAccess.Inspection.CategoryName.Overview" },
+            { "Gizmos", "RimWorldAccess.Inspection.CategoryName.Gizmos" },
             { "Health", "RimWorldAccess.Inspection.CategoryName.Health" },
             { "Needs", "RimWorldAccess.Inspection.CategoryName.Needs" },
             { "Mood", "RimWorldAccess.Inspection.CategoryName.Mood" },
@@ -55,6 +56,7 @@ namespace RimWorldAccess
             { "Power", "RimWorldAccess.Inspection.CategoryName.Power" },
             { "Art", "RimWorldAccess.Inspection.CategoryName.Art" },
             { "Contents", "RimWorldAccess.Inspection.CategoryName.Contents" },
+            { "Outfit Stand Contents", "RimWorldAccess.Inspection.CategoryName.Contents" },
             { "Books", "RimWorldAccess.Inspection.CategoryName.Books" },
             { "Book", "RimWorldAccess.Inspection.CategoryName.Book" },
             { "Genepacks", "RimWorldAccess.Inspection.CategoryName.Genepacks" },
@@ -69,6 +71,8 @@ namespace RimWorldAccess
             { "Pen Auto-Cut", "RimWorldAccess.Inspection.CategoryName.PenAutoCut" },
             { "Linked Facilities", "RimWorldAccess.Inspection.CategoryName.LinkedFacilities" },
             { "Rename", "RimWorldAccess.Inspection.CategoryName.Rename" },
+            { "VF Rename", "RimWorldAccess.Compat.Vf.RenameCategory" },
+            { "VF Recolor", "RimWorldAccess.Compat.Vf.RecolorCategory" },
             { "Growth Info", "RimWorldAccess.Inspection.CategoryName.GrowthInfo" },
             { "Plant Info", "RimWorldAccess.Inspection.CategoryName.PlantInfo" },
             { "Power Control", "RimWorldAccess.Inspection.CategoryName.PowerControl" },

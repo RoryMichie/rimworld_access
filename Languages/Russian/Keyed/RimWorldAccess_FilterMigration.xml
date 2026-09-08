@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Shell.FilterTree.PolicyRegionName>Фильтр предметов</RimWorldAccess.Shell.FilterTree.PolicyRegionName>
+  <RimWorldAccess.Shell.RangeEdit.RegionName>Диапазон</RimWorldAccess.Shell.RangeEdit.RegionName>
+  <RimWorldAccess.Inspection.RangeEdit.MentalBreakChanceLine>{0} {1}: {2}. Диапазон: от {3} до {4}</RimWorldAccess.Inspection.RangeEdit.MentalBreakChanceLine>
+  <RimWorldAccess.Inspection.RangeEdit.PercentLine>{0} {1}: {2}. Диапазон: от {3} до {4}</RimWorldAccess.Inspection.RangeEdit.PercentLine>
+</LanguageData>

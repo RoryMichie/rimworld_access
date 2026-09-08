@@ -1,14 +1,21 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
+using RimWorldAccess.Shell;
 using UnityEngine;
 using Verse;
-using Verse.Sound;
 
 namespace RimWorldAccess
 {
     public static class MechsMenuHelper
     {
+        /// <summary>
+        /// What a column DOES, derived once per <see cref="InitColumnDefs"/>
+        /// from its worker's own runtime TYPE — never its position in the
+        /// list — mirroring <see cref="AnimalsMenuHelper.ColumnType"/>'s own
+        /// classification approach for the sibling Animals table.
+        /// </summary>
         public enum ColumnType
         {
             Name,           // LabelWithIcon
@@ -18,39 +25,88 @@ namespace RimWorldAccess
             Overseer,       // Mechanitor name
             ControlGroup,   // Dropdown for control group
             WorkMode,       // Work mode label
-            AllowedArea     // Area restriction
+            AllowedArea,    // Area restriction
+            /// <summary>A modded/DLC column with no bespoke reader here: read generically through <see cref="PawnColumnHandlerRegistry"/> when its worker derives from a known vanilla base, honestly unavailable otherwise.</summary>
+            Unknown
         }
 
-        private const int TotalColumns = 8;
+        // === Column Defs (the single source of truth for the column SET,
+        // ORDER, and NAMES) plus the per-index classification derived from
+        // each def's own worker type (for dispatch — see ColumnType). ===
+        private static List<PawnColumnDef> columnDefs = new List<PawnColumnDef>();
+        private static List<ColumnType> columnKinds = new List<ColumnType>();
 
-        // === Column Defs (for sorting via game logic) ===
-        private static List<PawnColumnDef> columnDefs;
-
-        private static readonly Dictionary<ColumnType, string> columnTypeToDefName = new Dictionary<ColumnType, string>
-        {
-            { ColumnType.Name, "LabelWithIcon" },
-            { ColumnType.Energy, "Energy" },
-            { ColumnType.Draft, "DraftMech" },
-            { ColumnType.AutoRepair, "AutoRepair" },
-            { ColumnType.Overseer, "Overseer" },
-            { ColumnType.ControlGroup, "ControlGroup" },
-            { ColumnType.WorkMode, "WorkMode" },
-            { ColumnType.AllowedArea, "AllowedAreaMech" },
-        };
-
+        /// <summary>
+        /// Builds the resolved column list straight from vanilla's own
+        /// <see cref="PawnTableDefOf.Mechs"/> def — its order and any column
+        /// a mod adds. Spacer/no-content columns (Gap, RemainingSpace) are
+        /// skipped via the same <see cref="PawnColumnHandlerRegistry"/> test
+        /// <see cref="AnimalsMenuHelper.InitColumnDefs"/> applies.
+        /// </summary>
         public static void InitColumnDefs()
         {
             columnDefs = new List<PawnColumnDef>();
-            foreach (ColumnType ct in System.Enum.GetValues(typeof(ColumnType)))
+            columnKinds = new List<ColumnType>();
+
+            List<PawnColumnDef> defs = PawnTableDefOf.Mechs?.columns;
+            if (defs == null)
+                return;
+
+            foreach (PawnColumnDef def in defs)
             {
-                columnDefs.Add(DefDatabase<PawnColumnDef>.GetNamedSilentFail(columnTypeToDefName[ct]));
+                if (def == null)
+                    continue;
+                try
+                {
+                    if (PawnColumnHandlerRegistry.Resolve(def).SkipColumn(def))
+                        continue;
+                    columnDefs.Add(def);
+                    columnKinds.Add(ClassifyColumn(def));
+                }
+                catch (Exception ex)
+                {
+                    // A broken (typically modded) worker must not drop the
+                    // whole table — matches AnimalsMenuHelper's own
+                    // failure-containment rule.
+                    Log.Warning("[RimWorld Access] Mechs column '" + def.defName + "' failed to resolve and was skipped: " + ex);
+                }
             }
+        }
+
+        /// <summary>Classifies a column by its worker's own runtime type (is-checks, so a modded subclass inherits the base behavior for free).</summary>
+        private static ColumnType ClassifyColumn(PawnColumnDef def)
+        {
+            PawnColumnWorker worker = def.Worker;
+            // Overseer derives from PawnColumnWorker_Label (it renders the Label
+            // cell against the mech's overseer), so it must be tested before the
+            // Label check would swallow it and read the mech's own name instead.
+            if (worker is PawnColumnWorker_Overseer) return ColumnType.Overseer;
+            if (worker is PawnColumnWorker_Label) return ColumnType.Name;
+            if (worker is PawnColumnWorker_Energy) return ColumnType.Energy;
+            if (worker is PawnColumnWorker_DraftMech) return ColumnType.Draft;
+            if (worker is PawnColumnWorker_AutoRepair) return ColumnType.AutoRepair;
+            if (worker is PawnColumnWorker_ControlGroup) return ColumnType.ControlGroup;
+            if (worker is PawnColumnWorker_WorkMode) return ColumnType.WorkMode;
+            if (worker is PawnColumnWorker_AllowedArea) return ColumnType.AllowedArea;
+            return ColumnType.Unknown;
+        }
+
+        /// <summary>Internal so the focus driver can map the scope's column index onto vanilla's own column def with it.</summary>
+        internal static PawnColumnDef GetDef(int columnIndex)
+        {
+            return columnIndex >= 0 && columnIndex < columnDefs.Count ? columnDefs[columnIndex] : null;
+        }
+
+        /// <summary>The classification for a column index (Unknown if out of range or the worker has no bespoke reader here).</summary>
+        public static ColumnType GetColumnType(int columnIndex)
+        {
+            return columnIndex >= 0 && columnIndex < columnKinds.Count ? columnKinds[columnIndex] : ColumnType.Unknown;
         }
 
         public static bool IsColumnSortable(int columnIndex)
             => PawnColumnSortHelper.IsColumnSortable(columnDefs, columnIndex);
 
-        public static int GetTotalColumnCount() => TotalColumns;
+        public static int GetTotalColumnCount() => columnDefs.Count;
 
         // === Row Label (for typeahead search) ===
 
@@ -71,32 +127,27 @@ namespace RimWorldAccess
 
         public static string GetColumnName(int columnIndex)
         {
-            if (columnIndex < 0 || columnIndex >= TotalColumns)
+            PawnColumnDef def = GetDef(columnIndex);
+            if (def == null)
                 return "RimWorldAccess.Mechs.Value.Unknown".Translate().ToString();
 
-            ColumnType type = (ColumnType)columnIndex;
-            switch (type)
-            {
-                case ColumnType.Name:
-                    return "Name".Translate().Resolve();
-                case ColumnType.AllowedArea:
-                    return "AllowedArea".Translate().Resolve();
-                default:
-                    // Use the PawnColumnDef label (already localized by the game)
-                    if (columnDefs != null && columnIndex < columnDefs.Count && columnDefs[columnIndex] != null)
-                        return columnDefs[columnIndex].label.CapitalizeFirst();
-                    return type.ToString();
-            }
+            // Every vanilla Mechs column def carries its own label (LabelWithIcon
+            // inherits "name" from its Label parent, AllowedAreaMech inherits
+            // "allowed area" from its AllowedArea parent); a label-less mod
+            // column falls to its registry handler's name, then the defName.
+            if (!def.label.NullOrEmpty())
+                return def.LabelCap.ToString();
+            return PawnColumnHandlerRegistry.Resolve(def).HeaderLabel(def) ?? def.defName;
         }
 
         // === Column Values ===
 
         public static string GetColumnValue(Pawn pawn, int columnIndex)
         {
-            if (columnIndex < 0 || columnIndex >= TotalColumns)
+            if (GetDef(columnIndex) == null)
                 return "RimWorldAccess.Mechs.Value.Unknown".Translate().ToString();
 
-            switch ((ColumnType)columnIndex)
+            switch (GetColumnType(columnIndex))
             {
                 case ColumnType.Name:
                     return GetMechNameWithActivity(pawn);
@@ -115,18 +166,28 @@ namespace RimWorldAccess
                 case ColumnType.AllowedArea:
                     return GetAllowedAreaValue(pawn);
                 default:
-                    return "RimWorldAccess.Mechs.Value.Unknown".Translate().ToString();
+                    // Modded workers derived from a known vanilla base read generically.
+                    return PawnColumnCellReader.CellText(GetDef(columnIndex), pawn);
             }
+        }
+
+        /// <summary>Per-cell tip for an Unknown-classified column, via the registry; null for classified columns, whose tips are curated.</summary>
+        public static string GetUnknownCellTip(Pawn pawn, int columnIndex)
+        {
+            return GetColumnType(columnIndex) == ColumnType.Unknown
+                ? PawnColumnCellReader.CellTip(GetDef(columnIndex), pawn)
+                : null;
         }
 
         // === Column Tooltips ===
 
         public static string GetColumnTooltip(Pawn pawn, int columnIndex)
         {
-            if (columnIndex < 0 || columnIndex >= TotalColumns)
+            PawnColumnDef def = GetDef(columnIndex);
+            if (def == null)
                 return null;
 
-            switch ((ColumnType)columnIndex)
+            switch (GetColumnType(columnIndex))
             {
                 case ColumnType.Draft:
                     AcceptanceReport canDraft = MechanitorUtility.CanDraftMech(pawn);
@@ -136,11 +197,10 @@ namespace RimWorldAccess
                 case ColumnType.AutoRepair:
                     return "CommandAutoRepairDesc".Translate().Resolve();
                 case ColumnType.WorkMode:
-                    return "ClickToChangeWorkMode".Translate().Resolve();
+                    return WorkModeColumnHandler.CellTipFor(pawn);
                 case ColumnType.AllowedArea:
                     // From AllowedAreaMech XML headerTip
-                    var def = columnDefs != null && columnIndex < columnDefs.Count ? columnDefs[columnIndex] : null;
-                    return def?.headerTip;
+                    return def.headerTip;
                 default:
                     return null;
             }
@@ -157,10 +217,7 @@ namespace RimWorldAccess
 
         public static bool IsColumnInteractive(int columnIndex)
         {
-            if (columnIndex < 0 || columnIndex >= TotalColumns)
-                return false;
-
-            switch ((ColumnType)columnIndex)
+            switch (GetColumnType(columnIndex))
             {
                 case ColumnType.Name:        // Jump to mech
                 case ColumnType.Draft:       // Toggle draft
@@ -180,24 +237,12 @@ namespace RimWorldAccess
 
         public static bool CanPaintColumn(int columnIndex)
         {
-            if (columnIndex < 0 || columnIndex >= TotalColumns)
-                return false;
-
-            switch ((ColumnType)columnIndex)
-            {
-                case ColumnType.Draft:       // paintable=true in XML
-                case ColumnType.AutoRepair:  // paintable=true in XML
-                case ColumnType.ControlGroup: // paintable=true in XML
-                case ColumnType.AllowedArea: // mod lastAppliedArea mechanism
-                    return true;
-                default:
-                    return false;
-            }
+            return GetDef(columnIndex)?.paintable == true;
         }
 
         public static bool GetPaintableValue(Pawn pawn, int columnIndex)
         {
-            switch ((ColumnType)columnIndex)
+            switch (GetColumnType(columnIndex))
             {
                 case ColumnType.Draft:
                     return pawn.Drafted;
@@ -211,13 +256,18 @@ namespace RimWorldAccess
 
         public static bool SetPaintableValue(Pawn pawn, int columnIndex, bool value)
         {
-            switch ((ColumnType)columnIndex)
+            switch (GetColumnType(columnIndex))
             {
                 case ColumnType.Draft:
                     if (!ModsConfig.BiotechActive || !pawn.IsColonyMechPlayerControlled || !pawn.Spawned)
                         return false;
                     AcceptanceReport canDraft = MechanitorUtility.CanDraftMech(pawn);
                     if (!canDraft) return false;
+                    // MUTATION-C: mirrors PawnColumnWorker_DraftMech.DoCell's own
+                    // inline pawn.drafter.Drafted write (RimWorld/PawnColumnWorker_DraftMech.cs
+                    // :19-28) — DoCell draws its own checkbox and writes the field
+                    // itself on change; it is not a PawnColumnWorker_Checkbox
+                    // subclass, so there is no separate SetValue to call instead.
                     pawn.drafter.Drafted = value;
                     return true;
                 case ColumnType.AutoRepair:
@@ -237,7 +287,7 @@ namespace RimWorldAccess
 
         public static string GetPaintValueLabel(int columnIndex, bool value)
         {
-            switch ((ColumnType)columnIndex)
+            switch (GetColumnType(columnIndex))
             {
                 case ColumnType.Draft:
                     return value

@@ -62,6 +62,18 @@
   <RimWorldAccess.Inspection.Category.NoFallback>Інформація для «{0}» недоступна.</RimWorldAccess.Inspection.Category.NoFallback>
   <RimWorldAccess.Inspection.Category.NotFound>Категорію не знайдено.</RimWorldAccess.Inspection.Category.NotFound>
 
+  <!-- Synthetic category display names (InspectionInfoHelper.GetTabCategories).
+       These cover mod-only categories that have no corresponding vanilla tab
+       or keyed translation to reuse, so each gets its own whole-phrase key. -->
+  <RimWorldAccess.Inspection.Category.WorkPriorities>Пріоритети праці</RimWorldAccess.Inspection.Category.WorkPriorities>
+  <RimWorldAccess.Inspection.Category.JobQueue>Черга завдань</RimWorldAccess.Inspection.Category.JobQueue>
+  <RimWorldAccess.Inspection.Category.BedAssignment>Призначення ліжка</RimWorldAccess.Inspection.Category.BedAssignment>
+  <RimWorldAccess.Inspection.Category.OwnerAssignment>Призначення власника</RimWorldAccess.Inspection.Category.OwnerAssignment>
+  <RimWorldAccess.Inspection.Category.MeditationFocus>Фокус медитації</RimWorldAccess.Inspection.Category.MeditationFocus>
+  <RimWorldAccess.Inspection.Category.PlantSelection>Вибір рослини</RimWorldAccess.Inspection.Category.PlantSelection>
+  <RimWorldAccess.Inspection.Category.LinkedFacilities>Зв'язані споруди</RimWorldAccess.Inspection.Category.LinkedFacilities>
+  <RimWorldAccess.Inspection.Category.PlantInfo>Інформація про рослину</RimWorldAccess.Inspection.Category.PlantInfo>
+
   <!-- =================================================================
        Pawn overview / mood / character / gene-holder readouts.
        Each value is one tree-item line. {0} placeholders are described
@@ -169,12 +181,6 @@
        handles categories whose summary cannot be computed; {0} = label,
        {1} = expand state. ItemAllowState applies to ThingDef and
        SpecialFilter rows; {0} = label, {1} = the lowercase state. -->
-  <RimWorldAccess.Inspection.Storage.ToggleResultAllowed>{0}: дозволено</RimWorldAccess.Inspection.Storage.ToggleResultAllowed>
-  <RimWorldAccess.Inspection.Storage.ToggleResultDisallowed>{0}: заборонено</RimWorldAccess.Inspection.Storage.ToggleResultDisallowed>
-  <RimWorldAccess.Inspection.Storage.CategoryWithSummary>{0}. {1}, {2}</RimWorldAccess.Inspection.Storage.CategoryWithSummary>
-  <RimWorldAccess.Inspection.Storage.LabelWithExpandState>{0} {1}</RimWorldAccess.Inspection.Storage.LabelWithExpandState>
-  <RimWorldAccess.Inspection.Storage.ItemAllowed>{0}. дозволено</RimWorldAccess.Inspection.Storage.ItemAllowed>
-  <RimWorldAccess.Inspection.Storage.ItemDisallowed>{0}. заборонено</RimWorldAccess.Inspection.Storage.ItemDisallowed>
 
   <!-- Category summary phrases (ThingFilterHelper.FormatCategorySummary).
        Spoken as the {1} placeholder of CategoryWithSummary above and
@@ -190,29 +196,17 @@
        so the comma + "except: " glue can vary per language and the
        except-list / except-count distinction does not have to share
        wording. -->
-  <RimWorldAccess.Inspection.Storage.Summary.AllAllowed>дозволено</RimWorldAccess.Inspection.Storage.Summary.AllAllowed>
-  <RimWorldAccess.Inspection.Storage.Summary.AllDisallowed>заборонено</RimWorldAccess.Inspection.Storage.Summary.AllDisallowed>
   <RimWorldAccess.Inspection.Storage.Summary.AllowedExceptList>дозволено, крім: {0}</RimWorldAccess.Inspection.Storage.Summary.AllowedExceptList>
   <RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptList>заборонено, крім: {0}</RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptList>
   <RimWorldAccess.Inspection.Storage.Summary.AllowedExceptCount>дозволено, крім {0} предметів</RimWorldAccess.Inspection.Storage.Summary.AllowedExceptCount>
   <RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptCount>заборонено, крім {0} предметів</RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptCount>
 
   <!-- No info card available for the selected item. -->
-  <RimWorldAccess.Inspection.Storage.NoInfoCard>Картка інформації недоступна</RimWorldAccess.Inspection.Storage.NoInfoCard>
 
   <!-- Bulk action results. -->
 
   <!-- Expand-all-siblings results when * is pressed. AllAlreadyExpanded /
        NoneToExpand cover the edge cases where the action is a no-op. -->
-
-  <!-- Range editing announcements (StorageSettingsMenuPatch). Spoken
-       after Enter applies the new range or Escape discards it.
-       PressEnterEditRange is spoken by ThingFilterMenuState when the
-       user presses Right/Left on a range row (instead of expanding
-       since ranges have no children). -->
-  <RimWorldAccess.Inspection.Storage.RangeApplied>Зміни діапазону застосовано</RimWorldAccess.Inspection.Storage.RangeApplied>
-  <RimWorldAccess.Inspection.Storage.RangeCancelled>Редагування діапазону скасовано</RimWorldAccess.Inspection.Storage.RangeCancelled>
-  <RimWorldAccess.Inspection.Storage.PressEnterEditRange>Натисніть Enter, щоб редагувати діапазон</RimWorldAccess.Inspection.Storage.PressEnterEditRange>
 
   <!-- Submenu close fallbacks (used by InspectionReturnHelper when no
        parent inspection menu is active). -->
@@ -238,12 +232,7 @@
        when switching parts via Up/Down.
        ================================================================= -->
   <!-- Cannot-expand rejection (ThingFilterNavigationState). -->
-  <RimWorldAccess.Inspection.ThingFilter.CannotExpand>Неможливо розгорнути цей елемент.</RimWorldAccess.Inspection.ThingFilter.CannotExpand>
 
-  <RimWorldAccess.Inspection.ThingFilter.SliderPart.Min>Мінімум</RimWorldAccess.Inspection.ThingFilter.SliderPart.Min>
-  <RimWorldAccess.Inspection.ThingFilter.SliderPart.Max>Максимум</RimWorldAccess.Inspection.ThingFilter.SliderPart.Max>
-  <RimWorldAccess.Inspection.ThingFilter.SliderEdit.Announcement>{0} - {1}: {2}. Ліворуч/праворуч для регулювання, вгору/вниз для перемикання мінімуму/максимуму, Enter для підтвердження.</RimWorldAccess.Inspection.ThingFilter.SliderEdit.Announcement>
-  <RimWorldAccess.Inspection.ThingFilter.SliderEdit.PartWithValue>{0}: {1}</RimWorldAccess.Inspection.ThingFilter.SliderEdit.PartWithValue>
 
   <!-- =================================================================
        Colony inventory menu (WindowlessInventoryState). Triggered with
@@ -289,6 +278,10 @@
   <RimWorldAccess.Inspection.Inventory.OpenedSummaryOne>Інвентар колонії відкрито. {0} тип предметів. {1} категорій.</RimWorldAccess.Inspection.Inventory.OpenedSummaryOne>
   <RimWorldAccess.Inspection.Inventory.OpenedSummaryMany>Інвентар колонії відкрито. {0} типів предметів. {1} категорій.</RimWorldAccess.Inspection.Inventory.OpenedSummaryMany>
   <RimWorldAccess.Inspection.Inventory.Closed>Меню інвентарю закрито.</RimWorldAccess.Inspection.Inventory.Closed>
+
+  <!-- RegionName is the inventory menu's one navigable area, spoken by Tab and
+       by the empty announcement when the colony holds nothing. -->
+  <RimWorldAccess.Inspection.Inventory.RegionName>Інвентар</RimWorldAccess.Inspection.Inventory.RegionName>
 
   <RimWorldAccess.Inspection.Inventory.Expand.NoneToExpand>Немає категорій для розгортання.</RimWorldAccess.Inspection.Inventory.Expand.NoneToExpand>
   <RimWorldAccess.Inspection.Inventory.Expand.AllAlreadyExpanded>Усі категорії вже розгорнуто.</RimWorldAccess.Inspection.Inventory.Expand.AllAlreadyExpanded>
@@ -363,13 +356,28 @@
 
        SearchLabel.* are stable typeahead lookup keys (separate from
        the spoken row label so translators can localize each
-       independently). Status.Detail: {0} = fish-type label, {1} =
-       current population, {2} = max population, {3} = status word.
-       Label.MinimumPopulation: {0} = pct, {1} = fish-at-threshold.
-       Label.FishSpecies: {0} = count, {1} = expanded/collapsed word.
-       Action.ExpandedFishSpecies*: {0} = species count (One/Many
-       split for subject-verb agreement). Action.OpeningInfoCard: {0}
-       = fish label. Numeric.* govern the numeric-input overlay.
+       independently) AND, since the campaign 8 packet C2 announcement
+       retrofit, the bare row Label the composer speaks (Value/Check/
+       Expanded now carry what used to be baked into Label.*). Status.Detail:
+       {0} = fish-type label, {1} = current population, {2} = max
+       population, {3} = status word. Label.MinimumPopulation: {0} = pct,
+       {1} = fish-at-threshold (still used to keep the tree's own cached
+       item label in sync; the composer gets its Value from
+       Label.MinimumPopulationValue directly). Label.FishSpecies: {0} =
+       count, {1} = expanded/collapsed word (same "still used for the cached
+       item label" note; the composer speaks the count via the new
+       Label.FishSpeciesCount and the expanded state via Role.TreeItem's own
+       Expanded field instead). Action.OpeningInfoCard: {0} = fish label.
+       Numeric.* govern the numeric-input overlay.
+
+       Orphaned by the same retrofit (removed): Action.FishingAllowed,
+       Action.FishingForbidden, Action.PauseEnabled, Action.PauseDisabled,
+       Action.ExpandedFishSpeciesOne, Action.ExpandedFishSpeciesMany,
+       Action.Collapsed — each was a distinct post-toggle/expand/collapse
+       phrase spoken AS WELL AS a full row re-announcement; the row
+       re-announcement now carries the same state (checked/unchecked,
+       expanded/collapsed) through the shared composer vocabulary, so the
+       separate phrase would only double-speak it.
        ================================================================= -->
   <RimWorldAccess.Inspection.Fishing.NotAvailable>Налаштування зони рибальства недоступні - можливо, DLC Odyssey не встановлено</RimWorldAccess.Inspection.Fishing.NotAvailable>
 
@@ -387,52 +395,23 @@
   <RimWorldAccess.Inspection.Fishing.Status.NoWaterBody>Інформація про зону: водойму не знайдено</RimWorldAccess.Inspection.Fishing.Status.NoWaterBody>
   <RimWorldAccess.Inspection.Fishing.Status.UnableToRead>Інформація про зону: неможливо прочитати</RimWorldAccess.Inspection.Fishing.Status.UnableToRead>
   <RimWorldAccess.Inspection.Fishing.Status.Detail>Інформація про зону: {0}, {1}/{2} риб ({3})</RimWorldAccess.Inspection.Fishing.Status.Detail>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationVeryLow>дуже низька</RimWorldAccess.Inspection.Fishing.Status.PopulationVeryLow>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationLow>низька</RimWorldAccess.Inspection.Fishing.Status.PopulationLow>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationModerate>помірна</RimWorldAccess.Inspection.Fishing.Status.PopulationModerate>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationHealthy>здорова</RimWorldAccess.Inspection.Fishing.Status.PopulationHealthy>
   <RimWorldAccess.Inspection.Fishing.Status.UnknownFishType>Невідомо</RimWorldAccess.Inspection.Fishing.Status.UnknownFishType>
 
-  <RimWorldAccess.Inspection.Fishing.Label.AllowFishing>Дозволити рибальство: {0}</RimWorldAccess.Inspection.Fishing.Label.AllowFishing>
-  <RimWorldAccess.Inspection.Fishing.Label.RepeatMode>Режим повторення: {0}</RimWorldAccess.Inspection.Fishing.Label.RepeatMode>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeDoForever>Робити завжди</RimWorldAccess.Inspection.Fishing.Label.RepeatModeDoForever>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeRepeatCount>Кількість повторень</RimWorldAccess.Inspection.Fishing.Label.RepeatModeRepeatCount>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeTargetCount>Цільова кількість</RimWorldAccess.Inspection.Fishing.Label.RepeatModeTargetCount>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeUnknown>Невідомо</RimWorldAccess.Inspection.Fishing.Label.RepeatModeUnknown>
-  <RimWorldAccess.Inspection.Fishing.Label.RepeatCount>Кількість повторень: {0}</RimWorldAccess.Inspection.Fishing.Label.RepeatCount>
-  <RimWorldAccess.Inspection.Fishing.Label.TargetCount>Цільова кількість: {0}</RimWorldAccess.Inspection.Fishing.Label.TargetCount>
-  <RimWorldAccess.Inspection.Fishing.Label.CurrentlyHave>Зараз наявно: {0}</RimWorldAccess.Inspection.Fishing.Label.CurrentlyHave>
-  <RimWorldAccess.Inspection.Fishing.Label.PauseWhenSatisfied>Пауза при досягненні: {0}</RimWorldAccess.Inspection.Fishing.Label.PauseWhenSatisfied>
-  <RimWorldAccess.Inspection.Fishing.Label.UnpauseAt>Зняти паузу при: {0}</RimWorldAccess.Inspection.Fishing.Label.UnpauseAt>
-  <RimWorldAccess.Inspection.Fishing.Label.MinimumPopulation>Мінімальна популяція: {0}% ({1} риб)</RimWorldAccess.Inspection.Fishing.Label.MinimumPopulation>
   <RimWorldAccess.Inspection.Fishing.Label.MinimumPopulationValue>{0}% ({1} риб)</RimWorldAccess.Inspection.Fishing.Label.MinimumPopulationValue>
-  <RimWorldAccess.Inspection.Fishing.Label.FishSpecies>Види риб ({0}), {1}</RimWorldAccess.Inspection.Fishing.Label.FishSpecies>
+  <RimWorldAccess.Inspection.Fishing.Label.FishSpeciesCount>Доступно: {0}</RimWorldAccess.Inspection.Fishing.Label.FishSpeciesCount>
   <RimWorldAccess.Inspection.Fishing.Label.UncommonSuffix> (рідкісний)</RimWorldAccess.Inspection.Fishing.Label.UncommonSuffix>
 
-  <RimWorldAccess.Inspection.Fishing.Action.AlreadyExpanded>Вже розгорнуто</RimWorldAccess.Inspection.Fishing.Action.AlreadyExpanded>
-  <RimWorldAccess.Inspection.Fishing.Action.AlreadyCollapsed>Вже згорнуто</RimWorldAccess.Inspection.Fishing.Action.AlreadyCollapsed>
-  <RimWorldAccess.Inspection.Fishing.Action.PressAltIToViewFishInfo>Натисніть Alt+I, щоб переглянути інформацію про рибу</RimWorldAccess.Inspection.Fishing.Action.PressAltIToViewFishInfo>
-  <RimWorldAccess.Inspection.Fishing.Action.UseEnterToActivate>Натисніть Enter для активації</RimWorldAccess.Inspection.Fishing.Action.UseEnterToActivate>
-  <RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesOne>Розгорнуто, {0} вид риб</RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesOne>
-  <RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesMany>Розгорнуто, {0} видів риб</RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesMany>
-  <RimWorldAccess.Inspection.Fishing.Action.Collapsed>Згорнуто</RimWorldAccess.Inspection.Fishing.Action.Collapsed>
-  <RimWorldAccess.Inspection.Fishing.Action.UseRightLeftToExpand>Стрілка праворуч для розгортання, ліворуч для згортання</RimWorldAccess.Inspection.Fishing.Action.UseRightLeftToExpand>
   <RimWorldAccess.Inspection.Fishing.Action.UseLeftRightToAdjust>Стрілки ліворуч/праворуч для регулювання</RimWorldAccess.Inspection.Fishing.Action.UseLeftRightToAdjust>
   <RimWorldAccess.Inspection.Fishing.Action.NotAdjustable>Цей елемент неможливо відрегулювати</RimWorldAccess.Inspection.Fishing.Action.NotAdjustable>
   <RimWorldAccess.Inspection.Fishing.Action.FieldNotAdjustable>Це поле неможливо відрегулювати</RimWorldAccess.Inspection.Fishing.Action.FieldNotAdjustable>
   <RimWorldAccess.Inspection.Fishing.Action.NoMaximumLimit>Без максимального ліміту. Для великих значень використовуйте числове введення.</RimWorldAccess.Inspection.Fishing.Action.NoMaximumLimit>
-  <RimWorldAccess.Inspection.Fishing.Action.FishingAllowed>Рибальство дозволено</RimWorldAccess.Inspection.Fishing.Action.FishingAllowed>
-  <RimWorldAccess.Inspection.Fishing.Action.FishingForbidden>Рибальство заборонено</RimWorldAccess.Inspection.Fishing.Action.FishingForbidden>
-  <RimWorldAccess.Inspection.Fishing.Action.PauseEnabled>Паузу при досягненні увімкнено</RimWorldAccess.Inspection.Fishing.Action.PauseEnabled>
-  <RimWorldAccess.Inspection.Fishing.Action.PauseDisabled>Паузу при досягненні вимкнено</RimWorldAccess.Inspection.Fishing.Action.PauseDisabled>
   <RimWorldAccess.Inspection.Fishing.Action.SelectFishSpeciesFirst>Спершу виберіть вид риби</RimWorldAccess.Inspection.Fishing.Action.SelectFishSpeciesFirst>
   <RimWorldAccess.Inspection.Fishing.Action.OpeningInfoCard>Відкриття картки інформації для {0}</RimWorldAccess.Inspection.Fishing.Action.OpeningInfoCard>
 
-  <RimWorldAccess.Inspection.Fishing.Numeric.Prompt>Введіть число, потім натисніть Enter для підтвердження або Escape для скасування</RimWorldAccess.Inspection.Fishing.Numeric.Prompt>
-  <RimWorldAccess.Inspection.Fishing.Numeric.Empty>Порожньо</RimWorldAccess.Inspection.Fishing.Numeric.Empty>
-  <RimWorldAccess.Inspection.Fishing.Numeric.InvalidNumber>Неправильне число</RimWorldAccess.Inspection.Fishing.Numeric.InvalidNumber>
-  <RimWorldAccess.Inspection.Fishing.Numeric.Cancelled>Скасовано</RimWorldAccess.Inspection.Fishing.Numeric.Cancelled>
-  <RimWorldAccess.Inspection.Fishing.Numeric.NotApplicable>Неможливо застосувати числове значення до цього поля</RimWorldAccess.Inspection.Fishing.Numeric.NotApplicable>
 
   <!-- =================================================================
        Bill configuration menu (BillConfigState). Opened from
@@ -511,12 +490,11 @@
   <RimWorldAccess.Inspection.BillConfig.Label.LabelWithRangeQuality>{0}: {1} - {2}</RimWorldAccess.Inspection.BillConfig.Label.LabelWithRangeQuality>
   <RimWorldAccess.Inspection.BillConfig.Label.IncompatibleSuffix> ({0})</RimWorldAccess.Inspection.BillConfig.Label.IncompatibleSuffix>
   <RimWorldAccess.Inspection.BillConfig.Label.WorkerWithLabel>Працівник: {0}</RimWorldAccess.Inspection.BillConfig.Label.WorkerWithLabel>
+  <RimWorldAccess.Inspection.BillConfig.Label.StoreModeWithLabel>Зберігання продукту: {0}</RimWorldAccess.Inspection.BillConfig.Label.StoreModeWithLabel>
   <RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMin>{0}: {1} {2}</RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMin>
   <RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMax>{0}: {1} {2}</RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMax>
   <RimWorldAccess.Inspection.BillConfig.Label.RenameWithCustom>{0}: {1} (оригінал: {2})</RimWorldAccess.Inspection.BillConfig.Label.RenameWithCustom>
-  <RimWorldAccess.Inspection.BillConfig.Label.PawnWithSkillSuffix>{0} (навичка: {1})</RimWorldAccess.Inspection.BillConfig.Label.PawnWithSkillSuffix>
 
-  <RimWorldAccess.Inspection.BillConfig.Action.FinishEditingFirst>Спершу завершіть редагування (натисніть Enter або Escape)</RimWorldAccess.Inspection.BillConfig.Action.FinishEditingFirst>
   <RimWorldAccess.Inspection.BillConfig.Action.NotAdjustable>Цей елемент неможливо відрегулювати</RimWorldAccess.Inspection.BillConfig.Action.NotAdjustable>
   <RimWorldAccess.Inspection.BillConfig.Action.UseEnterToOpenSubmenu>Натисніть Enter, щоб відкрити підменю</RimWorldAccess.Inspection.BillConfig.Action.UseEnterToOpenSubmenu>
   <RimWorldAccess.Inspection.BillConfig.Action.UseLeftRightToAdjust>Стрілки ліворуч/праворуч для регулювання</RimWorldAccess.Inspection.BillConfig.Action.UseLeftRightToAdjust>
@@ -524,15 +502,8 @@
   <RimWorldAccess.Inspection.BillConfig.Action.FieldNotAdjustable>Це поле неможливо відрегулювати</RimWorldAccess.Inspection.BillConfig.Action.FieldNotAdjustable>
   <RimWorldAccess.Inspection.BillConfig.Action.RenamedTo>Замовлення перейменовано на {0}</RimWorldAccess.Inspection.BillConfig.Action.RenamedTo>
   <RimWorldAccess.Inspection.BillConfig.Action.RenameCancelled>Перейменування скасовано</RimWorldAccess.Inspection.BillConfig.Action.RenameCancelled>
-  <RimWorldAccess.Inspection.BillConfig.Action.HitPointsApplied>Міцність: від {0} до {1}</RimWorldAccess.Inspection.BillConfig.Action.HitPointsApplied>
-  <RimWorldAccess.Inspection.BillConfig.Action.QualityApplied>Якість: від {0} до {1}</RimWorldAccess.Inspection.BillConfig.Action.QualityApplied>
   <RimWorldAccess.Inspection.BillConfig.Action.DeletedBill>Видалено замовлення: {0}</RimWorldAccess.Inspection.BillConfig.Action.DeletedBill>
 
-  <RimWorldAccess.Inspection.BillConfig.Numeric.Prompt>Введіть число, потім натисніть Enter для підтвердження або Escape для скасування</RimWorldAccess.Inspection.BillConfig.Numeric.Prompt>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.Empty>Порожньо</RimWorldAccess.Inspection.BillConfig.Numeric.Empty>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.InvalidNumber>Неправильне число</RimWorldAccess.Inspection.BillConfig.Numeric.InvalidNumber>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.Cancelled>Скасовано</RimWorldAccess.Inspection.BillConfig.Numeric.Cancelled>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.NotApplicable>Неможливо застосувати числове значення до цього поля</RimWorldAccess.Inspection.BillConfig.Numeric.NotApplicable>
 
   <!-- IngredientFilter window title (passed to ThingFilterMenuState.Open). -->
   <RimWorldAccess.Inspection.BillConfig.IngredientFilterTitle>Фільтр складових</RimWorldAccess.Inspection.BillConfig.IngredientFilterTitle>
@@ -580,7 +551,6 @@
        per language). LabelWithState: {0} = label, {1} = state phrase. -->
   <RimWorldAccess.Inspection.Gizmo.StateOn>: увімкнено</RimWorldAccess.Inspection.Gizmo.StateOn>
   <RimWorldAccess.Inspection.Gizmo.StateOff>: вимкнено</RimWorldAccess.Inspection.Gizmo.StateOff>
-  <RimWorldAccess.Inspection.Gizmo.LabelWithState>{0}: {1}</RimWorldAccess.Inspection.Gizmo.LabelWithState>
   <RimWorldAccess.Inspection.Gizmo.NeuralHeatLimiter>Обмежувач нейронного перегріву: {0}</RimWorldAccess.Inspection.Gizmo.NeuralHeatLimiter>
   <RimWorldAccess.Inspection.Gizmo.LimiterStateOn>увімкнено</RimWorldAccess.Inspection.Gizmo.LimiterStateOn>
   <RimWorldAccess.Inspection.Gizmo.LimiterStateOff>вимкнено</RimWorldAccess.Inspection.Gizmo.LimiterStateOff>
@@ -606,12 +576,7 @@
        current value (already formatted as percent). Read* and
        CouldNotAdjust are the rare fallbacks fired when reflection
        can't reach the underlying field. -->
-  <RimWorldAccess.Inspection.Gizmo.SliderEnterPrompt>Регулювання: {0}. Поточна ціль: {1}. Ліворуч і праворуч для регулювання, Shift для більших кроків, Escape для завершення.</RimWorldAccess.Inspection.Gizmo.SliderEnterPrompt>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadSliderValue>Не вдалося прочитати значення повзунка</RimWorldAccess.Inspection.Gizmo.CouldNotReadSliderValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadPsyfocusValue>Не вдалося прочитати значення пси-фокусу</RimWorldAccess.Inspection.Gizmo.CouldNotReadPsyfocusValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadPruningValue>Не вдалося прочитати значення обрізання</RimWorldAccess.Inspection.Gizmo.CouldNotReadPruningValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadCarrierValue>Не вдалося прочитати значення носія</RimWorldAccess.Inspection.Gizmo.CouldNotReadCarrierValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotAdjustControl>Не вдалося відрегулювати цей елемент керування</RimWorldAccess.Inspection.Gizmo.CouldNotAdjustControl>
+  <RimWorldAccess.Inspection.Gizmo.SliderUseArrows>Стрілки ліворуч і праворуч для регулювання.</RimWorldAccess.Inspection.Gizmo.SliderUseArrows>
   <!-- Hemogen toggle failure (GeneGizmo_ResourceHemogen). -->
   <RimWorldAccess.Inspection.Gizmo.CouldNotToggleHemogen>Не вдалося перемкнути налаштування пакетів гемогену</RimWorldAccess.Inspection.Gizmo.CouldNotToggleHemogen>
   <!-- Activity suppression toggle failure (ActivityGizmo). -->
@@ -619,15 +584,42 @@
   <!-- Shift+key with no matching command. {0} = key name. -->
   <RimWorldAccess.Inspection.Gizmo.NoCommandForShiftPlus>Немає команди для Shift плюс {0}</RimWorldAccess.Inspection.Gizmo.NoCommandForShiftPlus>
 
-  <!-- Hint suffixes appended to AnnounceCurrentGizmo for interactive
-       gizmos. RightClickHint and EnterAdjustHint are the standard
-       cases; PsychicEntropyHints describes both actions for that
-       specific gizmo (Enter toggles limiter, ] adjusts psyfocus). -->
+  <!-- G menu: the owning object's name, spoken only when it changes from one
+       command to the next. {0} = owner name, {1} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.OwnerPrefix>{0}: {1}</RimWorldAccess.Inspection.Gizmo.OwnerPrefix>
+
+  <!-- Reverse-designation gizmo activation report. {0} = count, {1} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.DesignatedCount>Позначено для {1}: {0}.</RimWorldAccess.Inspection.Gizmo.DesignatedCount>
+  <!-- {0} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.DesignatedNone>Нічого не позначено для {0}.</RimWorldAccess.Inspection.Gizmo.DesignatedNone>
+  <!-- Reverse designator with no designation def of its own (e.g. Select Similar). {0} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.CommandApplied>{0}: застосовано.</RimWorldAccess.Inspection.Gizmo.CommandApplied>
+
+  <!-- Row wrappers for the Shift+hotkey disambiguation float menu. Those rows
+       are single strings rather than navigable elements, so each piece is
+       appended to the row text: the owner and the hotkey in brackets, then the
+       command's status readout, its on/off state, and its description. Keep any
+       leading space or colon that a language needs; RimWorld preserves them. -->
+  <RimWorldAccess.Inspection.Gizmo.MenuOwnerSuffix> ({0})</RimWorldAccess.Inspection.Gizmo.MenuOwnerSuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuHotkeySuffix> ({0})</RimWorldAccess.Inspection.Gizmo.MenuHotkeySuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuStatusSuffix>: {0}</RimWorldAccess.Inspection.Gizmo.MenuStatusSuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuStateSuffix>: {0}</RimWorldAccess.Inspection.Gizmo.MenuStateSuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuDescriptionSuffix>: {0}</RimWorldAccess.Inspection.Gizmo.MenuDescriptionSuffix>
+
+  <!-- Interaction hints for interactive gizmos. RightClickHint and
+       EnterAdjustHint are the standard cases; PsychicEntropyHints describes
+       both actions for that specific gizmo (Enter toggles limiter, ] adjusts
+       psyfocus). These values open with the joining punctuation because they
+       began life as string-concatenation suffixes; the announcement builder
+       now strips that leading run and supplies its own separator, so a
+       translation may keep or drop the opening punctuation either way. -->
   <RimWorldAccess.Inspection.Gizmo.HintRightClickOptions>. Натисніть праву квадратну дужку для додаткових варіантів</RimWorldAccess.Inspection.Gizmo.HintRightClickOptions>
-  <RimWorldAccess.Inspection.Gizmo.HintEnterToAdjust>. Натисніть Enter, щоб відрегулювати</RimWorldAccess.Inspection.Gizmo.HintEnterToAdjust>
-  <RimWorldAccess.Inspection.Gizmo.HintPsychicEntropy>. Натисніть Enter, щоб перемкнути обмежувач, праву квадратну дужку, щоб задати ціль пси-фокусу</RimWorldAccess.Inspection.Gizmo.HintPsychicEntropy>
-  <RimWorldAccess.Inspection.Gizmo.HintHemogen>. Натисніть Enter, щоб перемкнути дозвіл на пакети гемогену, праву квадратну дужку, щоб задати ціль</RimWorldAccess.Inspection.Gizmo.HintHemogen>
-  <RimWorldAccess.Inspection.Gizmo.HintActivitySuppression>. Натисніть Enter, щоб перемкнути автопридушення, праву квадратну дужку, щоб задати поріг придушення</RimWorldAccess.Inspection.Gizmo.HintActivitySuppression>
+  <RimWorldAccess.Inspection.Gizmo.HintArrowsToAdjust>. Стрілки ліворуч і праворуч для регулювання, Shift для більших кроків</RimWorldAccess.Inspection.Gizmo.HintArrowsToAdjust>
+  <RimWorldAccess.Inspection.Gizmo.HintPsychicEntropyArrows>. Натисніть Enter, щоб перемкнути обмежувач, стрілки ліворуч і праворуч, щоб задати ціль пси-фокусу</RimWorldAccess.Inspection.Gizmo.HintPsychicEntropyArrows>
+  <RimWorldAccess.Inspection.Gizmo.HintHemogenArrows>. Натисніть Enter, щоб перемкнути дозвіл на пакети гемогену, стрілки ліворуч і праворуч, щоб задати ціль</RimWorldAccess.Inspection.Gizmo.HintHemogenArrows>
+  <RimWorldAccess.Inspection.Gizmo.HintFuelAutoRefuelArrows>. Натисніть Enter, щоб перемкнути автозаправлення, стрілки ліворуч і праворуч, щоб задати цільовий рівень пального</RimWorldAccess.Inspection.Gizmo.HintFuelAutoRefuelArrows>
+  <RimWorldAccess.Inspection.Gizmo.AutoRefuelToggle>Автозаправлення {0}</RimWorldAccess.Inspection.Gizmo.AutoRefuelToggle>
+  <RimWorldAccess.Inspection.Gizmo.HintActivitySuppressionArrows>. Натисніть Enter, щоб перемкнути автопридушення, стрілки ліворуч і праворуч, щоб задати поріг придушення</RimWorldAccess.Inspection.Gizmo.HintActivitySuppressionArrows>
 
   <!-- =================================================================
        Gizmo type labels (GetNonCommandGizmoLabel and helpers). These
@@ -652,13 +644,15 @@
   <RimWorldAccess.Inspection.Gizmo.Type.PsychicEntropy>Нейронний перегрів і пси-фокус</RimWorldAccess.Inspection.Gizmo.Type.PsychicEntropy>
   <RimWorldAccess.Inspection.Gizmo.Type.MechanitorBandwidth>Пропускна здатність механітора</RimWorldAccess.Inspection.Gizmo.Type.MechanitorBandwidth>
   <RimWorldAccess.Inspection.Gizmo.Type.MechPowerCell>Енергоелемент меха</RimWorldAccess.Inspection.Gizmo.Type.MechPowerCell>
+  <RimWorldAccess.Inspection.Gizmo.Status.PowerCellPercentHours>{0}%, залишилося {1}{2}</RimWorldAccess.Inspection.Gizmo.Status.PowerCellPercentHours>
+  <RimWorldAccess.Inspection.Gizmo.Status.GuardianShipPayment>Оплата через {0}</RimWorldAccess.Inspection.Gizmo.Status.GuardianShipPayment>
   <RimWorldAccess.Inspection.Gizmo.Type.ResurrectionCharges>Заряди воскресіння</RimWorldAccess.Inspection.Gizmo.Type.ResurrectionCharges>
   <RimWorldAccess.Inspection.Gizmo.Type.ShieldHitPoints>Міцність щита</RimWorldAccess.Inspection.Gizmo.Type.ShieldHitPoints>
   <RimWorldAccess.Inspection.Gizmo.Type.PruningConfig>Налаштування обрізання</RimWorldAccess.Inspection.Gizmo.Type.PruningConfig>
   <RimWorldAccess.Inspection.Gizmo.Type.GuardianShip>Корабель-охоронець</RimWorldAccess.Inspection.Gizmo.Type.GuardianShip>
   <RimWorldAccess.Inspection.Gizmo.Type.CaravanInfo>Інформація про караван</RimWorldAccess.Inspection.Gizmo.Type.CaravanInfo>
   <RimWorldAccess.Inspection.Gizmo.Type.DeathrestCapacity>Місткість летаргічного сну</RimWorldAccess.Inspection.Gizmo.Type.DeathrestCapacity>
-  <RimWorldAccess.Inspection.Gizmo.Type.Activity>Активність</RimWorldAccess.Inspection.Gizmo.Type.Activity>
+  <RimWorldAccess.Inspection.Gizmo.DeathrestBoundBuildings>Прив'язані будівлі: {0}</RimWorldAccess.Inspection.Gizmo.DeathrestBoundBuildings>
   <RimWorldAccess.Inspection.Gizmo.Type.RoomStatsFallback>Статистика приміщення</RimWorldAccess.Inspection.Gizmo.Type.RoomStatsFallback>
   <RimWorldAccess.Inspection.Gizmo.Type.StatusDisplayFallback>Відображення стану</RimWorldAccess.Inspection.Gizmo.Type.StatusDisplayFallback>
 
@@ -703,7 +697,6 @@
   <RimWorldAccess.Inspection.Gizmo.Status.UsedTotal>{0} / {1}</RimWorldAccess.Inspection.Gizmo.Status.UsedTotal>
   <RimWorldAccess.Inspection.Gizmo.Status.PercentEnergy>{0}% ({1} / {2})</RimWorldAccess.Inspection.Gizmo.Status.PercentEnergy>
   <RimWorldAccess.Inspection.Gizmo.Status.HitPoints>{0} / {1} ОЗ</RimWorldAccess.Inspection.Gizmo.Status.HitPoints>
-  <RimWorldAccess.Inspection.Gizmo.Status.Charges>{0} / {1} зарядів</RimWorldAccess.Inspection.Gizmo.Status.Charges>
   <RimWorldAccess.Inspection.Gizmo.Status.Percent>{0}%</RimWorldAccess.Inspection.Gizmo.Status.Percent>
 
   <RimWorldAccess.Inspection.Gizmo.Status.SliderTargetWithLabel>Ціль: {0}%, {1}</RimWorldAccess.Inspection.Gizmo.Status.SliderTargetWithLabel>
@@ -747,8 +740,6 @@
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsCurrentOfNext>{0} з {1} балів</RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsCurrentOfNext>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsPerDaySuffix> (+{0})</RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsPerDaySuffix>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthLearningProgress>Навчання {0}</RimWorldAccess.Inspection.Gizmo.Status.GrowthLearningProgress>
-  <RimWorldAccess.Inspection.Gizmo.Status.GrowthNextMomentLine>{0}: {1}</RimWorldAccess.Inspection.Gizmo.Status.GrowthNextMomentLine>
-  <RimWorldAccess.Inspection.Gizmo.Status.GrowthNextTierHeader>Якщо досягнуто рівень росту {0}</RimWorldAccess.Inspection.Gizmo.Status.GrowthNextTierHeader>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthTierRewardsLine>{0}: {1}</RimWorldAccess.Inspection.Gizmo.Status.GrowthTierRewardsLine>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthRewardsAnd> і </RimWorldAccess.Inspection.Gizmo.Status.GrowthRewardsAnd>
 
@@ -834,51 +825,24 @@
        Failure forms cover the cases where TryAssignPawn /
        TryUnassignPawn does not actually move the pawn into / out of the
        owner list. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.MainMenu.AssignOwner>Призначити власника</RimWorldAccess.Inspection.OwnerAssignment.MainMenu.AssignOwner>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainMenu.UnassignOwner>Скасувати призначення власника</RimWorldAccess.Inspection.OwnerAssignment.MainMenu.UnassignOwner>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainMenu.CloseMenu>Закрити меню</RimWorldAccess.Inspection.OwnerAssignment.MainMenu.CloseMenu>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Assigned>{0}. Призначено: {1}. {2}</RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Assigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Unassigned>{0}. Призначення скасовано. {1}</RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Unassigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.MenuClosed>Меню призначення закрито</RimWorldAccess.Inspection.OwnerAssignment.MenuClosed>
 
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignBuilding>Неможливо призначити власників цій будівлі</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignBuilding>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignBuilding>Неможливо скасувати призначення власників цієї будівлі</RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignBuilding>
-  <RimWorldAccess.Inspection.OwnerAssignment.NoCandidates>Немає доступних персонажів для призначення</RimWorldAccess.Inspection.OwnerAssignment.NoCandidates>
-  <RimWorldAccess.Inspection.OwnerAssignment.NoneAssigned>Цій будівлі не призначено жодного персонажа</RimWorldAccess.Inspection.OwnerAssignment.NoneAssigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignOwner>Неможливо призначити власника</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignOwner>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignOwner>Неможливо скасувати призначення власника</RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignOwner>
 
   <!-- AssignReason suffixes are appended to the candidate row label.
        The leading space is part of the value. CannotAssignWithReason:
        {0} = StripTags(report.Reason). -->
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssign> (Неможливо призначити)</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssign>
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssignWithReason> ({0})</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssignWithReason>
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.IdeologyForbids> (Віра забороняє)</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.IdeologyForbids>
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.HasOtherAssignment> (Має інше призначення)</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.HasOtherAssignment>
 
   <!-- Submenu announcements ("Assign owner - first option"). The first
        form lists the picker's first option immediately so screen reader
        users know the submenu opened. {0} = first candidate / first
        assigned pawn label. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Announce>Призначити власника - {0}</RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Announce>
-  <RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Announce>Скасувати призначення власника - {0}</RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Announce>
   <!-- Item announcements while inside the submenus. {0} = pawn label. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Item>Призначити: {0}</RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Item>
-  <RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Item>Скасувати призначення: {0}</RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Item>
 
   <!-- Cannot-assign rejection messages (when the user actually tries to
        assign a flagged candidate). {0} = pawn label, {1} = stripped
        reason. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawn>Неможливо призначити {0} цій будівлі</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawn>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawnWithReason>Неможливо призначити {0}: {1}</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawnWithReason>
-  <RimWorldAccess.Inspection.OwnerAssignment.IdeologyForbidsPawn>Віра забороняє {0} користуватися цією будівлею</RimWorldAccess.Inspection.OwnerAssignment.IdeologyForbidsPawn>
 
   <!-- Result announcements after the assignment actually changed (or
        failed to change). {0} = pawn label, {1} = building label. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultAssigned>{0} призначено до: {1}</RimWorldAccess.Inspection.OwnerAssignment.ResultAssigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultUnassigned>{0} відкріплено від: {1}</RimWorldAccess.Inspection.OwnerAssignment.ResultUnassigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultAssignFailed>Не вдалося призначити {0}</RimWorldAccess.Inspection.OwnerAssignment.ResultAssignFailed>
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultUnassignFailed>Не вдалося скасувати призначення {0}</RimWorldAccess.Inspection.OwnerAssignment.ResultUnassignFailed>
 
   <!-- Meditation focus. NoMeditationFocus: {0} = search-radius cells. -->
   <RimWorldAccess.Inspection.Building.NoMeditationInfo>Інформація про фокус медитації недоступна.</RimWorldAccess.Inspection.Building.NoMeditationInfo>
@@ -939,7 +903,6 @@
   <!-- Suffix appended to a row's label when the entry is disabled.
        Includes the leading space so it joins onto whatever label
        precedes it. -->
-  <RimWorldAccess.Inspection.Bills.UnavailableSuffix> (недоступно)</RimWorldAccess.Inspection.Bills.UnavailableSuffix>
 
   <!-- Action result announcements. {0} = bill or recipe label, {1} =
        new position (MovedUp / MovedDown only). Each verb gets its own
@@ -958,8 +921,6 @@
   <RimWorldAccess.Inspection.Bills.CopiedToClipboard>Скопійовано в буфер обміну: {0}</RimWorldAccess.Inspection.Bills.CopiedToClipboard>
   <RimWorldAccess.Inspection.Bills.AddedBill>Додано замовлення: {0}</RimWorldAccess.Inspection.Bills.AddedBill>
   <RimWorldAccess.Inspection.Bills.PastedBill>Вставлено замовлення: {0}</RimWorldAccess.Inspection.Bills.PastedBill>
-  <RimWorldAccess.Inspection.Bills.RecipeRequiresMechanitor>Рецепт потребує механітора: {0}</RimWorldAccess.Inspection.Bills.RecipeRequiresMechanitor>
-  <RimWorldAccess.Inspection.Bills.RecipeRequiresSkills>Жоден персонаж не має потрібних навичок для: {0}</RimWorldAccess.Inspection.Bills.RecipeRequiresSkills>
   <!-- {0} = full type name of the unsupported Bill subclass. -->
   <RimWorldAccess.Inspection.Bills.UnsupportedType>Тип замовлення {0} ще не підтримується</RimWorldAccess.Inspection.Bills.UnsupportedType>
 
@@ -982,6 +943,7 @@
        StateCollapsed; the leading period+space is composed in C# since
        it is typographic punctuation, not a translatable particle.
        ================================================================= -->
+  <RimWorldAccess.Inspection.Panel.RegionName>Огляд</RimWorldAccess.Inspection.Panel.RegionName>
   <RimWorldAccess.Inspection.Panel.NoItems>Тут немає предметів для огляду.</RimWorldAccess.Inspection.Panel.NoItems>
   <RimWorldAccess.Inspection.Panel.NoObject>Немає об'єкта для огляду.</RimWorldAccess.Inspection.Panel.NoObject>
   <RimWorldAccess.Inspection.Panel.PanelClosed>Панель огляду закрито.</RimWorldAccess.Inspection.Panel.PanelClosed>
@@ -1012,6 +974,7 @@
   <RimWorldAccess.Inspection.InfoCard.CannotExpand>Неможливо розгорнути цей елемент.</RimWorldAccess.Inspection.InfoCard.CannotExpand>
   <RimWorldAccess.Inspection.InfoCard.MenuClosed>Меню закрито</RimWorldAccess.Inspection.InfoCard.MenuClosed>
   <RimWorldAccess.Inspection.InfoCard.InfoCardClosed>Картку інформації закрито.</RimWorldAccess.Inspection.InfoCard.InfoCardClosed>
+  <RimWorldAccess.Inspection.InfoCard.RegionName>Картка інформації</RimWorldAccess.Inspection.InfoCard.RegionName>
 
   <!-- =================================================================
        Info Card tree builder (InfoCardTreeBuilder). Section names
@@ -1089,6 +1052,11 @@
   <RimWorldAccess.Inspection.InfoCardTree.PermitReturnAllResult>{0}. {1}: {2}</RimWorldAccess.Inspection.InfoCardTree.PermitReturnAllResult>
   <RimWorldAccess.Inspection.InfoCardTree.PermitGranted>{0} надано. {1}: {2}</RimWorldAccess.Inspection.InfoCardTree.PermitGranted>
 
+  <!-- Spoken after confirming the Renounce Title action (Character tab,
+       Royal Titles section): {0} = vanilla "RenounceTitle" word, {1} =
+       vanilla "TitleOfFaction" composite (title name + faction). -->
+  <RimWorldAccess.Inspection.InfoCardTree.TitleRenounced>{0}: {1}.</RimWorldAccess.Inspection.InfoCardTree.TitleRenounced>
+
   <!-- =================================================================
        BuildingInspectPatch fallback announcements. Each phrase is the
        message spoken by InspectionReturnHelper.AnnounceParentOrFallback
@@ -1097,17 +1065,11 @@
        the inspection flow, e.g. from the scanner). One whole-phrase
        key per submenu so the verb (Closed / Cancelled) and the menu
        noun can vary per language without sentence-templating.
-       AppliedRangeChanges is announced after the user confirms the
-       hit-points / quality range editor; it is a TolkHelper.Speak
-       (not a fallback) since the user always lands back in the thing
-       filter menu after applying.
        ================================================================= -->
   <RimWorldAccess.Inspection.Patch.ClosedTemperatureControl>Меню контролю температури закрито</RimWorldAccess.Inspection.Patch.ClosedTemperatureControl>
   <RimWorldAccess.Inspection.Patch.ClosedBillsMenu>Меню замовлень закрито</RimWorldAccess.Inspection.Patch.ClosedBillsMenu>
   <RimWorldAccess.Inspection.Patch.ClosedBillConfiguration>Налаштування замовлення закрито</RimWorldAccess.Inspection.Patch.ClosedBillConfiguration>
   <RimWorldAccess.Inspection.Patch.ClosedThingFilterMenu>Меню фільтра предметів закрито</RimWorldAccess.Inspection.Patch.ClosedThingFilterMenu>
-  <RimWorldAccess.Inspection.Patch.CancelledRangeEditing>Редагування діапазону скасовано</RimWorldAccess.Inspection.Patch.CancelledRangeEditing>
-  <RimWorldAccess.Inspection.Patch.AppliedRangeChanges>Зміни діапазону застосовано</RimWorldAccess.Inspection.Patch.AppliedRangeChanges>
   <RimWorldAccess.Inspection.Patch.ClosedFuelSettings>Меню налаштувань палива закрито</RimWorldAccess.Inspection.Patch.ClosedFuelSettings>
   <RimWorldAccess.Inspection.Patch.ClosedDoorControls>Керування дверима закрито</RimWorldAccess.Inspection.Patch.ClosedDoorControls>
   <RimWorldAccess.Inspection.Patch.ClosedForbidControls>Керування забороною закрито</RimWorldAccess.Inspection.Patch.ClosedForbidControls>
@@ -1142,6 +1104,7 @@
   <RimWorldAccess.Inspection.Tree.PenAutoCutToggleAnnouncement>Автозрізання: {0}</RimWorldAccess.Inspection.Tree.PenAutoCutToggleAnnouncement>
   <RimWorldAccess.Inspection.Tree.PenDesignatedPlantsForCutting>Рослини позначено для зрізання</RimWorldAccess.Inspection.Tree.PenDesignatedPlantsForCutting>
   <RimWorldAccess.Inspection.Tree.BookEjected>{0}. {1}</RimWorldAccess.Inspection.Tree.BookEjected>
+  <RimWorldAccess.Inspection.Tree.ApparelEjected>{0}. {1}</RimWorldAccess.Inspection.Tree.ApparelEjected>
 
   <!-- =================================================================
        InspectionTreeBuilder tree-item labels paired with the actions
@@ -1255,11 +1218,35 @@
          translated by the game), {1} = entry text.
        ================================================================= -->
   <RimWorldAccess.Inspection.Tree.Root>Огляд</RimWorldAccess.Inspection.Tree.Root>
+  <RimWorldAccess.Inspection.Tree.AlsoShown>Також показано на цій вкладці</RimWorldAccess.Inspection.Tree.AlsoShown>
+  <!-- Hotel/restaurant wave: a captured row standing in for a mod's own
+       ThingFilterUI panel (e.g. Gastronomy's Menu, Storefront's stock
+       filter) — activating it opens our full filter screen instead of the
+       mod's own scroll-culled tree. FilterPanelTitle is the generic
+       fallback title when the owning tab's own display name is
+       unavailable. -->
+  <RimWorldAccess.Inspection.Tree.EditFilterList>Редагувати список фільтрів</RimWorldAccess.Inspection.Tree.EditFilterList>
+  <RimWorldAccess.Inspection.Tree.FilterPanelTitle>Фільтр</RimWorldAccess.Inspection.Tree.FilterPanelTitle>
+  <!-- Hotel/restaurant wave: qualifies a captured button whose only name is
+       punctuation (a mod's "×"/"+" icon button) with the text of the row it
+       belongs to, so it reads as "No one: ×" rather than a bare glyph.
+       {0} = the row's own text, {1} = the glyph name. -->
+  <RimWorldAccess.Inspection.Tree.GlyphButtonQualifiedName>{0}: {1}</RimWorldAccess.Inspection.Tree.GlyphButtonQualifiedName>
+  <RimWorldAccess.Inspection.Parity.NoLongerShown>{0} більше не показано на цій вкладці.</RimWorldAccess.Inspection.Parity.NoLongerShown>
+  <RimWorldAccess.Inspection.Parity.ActivateFailed>Не вдалося активувати {0}.</RimWorldAccess.Inspection.Parity.ActivateFailed>
+  <RimWorldAccess.Inspection.Parity.Disabled>{0} вимкнено.</RimWorldAccess.Inspection.Parity.Disabled>
+  <RimWorldAccess.Inspection.Parity.Increase>Збільшити</RimWorldAccess.Inspection.Parity.Increase>
+  <RimWorldAccess.Inspection.Parity.Decrease>Зменшити</RimWorldAccess.Inspection.Parity.Decrease>
+  <RimWorldAccess.Inspection.Parity.SetValue>Встановити значення</RimWorldAccess.Inspection.Parity.SetValue>
+  <RimWorldAccess.Inspection.Parity.NotANumber>{0} не є числом.</RimWorldAccess.Inspection.Parity.NotANumber>
   <RimWorldAccess.Inspection.Tree.MeditationFocusNoFocus>Фокус медитації - немає об'єктів фокусу в межах дальності</RimWorldAccess.Inspection.Tree.MeditationFocusNoFocus>
   <RimWorldAccess.Inspection.Tree.NoTabInfo>Для цієї вкладки інформація недоступна.</RimWorldAccess.Inspection.Tree.NoTabInfo>
   <RimWorldAccess.Inspection.Tree.TabNoKeyboardContent>Вкладка «{0}» не має вмісту, доступного з клавіатури.</RimWorldAccess.Inspection.Tree.TabNoKeyboardContent>
   <RimWorldAccess.Inspection.Tree.UnrecognizedTab>Це нерозпізнана вкладка з мода або DLC.</RimWorldAccess.Inspection.Tree.UnrecognizedTab>
   <RimWorldAccess.Inspection.Tree.NoFacilityInfo>Немає інформації про зв'язані споруди.</RimWorldAccess.Inspection.Tree.NoFacilityInfo>
+  <!-- Shown when the inspect tree's Gizmos category expands on an object the game
+       currently offers no commands for. -->
+  <RimWorldAccess.Inspection.Tree.NoCommands>Немає доступних команд.</RimWorldAccess.Inspection.Tree.NoCommands>
 
   <RimWorldAccess.Inspection.Tree.NoNeedsToDisplay>Немає потреб для показу.</RimWorldAccess.Inspection.Tree.NoNeedsToDisplay>
   <RimWorldAccess.Inspection.Tree.NoTrainableSkills>Немає навичок для тренування</RimWorldAccess.Inspection.Tree.NoTrainableSkills>
@@ -1273,6 +1260,8 @@
   <RimWorldAccess.Inspection.Tree.HealthSettings>Налаштування здоров'я</RimWorldAccess.Inspection.Tree.HealthSettings>
   <RimWorldAccess.Inspection.Tree.Capacities>Здатності</RimWorldAccess.Inspection.Tree.Capacities>
   <RimWorldAccess.Inspection.Tree.BreakThresholds>Пороги зриву</RimWorldAccess.Inspection.Tree.BreakThresholds>
+  <RimWorldAccess.Inspection.Tree.JoyKindsOnMap>Джерела розваг на мапі</RimWorldAccess.Inspection.Tree.JoyKindsOnMap>
+  <RimWorldAccess.Inspection.Tree.ActiveLearningDesires>Активні прагнення до навчання</RimWorldAccess.Inspection.Tree.ActiveLearningDesires>
   <RimWorldAccess.Inspection.Tree.CombatLog>Бойовий журнал</RimWorldAccess.Inspection.Tree.CombatLog>
   <RimWorldAccess.Inspection.Tree.SocialLog>Соціальний журнал</RimWorldAccess.Inspection.Tree.SocialLog>
 
@@ -1403,16 +1392,6 @@
   <RimWorldAccess.Inspection.Gizmo.WeaponVerbLabel>{0} - {1}</RimWorldAccess.Inspection.Gizmo.WeaponVerbLabel>
   <RimWorldAccess.Inspection.Gizmo.UnknownCommand>Невідома команда</RimWorldAccess.Inspection.Gizmo.UnknownCommand>
 
-  <!-- Info Card skin-color shade descriptors (src/Inspection/InfoCardDataExtractor.cs), keyed off luminance. -->
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.VeryLight>дуже світла</RimWorldAccess.Inspection.InfoCard.SkinShade.VeryLight>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Light>світла</RimWorldAccess.Inspection.InfoCard.SkinShade.Light>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Fair>ясна</RimWorldAccess.Inspection.InfoCard.SkinShade.Fair>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Medium>середня</RimWorldAccess.Inspection.InfoCard.SkinShade.Medium>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Tan>смаглява</RimWorldAccess.Inspection.InfoCard.SkinShade.Tan>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Brown>коричнева</RimWorldAccess.Inspection.InfoCard.SkinShade.Brown>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.DarkBrown>темно-коричнева</RimWorldAccess.Inspection.InfoCard.SkinShade.DarkBrown>
-  <RimWorldAccess.Inspection.InfoCard.SkinColorShade>Колір шкіри ({0})</RimWorldAccess.Inspection.InfoCard.SkinColorShade>
-
   <!-- Training tab status words for tree labels (src/Inspection/InspectionTreeBuilder.cs). -->
   <RimWorldAccess.Inspection.Training.CannotTrain>Неможливо тренувати</RimWorldAccess.Inspection.Training.CannotTrain>
   <RimWorldAccess.Inspection.Training.StatusLearned>Вивчено</RimWorldAccess.Inspection.Training.StatusLearned>
@@ -1426,6 +1405,8 @@
   <!-- Inspection category display names (src/Inspection/InspectionCategoryLocalizer.cs).
        English identifiers stay as internal dispatch keys; these are display only. -->
   <RimWorldAccess.Inspection.CategoryName.Overview>Огляд</RimWorldAccess.Inspection.CategoryName.Overview>
+  <!-- The object's commands: the same list the G key opens, as tree rows. -->
+  <RimWorldAccess.Inspection.CategoryName.Gizmos>Команди</RimWorldAccess.Inspection.CategoryName.Gizmos>
   <RimWorldAccess.Inspection.CategoryName.Health>Здоров'я</RimWorldAccess.Inspection.CategoryName.Health>
   <RimWorldAccess.Inspection.CategoryName.Needs>Потреби</RimWorldAccess.Inspection.CategoryName.Needs>
   <RimWorldAccess.Inspection.CategoryName.Mood>Настрій</RimWorldAccess.Inspection.CategoryName.Mood>

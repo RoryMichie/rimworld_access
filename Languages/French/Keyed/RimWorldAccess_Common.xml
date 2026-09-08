@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Shared vocabulary used by RimWorld Access helper classes. Every phrase in
+    this file is emitted by a helper in src/UI, src/Map, or src/Inspection and
+    represents the canonical English wording that Phase A consolidated. Each
+    key is spoken many times across the mod - localizing here localizes the
+    corresponding announcement everywhere it appears.
+
+    Placeholders follow string.Format ({0}, {1}, ...). When a key has One/Many
+    variants, the caller picks the form based on a count value; languages with
+    additional plural classes can either keep both keys identical or split
+    further using RimWorld's LanguageWorker.
+  -->
+
+  <!-- Guard preconditions (src/UI/GuardHelper.cs).
+       Spoken when a state class cannot proceed because of missing game state. -->
+  <RimWorldAccess.Guard.NotInGame>Aucune partie en cours</RimWorldAccess.Guard.NotInGame>
+  <RimWorldAccess.Guard.NoMapLoaded>Aucune carte chargée</RimWorldAccess.Guard.NoMapLoaded>
+  <RimWorldAccess.Guard.NoPawnSelected>Aucun personnage sélectionné</RimWorldAccess.Guard.NoPawnSelected>
+  <RimWorldAccess.Guard.NoItemSelected>Aucun objet sélectionné</RimWorldAccess.Guard.NoItemSelected>
+  <RimWorldAccess.Guard.NoBuildingToConfigure>Aucun bâtiment à configurer</RimWorldAccess.Guard.NoBuildingToConfigure>
+  <RimWorldAccess.Guard.WorldNavigationNotActive>Navigation du monde inactive</RimWorldAccess.Guard.WorldNavigationNotActive>
+  <RimWorldAccess.Guard.NoValidTileSelected>Aucune tuile valide sélectionnée</RimWorldAccess.Guard.NoValidTileSelected>
+  <RimWorldAccess.Guard.InvalidCursorPosition>Position du curseur invalide</RimWorldAccess.Guard.InvalidCursorPosition>
+
+  <!-- Typeahead search (src/UI/TypeaheadSearchHelper.cs).
+       Used across every menu that has type-to-find search.
+       {0} = the user's search text (NoMatches).
+       {0} = current 1-based match position, {1} = total matches,
+       {2} = search buffer (ContextSuffix). -->
+  <RimWorldAccess.Search.Cleared>Recherche effacée</RimWorldAccess.Search.Cleared>
+  <RimWorldAccess.Search.Prompt>Recherche</RimWorldAccess.Search.Prompt>
+  <RimWorldAccess.Search.Closed>Recherche fermée</RimWorldAccess.Search.Closed>
+  <RimWorldAccess.Search.NoMatches>Aucun résultat pour '{0}'</RimWorldAccess.Search.NoMatches>
+  <RimWorldAccess.Search.ContextSuffix>, {0} sur {1} résultats pour '{2}'</RimWorldAccess.Search.ContextSuffix>
+
+  <!-- Info card (src/Inspection/InfoCardState.cs).
+       Spoken when an 'i'-style info-card action has no eligible target.
+       Inspectable: suffix appended to a tree item's announcement when
+       pressing Alt+I would open an info card; the leading space is part
+       of the key so it joins onto whatever label precedes it.
+       ChooseItemToInspect: float-menu prompt when the current item has
+       multiple Defs that could be inspected. -->
+  <RimWorldAccess.InfoCard.Unavailable>Aucun onglet d'information disponible</RimWorldAccess.InfoCard.Unavailable>
+  <RimWorldAccess.InfoCard.Inspectable> Consultable.</RimWorldAccess.InfoCard.Inspectable>
+  <RimWorldAccess.InfoCard.ChooseItemToInspect>Choisir l'objet à consulter</RimWorldAccess.InfoCard.ChooseItemToInspect>
+
+  <!-- Tree expansion state (src/UI/TreeNavigationHelper.cs).
+       StateExpanded/StateCollapsed are the bare words, composed into the
+       suffix keys. SuffixWithCountOne/Many are used when a child count is
+       included; {0} = state word, {1} = child count.
+       ExpandedCountOne/Many are spoken after ExpandAllSiblings collapses or
+       expands several siblings in one action. -->
+  <RimWorldAccess.Tree.StateExpanded>développé</RimWorldAccess.Tree.StateExpanded>
+  <RimWorldAccess.Tree.StateCollapsed>réduit</RimWorldAccess.Tree.StateCollapsed>
+  <RimWorldAccess.Tree.ExpansionSuffix>, {0}</RimWorldAccess.Tree.ExpansionSuffix>
+  <RimWorldAccess.Tree.ExpansionSuffixWithCountOne>, {0}, {1} élément</RimWorldAccess.Tree.ExpansionSuffixWithCountOne>
+  <RimWorldAccess.Tree.ExpansionSuffixWithCountMany>, {0}, {1} éléments</RimWorldAccess.Tree.ExpansionSuffixWithCountMany>
+  <RimWorldAccess.Tree.ExpansionSpaceSuffix> {0}</RimWorldAccess.Tree.ExpansionSpaceSuffix>
+  <RimWorldAccess.Tree.ExpandedCountOne>{0} élément développé</RimWorldAccess.Tree.ExpandedCountOne>
+  <RimWorldAccess.Tree.ExpandedCountMany>{0} éléments développés</RimWorldAccess.Tree.ExpandedCountMany>
+  <!-- No-op feedback for ExpandAllSiblings: everything at this level was
+       already open, or nothing here can expand. -->
+  <RimWorldAccess.Tree.AllAlreadyExpanded>Tous les éléments sont déjà développés</RimWorldAccess.Tree.AllAlreadyExpanded>
+  <RimWorldAccess.Tree.NoneToExpand>Aucun élément à développer</RimWorldAccess.Tree.NoneToExpand>
+
+  <!-- Two-level menu (src/UI/TwoLevelMenuHelper.cs). Used by the mod-list detail view,
+       notifications, and the History Graph sub-tab. ButtonAnnouncement/Disabled and
+       ButtonDisabled/Reason retired (Task 8 packet H): button focus now speaks through
+       the composer's own Button role + Disabled state, and the disabled-activation
+       refusal reuses the shared RimWorldAccess.Shell.GenericWindow.Disabled key. -->
+  <RimWorldAccess.TwoLevel.BackToList>Retour à la liste</RimWorldAccess.TwoLevel.BackToList>
+  <RimWorldAccess.TwoLevel.BackToListWithSuffix>Retour à la liste. {0}</RimWorldAccess.TwoLevel.BackToListWithSuffix>
+
+  <!-- Menu formatting (src/UI/MenuHelper.cs).
+       Position: {0} = 1-based index, {1} = total.
+       LevelSuffix: {0} = indent level (1-based), appended to item announcements.
+       CannotPaintColumn: tabular menus when a column cannot be paint-copied. -->
+  <RimWorldAccess.Menu.Position>{0} sur {1}</RimWorldAccess.Menu.Position>
+  <RimWorldAccess.Menu.TabPosition>onglet {0} sur {1}</RimWorldAccess.Menu.TabPosition>
+  <RimWorldAccess.Menu.LevelSuffix> niveau {0}</RimWorldAccess.Menu.LevelSuffix>
+  <RimWorldAccess.Menu.CannotPaintColumn>Impossible de peindre cette colonne</RimWorldAccess.Menu.CannotPaintColumn>
+
+  <!-- Edge announcements (src/UI/MenuHelper.cs, MenuHelper.EdgeDirection).
+       Spoken when navigation has reached a boundary and cannot continue. -->
+  <RimWorldAccess.Edge.Top>Déjà en haut</RimWorldAccess.Edge.Top>
+  <RimWorldAccess.Edge.Bottom>Déjà en bas</RimWorldAccess.Edge.Bottom>
+  <RimWorldAccess.Edge.First>Déjà à la première position</RimWorldAccess.Edge.First>
+  <RimWorldAccess.Edge.Last>Déjà à la dernière position</RimWorldAccess.Edge.Last>
+  <RimWorldAccess.Edge.Minimum>Déjà au minimum</RimWorldAccess.Edge.Minimum>
+  <RimWorldAccess.Edge.Maximum>Déjà au maximum</RimWorldAccess.Edge.Maximum>
+  <RimWorldAccess.Edge.TopLevel>Déjà au niveau supérieur</RimWorldAccess.Edge.TopLevel>
+  <RimWorldAccess.Edge.Zero>Déjà à zéro</RimWorldAccess.Edge.Zero>
+  <RimWorldAccess.Edge.Generic>Déjà au bord</RimWorldAccess.Edge.Generic>
+
+  <!-- Map navigation (src/Map/MapNavigationState.cs).
+       JumpedTo: {0} = the target label (scanner item, menu row, etc.).
+       JumpedToTarget: fallback when no label is available.
+       SelectedCell: {0} = cell x, {1} = cell z. -->
+  <RimWorldAccess.Map.JumpedTo>Aller à : {0}</RimWorldAccess.Map.JumpedTo>
+  <RimWorldAccess.Map.JumpedToTarget>Aller à la cible</RimWorldAccess.Map.JumpedToTarget>
+  <RimWorldAccess.Map.SelectedCell>Sélection, {0}, {1}</RimWorldAccess.Map.SelectedCell>
+
+  <!-- Numeric stepper (src/UI/NumericStepperHelper.cs).
+       Minimum/Maximum are boundary hits (value did not change).
+       ValueAtMinimum/Maximum are transitions INTO the boundary; {0} = the
+       formatted value label. -->
+  <RimWorldAccess.Stepper.Minimum>Minimum</RimWorldAccess.Stepper.Minimum>
+  <RimWorldAccess.Stepper.Maximum>Maximum</RimWorldAccess.Stepper.Maximum>
+  <RimWorldAccess.Stepper.ValueAtMinimum>{0}, minimum</RimWorldAccess.Stepper.ValueAtMinimum>
+  <RimWorldAccess.Stepper.ValueAtMaximum>{0}, maximum</RimWorldAccess.Stepper.ValueAtMaximum>
+
+  <!-- Generic shared labels. NameColumn is the header for a pawn-name column in
+       tabular menus (skills table, assign menu). Unknown is a defensive fallback
+       for an out-of-range column. Material is the generic placeholder cost word
+       for a stuff-based building before a specific stuff is chosen. SortAscending/
+       Descending are spoken when a table column is sorted. RenameLabeled is a
+       rename gizmo label with the target's name ({0}). -->
+  <RimWorldAccess.Common.NameColumn>Nom</RimWorldAccess.Common.NameColumn>
+  <RimWorldAccess.Common.Unknown>Inconnu</RimWorldAccess.Common.Unknown>
+  <RimWorldAccess.Common.Material>matériau</RimWorldAccess.Common.Material>
+  <RimWorldAccess.Common.SortAscending>tri croissant</RimWorldAccess.Common.SortAscending>
+  <RimWorldAccess.Common.SortDescending>tri décroissant</RimWorldAccess.Common.SortDescending>
+  <RimWorldAccess.Common.RenameLabeled>Renommer {0}</RimWorldAccess.Common.RenameLabeled>
+
+  <!-- Where a row dragged with the mouse would land. {0} = 1-based position,
+       {1} = number of rows in the list being reordered. -->
+  <RimWorldAccess.Common.Drag.ReorderPosition>Position {0} sur {1}</RimWorldAccess.Common.Drag.ReorderPosition>
+</LanguageData>

@@ -8,29 +8,23 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Shared utility methods for building ideology data used by IdeologyTabState.
-    /// Provides data extraction, announcement building, and tree construction.
+    /// The read-only tree/list/announcement source shared by every in-game ideology surface:
+    /// data extraction, announcement building and tree construction.
     /// </summary>
     public static class IdeologyHelper
     {
-        /// <summary>
-        /// Returns all visible ideologies in the game's standard view order.
-        /// </summary>
+        /// <summary>Every visible ideology, in the game's standard view order.</summary>
         public static List<Ideo> BuildIdeologyList()
         {
             return Find.IdeoManager.IdeosInViewOrder.ToList();
         }
 
-        /// <summary>
-        /// Builds the announcement string for an ideology in the list panel.
-        /// Shows name and which factions hold it.
-        /// </summary>
+        /// <summary>The list-panel announcement for an ideology: its name and the factions holding it.</summary>
         public static string BuildIdeoListAnnouncement(Ideo ideo)
         {
             var sb = new StringBuilder();
             sb.Append(ideo.name);
 
-            // Show which factions use this ideology
             var factionParts = new List<string>();
             if (Find.World != null)
             {
@@ -53,9 +47,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Builds the full tree structure for one ideology's details.
-        /// Root is hidden (IndentLevel -1). Level 0 nodes are section headers.
-        /// Each section aggregates its children's text into its own label.
+        /// The full tree for one ideology's details. The root is hidden (IndentLevel -1), level 0
+        /// nodes are section headers, and each section aggregates its children's text into its label.
         /// </summary>
         public static InspectionTreeItem BuildIdeologyTree(Ideo ideo)
         {
@@ -78,7 +71,7 @@ namespace RimWorldAccess
             BuildNarrativeSection(root, ideo);
             BuildDeitiesSection(root, ideo);
 
-            // Precept categories matching vanilla's DoPrecepts order
+            // Precept categories in vanilla's DoPrecepts order.
             BuildPreceptCategorySection(root, ideo, "Precepts".Translate(),
                 p => p.preceptClass == typeof(Precept));
             BuildPreceptCategorySection(root, ideo, "IdeoRoles".Translate(),
@@ -103,6 +96,12 @@ namespace RimWorldAccess
             BuildPreceptCategorySection(root, ideo, "IdeoApparel".Translate(),
                 p => p.preceptClass == typeof(Precept_Apparel));
 
+            // Residual bucket so a visible PreceptDef whose preceptClass no section above claims
+            // (a modded class) still lands somewhere. Vanilla's own ladder has no catch-all, so
+            // this is empty for any vanilla-only ideology.
+            BuildPreceptCategorySection(root, ideo, "RimWorldAccess.Ideology.OtherPrecepts".Translate(),
+                p => !IsClaimedByStandardPreceptSection(p));
+
             BuildAppearanceSection(root, ideo);
 
             return root;
@@ -113,28 +112,44 @@ namespace RimWorldAccess
         private static void BuildOverviewSection(InspectionTreeItem root, Ideo ideo)
         {
             var children = new List<string>();
+            // Kept in lockstep with children: the two facts vanilla gives an icon of their own ring
+            // that icon; the rest inherit the section's block below.
+            var ringTargets = new List<object>();
+            void AddOverviewChild(string text, object ringTarget)
+            {
+                children.Add(text);
+                ringTargets.Add(ringTarget);
+            }
 
-            children.Add("Adjective".Translate().CapitalizeFirst() + ": " + ideo.adjective.CapitalizeFirst());
-            children.Add("IdeoMembers".Translate().CapitalizeFirst() + ": " + ideo.memberName.CapitalizeFirst());
+            AddOverviewChild("Adjective".Translate().CapitalizeFirst() + ": " + ideo.adjective.CapitalizeFirst(), null);
+            AddOverviewChild("IdeoMembers".Translate().CapitalizeFirst() + ": " + ideo.memberName.CapitalizeFirst(), null);
 
             MemeDef structureMeme = ideo.StructureMeme;
             if (structureMeme != null)
-                children.Add("StructureMeme".Translate().CapitalizeFirst() + ": " + structureMeme.LabelCap);
+                AddOverviewChild("StructureMeme".Translate().CapitalizeFirst() + ": " + structureMeme.LabelCap, structureMeme);
 
             if (ideo.culture != null)
-                children.Add("Culture".Translate().CapitalizeFirst() + ": " + ideo.culture.LabelCap);
+                AddOverviewChild("Culture".Translate().CapitalizeFirst() + ": " + ideo.culture.LabelCap, ideo.culture);
 
             if (!string.IsNullOrEmpty(ideo.leaderTitleMale))
             {
                 string leaderEntry = "LeaderTitle".Translate().CapitalizeFirst() + ": " + ideo.leaderTitleMale.CapitalizeFirst();
                 if (!string.IsNullOrEmpty(ideo.leaderTitleFemale) && ideo.leaderTitleFemale != ideo.leaderTitleMale)
                     leaderEntry += " (" + ideo.leaderTitleFemale.CapitalizeFirst() + ")";
-                children.Add(leaderEntry);
+                AddOverviewChild(leaderEntry, null);
             }
 
-            children.Add("WorshipRoom".Translate().CapitalizeFirst() + ": " + ideo.WorshipRoomLabel.CapitalizeFirst());
+            AddOverviewChild("WorshipRoom".Translate().CapitalizeFirst() + ": " + ideo.WorshipRoomLabel.CapitalizeFirst(), null);
 
             var sectionNode = CreateSectionNode(root, ideo.name, children);
+            // The name/symbol block's hover region is the finest-grained box vanilla has for the
+            // remaining facts.
+            sectionNode.RingTarget = Shell.IdeoBoxDrawPatch.NameSymbolKey;
+            for (int i = 0; i < ringTargets.Count && i < sectionNode.Children.Count; i++)
+            {
+                if (ringTargets[i] != null)
+                    sectionNode.Children[i].RingTarget = ringTargets[i];
+            }
             root.Children.Add(sectionNode);
         }
 
@@ -145,15 +160,13 @@ namespace RimWorldAccess
 
             var selectedStyles = ideo.thingStyleCategories;
 
-            // Build child data for each style category
-            var catDataList = new List<(string name, List<string> childTexts, bool hasSound)>();
+            var catDataList = new List<(StyleCategoryDef def, string name, List<string> childTexts, bool hasSound)>();
             foreach (var styleCatWithPriority in selectedStyles)
             {
                 StyleCategoryDef cat = styleCatWithPriority.category;
                 var childTexts = new List<string>();
                 var overrides = new Dictionary<StyleCategoryDef, List<string>>();
 
-                // New buildables
                 var buildables = new List<string>();
                 if (!cat.addDesignators.NullOrEmpty())
                     foreach (var bd in cat.addDesignators)
@@ -165,7 +178,6 @@ namespace RimWorldAccess
                 if (buildables.Count > 0)
                     childTexts.Add("IdeoMakesBuildingBuildable".Translate() + ": " + string.Join(", ", buildables));
 
-                // Styled items/objects with override tracking
                 var styledThings = new List<string>();
                 foreach (var tds in cat.thingDefStyles)
                 {
@@ -203,20 +215,19 @@ namespace RimWorldAccess
                 bool hasActiveRitualSound = cat.soundOngoingRitual != null
                     && cat.soundOngoingRitual == ideo.SoundOngoingRitual;
 
-                // Override entries
                 foreach (var kvp in overrides.OrderBy(o => selectedStyles.ToList().FindIndex(s => s.category == o.Key)))
                 {
                     kvp.Value.Sort();
                     childTexts.Add("OverriddenByStyle".Translate(kvp.Key.LabelCap).Resolve() + ": " + string.Join(", ", kvp.Value));
                 }
 
-                catDataList.Add((cat.LabelCap.Resolve(), childTexts, hasActiveRitualSound));
+                catDataList.Add((cat, cat.LabelCap.Resolve(), childTexts, hasActiveRitualSound));
             }
 
-            // Single style: flatten — children go directly under the section node
+            // Single style: children go directly under the section node.
             if (catDataList.Count == 1)
             {
-                var (name, childTexts, hasSound) = catDataList[0];
+                var (def, name, childTexts, hasSound) = catDataList[0];
                 var sectionLabel = new StringBuilder("Styles".Translate() + ": " + name);
                 foreach (string childText in childTexts)
                     AppendSentence(sectionLabel, childText);
@@ -228,7 +239,8 @@ namespace RimWorldAccess
                     IsExpandable = true,
                     IsExpanded = false,
                     Parent = root,
-                    Type = InspectionTreeItem.ItemType.Category
+                    Type = InspectionTreeItem.ItemType.Category,
+                    RingTarget = def
                 };
 
                 foreach (string childText in childTexts)
@@ -240,14 +252,17 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Multiple styles: nested structure
+            // Multiple styles: nested.
             var multiSectionNode = new InspectionTreeItem
             {
                 IndentLevel = 0,
                 IsExpandable = true,
                 IsExpanded = false,
                 Parent = root,
-                Type = InspectionTreeItem.ItemType.Category
+                Type = InspectionTreeItem.ItemType.Category,
+                // Vanilla lays the tiles out in selection order, so the first selected category is
+                // the topmost tile and the honest target for the section as a whole.
+                RingTarget = selectedStyles[0].category
             };
 
             var catLabels = new List<string>();
@@ -255,7 +270,7 @@ namespace RimWorldAccess
 
             for (int i = 0; i < catDataList.Count; i++)
             {
-                var (name, childTexts, hasSound) = catDataList[i];
+                var (def, name, childTexts, hasSound) = catDataList[i];
                 var catHeader = new StringBuilder(name);
                 foreach (string childText in childTexts)
                     AppendSentence(catHeader, childText);
@@ -267,7 +282,8 @@ namespace RimWorldAccess
                     IsExpandable = true,
                     IsExpanded = false,
                     Parent = multiSectionNode,
-                    Type = InspectionTreeItem.ItemType.SubCategory
+                    Type = InspectionTreeItem.ItemType.SubCategory,
+                    RingTarget = def
                 };
 
                 foreach (string childText in childTexts)
@@ -321,6 +337,9 @@ namespace RimWorldAccess
                 return;
 
             var sectionNode = CreateSectionNode(root, "IdeoligionOf".Translate().CapitalizeFirst(), factionEntries);
+            // Vanilla draws one icon per faction with no per-faction seam a row could key off, so
+            // the whole row is the unit.
+            sectionNode.RingTarget = Shell.IdeoBoxDrawPatch.FactionsRowKey;
             root.Children.Add(sectionNode);
         }
 
@@ -329,11 +348,10 @@ namespace RimWorldAccess
             string points = ideo.development.Points + " / " + ideo.development.NextReformationDevelopmentPoints;
             bool canReform = ideo.development.CanReformNow;
 
-            // The section title carries the live points (and, when reformable, the action hint) so
-            // landing on the node leads with the actionable info. The explanatory tip and the list
-            // of ways to earn points live in the children — expand (Right) to read them. Enter on
-            // the node reforms directly when possible (no expand-then-arrow); the points are NOT
-            // repeated as a child (that produced a "current points, current points" double).
+            // The section title carries the live points and, when reformable, the action hint, so
+            // landing on the node leads with the actionable info; the tip and the ways to earn
+            // points are children. Enter reforms directly when possible. The points are NOT
+            // repeated as a child, which doubled them.
             string title = "CurrentDevelopmentPoints".Translate().CapitalizeFirst() + ": " + points;
             if (canReform)
                 title += ". " + (string)"RimWorldAccess.Ideology.PressEnterToReform".Translate();
@@ -362,9 +380,9 @@ namespace RimWorldAccess
 
             var sectionNode = CreateSectionNode(root, title, children);
 
-            // When enough development points are earned, the node itself becomes the Reform action
-            // (Enter activates it via IdeologyTreeNavigation.HandleActivate); Right still expands to
-            // read the tip. Below the threshold it's a plain info node.
+            // Once enough points are earned the node itself becomes the Reform action (Enter
+            // activates it through IdeoDetailsTreeRegion.TryActivateSpecial) and Right still
+            // expands to the tip; below the threshold it is a plain info node.
             if (canReform)
                 sectionNode.Data = new IdeoReformState.ReformActionMarker { Ideo = ideo };
 
@@ -390,17 +408,12 @@ namespace RimWorldAccess
 
             foreach (MemeDef meme in nonStructureMemes)
             {
-                // Build header: name + impact
+                // The name alone: impact arrives with vanilla's own tip lines below.
                 var memeHeader = new StringBuilder(meme.LabelCap.Resolve());
-                if (meme.impact > 0)
-                    memeHeader.Append(", " + "IdeoImpact".Translate() + ": " + IdeoImpactUtility.MemeImpactLabel(meme.impact).CapitalizeFirst());
-
-                // Build structured child lines
-                var childLines = BuildMemeDetailLines(meme, ideo);
+                var childLines = IdeoMemeSelectionHelper.GetMemeTipDetailLines(ideo, meme);
 
                 if (childLines.Count > 0)
                 {
-                    // Build aggregated label: header + all children
                     var memeLabel = new StringBuilder(memeHeader.ToString());
                     foreach (string child in childLines)
                         AppendSentence(memeLabel, child);
@@ -413,9 +426,11 @@ namespace RimWorldAccess
                         IsExpanded = false,
                         Parent = sectionNode,
                         Type = InspectionTreeItem.ItemType.SubCategory,
-                        // Carry the MemeDef so Alt+I opens its info card (the walker climbs to here
-                        // from the detail-line children too). MemeDef : Def.
-                        Data = meme
+                        // Carries the MemeDef for identity lookups elsewhere in this tree. Vanilla
+                        // never opens Dialog_InfoCard for a MemeDef, so the Alt+I walker excludes
+                        // MemeDef the same way it excludes SoundDef: this node yields no target.
+                        Data = meme,
+                        RingTarget = meme
                     };
 
                     foreach (string child in childLines)
@@ -426,12 +441,11 @@ namespace RimWorldAccess
                 }
                 else
                 {
-                    AddChildNode(sectionNode, memeHeader.ToString(), meme);
+                    AddChildNode(sectionNode, memeHeader.ToString(), meme).RingTarget = meme;
                     memeLabels.Add(memeHeader.ToString());
                 }
             }
 
-            // Section label aggregates all memes' full content
             var sb = new StringBuilder("Memes".Translate());
             foreach (string memeLabel in memeLabels)
                 AppendSentence(sb, memeLabel);
@@ -440,132 +454,6 @@ namespace RimWorldAccess
             root.Children.Add(sectionNode);
         }
 
-        /// <summary>
-        /// Builds individual detail lines for a meme, each becoming a child node.
-        /// Matches the order of vanilla's IdeoUIUtility.GetMemeTip().
-        /// </summary>
-        private static List<string> BuildMemeDetailLines(MemeDef meme, Ideo ideo)
-        {
-            var lines = new List<string>();
-
-            if (!string.IsNullOrEmpty(meme.description))
-                lines.Add(meme.description);
-
-            // Required precepts (from requireOne with single entries)
-            if (!meme.requireOne.NullOrEmpty())
-            {
-                var required = new List<string>();
-                foreach (var preceptList in meme.requireOne)
-                {
-                    if (preceptList.Count == 1)
-                        required.Add(preceptList[0].issue.LabelCap + ": " + preceptList[0].LabelCap);
-                }
-                if (required.Count > 0)
-                    lines.Add("RequiredPrecepts".Translate() + ": " + string.Join(", ", required));
-
-                // "Requires one of" groups
-                foreach (var preceptList in meme.requireOne)
-                {
-                    if (preceptList.Count > 1)
-                    {
-                        var options = preceptList.Select(p => p.issue.LabelCap + ": " + p.LabelCap);
-                        lines.Add("RequiresOnePrecept".Translate() + ": " + string.Join(", ", options));
-                    }
-                }
-            }
-
-            // Chance-to-have precepts
-            if (meme.selectOneOrNone != null && meme.selectOneOrNone.preceptThingPairs.Count > 0)
-            {
-                var items = meme.selectOneOrNone.preceptThingPairs
-                    .Select(p => p.thing.LabelCap.Resolve() + ": " + p.precept.LabelCap.Resolve());
-                lines.Add("ChanceToHavePrecept".Translate() + ": " + string.Join(", ", items));
-            }
-
-            // Required rituals
-            if (!meme.requiredRituals.NullOrEmpty())
-            {
-                var items = meme.requiredRituals.Select(r =>
-                    r.pattern.shortDescOverride?.CapitalizeFirst() ?? r.precept.LabelCap.Resolve());
-                lines.Add("RequiredRituals".Translate() + ": " + string.Join(", ", items));
-            }
-
-            // Unlocked roles
-            List<string> unlockedRoles = meme.UnlockedRoles(ideo);
-            if (!unlockedRoles.NullOrEmpty())
-                lines.Add("MemeUnlocksRoles".Translate() + ": " + string.Join(", ", unlockedRoles));
-
-            // Unlocked rituals
-            List<string> unlockedRituals = meme.UnlockedRituals();
-            if (!unlockedRituals.NullOrEmpty())
-                lines.Add("MemeUnlocksRituals".Translate() + ": " + string.Join(", ", unlockedRituals));
-
-            // Style categories
-            if (!meme.thingStyleCategories.NullOrEmpty())
-            {
-                var items = meme.thingStyleCategories.Select(sc => sc.category.LabelCap.Resolve());
-                lines.Add("Styles".Translate() + ": " + string.Join(", ", items));
-            }
-
-            // Unlocked recipes
-            var unlockedRecipes = DefDatabase<RecipeDef>.AllDefsListForReading
-                .Where(r => r.memePrerequisitesAny != null && r.memePrerequisitesAny.Contains(meme))
-                .Select(r => r.ProducedThingDef)
-                .Where(td => td != null)
-                .Distinct()
-                .Select(td => td.LabelCap.Resolve())
-                .OrderBy(s => s)
-                .ToList();
-            if (unlockedRecipes.Count > 0)
-                lines.Add("UnlockedRecipes".Translate().CapitalizeFirst() + ": " + string.Join(", ", unlockedRecipes));
-
-            // Buildable designators
-            {
-                var buildables = new List<string>();
-                if (!meme.addDesignators.NullOrEmpty())
-                    foreach (var bd in meme.addDesignators)
-                        buildables.Add(bd.LabelCap.Resolve());
-                if (!meme.addDesignatorGroups.NullOrEmpty())
-                    foreach (var group in meme.addDesignatorGroups)
-                        buildables.Add(group.LabelCap.Resolve());
-                buildables.Sort();
-                if (buildables.Count > 0)
-                    lines.Add("IdeoMakesBuildingBuildable".Translate() + ": " + string.Join(", ", buildables));
-            }
-
-            // Starting research
-            if (!meme.startingResearchProjects.NullOrEmpty())
-            {
-                var items = meme.startingResearchProjects.Select(r => r.LabelCap.Resolve()).OrderBy(s => s);
-                lines.Add("IdeoStartWithResearch".Translate() + ": " + string.Join(", ", items));
-            }
-
-            // Agreeable traits
-            if (!meme.agreeableTraits.NullOrEmpty())
-            {
-                var items = meme.agreeableTraits.Select(x =>
-                    (!x.degree.HasValue ? x.def.degreeDatas.First().label : x.def.DataAtDegree(x.degree.Value).label).CapitalizeFirst());
-                lines.Add("AgreeableTraits".Translate() + ": " + string.Join(", ", items));
-            }
-
-            // Disagreeable traits
-            if (!meme.disagreeableTraits.NullOrEmpty())
-            {
-                var items = meme.disagreeableTraits.Select(x =>
-                    (!x.degree.HasValue ? x.def.degreeDatas.First().label : x.def.DataAtDegree(x.degree.Value).label).CapitalizeFirst());
-                lines.Add("DisagreeableTraits".Translate() + ": " + string.Join(", ", items));
-            }
-
-            // Conflicting precepts prevented
-            var preventedPrecepts = DefDatabase<PreceptDef>.AllDefsListForReading
-                .Where(p => p.conflictingMemes != null && p.conflictingMemes.Contains(meme))
-                .Select(p => p.issue.LabelCap.Resolve() + ": " + p.LabelCap.Resolve())
-                .ToList();
-            if (preventedPrecepts.Count > 0)
-                lines.Add("PreventsPrecepts".Translate() + ": " + string.Join(", ", preventedPrecepts));
-
-            return lines;
-        }
 
         private static void BuildNarrativeSection(InspectionTreeItem root, Ideo ideo)
         {
@@ -577,14 +465,12 @@ namespace RimWorldAccess
 
             if (lines.Length <= 1)
             {
-                // Single line: simple expandable node
                 var sectionNode = CreateSectionNode(root, narrativeLabel,
                     new List<string> { ideo.description.Trim() });
                 root.Children.Add(sectionNode);
             }
             else
             {
-                // Multi-line: expandable node with line children
                 var sectionNode = new InspectionTreeItem
                 {
                     Label = narrativeLabel + ". " + ideo.description.Replace("\r", "").Replace("\n", " ").Trim(),
@@ -630,7 +516,7 @@ namespace RimWorldAccess
             {
                 string deityInfo = BuildDeityAnnouncement(deity);
                 aggregatedParts.Add(deityInfo);
-                AddChildNode(sectionNode, deityInfo);
+                AddChildNode(sectionNode, deityInfo).RingTarget = deity;
             }
 
             // Section label: "Deities. [deity1 info]. [deity2 info]..."
@@ -659,6 +545,97 @@ namespace RimWorldAccess
             return sb.ToString();
         }
 
+        /// <summary>Precomputed presentation data for one precept, shared by every renderer of a precept node.</summary>
+        private struct PreceptNodeData
+        {
+            public Precept Precept;
+            public Def PreceptDef;
+            public string FlatTipLabel;
+            public string CombinedText;
+            public List<PreceptTipLine> TipLines;
+        }
+
+        private static PreceptNodeData ComputePreceptNodeData(Precept precept)
+        {
+            string tipLabel = precept.TipLabel.StripTags();
+            string fullTip = precept.GetTip().StripTags();
+
+            if (!precept.def.grantedAbilities.NullOrEmpty())
+                fullTip = EnhanceWithAbilityDescriptions(precept.def.grantedAbilities, precept.ideo, fullTip);
+
+            Def preceptDef = GetPreceptDef(precept);
+
+            // Flatten first: TipLabel can be multi-line for rituals.
+            string flatTipLabel = tipLabel.Replace("\r", "").Replace("\n", " ").Trim();
+            string flatFullTip = fullTip.Replace("\r", "").Replace("\n", " ").Trim();
+            var combinedSb = new StringBuilder(flatTipLabel);
+            AppendSentence(combinedSb, flatFullTip);
+            string combinedText = combinedSb.ToString();
+
+            string[] rawTipLines = fullTip.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            var tipLines = ConsolidateTipLines(rawTipLines, precept);
+
+            return new PreceptNodeData
+            {
+                Precept = precept,
+                PreceptDef = preceptDef,
+                FlatTipLabel = flatTipLabel,
+                CombinedText = combinedText,
+                TipLines = tipLines
+            };
+        }
+
+        /// <summary>An expandable node for a multi-line precept tip, one child per consolidated line.</summary>
+        private static InspectionTreeItem BuildPreceptNode(PreceptNodeData data, int indentLevel,
+            InspectionTreeItem parent, InspectionTreeItem.ItemType nodeType)
+        {
+            var node = new InspectionTreeItem
+            {
+                Label = data.CombinedText,
+                IndentLevel = indentLevel,
+                IsExpandable = true,
+                IsExpanded = false,
+                Parent = parent,
+                Type = nodeType,
+                Data = data.PreceptDef,
+                RingTarget = data.Precept
+            };
+
+            foreach (PreceptTipLine tipLine in data.TipLines)
+            {
+                string trimmed = tipLine.Text.Trim();
+                if (string.IsNullOrEmpty(trimmed))
+                    continue;
+
+                object childData = tipLine.Data;
+                string label = trimmed.StripTags();
+
+                if (childData is ThingDef td && td.IsApparel && !string.IsNullOrEmpty(td.description))
+                    label += ". " + td.description;
+
+                AddChildNode(node, label, childData);
+            }
+
+            return node;
+        }
+
+        /// <summary>
+        /// Whether one of the nine standard precept sections claims this PreceptDef. Mirrors that
+        /// ladder's conditions exactly; used only to compute the residual "other precepts" bucket.
+        /// </summary>
+        private static bool IsClaimedByStandardPreceptSection(PreceptDef p)
+        {
+            return p.preceptClass == typeof(Precept)
+                || typeof(Precept_Role).IsAssignableFrom(p.preceptClass)
+                || p.preceptClass == typeof(Precept_Ritual)
+                || p.preceptClass == typeof(Precept_Building) || p.preceptClass == typeof(Precept_RitualSeat)
+                || p.preceptClass == typeof(Precept_Relic)
+                || p.preceptClass == typeof(Precept_Weapon)
+                || p.preceptClass == typeof(Precept_Animal)
+                || p.preceptClass == typeof(Precept_Xenotype)
+                || p.preceptClass == typeof(Precept_Apparel);
+        }
+
         private static void BuildPreceptCategorySection(InspectionTreeItem root, Ideo ideo,
             string categoryLabel, Func<PreceptDef, bool> filter)
         {
@@ -672,61 +649,16 @@ namespace RimWorldAccess
             if (matchingPrecepts.Count == 0)
                 return;
 
-            // Single-precept optimization: flatten to avoid redundant nesting
-            // e.g., "Weapons → Weapons: Noble and despised" becomes just
-            // "Weapons: Noble and despised" directly at level 0
+            // Flatten a single-precept section: "Weapons -> Weapons: Noble and despised" reads as
+            // "Weapons: Noble and despised" at level 0 instead.
             if (matchingPrecepts.Count == 1)
             {
                 var precept = matchingPrecepts[0];
-                string tipLabel = precept.TipLabel.StripTags();
-                string fullTip = precept.GetTip().StripTags();
+                var data = ComputePreceptNodeData(precept);
 
-                if (!precept.def.grantedAbilities.NullOrEmpty())
-                    fullTip = EnhanceWithAbilityDescriptions(precept.def.grantedAbilities, precept.ideo, fullTip);
-
-                Dictionary<string, AbilityDef> abilityDefMap = null;
-                if (!precept.def.grantedAbilities.NullOrEmpty())
-                    abilityDefMap = BuildAbilityDefMap(precept.def.grantedAbilities, precept.ideo);
-
-                Def preceptDef = GetPreceptDef(precept);
-
-                string[] rawTipLines = fullTip.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                var tipLines = ConsolidateTipLines(rawTipLines);
-
-                if (tipLines.Count > 1)
+                if (data.TipLines.Count > 1)
                 {
-                    string flatTipLabel = tipLabel.Replace("\r", "").Replace("\n", " ").Trim();
-                    string flatFullTip = fullTip.Replace("\r", "").Replace("\n", " ").Trim();
-                    var combinedSb = new StringBuilder(flatTipLabel);
-                    AppendSentence(combinedSb, flatFullTip);
-
-                    var flatNode = new InspectionTreeItem
-                    {
-                        Label = combinedSb.ToString(),
-                        IndentLevel = 0,
-                        IsExpandable = true,
-                        IsExpanded = false,
-                        Parent = root,
-                        Type = InspectionTreeItem.ItemType.Category,
-                        Data = preceptDef
-                    };
-
-                    foreach (string line in tipLines)
-                    {
-                        string trimmed = line.Trim();
-                        if (string.IsNullOrEmpty(trimmed))
-                            continue;
-
-                        object childData = GetChildData(trimmed, precept, abilityDefMap);
-                        string label = trimmed.StripTags();
-
-                        // Append apparel description for required apparel items
-                        if (childData is ThingDef td && td.IsApparel && !string.IsNullOrEmpty(td.description))
-                            label += ". " + td.description;
-
-                        AddChildNode(flatNode, label, childData);
-                    }
-
+                    var flatNode = BuildPreceptNode(data, 0, root, InspectionTreeItem.ItemType.Category);
                     root.Children.Add(flatNode);
                     return;
                 }
@@ -745,68 +677,18 @@ namespace RimWorldAccess
 
             foreach (Precept precept in matchingPrecepts)
             {
-                string tipLabel = precept.TipLabel.StripTags();
-                string fullTip = precept.GetTip().StripTags();
+                var data = ComputePreceptNodeData(precept);
 
-                // Enhance role ability lines with descriptions
-                if (!precept.def.grantedAbilities.NullOrEmpty())
-                    fullTip = EnhanceWithAbilityDescriptions(precept.def.grantedAbilities, precept.ideo, fullTip);
+                aggregatedParts.Add(data.FlatTipLabel);
 
-                // Build ability Def mapping for attaching to child nodes
-                Dictionary<string, AbilityDef> abilityDefMap = null;
-                if (!precept.def.grantedAbilities.NullOrEmpty())
-                    abilityDefMap = BuildAbilityDefMap(precept.def.grantedAbilities, precept.ideo);
-
-                Def preceptDef = GetPreceptDef(precept);
-
-                // Flatten before combining — TipLabel can be multi-line for rituals
-                string flatTipLabel = tipLabel.Replace("\r", "").Replace("\n", " ").Trim();
-                string flatFullTip = fullTip.Replace("\r", "").Replace("\n", " ").Trim();
-                var combinedSb = new StringBuilder(flatTipLabel);
-                if (!string.IsNullOrEmpty(flatFullTip))
-                    AppendSentence(combinedSb, flatFullTip);
-                string combinedText = combinedSb.ToString();
-
-                aggregatedParts.Add(flatTipLabel);
-
-                // Check if tooltip is multi-line for expandable children
-                string[] rawTipLines = fullTip.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                var tipLines = ConsolidateTipLines(rawTipLines);
-                if (tipLines.Count > 1)
+                if (data.TipLines.Count > 1)
                 {
-                    var preceptNode = new InspectionTreeItem
-                    {
-                        Label = combinedText,
-                        IndentLevel = 1,
-                        IsExpandable = true,
-                        IsExpanded = false,
-                        Parent = sectionNode,
-                        Type = InspectionTreeItem.ItemType.SubCategory,
-                        Data = preceptDef
-                    };
-
-                    foreach (string line in tipLines)
-                    {
-                        string trimmed = line.Trim();
-                        if (string.IsNullOrEmpty(trimmed))
-                            continue;
-
-                        object childData = GetChildData(trimmed, precept, abilityDefMap);
-                        string label = trimmed.StripTags();
-
-                        // Append apparel description for required apparel items
-                        if (childData is ThingDef td && td.IsApparel && !string.IsNullOrEmpty(td.description))
-                            label += ". " + td.description;
-
-                        AddChildNode(preceptNode, label, childData);
-                    }
-
+                    var preceptNode = BuildPreceptNode(data, 1, sectionNode, InspectionTreeItem.ItemType.SubCategory);
                     sectionNode.Children.Add(preceptNode);
                 }
                 else
                 {
-                    // Single-line tip: simple leaf
-                    AddChildNode(sectionNode, combinedText, preceptDef);
+                    AddChildNode(sectionNode, data.CombinedText, data.PreceptDef).RingTarget = data.Precept;
                 }
             }
 
@@ -832,7 +714,7 @@ namespace RimWorldAccess
             string tattooSummary = "Tattoos".Translate() + ": " + "NumAvailable".Translate(tattooCount.ToString())
                 + ". " + "TattoosDesc".Translate();
 
-            // Section node — label is just summary counts (not all style names)
+            // The section label is summary counts, not all style names.
             var sectionNode = new InspectionTreeItem
             {
                 Label = "Appearance".Translate().CapitalizeFirst() + ". " + hairSummary + ". " + tattooSummary,
@@ -840,10 +722,11 @@ namespace RimWorldAccess
                 IsExpandable = true,
                 IsExpanded = false,
                 Parent = root,
-                Type = InspectionTreeItem.ItemType.Category
+                Type = InspectionTreeItem.ItemType.Category,
+                // The section spans both boxes; the leftmost is where its cursor reads as being.
+                RingTarget = Shell.IdeoBoxDrawPatch.HairAndBeardKey
             };
 
-            // Hair and Beards (level 1, expandable)
             var hairNode = new InspectionTreeItem
             {
                 Label = hairSummary,
@@ -851,7 +734,8 @@ namespace RimWorldAccess
                 IsExpandable = true,
                 IsExpanded = false,
                 Parent = sectionNode,
-                Type = InspectionTreeItem.ItemType.SubCategory
+                Type = InspectionTreeItem.ItemType.SubCategory,
+                RingTarget = Shell.IdeoBoxDrawPatch.HairAndBeardKey
             };
             BuildStyleItemTypeNode(hairNode, ideo, "Hair".Translate(),
                 DefDatabase<HairDef>.AllDefs.Cast<StyleItemDef>(), 2);
@@ -859,7 +743,6 @@ namespace RimWorldAccess
                 DefDatabase<BeardDef>.AllDefs.Cast<StyleItemDef>(), 2);
             sectionNode.Children.Add(hairNode);
 
-            // Tattoos (level 1, expandable)
             var tattooNode = new InspectionTreeItem
             {
                 Label = tattooSummary,
@@ -867,7 +750,8 @@ namespace RimWorldAccess
                 IsExpandable = true,
                 IsExpanded = false,
                 Parent = sectionNode,
-                Type = InspectionTreeItem.ItemType.SubCategory
+                Type = InspectionTreeItem.ItemType.SubCategory,
+                RingTarget = Shell.IdeoBoxDrawPatch.TattooKey
             };
             BuildStyleItemTypeNode(tattooNode, ideo, "TattooFace".Translate(),
                 DefDatabase<TattooDef>.AllDefs.Where(t => t.tattooType == TattooType.Face).Cast<StyleItemDef>(), 2);
@@ -878,10 +762,7 @@ namespace RimWorldAccess
             root.Children.Add(sectionNode);
         }
 
-        /// <summary>
-        /// Builds a sub-node for a style item type (e.g., Hair, Beards, Face Tattoos)
-        /// grouped by category, with individual items sorted by frequency (most used first).
-        /// </summary>
+        /// <summary>A sub-node for one style item type, grouped by category, items sorted most-used first.</summary>
         private static void BuildStyleItemTypeNode(InspectionTreeItem parent, Ideo ideo,
             string typeLabel, IEnumerable<StyleItemDef> allDefs, int baseIndent)
         {
@@ -895,14 +776,13 @@ namespace RimWorldAccess
                 Type = InspectionTreeItem.ItemType.SubCategory
             };
 
-            // Group by category, sort categories alphabetically
             var byCategory = allDefs
                 .Where(d => d.StyleItemCategory != null)
                 .GroupBy(d => d.StyleItemCategory)
                 .OrderBy(g => g.Key.LabelCap.Resolve())
                 .ToList();
 
-            // Frequency sort order: Frequent(5) > Common(4) > Normal(3) > Uncommon(2) > Rare(1) > Never(0)
+            // Frequency order: Frequent(5) > Common(4) > Normal(3) > Uncommon(2) > Rare(1) > Never(0).
             foreach (var group in byCategory)
             {
                 var catNode = new InspectionTreeItem
@@ -937,7 +817,7 @@ namespace RimWorldAccess
                 typeNode.Children.Add(catNode);
             }
 
-            // Also handle items with no category
+            // Items with no category.
             var uncategorized = allDefs.Where(d => d.StyleItemCategory == null).ToList();
             if (uncategorized.Count > 0)
             {
@@ -966,7 +846,7 @@ namespace RimWorldAccess
             var sb = new StringBuilder(item.LabelCap.Resolve());
             sb.Append(", " + ideo.style.GetFrequency(item).GetLabel());
 
-            // Beards have no gender restriction; hair and tattoos do
+            // Beards have no gender restriction; hair and tattoos do.
             if (!(item is BeardDef))
             {
                 StyleGender gender = ideo.style.GetGender(item);
@@ -988,10 +868,7 @@ namespace RimWorldAccess
 
         #region Tree Building Utilities
 
-        /// <summary>
-        /// Creates a section node at level 0 whose label aggregates all children's text.
-        /// Children are added as non-expandable leaves at level 1.
-        /// </summary>
+        /// <summary>A level-0 section node whose label aggregates its children, which are added as level-1 leaves.</summary>
         private static InspectionTreeItem CreateSectionNode(InspectionTreeItem root,
             string sectionName, List<string> childTexts)
         {
@@ -1005,13 +882,11 @@ namespace RimWorldAccess
                 ExpandedLabel = sectionName
             };
 
-            // Build aggregated label
             var sb = new StringBuilder(sectionName);
             foreach (string text in childTexts)
                 AppendSentence(sb, text);
             node.Label = sb.ToString();
 
-            // Add children
             foreach (string text in childTexts)
             {
                 AddChildNode(node, text);
@@ -1020,9 +895,10 @@ namespace RimWorldAccess
             return node;
         }
 
-        private static void AddChildNode(InspectionTreeItem parent, string label, object data = null)
+        /// <summary>Returns the node it added, so a caller can tag it further (see <see cref="InspectionTreeItem.RingTarget"/>).</summary>
+        private static InspectionTreeItem AddChildNode(InspectionTreeItem parent, string label, object data = null)
         {
-            parent.Children.Add(new InspectionTreeItem
+            var node = new InspectionTreeItem
             {
                 Label = label,
                 IndentLevel = parent.IndentLevel + 1,
@@ -1031,13 +907,14 @@ namespace RimWorldAccess
                 Parent = parent,
                 Type = InspectionTreeItem.ItemType.DetailText,
                 Data = data
-            });
+            };
+            parent.Children.Add(node);
+            return node;
         }
 
         /// <summary>
-        /// Extracts a Def from a precept for info card display, returning only
-        /// Def types that produce useful info cards (ThingDef, XenotypeDef).
-        /// Returns null for precept types whose info cards only repeat description text.
+        /// The Def behind a precept for info-card display, restricted to the types whose info cards
+        /// say something the description does not already (ThingDef, XenotypeDef); null otherwise.
         /// </summary>
         private static Def GetPreceptDef(Precept precept)
         {
@@ -1052,43 +929,6 @@ namespace RimWorldAccess
             return null;
         }
 
-        /// <summary>
-        /// Builds a mapping of tip-line ability names to AbilityDefs for a precept.
-        /// Uses same label logic as EnhanceWithAbilityDescriptions.
-        /// </summary>
-        private static Dictionary<string, AbilityDef> BuildAbilityDefMap(List<AbilityDef> abilities, Ideo ideo)
-        {
-            var map = new Dictionary<string, AbilityDef>(StringComparer.OrdinalIgnoreCase);
-            foreach (var abilityDef in abilities)
-            {
-                var ritualComp = abilityDef.comps?.FirstOrDefault(c => c is CompProperties_AbilityStartRitual)
-                    as CompProperties_AbilityStartRitual;
-
-                if (ritualComp != null && ideo != null)
-                {
-                    foreach (Precept p in ideo.PreceptsListForReading)
-                    {
-                        if (p is Precept_Ritual ritual && ritual.def == ritualComp.ritualDef)
-                        {
-                            map[ritual.LabelCap.StripTags()] = abilityDef;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    map[abilityDef.LabelCap.Resolve().StripTags()] = abilityDef;
-                }
-            }
-            return map;
-        }
-
-        /// <summary>
-        /// Enhances ability name lines in a precept tip with their descriptions.
-        /// Lines like "- Convert" become "- Convert. Attempt to convert a pawn..."
-        /// For ritual abilities, the tip line shows the ritual precept label,
-        /// so we map ritual labels to the ability description.
-        /// </summary>
         /// <summary>
         /// Injects each granted ability's description inline with its bullet line in a role/ritual
         /// precept tip (the vanilla tip lists ability NAMES only). Shared with the IdeoBuilder typed-
@@ -1108,7 +948,7 @@ namespace RimWorldAccess
 
                 if (ritualComp != null && ideo != null)
                 {
-                    // Ritual ability: tip line shows ritual precept label
+                    // Ritual ability: the tip line shows the ritual precept label.
                     foreach (Precept p in ideo.PreceptsListForReading)
                     {
                         if (p is Precept_Ritual ritual && ritual.def == ritualComp.ritualDef)
@@ -1121,7 +961,7 @@ namespace RimWorldAccess
                 }
                 else
                 {
-                    // Normal ability: tip line shows ability label
+                    // Normal ability: the tip line shows the ability label.
                     string label = abilityDef.LabelCap.Resolve().StripTags();
                     descriptions[label] = abilityDef.description;
                 }
@@ -1140,7 +980,7 @@ namespace RimWorldAccess
                 string line = lines[i];
                 string trimmed = line.TrimStart();
 
-                // Track section transitions — only enhance under "Abilities:" header
+                // Only enhance under the "Abilities:" header.
                 string strippedLine = trimmed.StripTags().TrimEnd();
                 if (strippedLine.EndsWith(":") && !strippedLine.StartsWith("- "))
                 {
@@ -1163,15 +1003,47 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Consolidates split tip lines by merging section headers with their items.
-        /// Single-item sections become "Header: Item". "Has role in rituals" always
-        /// comma-separates. Non-bullet text after a header merges into the header.
-        /// Multi-item sections are kept as header + individual bullet lines.
+        /// One display-ready precept tip line with the structured Def data backing it. Data is
+        /// attached at construction from the members vanilla's own tip builder reads, never by
+        /// parsing the rendered text back apart.
         /// </summary>
-        private static List<string> ConsolidateTipLines(string[] lines)
+        private struct PreceptTipLine
         {
-            var result = new List<string>();
+            public string Text;
+            public object Data;
+        }
+
+        /// <summary>
+        /// Consolidates split tip lines by merging section headers with their items, pairing each
+        /// line with the Def it is about. Single-item sections become "Header: Item", "Has role in
+        /// rituals" always comma-separates, non-bullet text after a header merges into it, and
+        /// multi-item sections stay header plus bullets.
+        ///
+        /// Data comes from the precept's own structured members, mirroring the exact loops vanilla
+        /// uses to build the text, and never from reverse-parsing the tip string (which broke on
+        /// labels containing ":" or ", " and on duplicate display names): granted abilities line up
+        /// 1:1 with <c>precept.def.grantedAbilities</c>, rituals come from
+        /// <see cref="GetRitualAbilityDefs"/>, required apparel lines up 1:1 with
+        /// <c>Precept_Role.apparelRequirements</c>, and weapon dispositions pair with
+        /// <c>Precept_Weapon.noble</c>/<c>despised</c>.
+        /// </summary>
+        private static List<PreceptTipLine> ConsolidateTipLines(string[] lines, Precept precept)
+        {
+            var result = new List<PreceptTipLine>();
             string ritualsHeader = "RoleRitualsLabel".Translate().Resolve().StripTags();
+            string abilitiesHeader = "RoleGrantedAbilitiesLabel".Translate().Resolve().StripTags();
+            string apparelHeader = "RoleRequiredApparelLabel".Translate().Resolve().StripTags();
+            // Precept_Weapon.GetTip builds these headers without a Resolve() call, unlike the role
+            // headers above; mirrored exactly so the comparison matches in locales where the raw
+            // translation is not already capitalized.
+            string nobleHeader = "Noble".Translate().Resolve().StripTags().CapitalizeFirst();
+            string despisedHeader = "Despised".Translate().Resolve().StripTags().CapitalizeFirst();
+
+            List<AbilityDef> grantedAbilities = precept.def.grantedAbilities;
+            List<PreceptApparelRequirement> apparelRequirements = (precept as Precept_Role)?.apparelRequirements;
+            List<Def> ritualAbilityDefs = grantedAbilities.NullOrEmpty()
+                ? null
+                : GetRitualAbilityDefs(precept.def, precept.ideo, grantedAbilities);
 
             int i = 0;
             while (i < lines.Length)
@@ -1179,7 +1051,6 @@ namespace RimWorldAccess
                 string current = lines[i].Trim();
                 if (string.IsNullOrEmpty(current)) { i++; continue; }
 
-                // Check if this line is a section header (ends with ":")
                 if (current.StripTags().TrimEnd().EndsWith(":"))
                 {
                     string headerName = current.StripTags().TrimEnd().TrimEnd(':').Trim();
@@ -1201,8 +1072,7 @@ namespace RimWorldAccess
                         }
                         else if (bulletItems.Count > 0 && !next.StripTags().TrimEnd().EndsWith(":"))
                         {
-                            // Continuation text after a bullet item (e.g., orphaned ability
-                            // description) — merge with the previous bullet item
+                            // Continuation text after a bullet item merges with that item.
                             bulletItems[bulletItems.Count - 1] += ". " + next.Trim();
                             j++;
                         }
@@ -1220,32 +1090,50 @@ namespace RimWorldAccess
 
                     if (nonBulletMerge != null)
                     {
-                        result.Add(headerName + ": " + nonBulletMerge);
+                        object mergedData = null;
+                        if (precept is Precept_Weapon pw)
+                        {
+                            if (headerName == nobleHeader && pw.noble != null)
+                                mergedData = GetWeaponThingDefs(pw.noble);
+                            else if (headerName == despisedHeader && pw.despised != null)
+                                mergedData = GetWeaponThingDefs(pw.despised);
+                        }
+                        result.Add(new PreceptTipLine { Text = headerName + ": " + nonBulletMerge, Data = mergedData });
                     }
                     else if (bulletItems.Count == 0)
                     {
-                        result.Add(current);
+                        result.Add(new PreceptTipLine { Text = current, Data = null });
                     }
                     else if (headerName == ritualsHeader)
                     {
-                        result.Add(headerName + ": " + string.Join(", ", bulletItems));
+                        result.Add(new PreceptTipLine
+                        {
+                            Text = headerName + ": " + string.Join(", ", bulletItems),
+                            Data = ritualAbilityDefs
+                        });
                     }
                     else if (bulletItems.Count == 1)
                     {
-                        result.Add(headerName + ": " + bulletItems[0]);
+                        object itemData = GetTipItemData(headerName, 0, abilitiesHeader, apparelHeader,
+                            grantedAbilities, apparelRequirements);
+                        result.Add(new PreceptTipLine { Text = headerName + ": " + bulletItems[0], Data = itemData });
                     }
                     else
                     {
-                        result.Add(current);
-                        foreach (string item in bulletItems)
-                            result.Add("- " + item);
+                        result.Add(new PreceptTipLine { Text = current, Data = null });
+                        for (int k = 0; k < bulletItems.Count; k++)
+                        {
+                            object itemData = GetTipItemData(headerName, k, abilitiesHeader, apparelHeader,
+                                grantedAbilities, apparelRequirements);
+                            result.Add(new PreceptTipLine { Text = "- " + bulletItems[k], Data = itemData });
+                        }
                     }
 
                     i = j;
                 }
                 else
                 {
-                    result.Add(current);
+                    result.Add(new PreceptTipLine { Text = current, Data = null });
                     i++;
                 }
             }
@@ -1254,94 +1142,69 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Determines the appropriate Data object for a consolidated tip line.
-        /// Handles ability lines (AbilityDef), weapon lines (List of ThingDef),
-        /// and "Has role in rituals" lines (List of AbilityDef).
+        /// The Def behind the index-th bullet under a tip section header, found by structural
+        /// position rather than by matching rendered text. Only the two sections whose items line up
+        /// 1:1 with a list of Defs come through here; every other section has no per-item data.
         /// </summary>
-        private static object GetChildData(string line, Precept precept,
-            Dictionary<string, AbilityDef> abilityDefMap)
+        private static object GetTipItemData(string headerName, int index, string abilitiesHeader, string apparelHeader,
+            List<AbilityDef> grantedAbilities, List<PreceptApparelRequirement> apparelRequirements)
         {
-            // Weapon lines: "Noble: Wood, Club, ..." or "Despised: Persona monosword, ..."
-            if (precept is Precept_Weapon pw)
-            {
-                string noblePrefix = "Noble".Translate().Resolve().StripTags() + ":";
-                string despisedPrefix = "Despised".Translate().Resolve().StripTags() + ":";
+            if (headerName == abilitiesHeader && !grantedAbilities.NullOrEmpty() && index < grantedAbilities.Count)
+                return grantedAbilities[index];
 
-                if (line.StartsWith(noblePrefix, StringComparison.OrdinalIgnoreCase) && pw.noble != null)
-                    return GetWeaponThingDefs(pw.noble);
-                if (line.StartsWith(despisedPrefix, StringComparison.OrdinalIgnoreCase) && pw.despised != null)
-                    return GetWeaponThingDefs(pw.despised);
-            }
-
-            // "Has role in rituals: Name1, Name2, ..." line
-            string ritualsHeader = "RoleRitualsLabel".Translate().Resolve().StripTags();
-            if (line.StartsWith(ritualsHeader + ":") && abilityDefMap != null)
-            {
-                string namesPart = line.Substring(ritualsHeader.Length + 1).Trim();
-                var names = namesPart.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                var defs = new List<Def>();
-                foreach (string name in names)
-                {
-                    string trimmedName = name.Trim();
-                    if (abilityDefMap.TryGetValue(trimmedName, out AbilityDef aDef))
-                        defs.Add(aDef);
-                }
-                return defs.Count > 0 ? (object)defs : null;
-            }
-
-            // Ability lines: "- Name. Description"
-            if (abilityDefMap != null && line.StartsWith("- "))
-            {
-                string abilityPart = line.Substring(2).Trim();
-                int dotIndex = abilityPart.IndexOf(". ");
-                string abilityName = dotIndex >= 0 ? abilityPart.Substring(0, dotIndex) : abilityPart;
-                if (abilityDefMap.TryGetValue(abilityName, out AbilityDef aDef))
-                    return aDef;
-            }
-
-            // Role required apparel lines in two formats:
-            // Multi-item: "- Cape", "- Visage mask" (raw bullet items)
-            // Single-item (consolidated): "Required apparel: Broadwrap"
-            if (precept is Precept_Role role && !role.apparelRequirements.NullOrEmpty())
-            {
-                string apparelName = null;
-                if (line.StartsWith("- "))
-                {
-                    apparelName = line.Substring(2).Trim();
-                }
-                else
-                {
-                    string apparelHeader = "RoleRequiredApparelLabel".Translate().Resolve().StripTags();
-                    if (line.StartsWith(apparelHeader + ":", StringComparison.OrdinalIgnoreCase))
-                        apparelName = line.Substring(apparelHeader.Length + 1).Trim();
-                }
-
-                if (apparelName != null)
-                {
-                    foreach (var req in role.apparelRequirements)
-                    {
-                        if (!req.requirement.groupLabel.NullOrEmpty()
-                            && string.Equals(req.requirement.groupLabel, apparelName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            ThingDef first = req.requirement.AllRequiredApparel().FirstOrDefault();
-                            if (first != null) return first;
-                        }
-                        foreach (ThingDef apparel in req.requirement.AllRequiredApparel())
-                        {
-                            if (string.Equals(apparel.LabelCap.Resolve().StripTags(), apparelName, StringComparison.OrdinalIgnoreCase))
-                                return apparel;
-                        }
-                    }
-                }
-            }
+            if (headerName == apparelHeader && !apparelRequirements.NullOrEmpty() && index < apparelRequirements.Count)
+                return GetApparelRequirementThingDef(apparelRequirements[index].requirement);
 
             return null;
         }
 
         /// <summary>
-        /// Looks up all weapon ThingDefs belonging to a WeaponClassDef.
-        /// Matches the filter used by Precept_Weapon.GetTip() for consistency.
+        /// Mirrors Precept_Role.GetTip's "RoleRitualsLabel" loop exactly to find the same ritual
+        /// precepts vanilla lists, then attaches each one's AbilityDef whenever one of this role's
+        /// granted abilities starts that ritual — matched by def identity, never by re-parsing
+        /// label text.
         /// </summary>
+        private static List<Def> GetRitualAbilityDefs(PreceptDef def, Ideo ideo, List<AbilityDef> grantedAbilities)
+        {
+            if (ideo == null)
+                return null;
+
+            var result = new List<Def>();
+            var seenLabels = new HashSet<string>();
+            foreach (Precept item in ideo.PreceptsListForReading)
+            {
+                if (!(item is Precept_Ritual ritual) || !item.def.listedForRoles)
+                    continue;
+                if (ritual.behavior?.def.stages == null || ritual.behavior.def.roles == null)
+                    continue;
+                if (!ritual.behavior.def.roles.Any(r => r.precept == def))
+                    continue;
+                if (!seenLabels.Add(ritual.LabelCap))
+                    continue;
+
+                AbilityDef abilityDef = grantedAbilities?.FirstOrDefault(a =>
+                    (a.comps?.FirstOrDefault(c => c is CompProperties_AbilityStartRitual)
+                        as CompProperties_AbilityStartRitual)?.ritualDef == ritual.def);
+                if (abilityDef != null)
+                    result.Add(abilityDef);
+            }
+            return result.Count > 0 ? result : null;
+        }
+
+        /// <summary>
+        /// The ThingDef to attach as Alt+I data for a required-apparel line. Mirrors
+        /// Precept_Role.AllApparelRequirementLabels, which names single-item requirements using
+        /// Gender.Male regardless of the assigned pawn; group requirements have no single named
+        /// apparel in vanilla's text, so the group's first item stands in.
+        /// </summary>
+        private static ThingDef GetApparelRequirementThingDef(ApparelRequirement requirement)
+        {
+            if (!requirement.groupLabel.NullOrEmpty())
+                return requirement.AllRequiredApparel().FirstOrDefault();
+            return requirement.AllRequiredApparel(Gender.Male).FirstOrDefault();
+        }
+
+        /// <summary>Every weapon ThingDef in a WeaponClassDef, using Precept_Weapon.GetTip's own filter.</summary>
         private static List<Def> GetWeaponThingDefs(WeaponClassDef weaponClass)
         {
             return DefDatabase<ThingDef>.AllDefs
@@ -1352,15 +1215,12 @@ namespace RimWorldAccess
                 .ToList();
         }
 
-        /// <summary>
-        /// Appends text as a new sentence, ensuring no double periods.
-        /// </summary>
+        /// <summary>Appends text as a new sentence, without doubling periods.</summary>
         public static void AppendSentence(StringBuilder sb, string text)
         {
             if (string.IsNullOrEmpty(text))
                 return;
 
-            // Trim leading periods/whitespace to prevent ". ." patterns
             text = text.TrimStart('.', ' ');
             if (string.IsNullOrEmpty(text))
                 return;

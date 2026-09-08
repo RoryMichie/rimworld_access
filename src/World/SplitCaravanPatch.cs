@@ -12,15 +12,9 @@ namespace RimWorldAccess
     [HarmonyPatch(typeof(Dialog_SplitCaravan))]
     public static class SplitCaravanPatch
     {
-        /// <summary>
-        /// Patch for PostOpen to activate keyboard navigation when the dialog opens.
-        /// </summary>
-        [HarmonyPatch("PostOpen")]
-        [HarmonyPostfix]
-        public static void PostOpen_Postfix(Dialog_SplitCaravan __instance)
-        {
-            SplitCaravanState.Open(__instance);
-        }
+        // The PostOpen open-state patch is retired: SplitCaravanScope (a
+        // ScreenScope) self-constructs from the window via its ScopeForWindow
+        // registration and announces on first focus.
 
         /// <summary>
         /// Patch for PostClose to deactivate keyboard navigation when the dialog closes.
@@ -79,7 +73,7 @@ namespace RimWorldAccess
 
             Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(indicatorRect, "Keyboard Mode Active");
+            Widgets.Label(indicatorRect, (string)"RimWorldAccess.Caravan.Split.KeyboardModeActive".Translate());
 
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
@@ -92,9 +86,7 @@ namespace RimWorldAccess
             Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.UpperLeft;
 
-            string instructions = "Tabs: Pawns, Items, Food & Medicine | Left/Right: Switch tabs/caravans\n" +
-                                "Up/Down: Navigate/Stats | Space/Enter: Toggle/Qty | Shift+Enter: Max | Del: Remove\n" +
-                                "Tab: Summary (Up/Down: stats, L/R: caravans) | Alt+I: Inspect | Alt+S: Split";
+            string instructions = "RimWorldAccess.Caravan.Split.KeyboardInstructions".Translate();
 
             Widgets.Label(instructionsRect, instructions);
 

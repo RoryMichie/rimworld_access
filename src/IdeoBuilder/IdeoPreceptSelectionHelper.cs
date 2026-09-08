@@ -94,12 +94,14 @@ namespace RimWorldAccess
 
         // Localized display labels for the two sections — kept separate from the stable const
         // tokens (ActiveSectionTitle / NotSetSectionTitle) that are stored in Data and used for
-        // section lookup. Localized labels must never be used for comparison.
-        private static string LocalizedSectionLabel(string titleToken, int count)
+        // section lookup. Localized labels must never be used for comparison. Bare names, no
+        // count: the section node is a tree parent, so its child count rides the shared
+        // expansion suffix, which must be the one channel carrying it.
+        private static string LocalizedSectionLabel(string titleToken)
         {
             if (titleToken == ActiveSectionTitle)
-                return (string)"RimWorldAccess.Ideology.Builder.PreceptSection.Active".Translate(count);
-            return (string)"RimWorldAccess.Ideology.Builder.PreceptSection.NotSet".Translate(count);
+                return (string)"RimWorldAccess.Ideology.Builder.PreceptSection.ActiveName".Translate();
+            return (string)"RimWorldAccess.Ideology.Builder.PreceptSection.NotSetName".Translate();
         }
 
         private static void AddIssueSection(InspectionTreeItem root, Ideo ideo, string title, List<IssueDef> issues, bool expanded)
@@ -108,7 +110,7 @@ namespace RimWorldAccess
 
             var section = new InspectionTreeItem
             {
-                Label = LocalizedSectionLabel(title, issues.Count),
+                Label = LocalizedSectionLabel(title),
                 IndentLevel = 0,
                 IsExpandable = true,
                 IsExpanded = expanded,
@@ -123,10 +125,13 @@ namespace RimWorldAccess
                 string shortLabel = BuildIssueLabel(issue, current);
                 var detailLines = BuildIssueDetailLines(current);
 
+                // Short label always: the collapsed/expanded distinction rides Label-versus-Extras
+                // in the scope's DescribeTreeNode, so no ExpandedLabel and no inlined detail lines.
+                // The Label is also the typeahead haystack text, which makes the current value
+                // ("Corpses: Acceptable") searchable as a free bonus.
                 var issueNode = new InspectionTreeItem
                 {
-                    ExpandedLabel = shortLabel,
-                    Label = detailLines.Count > 0 ? shortLabel + ". " + string.Join(". ", detailLines) : shortLabel,
+                    Label = shortLabel,
                     IndentLevel = 1,
                     IsExpandable = true,
                     IsExpanded = false,

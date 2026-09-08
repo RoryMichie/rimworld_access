@@ -47,8 +47,6 @@
   <RimWorldAccess.Ideology.RitualSound.Playing>{0}, playing.</RimWorldAccess.Ideology.RitualSound.Playing>
   <RimWorldAccess.Ideology.RitualSound.Stopped>{0}, stopped.</RimWorldAccess.Ideology.RitualSound.Stopped>
   <!-- Context-menu option to start/stop the ritual sound preview in the ideoligion editor. -->
-  <RimWorldAccess.Ideology.RitualSound.Preview>Preview ritual sound</RimWorldAccess.Ideology.RitualSound.Preview>
-  <RimWorldAccess.Ideology.RitualSound.Stop>Stop ritual sound</RimWorldAccess.Ideology.RitualSound.Stop>
 
   <!-- Tab open/close composition.
          TabClosed: spoken when Escape closes the tab. {0} = tab label.
@@ -69,19 +67,26 @@
          {0} = ideology name, {1} = vanilla "NoneLower" translation. -->
   <RimWorldAccess.Ideology.Tree.Empty>{0}. {1}</RimWorldAccess.Ideology.Tree.Empty>
 
+  <!-- Residual precept section label (IdeologyHelper.BuildIdeologyTree). Vanilla's own
+       precept ladder (IdeoUIUtility.DoPrecepts) has no catch-all category, so there is no
+       vanilla key to reuse; this covers precepts from a modded preceptClass that none of
+       the nine standard sections claim, so they still reach the tree instead of vanishing. -->
+  <RimWorldAccess.Ideology.OtherPrecepts>Other precepts</RimWorldAccess.Ideology.OtherPrecepts>
+
   <!-- IdeoBuilder module strings (src/IdeoBuilder/).
-       Navigation hints for the two-tab builder shell. -->
+       Navigation hint for the worldgen builder hub's own two-tab shell. -->
   <RimWorldAccess.Ideology.Builder.TabForIdeoList>Tab for the ideoligion list</RimWorldAccess.Ideology.Builder.TabForIdeoList>
-  <RimWorldAccess.Ideology.Builder.TabToReturnToList>Tab to return to the list</RimWorldAccess.Ideology.Builder.TabToReturnToList>
 
   <!-- Spoken when a section or action is disabled but has no specific reason string. -->
   <RimWorldAccess.Ideology.Builder.Unavailable>Unavailable</RimWorldAccess.Ideology.Builder.Unavailable>
 
   <!-- Spoken when the ] edit-menu is opened on a precept that has no editable options. -->
   <RimWorldAccess.Ideology.Builder.NoEditOptions>No edit options</RimWorldAccess.Ideology.Builder.NoEditOptions>
-  <!-- Hidden display-English sweep (returned/assigned strings localized). -->
-  <RimWorldAccess.Ideology.Builder.PreceptSection.Active>Active precepts, {0}</RimWorldAccess.Ideology.Builder.PreceptSection.Active>
-  <RimWorldAccess.Ideology.Builder.PreceptSection.NotSet>Not set, {0}</RimWorldAccess.Ideology.Builder.PreceptSection.NotSet>
+  <!-- Hidden display-English sweep (returned/assigned strings localized).
+       The two section names are BARE names: the precept editor is a tree again, so the
+       child count rides the shared expansion suffix instead of the section label. -->
+  <RimWorldAccess.Ideology.Builder.PreceptSection.ActiveName>Active precepts</RimWorldAccess.Ideology.Builder.PreceptSection.ActiveName>
+  <RimWorldAccess.Ideology.Builder.PreceptSection.NotSetName>Not set</RimWorldAccess.Ideology.Builder.PreceptSection.NotSetName>
   <RimWorldAccess.Ideology.Builder.PreceptSummary>{0} active, {1} not set</RimWorldAccess.Ideology.Builder.PreceptSummary>
   <RimWorldAccess.Ideology.Builder.PreceptCurrent>current</RimWorldAccess.Ideology.Builder.PreceptCurrent>
 
@@ -101,5 +106,54 @@
   <RimWorldAccess.Ideology.Builder.DiscardConfirm>Going back will discard this custom ideoligion. Continue?</RimWorldAccess.Ideology.Builder.DiscardConfirm>
   <RimWorldAccess.Ideology.Builder.DiscardContinue>Continue</RimWorldAccess.Ideology.Builder.DiscardContinue>
   <RimWorldAccess.Ideology.Builder.DiscardCancel>Cancel</RimWorldAccess.Ideology.Builder.DiscardCancel>
+
+  <!-- Randomize-all confirmation, shown by both the worldgen hub and the Archonexus-facing
+       section editor (Alt+R replaces the entire ideoligion; vanilla shows no warning). -->
+  <RimWorldAccess.Ideology.Builder.RandomizeAllConfirm>Randomizing will replace the entire ideoligion. Continue?</RimWorldAccess.Ideology.Builder.RandomizeAllConfirm>
+  <RimWorldAccess.Ideology.Builder.RandomizeAllContinue>Continue</RimWorldAccess.Ideology.Builder.RandomizeAllContinue>
+  <RimWorldAccess.Ideology.Builder.RandomizeAllCancel>Cancel</RimWorldAccess.Ideology.Builder.RandomizeAllCancel>
+
+  <!-- IdeoBuilderScreenScope: the two regions of the worldgen builder hub. -->
+  <RimWorldAccess.Ideology.Builder.EditorRegion>Ideoligion</RimWorldAccess.Ideology.Builder.EditorRegion>
+  <RimWorldAccess.Ideology.Builder.ListRegion>Ideoligions</RimWorldAccess.Ideology.Builder.ListRegion>
+
+  <!-- Description-lock checkbox row label (the icon-only lock button next to the narrative text
+       has no vanilla label of its own — IdeoUIUtility.DoDescription, decompiled :1086-1104). -->
+  <RimWorldAccess.Ideology.Builder.DescriptionLock>Lock description</RimWorldAccess.Ideology.Builder.DescriptionLock>
+
+  <!-- Dev-mode "+" button next to the fluid development-points row (IdeoUIUtility.DoFluidIdeo,
+       decompiled :983-986); vanilla draws it as a bare "+" with no accessible label. -->
+  <RimWorldAccess.Ideology.Builder.DevMaxPoints>DEV: Max development points</RimWorldAccess.Ideology.Builder.DevMaxPoints>
+
+  <!-- Label for the read-only validation/impact row at the end of the editor region (mirrors
+       Page_ConfigureIdeo.DoWindowContents' bottom-right warning/impact readout). -->
+  <RimWorldAccess.Ideology.Builder.StatusLabel>Status</RimWorldAccess.Ideology.Builder.StatusLabel>
+
+  <!-- StyleItemsDialogScope (focus-ring census wave 3, slice W3-9). A category row's aggregate frequency when its
+       items disagree — vanilla's own RadioButSemiOn semi-selected mark has no text label of its
+       own, so this is new. -->
+  <RimWorldAccess.Ideology.Builder.Appearance.MixedFrequency>Mixed</RimWorldAccess.Ideology.Builder.Appearance.MixedFrequency>
+
+  <!-- Gender fragment appended to an item or category row's Extras. {0} = the gender label
+       ("Male"/"Female"/"Male and female"). -->
+  <RimWorldAccess.Ideology.Builder.Appearance.GenderFragment>Gender: {0}</RimWorldAccess.Ideology.Builder.Appearance.GenderFragment>
+
+  <!-- IdeologyViewerScreenScope: the F12 Ideology
+       tab's three regions. Kept distinct from the worldgen builder's Builder.EditorRegion/
+       Builder.ListRegion keys — this tab's third region is the dev-only editor, not the builder's
+       always-present one, and "Details" names the read-only tree that has no equivalent there. -->
+  <RimWorldAccess.Ideology.Viewer.ListRegion>Ideoligions</RimWorldAccess.Ideology.Viewer.ListRegion>
+  <RimWorldAccess.Ideology.Viewer.DetailsRegion>Details</RimWorldAccess.Ideology.Viewer.DetailsRegion>
+  <RimWorldAccess.Ideology.Viewer.EditorRegion>Editor</RimWorldAccess.Ideology.Viewer.EditorRegion>
+
+  <!-- Hint suffix baked into the two injected appearance-editor tree rows (S1 follow-up finding
+       #8b), the same way the Fluid section's own label bakes in PressEnterToReform above — this
+       tree's formatter has no separate spoken-role mechanism. -->
+  <RimWorldAccess.Ideology.Viewer.PressEnterToEdit>Press Enter to edit</RimWorldAccess.Ideology.Viewer.PressEnterToEdit>
+
+  <!-- IdeoReformScreenScope: the fluid-ideoligion
+       reform dialog's one content region, whose name flips with the dialog's own stage. -->
+  <RimWorldAccess.Ideology.Reform.ChangesRegion>Changes</RimWorldAccess.Ideology.Reform.ChangesRegion>
+  <RimWorldAccess.Ideology.Reform.EditRegion>Edit</RimWorldAccess.Ideology.Reform.EditRegion>
 
 </LanguageData>

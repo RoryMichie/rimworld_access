@@ -49,7 +49,11 @@ namespace RimWorldAccess
                 {
                     ComponentType = "CompRefuelable",
                     DisplayName = label,
-                    CategoryName = label,
+                    // Stable dispatch identity: the per-def fuel gizmo label ("fuel", "barrel
+                    // durability", ...) is display-only — RefuelableAdapter.CategoryDisplayName
+                    // resolves it live. Dispatching on the translated label broke the
+                    // language-independent-key doctrine.
+                    CategoryName = "Refuelable",
                     Component = refuelable,
                     IsReadOnly = false
                 });

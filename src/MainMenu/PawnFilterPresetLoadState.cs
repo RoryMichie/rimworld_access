@@ -1,25 +1,38 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
 {
+    /// <summary>
+    /// Data and mutation vehicles for the saved-pawn-filter picker.
+    ///
+    /// Shares the S1 <see cref="StartingPawnState"/> shape, the same promotion
+    /// <see cref="WindowlessScenarioLoadState"/> had: lifecycle plus
+    /// <see cref="PresetNames"/> plus the load/delete vehicles. The cursor, the
+    /// typeahead and every announcement now live on
+    /// <see cref="RimWorldAccess.Shell.FilterPresetLoadScope"/>.
+    ///
+    /// <b>The picker stays active under its own delete confirmation.</b> It used to flip
+    /// itself INACTIVE while the confirm was open, which was how the retired ladder kept the
+    /// two blocks from both handling Enter; the confirm scope is modal now, so the flag can
+    /// stay honest — and keeping it up means the picker is merely covered rather than closed
+    /// and reopened, so the cursor stays on the row the player was standing on when the
+    /// confirm goes away.
+    /// </summary>
     public static class PawnFilterPresetLoadState
     {
         public static bool IsActive { get; private set; }
 
         private static List<string> presetNames = new List<string>();
-        private static int selectedIndex = 0;
         private static Action<PawnFilter> onPresetLoaded;
-        private static TypeaheadSearchHelper typeaheadHelper = new TypeaheadSearchHelper();
+
+        /// <summary>Every saved preset name, in serializer order.</summary>
+        public static IReadOnlyList<string> PresetNames => presetNames;
 
         public static void Open(Action<PawnFilter> onLoaded)
         {
             onPresetLoaded = onLoaded;
-            typeaheadHelper.ClearSearch();
-
             ReloadPresets();
 
             if (presetNames.Count == 0)
@@ -29,18 +42,15 @@ namespace RimWorldAccess
                 return;
             }
 
-            selectedIndex = 0;
             IsActive = true;
-
-            TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetLoad.OpenInstructions".Loc(presetNames.Count));
-            AnnounceCurrentPreset();
+            // The opening announcement is the scope's own job (FilterPresetLoadScope's
+            // ComposeOpenAnnouncement) — see this class's remarks.
         }
 
         public static void Close()
         {
             IsActive = false;
             presetNames.Clear();
-            typeaheadHelper.ClearSearch();
             onPresetLoaded = null;
         }
 
@@ -49,163 +59,20 @@ namespace RimWorldAccess
             presetNames = PawnFilterPresetSerializer.GetPresetNames();
         }
 
-        private static void AnnounceCurrentPreset()
+        /// <summary>Enter on a preset row: load it and hand it to the editor that opened this picker.</summary>
+        public static void LoadSelected(int index)
         {
-            if (presetNames.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetLoad.NoPresetsAvailable".Loc());
-                return;
-            }
-
-            string name = presetNames[selectedIndex];
-            if (string.IsNullOrEmpty(name))
-                name = "RimWorldAccess.PawnFilter.PresetLoad.UnnamedFallback".Translate();
-
-            string positionPart = MenuHelper.FormatPosition(selectedIndex, presetNames.Count);
-
-            string text = name;
-
-            if (typeaheadHelper.HasActiveSearch)
-            {
-                text += typeaheadHelper.BuildSearchContextSuffix();
-            }
-            else if (!string.IsNullOrEmpty(positionPart))
-            {
-                text += "RimWorldAccess.PawnFilter.PresetLoad.WithPositionSuffix".Translate(positionPart);
-            }
-
-            TolkHelper.SpeakData(text);
-        }
-
-        #region Navigation
-
-        private static void SelectNext()
-        {
-            if (presetNames.Count == 0) return;
-
-            typeaheadHelper.ClearSearch();
-            selectedIndex = MenuHelper.SelectNext(selectedIndex, presetNames.Count);
-            AnnounceCurrentPreset();
-        }
-
-        private static void SelectPrevious()
-        {
-            if (presetNames.Count == 0) return;
-
-            typeaheadHelper.ClearSearch();
-            selectedIndex = MenuHelper.SelectPrevious(selectedIndex, presetNames.Count);
-            AnnounceCurrentPreset();
-        }
-
-        private static void JumpToFirst()
-        {
-            if (presetNames.Count == 0) return;
-
-            typeaheadHelper.ClearSearch();
-            selectedIndex = 0;
-            AnnounceCurrentPreset();
-        }
-
-        private static void JumpToLast()
-        {
-            if (presetNames.Count == 0) return;
-
-            typeaheadHelper.ClearSearch();
-            selectedIndex = presetNames.Count - 1;
-            AnnounceCurrentPreset();
-        }
-
-        private static void SelectNextMatch()
-        {
-            if (!typeaheadHelper.HasActiveSearch) return;
-
-            int next = typeaheadHelper.GetNextMatch(selectedIndex);
-            if (next >= 0)
-            {
-                selectedIndex = next;
-                AnnounceCurrentPreset();
-            }
-        }
-
-        private static void SelectPreviousMatch()
-        {
-            if (!typeaheadHelper.HasActiveSearch) return;
-
-            int prev = typeaheadHelper.GetPreviousMatch(selectedIndex);
-            if (prev >= 0)
-            {
-                selectedIndex = prev;
-                AnnounceCurrentPreset();
-            }
-        }
-
-        #endregion
-
-        #region Typeahead
-
-        private static bool HandleTypeahead(char character)
-        {
-            if (presetNames.Count == 0) return false;
-
-            if (typeaheadHelper.ProcessCharacterInput(character, presetNames, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    AnnounceCurrentPreset();
-                }
-            }
-            else
-            {
-                typeaheadHelper.SpeakNoMatches();
-            }
-
-            return true;
-        }
-
-        private static bool HandleTypeaheadBackspace()
-        {
-            if (!typeaheadHelper.HasActiveSearch) return false;
-
-            if (typeaheadHelper.ProcessBackspace(presetNames, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    AnnounceCurrentPreset();
-                }
-            }
-
-            return true;
-        }
-
-        private static bool ClearTypeahead()
-        {
-            if (typeaheadHelper.ClearSearchAndAnnounce())
-            {
-                AnnounceCurrentPreset();
-                return true;
-            }
-            return false;
-        }
-
-        #endregion
-
-        #region Actions
-
-        private static void LoadSelected()
-        {
-            if (presetNames.Count == 0 || selectedIndex >= presetNames.Count)
+            if (index < 0 || index >= presetNames.Count)
             {
                 TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetLoad.NoPresetSelected".Loc());
                 return;
             }
 
-            string name = presetNames[selectedIndex];
+            string name = presetNames[index];
 
             try
             {
-                var loadedFilter = PawnFilterPresetSerializer.LoadPreset(selectedIndex);
+                var loadedFilter = PawnFilterPresetSerializer.LoadPreset(index);
                 var callback = onPresetLoaded;
                 Close();
                 if (loadedFilter != null)
@@ -226,121 +93,48 @@ namespace RimWorldAccess
             }
         }
 
-        private static void DeleteSelected()
+        /// <summary>Delete on a preset row: opens the confirmation, which owns the deletion itself.</summary>
+        public static void RequestDelete(int index)
         {
-            if (presetNames.Count == 0 || selectedIndex >= presetNames.Count)
+            if (index < 0 || index >= presetNames.Count)
                 return;
 
-            string name = presetNames[selectedIndex];
-
+            string name = presetNames[index];
             TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetLoad.DeleteConfirm".Loc(name));
-            PawnFilterPresetDeleteConfirmState.Open(selectedIndex, name, () =>
-            {
-                ReloadPresets();
-                if (selectedIndex >= presetNames.Count)
-                {
-                    selectedIndex = Math.Max(0, presetNames.Count - 1);
-                }
-                IsActive = true;
-
-                if (presetNames.Count == 0)
-                {
-                    TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetLoad.NoneRemaining".Loc());
-                    var callback = onPresetLoaded;
-                    Close();
-                    callback?.Invoke(null);
-                }
-                else
-                {
-                    AnnounceCurrentPreset();
-                }
-            });
-
-            IsActive = false;
+            PawnFilterPresetDeleteConfirmState.Open(index, name, ReloadAfterDelete);
         }
 
-        #endregion
-
-        #region Input Handling
-
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
+        /// <summary>
+        /// Fired once the confirmation closes, either way. The row list is re-read so the
+        /// scope's next refresh sees it; the picker closes itself only when nothing is left
+        /// to pick.
+        /// </summary>
+        private static void ReloadAfterDelete()
         {
-            if (!IsActive) return false;
-
-            switch (key)
-            {
-                case KeyCode.UpArrow:
-                    if (typeaheadHelper.HasActiveSearch)
-                        SelectPreviousMatch();
-                    else
-                        SelectPrevious();
-                    return true;
-
-                case KeyCode.DownArrow:
-                    if (typeaheadHelper.HasActiveSearch)
-                        SelectNextMatch();
-                    else
-                        SelectNext();
-                    return true;
-
-                case KeyCode.Home:
-                    JumpToFirst();
-                    return true;
-
-                case KeyCode.End:
-                    JumpToLast();
-                    return true;
-
-                case KeyCode.Return:
-                case KeyCode.KeypadEnter:
-                    LoadSelected();
-                    return true;
-
-                case KeyCode.Delete:
-                    DeleteSelected();
-                    return true;
-
-                case KeyCode.Escape:
-                    if (typeaheadHelper.HasActiveSearch)
-                    {
-                        ClearTypeahead();
-                    }
-                    else
-                    {
-                        var callback = onPresetLoaded;
-                        Close();
-                        TolkHelper.Speak("RimWorldAccess.UI.Cancelled".Loc());
-                        callback?.Invoke(null);
-                    }
-                    return true;
-
-                case KeyCode.Backspace:
-                    if (typeaheadHelper.HasActiveSearch)
-                    {
-                        HandleTypeaheadBackspace();
-                        return true;
-                    }
-                    break;
-            }
-
-            return false;
+            ReloadPresets();
+            if (presetNames.Count > 0)
+                return;
+            TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetLoad.NoneRemaining".Loc());
+            var callback = onPresetLoaded;
+            Close();
+            callback?.Invoke(null);
         }
 
-        public static bool HandleCharacterInput(char character)
+        /// <summary>Escape: cancel out with the null-result callback the editor waits on.</summary>
+        public static void HandleCancel()
         {
-            if (!IsActive) return false;
-
-            if (char.IsLetterOrDigit(character))
-            {
-                return HandleTypeahead(character);
-            }
-
-            return false;
+            var callback = onPresetLoaded;
+            Close();
+            TolkHelper.Speak("RimWorldAccess.UI.Cancelled".Loc());
+            callback?.Invoke(null);
         }
-
-        #endregion
     }
 
+    /// <summary>
+    /// The delete-preset confirmation inside the picker: two buttons and the deletion itself.
+    /// <see cref="RimWorldAccess.Shell.FilterPresetDeleteConfirmScope"/> presents them as the
+    /// two rows of its Buttons region.
+    /// </summary>
     public static class PawnFilterPresetDeleteConfirmState
     {
         public static bool IsActive { get; private set; }
@@ -392,23 +186,14 @@ namespace RimWorldAccess
             onComplete = null;
         }
 
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
+        /// <summary>
+        /// Silent teardown reset (wave-I law 7, I7): drops the flag WITHOUT
+        /// invoking the completion callback (which would re-read the load
+        /// state's list) or speaking — for the host PostClose patches only.
+        /// </summary>
+        internal static void ForceClose()
         {
-            if (!IsActive) return false;
-
-            switch (key)
-            {
-                case KeyCode.Return:
-                case KeyCode.KeypadEnter:
-                    Confirm();
-                    return true;
-
-                case KeyCode.Escape:
-                    Cancel();
-                    return true;
-            }
-
-            return false;
+            Close();
         }
     }
 }

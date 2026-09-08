@@ -7,19 +7,12 @@ using Verse;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Helper class for extracting information about world tiles and settlements.
-    /// Used by WorldNavigationState and SettlementBrowserState.
-    /// </summary>
+    /// <summary>Extracts information about world tiles and settlements for the world-map announcements.</summary>
     public static class WorldInfoHelper
     {
-        // Maps internal English compass tokens (north/east/south/west and four
-        // diagonals) to localized lower-case nouns from Map.Direction.Lower.*.
-        // The tokens stay English inside this class so the dictionary lookups
-        // (opposite-direction, priority ordering) keep working - localization
-        // happens at announcement time only.
-        // Internal so route-planner announcements (RoutePlannerState) can localize
-        // the same English tokens at their own announcement time.
+        // Compass tokens stay English inside this class so the dictionary lookups (opposite
+        // direction, priority ordering) keep working; localization happens at announcement time.
+        // Internal so RoutePlannerState can localize the same tokens in its own announcements.
         internal static string LocalizeCompass(string englishCompass)
         {
             switch (englishCompass)
@@ -37,15 +30,11 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets a brief summary of a world tile (for navigation announcements).
+        /// A brief tile summary for navigation announcements. <paramref name="includeRouteInfo"/>
+        /// adds the waypoint prefix and route-planner info; <paramref name="minimal"/> keeps only
+        /// biome, hilliness, temperature and world objects; <paramref name="fuelCostInfo"/> is
+        /// inserted right after the biome name.
         /// </summary>
-        /// <param name="planetTile">The tile to summarize.</param>
-        /// <param name="includeRouteInfo">If true, includes waypoint prefix and route planner info.
-        /// Set to false when called from scanner or other contexts that provide their own context.</param>
-        /// <param name="minimal">If true, only includes biome, hilliness, temp, and world objects.
-        /// Excludes roads, rivers, quests. Used by scanners that just need basic tile identification.</param>
-        /// <param name="fuelCostInfo">Optional fuel cost info to insert right after the biome name.
-        /// Used during transport pod targeting.</param>
         public static string GetTileSummary(PlanetTile planetTile, bool includeRouteInfo = true, bool minimal = false, string fuelCostInfo = null)
         {
             if (!planetTile.Valid || Find.WorldGrid == null)
@@ -200,9 +189,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets detailed information about a world tile (for I key).
-        /// </summary>
+        /// <summary>Detailed tile information, for the Info key.</summary>
         public static string GetDetailedTileInfo(PlanetTile planetTile)
         {
             if (!planetTile.Valid || Find.WorldGrid == null)
@@ -252,6 +239,13 @@ namespace RimWorldAccess
             {
                 builder.Add("RimWorldAccess.World.Tile.Detail.QuestTargetsHeader".Translate());
                 builder.Add(questInfo);
+            }
+
+            // Mirrors the "Debug world tile ID" line both WITab_Terrain and WITab_Orbit append
+            // under Prefs.DevMode; this builder covers the surface and space tabs alike.
+            if (Prefs.DevMode)
+            {
+                builder.Add("RimWorldAccess.Dev.Info.WorldTileId".Translate(planetTile.ToString()));
             }
 
             return builder.Build();
@@ -311,9 +305,7 @@ namespace RimWorldAccess
             builder.Add(obj.Label);
         }
 
-        /// <summary>
-        /// Gets information about a specific settlement.
-        /// </summary>
+        /// <summary>Describes a settlement: name, faction, relationship, goodwill, visitable/attackable status.</summary>
         public static string GetSettlementInfo(Settlement settlement)
         {
             if (settlement == null)
@@ -353,9 +345,7 @@ namespace RimWorldAccess
             return builder.Build();
         }
 
-        /// <summary>
-        /// Gets a list of all settlements sorted by distance from a given tile.
-        /// </summary>
+        /// <summary>All settlements, nearest first from <paramref name="fromTile"/>.</summary>
         public static List<Settlement> GetSettlementsByDistance(PlanetTile fromTile)
         {
             if (!fromTile.Valid || Find.WorldObjects?.Settlements == null || Find.WorldGrid == null)
@@ -366,9 +356,7 @@ namespace RimWorldAccess
                 .ToList();
         }
 
-        /// <summary>
-        /// Gets the player's home settlement (first player settlement found).
-        /// </summary>
+        /// <summary>The first player settlement, or null.</summary>
         public static Settlement GetPlayerHomeSettlement()
         {
             if (Find.WorldObjects?.Settlements == null)
@@ -378,9 +366,6 @@ namespace RimWorldAccess
                 .FirstOrDefault(s => s.Faction == Faction.OfPlayer);
         }
 
-        /// <summary>
-        /// Gets all player caravans.
-        /// </summary>
         public static List<Caravan> GetPlayerCaravans()
         {
             if (Find.WorldObjects?.Caravans == null)
@@ -391,17 +376,12 @@ namespace RimWorldAccess
                 .ToList();
         }
 
-        /// <summary>
-        /// Gets a concise status string for a caravan (for cycle announcements).
-        /// Shows current activity first, then destination if applicable.
-        /// Examples: "traveling to Hilltown", "resting (2 bedrolls), heading to Hilltown", "paused, heading to Hilltown"
-        /// </summary>
+        /// <summary>A caravan's status for cycle announcements: current activity first, then destination.</summary>
         public static string GetCaravanStatus(Caravan caravan)
         {
             if (caravan == null)
                 return "RimWorldAccess.World.Caravan.Status.Unknown".Translate();
 
-            // Check problem states first (these are most important)
             if (caravan.AllOwnersDowned)
                 return "RimWorldAccess.World.Caravan.Status.AllDowned".Translate();
 
@@ -411,34 +391,30 @@ namespace RimWorldAccess
             if (caravan.ImmobilizedByMass)
                 return "RimWorldAccess.World.Caravan.Status.Overloaded".Translate();
 
-            // Check if visiting a settlement (this takes priority - they've arrived)
+            // Arrival outranks movement state.
             Settlement visitedSettlement = CaravanVisitUtility.SettlementVisitedNow(caravan);
             if (visitedSettlement != null)
                 return "RimWorldAccess.World.Caravan.Status.Visiting".Translate(visitedSettlement.Label);
 
-            // Check movement status
             if (caravan.pather.Moving)
             {
                 if (caravan.pather.Paused)
                     return "RimWorldAccess.World.Caravan.Status.Paused".Translate() + GetDestinationSuffix(caravan, active: false);
 
-                // Check if actually moving right now or stopped for some reason
                 if (caravan.NightResting)
                 {
                     return BuildRestingStatus(caravan) + GetDestinationSuffix(caravan, active: false);
                 }
 
-                // Actively traveling - use "to [infinitive]" format
                 return "RimWorldAccess.World.Caravan.Status.Traveling".Translate() + GetDestinationSuffix(caravan, active: true);
             }
 
-            // Not moving - no destination is meaningful (Destination field may have stale data)
+            // Not moving: the Destination field may hold stale data, so it is not read here.
             if (caravan.NightResting)
             {
                 return BuildRestingStatus(caravan);
             }
 
-            // Caravan is stopped - they have no active destination
             return "RimWorldAccess.World.Caravan.Status.Waiting".Translate();
         }
 
@@ -456,45 +432,29 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets a destination suffix with proper grammar.
-        /// active=true (caravan currently traveling): " to X" (clean) or
-        /// ", to <infinitive>" (verb-extracted).
-        /// active=false (paused/resting): ". To X" (clean) or
-        /// ", will <infinitive>" (verb-extracted).
+        /// Where the caravan is headed. An arrival action's own ReportString is appended unmodified;
+        /// otherwise the destination comes from the destination tile's world object, phrased
+        /// "to X" while <paramref name="active"/> and ". To X" while paused or resting.
         /// </summary>
         private static string GetDestinationSuffix(Caravan caravan, bool active)
         {
             if (caravan?.pather == null)
                 return "";
 
-            // Check if there's an arrival action with a description
+            // The game's ReportString is already fully localized; never hand-roll -ing/infinitive
+            // morphology on top of it.
             if (caravan.pather.ArrivalAction != null)
             {
                 string report = caravan.pather.ArrivalAction.ReportString;
                 if (!string.IsNullOrEmpty(report))
                 {
                     string trimmedReport = report.TrimEnd('.');
-
-                    // If it starts with "Traveling to", extract the destination.
-                    // This pattern only matches the game's English inspect string -
-                    // localized game data falls through to the destination-tile fallback.
-                    if (trimmedReport.StartsWith("Traveling to ", System.StringComparison.OrdinalIgnoreCase))
-                    {
-                        string destination = trimmedReport.Substring(13);
-                        return active
-                            ? "RimWorldAccess.World.Caravan.SuffixActiveTo".Translate(destination)
-                            : "RimWorldAccess.World.Caravan.SuffixPausedSeparate".Translate(destination);
-                    }
-
-                    // Convert "-ing" verb to infinitive: "Entering X" -> "enter X"
-                    string infinitive = ConvertToInfinitive(trimmedReport);
-                    return active
-                        ? "RimWorldAccess.World.Caravan.SuffixActiveVerb".Translate(infinitive)
-                        : "RimWorldAccess.World.Caravan.SuffixPausedVerb".Translate(infinitive);
+                    return "RimWorldAccess.World.Caravan.SuffixReport".Translate(trimmedReport);
                 }
             }
 
-            // If we have a destination tile but no arrival action, try to describe it
+            // No usable report: derive the destination from the game's own destination-tile object
+            // rather than string-matching a localized report.
             if (caravan.pather.Destination != PlanetTile.Invalid)
             {
                 var destObjects = Find.WorldObjects?.ObjectsAt(caravan.pather.Destination);
@@ -521,69 +481,7 @@ namespace RimWorldAccess
             return "";
         }
 
-        /// <summary>
-        /// Converts an "-ing" verb phrase to infinitive form.
-        /// "Entering Mikaelville" -> "enter Mikaelville"
-        /// "Attacking bandit camp" -> "attack bandit camp"
-        /// </summary>
-        private static string ConvertToInfinitive(string phrase)
-        {
-            if (string.IsNullOrEmpty(phrase))
-                return phrase;
-
-            // Find the first word (the verb)
-            int spaceIndex = phrase.IndexOf(' ');
-            string verb = spaceIndex > 0 ? phrase.Substring(0, spaceIndex) : phrase;
-            string rest = spaceIndex > 0 ? phrase.Substring(spaceIndex) : "";
-
-            // Convert -ing to infinitive
-            string lowerVerb = verb.ToLower();
-            if (lowerVerb.EndsWith("ing") && lowerVerb.Length > 4)
-            {
-                // Handle common patterns:
-                // "entering" -> "enter" (remove -ing, but "enter" not "ent")
-                // "attacking" -> "attack" (remove -ing)
-                // "visiting" -> "visit" (remove -ing)
-                // "settling" -> "settle" (remove -ing, add -e)
-                // "trading" -> "trade" (remove -ing, add -e)
-
-                string stem = lowerVerb.Substring(0, lowerVerb.Length - 3);
-
-                // Check if we need to add back an 'e' (words like trade, settle, etc.)
-                // Common pattern: consonant + 'ing' where original had consonant + 'e'
-                if (stem.Length >= 2)
-                {
-                    char lastChar = stem[stem.Length - 1];
-                    char secondLast = stem[stem.Length - 2];
-
-                    // If stem ends in consonant and second-to-last is also consonant, likely needs 'e'
-                    // Examples: trad(e), settl(e), but not: attack, visit, enter
-                    bool needsE = IsConsonant(lastChar) && IsConsonant(secondLast) &&
-                                  !stem.EndsWith("ck") && !stem.EndsWith("tt") && !stem.EndsWith("ss");
-
-                    // Special cases that don't need 'e'
-                    if (stem == "enter" || stem == "attack" || stem == "visit" || stem == "rest")
-                        needsE = false;
-
-                    if (needsE)
-                        stem += "e";
-                }
-
-                return stem + rest;
-            }
-
-            return phrase.ToLower();
-        }
-
-        private static bool IsConsonant(char c)
-        {
-            return char.IsLetter(c) && !"aeiouAEIOU".Contains(c);
-        }
-
-        /// <summary>
-        /// Gets quest information for a tile (if any quests target this tile).
-        /// Includes difficulty and brief description for direct tile announcements.
-        /// </summary>
+        /// <summary>Quests targeting this tile, with difficulty and a brief description, or null.</summary>
         public static string GetQuestInfoForTile(PlanetTile planetTile)
         {
             if (!planetTile.Valid || Find.QuestManager == null)
@@ -633,8 +531,10 @@ namespace RimWorldAccess
                             : "RimWorldAccess.World.Quest.DifficultyManyStars".Translate(quest.challengeRating);
                     }
 
-                    // Add description (first two sentences or up to 250 chars)
-                    string questDesc = quest.description.ToString().StripTags();
+                    // First two sentences, or 250 chars. The no-defer overload reads a marker while
+                    // the description is being rewritten: this summary is rebuilt every time the
+                    // cursor revisits the tile, so waiting for it to settle would buy nothing.
+                    string questDesc = RimTalkQuestsCompat.GetDescriptionOrMarker(quest).StripTags();
                     if (!string.IsNullOrEmpty(questDesc))
                     {
                         int firstPeriod = questDesc.IndexOf('.');
@@ -676,9 +576,7 @@ namespace RimWorldAccess
             return string.Join(" | ", questInfos);
         }
 
-        /// <summary>
-        /// Gets detailed quest information for a tile (for the I key detailed view).
-        /// </summary>
+        /// <summary>Quests targeting this tile, in full, for the Info key's detailed view.</summary>
         public static string GetDetailedQuestInfoForTile(PlanetTile planetTile)
         {
             if (!planetTile.Valid || Find.QuestManager == null)
@@ -695,7 +593,8 @@ namespace RimWorldAccess
                     continue;
 
                 string questName = quest.name.StripTags();
-                string questDesc = quest.description.ToString().StripTags();
+                // Marker-only, no-defer read: this view is rebuilt fresh on every press.
+                string questDesc = RimTalkQuestsCompat.GetDescriptionOrMarker(quest).StripTags();
 
                 builder.Add("RimWorldAccess.World.Quest.Label".Translate(questName));
 
@@ -739,10 +638,7 @@ namespace RimWorldAccess
         }
         #region Number Key Tile Info (Keys 1-5)
 
-        /// <summary>
-        /// Key 1: Growing, Food, and Resources information.
-        /// Growing period, forageability, grazing, rainfall, stone types.
-        /// </summary>
+        /// <summary>Key 1: growing period, forageability, grazing, rainfall, stone types.</summary>
         public static string GetTileGrowingInfo(PlanetTile planetTile)
         {
             if (!planetTile.Valid || Find.WorldGrid == null)
@@ -786,9 +682,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Key 2: Movement and Terrain information.
-        /// Movement difficulty, winter penalty, roads, rivers, elevation, coastal.
-        /// When on a planned route, adds path direction and travel times at the BEGINNING.
+        /// Key 2: movement difficulty, winter penalty, roads, rivers, elevation, coastal. On a
+        /// planned route, path direction and travel times come FIRST, for quick path tracing.
         /// </summary>
         public static string GetTileMovementInfo(PlanetTile planetTile)
         {
@@ -804,7 +699,6 @@ namespace RimWorldAccess
 
             var builder = new AnnouncementBuilder().DefaultSep(Separator.Period);
 
-            // Route/path info at the BEGINNING (for quick path tracing with Key 2)
             string routeAnnouncement = RoutePlannerState.GetRouteAnnouncement(planetTile);
             if (!string.IsNullOrEmpty(routeAnnouncement))
             {
@@ -885,10 +779,7 @@ namespace RimWorldAccess
             return builder.Build();
         }
 
-        /// <summary>
-        /// Key 3: Health and Environment information.
-        /// Disease frequency, pollution, noxious haze risk.
-        /// </summary>
+        /// <summary>Key 3: disease frequency, pollution, noxious haze risk.</summary>
         public static string GetTileHealthInfo(PlanetTile planetTile)
         {
             if (!planetTile.Valid || Find.WorldGrid == null)
@@ -934,10 +825,7 @@ namespace RimWorldAccess
             return builder.Build();
         }
 
-        /// <summary>
-        /// Key 4: Location information.
-        /// Coordinates, time zone, tile ID.
-        /// </summary>
+        /// <summary>Key 4: coordinates and time zone.</summary>
         public static string GetTileLocationInfo(PlanetTile planetTile)
         {
             if (!planetTile.Valid || Find.WorldGrid == null)
@@ -962,16 +850,12 @@ namespace RimWorldAccess
                 : timeZone.ToString();
             builder.Add("RimWorldAccess.World.Tile.Location.TimeZone".Translate(tzStr));
 
-            // Tile ID (the raw internal tile index) is dev-only data and is not surfaced to
-            // players; sighted players never see it outside dev mode, so we don't announce it.
+            // The raw tile index is dev-only data a sighted player never sees, so it is not spoken.
 
             return builder.Build();
         }
 
-        /// <summary>
-        /// Key 5: Tile Features and DLC information.
-        /// Mutators (Odyssey), landmarks (Odyssey), caves.
-        /// </summary>
+        /// <summary>Key 5: mutators, landmarks, region feature, caves.</summary>
         public static string GetTileFeaturesInfo(PlanetTile planetTile)
         {
             if (!planetTile.Valid || Find.WorldGrid == null)
@@ -1020,23 +904,16 @@ namespace RimWorldAccess
         #region Road Direction Helpers
 
         /// <summary>
-        /// Gets a description of which directions roads go from this tile.
-        /// Uses 8-way compass directions (N, NE, E, SE, S, SW, W, NW) for accuracy on hex grids.
-        /// Examples:
-        /// - "Runs north to south." (straight road)
-        /// - "Runs northeast to southwest." (diagonal road)
-        /// - "Curves from north to east." (turning road)
-        /// - "Ends here, continues south." (dead end)
-        /// - "Junction: north, east, and south." (3+ directions)
+        /// Which directions the roads on this tile run, in 8-way compass terms for accuracy on the
+        /// hex grid: "runs north to south", "curves from north to east", "ends here", or a junction.
         /// </summary>
         private static string GetRoadDirectionDescription(PlanetTile fromTile, List<SurfaceTile.RoadLink> roads)
         {
             return BuildRoadDirection(fromTile, roads, inline: false);
         }
 
-        // Lower-case mid-sentence form used by GetTileSummary so the
-        // composition "Highway1 runs north to south" doesn't depend on
-        // ToLower() over the capitalized phrase.
+        // Lower-case mid-sentence form, so composing "Highway1 runs north to south" never depends
+        // on ToLower() over a capitalized phrase.
         private static string GetRoadDirectionInline(PlanetTile fromTile, List<SurfaceTile.RoadLink> roads)
         {
             return BuildRoadDirection(fromTile, roads, inline: true);
@@ -1100,22 +977,15 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets a description of which directions rivers flow from this tile.
-        /// Uses 8-way compass directions (N, NE, E, SE, S, SW, W, NW) for accuracy on hex grids.
-        /// Rivers use "flows" language since they have direction (unlike roads).
-        /// Examples:
-        /// - "Flows north to south." (river passing through)
-        /// - "Flows northeast to southwest." (diagonal river)
-        /// - "Bends from north to east." (river bending)
-        /// - "Flows south." (river source/end)
-        /// - "Confluence: north, east, and south." (river fork)
+        /// Which directions the rivers on this tile flow, in 8-way compass terms. Rivers use "flows"
+        /// language because, unlike roads, they have a direction.
         /// </summary>
         private static string GetRiverDirectionDescription(PlanetTile fromTile, List<SurfaceTile.RiverLink> rivers)
         {
             return BuildRiverDirection(fromTile, rivers, inline: false);
         }
 
-        // Lower-case mid-sentence form used by GetTileSummary.
+        // Lower-case mid-sentence form.
         private static string GetRiverDirectionInline(PlanetTile fromTile, List<SurfaceTile.RiverLink> rivers)
         {
             return BuildRiverDirection(fromTile, rivers, inline: true);
@@ -1177,13 +1047,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets the arrow key direction needed to move from one tile to a neighbor tile.
-        /// This determines which arrow key press would select the target tile, matching
-        /// the logic used in WorldNavigationState.MoveInDirection.
-        /// Returns: north, east, south, west if reachable by single arrow key.
-        /// If the target tile isn't directly reachable by any single arrow key,
-        /// returns 8-way compass direction (northeast, southeast, etc.) so user knows
-        /// they need two key presses.
+        /// Which arrow key moves from one tile to a neighbor, matching
+        /// WorldNavigationState.MoveInDirection's own selection logic: a cardinal name when one key
+        /// reaches it, otherwise an 8-way compass name, signalling that two presses are needed.
         /// </summary>
         internal static string GetArrowKeyDirection(PlanetTile fromTile, PlanetTile toTile)
         {
@@ -1196,11 +1062,10 @@ namespace RimWorldAccess
             Vector3 north = Vector3.ProjectOnPlane(Vector3.up, up).normalized;
             Vector3 east = Vector3.Cross(up, north).normalized;
 
-            // Get all neighbors
             List<PlanetTile> neighbors = new List<PlanetTile>();
             Find.WorldGrid.GetTileNeighbors(fromTile, neighbors);
 
-            // Only test the 4 cardinal directions that arrow keys actually support
+            // Only the four cardinals the arrow keys support.
             var cardinalDirections = new (string name, Vector3 dir)[]
             {
                 ("north", north),
@@ -1209,11 +1074,9 @@ namespace RimWorldAccess
                 ("west", -east)
             };
 
-            // First pass: check if any cardinal direction directly selects the target tile
             foreach (var (name, desiredDir) in cardinalDirections)
             {
-                // Find which neighbor would be selected for this direction
-                // (same logic as MoveInDirection)
+                // The neighbor MoveInDirection would select for this direction.
                 PlanetTile bestNeighbor = PlanetTile.Invalid;
                 float bestDot = -2f;
 
@@ -1230,35 +1093,29 @@ namespace RimWorldAccess
                     }
                 }
 
-                // If this direction would select our target tile, that's our answer
                 if (bestNeighbor.Valid && bestNeighbor.tileId == toTile.tileId)
                 {
                     return name;
                 }
             }
 
-            // Target tile isn't directly reachable by any single arrow key
-            // Return 8-way compass direction so user knows they need two key presses
+            // Not reachable in one press: the 8-way name tells the player two are needed.
             return GetCompassDirection(currentPos, targetPos, north, east);
         }
 
         /// <summary>
-        /// Gets the 8-way compass direction from one position to another.
-        /// Returns: north, northeast, east, southeast, south, southwest, west, northwest
-        /// These map to arrow key presses: north=up, south=down, east=right, west=left,
-        /// and diagonals require two arrow keys (e.g., northeast=up+right).
-        /// NOTE: For directions that should match arrow key navigation, use GetArrowKeyDirection instead.
+        /// The 8-way compass direction between two positions. For directions that must match arrow
+        /// key navigation, use <see cref="GetArrowKeyDirection"/> instead.
         /// </summary>
         internal static string GetCompassDirection(Vector3 fromPos, Vector3 toPos, Vector3 north, Vector3 east)
         {
             Vector3 up = fromPos.normalized;
             Vector3 direction = (toPos - fromPos).normalized;
 
-            // Project onto tangent plane
             float northComponent = Vector3.Dot(direction, north);
             float eastComponent = Vector3.Dot(direction, east);
 
-            // Use threshold to determine cardinal vs diagonal (~22.5 degrees)
+            // Cardinal vs diagonal cutoff, about 22.5 degrees.
             const float threshold = 0.38f;
 
             if (Mathf.Abs(eastComponent) < threshold)
@@ -1277,9 +1134,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Checks if two 8-way directions are opposite.
-        /// </summary>
         private static bool AreOppositeDirections8Way(string dir1, string dir2)
         {
             var opposites = new Dictionary<string, string>
@@ -1292,12 +1146,9 @@ namespace RimWorldAccess
             return opposites.TryGetValue(dir1, out string opposite) && opposite == dir2;
         }
 
-        /// <summary>
-        /// Orders a direction pair consistently for 8-way compass.
-        /// </summary>
+        /// <summary>Orders a direction pair consistently: north before south, east before west, diagonals by primary component.</summary>
         private static (string, string) OrderDirectionPair8Way(string dir1, string dir2)
         {
-            // Order: north before south, east before west, diagonals follow their primary component
             var priority = new Dictionary<string, int>
             {
                 {"north", 0}, {"northeast", 1}, {"east", 2}, {"southeast", 3},
@@ -1306,7 +1157,6 @@ namespace RimWorldAccess
 
             if (priority.TryGetValue(dir1, out int p1) && priority.TryGetValue(dir2, out int p2))
             {
-                // For opposites, prefer the "earlier" direction
                 if (p1 > p2)
                     return (dir2, dir1);
             }
@@ -1318,14 +1168,10 @@ namespace RimWorldAccess
         #region Caravan Path Helpers
 
         /// <summary>
-        /// Gets an announcement for caravan paths passing through this tile.
-        /// Returns null if no selected caravans have paths through this tile.
-        /// Uses multiSelectedCaravans if any, otherwise uses the focused selectedCaravan.
+        /// Caravan paths passing through this tile ("Sam's caravan will head north"), or null.
+        /// Considers the multi-selected caravans if any, otherwise the focused one;
+        /// <paramref name="includeCaravansOnTile"/> widens it to every moving caravan on the tile.
         /// </summary>
-        /// <param name="tile">The tile to check for caravan paths.</param>
-        /// <param name="includeCaravansOnTile">If true, includes ALL moving caravans on this tile
-        /// (not just selected ones). Used by "2" key for quick movement info.</param>
-        /// <returns>Announcement like "Sam's caravan will head north." or "Sam's caravan will stop here." or null if not on any path.</returns>
         internal static string GetCaravanPathAnnouncement(PlanetTile tile, bool includeCaravansOnTile = false)
         {
             if (!tile.Valid || Find.WorldGrid == null)
@@ -1335,7 +1181,6 @@ namespace RimWorldAccess
             List<string> stoppingCaravans = new List<string>();
             HashSet<int> processedCaravanIds = new HashSet<int>();
 
-            // If includeCaravansOnTile is true, first check ALL moving caravans on this tile
             if (includeCaravansOnTile && Find.WorldObjects != null)
             {
                 var caravansOnTile = Find.WorldObjects.ObjectsAt(tile).OfType<Caravan>()
@@ -1354,7 +1199,6 @@ namespace RimWorldAccess
 
                     string caravanName = caravan.Label ?? (string)"RimWorldAccess.World.Caravan.DefaultLabel".Translate();
 
-                    // Get direction to next tile on path
                     string direction = GetCaravanTravelDirection(caravan);
                     if (!string.IsNullOrEmpty(direction))
                     {
@@ -1368,7 +1212,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Get relevant caravans based on selection state (for path-through tiles)
             var caravansToCheck = GetSelectedCaravansForPathCheck();
             if (caravansToCheck != null && caravansToCheck.Count > 0)
             {
@@ -1377,11 +1220,10 @@ namespace RimWorldAccess
                     if (caravan == null || caravan.Destroyed)
                         continue;
 
-                    // Skip if already processed (caravan was on this tile)
                     if (processedCaravanIds.Contains(caravan.ID))
                         continue;
 
-                    // Check if caravan has a valid path (may be paused but still has destination)
+                    // A paused caravan still has a path and a destination.
                     if (caravan.pather == null || caravan.pather.curPath == null)
                         continue;
 
@@ -1391,16 +1233,13 @@ namespace RimWorldAccess
 
                     string caravanName = caravan.Label ?? (string)"RimWorldAccess.World.Caravan.DefaultLabel".Translate();
 
-                    // Check if this tile is the caravan's destination
                     if (IsCaravanDestination(tile, path))
                     {
                         stoppingCaravans.Add(caravanName);
                     }
-                    // Skip path announcements if the caravan is ON this tile
-                    // (handled above if includeCaravansOnTile is true, otherwise status shows it)
+                    // A caravan ON this tile is covered above, or by its status line.
                     else if (caravan.Tile.tileId != tile.tileId)
                     {
-                        // Check if this tile is on the remaining path
                         string direction = GetCaravanPathDirection(tile, path);
 
                         if (!string.IsNullOrEmpty(direction))
@@ -1411,17 +1250,14 @@ namespace RimWorldAccess
                 }
             }
 
-            // Build the combined announcement
             List<string> allAnnouncements = new List<string>();
 
-            // Add stopping announcement if any caravans stop here
             if (stoppingCaravans.Count > 0)
             {
                 string stoppingText = "RimWorldAccess.World.Caravan.PathWillStopHere".Translate(FormatCaravanList(stoppingCaravans));
                 allAnnouncements.Add(stoppingText);
             }
 
-            // Add path direction announcements
             allAnnouncements.AddRange(pathAnnouncements);
 
             if (allAnnouncements.Count == 0)
@@ -1430,24 +1266,17 @@ namespace RimWorldAccess
             return string.Join(" ", allAnnouncements);
         }
 
-        /// <summary>
-        /// Checks if the given tile is the destination of the caravan's current path.
-        /// </summary>
         private static bool IsCaravanDestination(PlanetTile tile, WorldPath path)
         {
             if (!tile.Valid || path == null || !path.Found || path.NodesLeftCount <= 0)
                 return false;
 
-            // The destination is at Peek(NodesLeftCount - 1)
+            // The destination is the last remaining node.
             PlanetTile destTile = path.Peek(path.NodesLeftCount - 1);
             return destTile.tileId == tile.tileId;
         }
 
-        /// <summary>
-        /// Formats a list of caravan names naturally: "A", "A and B", or "A, B, and C".
-        /// Delegates to the game's ToCommaList(useAnd: true) so the conjunction
-        /// honours the active language (vanilla "AndListItem" translation key).
-        /// </summary>
+        /// <summary>Formats caravan names as "A", "A and B", or "A, B, and C" through the game's own localized conjunction.</summary>
         private static string FormatCaravanList(List<string> names)
         {
             if (names.Count == 0)
@@ -1455,10 +1284,8 @@ namespace RimWorldAccess
             return names.ToCommaList(useAnd: true);
         }
 
-        // Formats a single caravan label with an optional parenthetical
-        // detail (foreign-faction name for non-player caravans, or short
-        // status for player caravans). Used by GetTileSummary's caravan
-        // listing.
+        // Caravan label plus a parenthetical: the faction name for foreign caravans, a short
+        // status for the player's own.
         private static string FormatCaravanWithDetail(Caravan caravan)
         {
             string label = caravan.Label;
@@ -1476,20 +1303,15 @@ namespace RimWorldAccess
             return "RimWorldAccess.World.Tile.Caravan.WithDetailParenthetical".Translate(label, detail);
         }
 
-        /// <summary>
-        /// Gets the list of caravans to check for path announcements.
-        /// Priority: 1) Ctrl+Space multi-selected caravans, 2) Comma/period focused caravan
-        /// </summary>
+        /// <summary>The caravans to check for path announcements: explicit multi-selections first, else the focused caravan.</summary>
         private static List<Caravan> GetSelectedCaravansForPathCheck()
         {
-            // First priority: Ctrl+Space explicit selections
             var multiSelected = WorldNavigationState.GetMultiSelectedCaravans();
             if (multiSelected != null && multiSelected.Count > 0)
             {
                 return multiSelected.ToList();
             }
 
-            // Second priority: Comma/period focused caravan
             var focusedCaravan = WorldNavigationState.GetSelectedCaravan();
             if (focusedCaravan != null)
             {
@@ -1499,18 +1321,12 @@ namespace RimWorldAccess
             return null;
         }
 
-        /// <summary>
-        /// Gets the compass direction the caravan will travel from this tile.
-        /// Returns null if the tile is not on the caravan's remaining path.
-        /// </summary>
+        /// <summary>The direction the caravan will travel from this tile, or null when the tile is not on its remaining path.</summary>
         private static string GetCaravanPathDirection(PlanetTile tile, WorldPath path)
         {
             int tileId = tile.tileId;
 
-            // Find this tile in the remaining path
-            // WorldPath stores nodes in reverse order (destination first, current last)
-            // NodesReversed[0] = destination, NodesReversed[Count-1] = start
-            // But we only care about nodes from 0 to NodesLeftCount-1 (the remaining path)
+            // Peek indexes the remaining path with the HIGHEST index closest to the destination.
             int tileIndex = -1;
             for (int i = 0; i < path.NodesLeftCount; i++)
             {
@@ -1524,31 +1340,22 @@ namespace RimWorldAccess
             if (tileIndex < 0)
                 return null; // Tile not on remaining path
 
-            // If we're at or past the last tile before destination, no next direction
-            // (higher Peek index = closer to destination)
             if (tileIndex >= path.NodesLeftCount - 1)
                 return null;
 
-            // Get the next tile toward destination (higher index = closer to destination)
             PlanetTile nextTile = path.Peek(tileIndex + 1);
             if (!nextTile.Valid)
                 return null;
 
-            // Get arrow key direction (which key press would move from tile to nextTile)
             return GetArrowKeyDirection(tile, nextTile);
         }
 
-        /// <summary>
-        /// Gets a short status string for a caravan on the current tile.
-        /// For traveling caravans: "heading [direction] toward [destination]"
-        /// For other states: "resting", "paused", "stopped", "overloaded", etc.
-        /// </summary>
+        /// <summary>A short caravan status: "heading north toward X" while traveling, otherwise resting, paused, stopped or overloaded.</summary>
         internal static string GetCaravanShortStatus(Caravan caravan)
         {
             if (caravan == null)
                 return null;
 
-            // Check problem states first
             if (caravan.AllOwnersDowned)
                 return "RimWorldAccess.World.Caravan.Status.AllDowned".Translate();
 
@@ -1558,12 +1365,10 @@ namespace RimWorldAccess
             if (caravan.ImmobilizedByMass)
                 return "RimWorldAccess.World.Caravan.Status.Overloaded".Translate();
 
-            // Check if visiting a settlement
             Settlement visitedSettlement = CaravanVisitUtility.SettlementVisitedNow(caravan);
             if (visitedSettlement != null)
                 return "RimWorldAccess.World.Caravan.Status.Visiting".Translate(visitedSettlement.Label);
 
-            // Check movement status
             if (caravan.pather != null && caravan.pather.Moving)
             {
                 if (caravan.pather.Paused)
@@ -1572,7 +1377,6 @@ namespace RimWorldAccess
                 if (caravan.NightResting)
                     return "RimWorldAccess.World.Caravan.Status.Resting".Translate();
 
-                // Actively traveling - get direction and destination
                 string direction = GetCaravanTravelDirection(caravan);
                 string destination = GetCaravanDestinationName(caravan);
 
@@ -1586,16 +1390,13 @@ namespace RimWorldAccess
                     return "RimWorldAccess.World.Caravan.Status.Traveling".Translate();
             }
 
-            // Not moving
             if (caravan.NightResting)
                 return "RimWorldAccess.World.Caravan.Status.Resting".Translate();
 
             return "RimWorldAccess.World.Caravan.Status.Stopped".Translate();
         }
 
-        /// <summary>
-        /// Gets the compass direction the caravan is currently heading from its current tile.
-        /// </summary>
+        /// <summary>The direction the caravan is heading from its current tile.</summary>
         private static string GetCaravanTravelDirection(Caravan caravan)
         {
             if (caravan?.pather?.curPath == null || !caravan.pather.curPath.Found)
@@ -1608,68 +1409,38 @@ namespace RimWorldAccess
             PlanetTile currentTile = caravan.Tile;
             PlanetTile nextTile = PlanetTile.Invalid;
 
-            // Get direction from caravan's current tile to the next tile on path
             PlanetTile immediateTile = path.Peek(0);
             if (immediateTile.tileId != currentTile.tileId)
             {
-                // Caravan heading to Peek(0) - this is the common case
                 nextTile = immediateTile;
             }
             else if (path.NodesLeftCount >= 2)
             {
-                // Caravan is at Peek(0), heading to Peek(1)
                 nextTile = path.Peek(1);
             }
             else
             {
-                // Only destination remains and we're already there
+                // Only the destination remains, and the caravan is already on it.
                 return null;
             }
 
             if (!nextTile.Valid || Find.WorldGrid == null)
                 return null;
 
-            // Get arrow key direction (which key press would move to nextTile)
             return GetArrowKeyDirection(currentTile, nextTile);
         }
 
-        /// <summary>
-        /// Gets the destination name for a traveling caravan.
-        /// </summary>
+        /// <summary>The destination name for a traveling caravan.</summary>
         private static string GetCaravanDestinationName(Caravan caravan)
         {
-            if (caravan?.pather == null)
+            if (caravan?.pather == null || !caravan.pather.Destination.Valid)
                 return null;
 
-            // Try to get destination from arrival action
-            if (caravan.pather.ArrivalAction != null)
-            {
-                string report = caravan.pather.ArrivalAction.ReportString;
-                if (!string.IsNullOrEmpty(report))
-                {
-                    // Extract destination from "Traveling to X" format
-                    if (report.StartsWith("Traveling to ", System.StringComparison.OrdinalIgnoreCase))
-                    {
-                        return report.Substring(13).TrimEnd('.');
-                    }
-                    // Other action formats - just use the report
-                    return report.TrimEnd('.');
-                }
-            }
-
-            // Fall back to destination tile's world object name
-            if (caravan.pather.Destination.Valid)
-            {
-                var destObjects = Find.WorldObjects?.ObjectsAt(caravan.pather.Destination);
-                if (destObjects != null)
-                {
-                    var destObject = destObjects.FirstOrDefault();
-                    if (destObject != null)
-                        return destObject.Label;
-                }
-            }
-
-            return null;
+            // From the destination-tile object itself: ArrivalAction.ReportString is a full
+            // localized clause, never a bare place name, so parsing it here would misuse it.
+            var destObjects = Find.WorldObjects?.ObjectsAt(caravan.pather.Destination);
+            var destObject = destObjects?.FirstOrDefault();
+            return destObject?.Label;
         }
 
         #endregion

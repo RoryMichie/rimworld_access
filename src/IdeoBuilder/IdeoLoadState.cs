@@ -1,37 +1,33 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using HarmonyLib;
 using RimWorld;
-using UnityEngine;
 using Verse;
-using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Keyboard-accessible state for the saved-ideoligion picker (Dialog_IdeoList_Load).
-    /// A flat list of saved ideoligion files: Up/Down to navigate, typeahead to search by
-    /// file name, Enter to load (delegates to the dialog's DoFileInteraction so vanilla's
-    /// version/meme-compatibility checks still run), Delete to delete (with confirmation),
-    /// Escape to close.
+    /// Lifecycle, data and mutation vehicles for the saved-ideoligion picker
+    /// (Dialog_IdeoList_Load). Navigation, typeahead and announcements belong to
+    /// <see cref="RimWorldAccess.Shell.IdeoLoadScope"/>, which is a real
+    /// <see cref="RimWorldAccess.Shell.ScreenScope"/>. This class was slimmed to a leaner state shape
+    /// at the same time: the FlatListCursor, the search buffer, and the row/opening announcements all
+    /// moved onto the chassis, and what remains is the file enumeration plus the two mutations
+    /// (<see cref="LoadSelected"/>, <see cref="RequestDelete"/>), each on vanilla's own vehicle.
+    ///
+    /// <see cref="IsActive"/> is still the lifecycle flag <see cref="StateResetRegistry"/>
+    /// and the dialog's PostOpen/PostClose patches drive (see IdeoLoadPatch.cs).
     /// </summary>
     public static class IdeoLoadState
     {
         public static bool IsActive { get; private set; }
 
-        /// <summary>
-        /// True when a typeahead search is currently filtering the list. Escape should clear the
-        /// search rather than close the dialog, so IdeoLoadPatch_OnCancel blocks vanilla's cancel
-        /// only in this case and otherwise lets the game close the dialog normally.
-        /// </summary>
-        public static bool HasActiveSearch => typeahead.HasActiveSearch;
+        /// <summary>The dialog's OWN file list (the same instance — see <see cref="RebuildFromDialog"/>), in vanilla's order.</summary>
+        internal static IReadOnlyList<SaveFileInfo> Files => files;
 
         private static Dialog_IdeoList_Load dialog;
         private static List<SaveFileInfo> files = new List<SaveFileInfo>();
-        private static int selectedIndex;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
 
         private static readonly System.Reflection.FieldInfo FilesField =
             AccessTools.Field(typeof(Dialog_FileList), "files");
@@ -45,24 +41,20 @@ namespace RimWorldAccess
             // Reference equality alone is the right guard. After Close sets
             // IsActive=false, the window-stack's snapshot iteration still calls
             // DoWindowContents one more time on the just-removed dialog in the
-            // SAME frame. Keying off IsActive there would re-announce on every
+            // SAME frame. Keying off IsActive there would re-open on every
             // close. Compare the dialog reference (which we deliberately keep
             // through Close) so the teardown re-render is a no-op.
             if (System.Object.ReferenceEquals(dialog, d))
                 return;
             dialog = d;
             IsActive = true;
-            selectedIndex = 0;
-            typeahead.ClearSearch();
             RebuildFromDialog();
-            AnnounceOpening();
         }
 
         public static void Close()
         {
             IsActive = false;
             files.Clear();
-            typeahead.ClearSearch();
             // Keep `dialog` set so EnsureOpen's reference check can detect the
             // post-close snapshot re-render (see EnsureOpen). The reference is
             // replaced naturally when a new load dialog opens.
@@ -71,116 +63,26 @@ namespace RimWorldAccess
         private static void RebuildFromDialog()
         {
             files = (FilesField.GetValue(dialog) as List<SaveFileInfo>) ?? new List<SaveFileInfo>();
-            if (selectedIndex >= files.Count)
-                selectedIndex = System.Math.Max(0, files.Count - 1);
         }
 
-        private static List<string> Labels() =>
-            files.Select(f => Path.GetFileNameWithoutExtension(f.FileName)).ToList();
-
-        #region Input
-
-        public static bool HandleInput(Event ev)
+        /// <summary>Hands the file name to vanilla's own DoFileInteraction so its version/meme-compatibility checks still run.</summary>
+        internal static void LoadSelected(int index)
         {
-            if (ev.type != EventType.KeyDown) return false;
-
-            KeyCode key = ev.keyCode;
-            bool alt = KeyboardHelper.IsAltHeld;
-            bool ctrl = ev.control;
-
-            if (key == KeyCode.Escape && !alt && !ctrl)
-            {
-                if (typeahead.HasActiveSearch) { typeahead.ClearSearchAndAnnounce(); AnnounceCurrent(); return true; }
-                dialog.Close(doCloseSound: false);
-                return true;
-            }
-
-            if (files.Count == 0)
-                return true;
-
-            if (key == KeyCode.UpArrow) { Move(-1); return true; }
-            if (key == KeyCode.DownArrow) { Move(1); return true; }
-            if (key == KeyCode.Home)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches) selectedIndex = typeahead.GetFirstMatch();
-                else { typeahead.ClearSearch(); selectedIndex = 0; }
-                AnnounceCurrent();
-                return true;
-            }
-            if (key == KeyCode.End)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches) selectedIndex = typeahead.GetLastMatch();
-                else { typeahead.ClearSearch(); selectedIndex = files.Count - 1; }
-                AnnounceCurrent();
-                return true;
-            }
-
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                LoadSelected();
-                return true;
-            }
-
-            if (key == KeyCode.Delete)
-            {
-                DeleteSelected();
-                return true;
-            }
-
-            if (key == KeyCode.Backspace)
-            {
-                if (typeahead.HasActiveSearch && typeahead.ProcessBackspace(Labels(), out int ni))
-                {
-                    if (ni >= 0) selectedIndex = ni;
-                    AnnounceCurrent();
-                }
-                return true;
-            }
-
-            char c = ev.character;
-            if (!alt && !ctrl && c != '\0' && char.IsLetterOrDigit(c))
-            {
-                if (typeahead.ProcessCharacterInput(c, Labels(), out int ni))
-                {
-                    selectedIndex = ni;
-                    AnnounceCurrent();
-                }
-                else
-                {
-                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    typeahead.SpeakNoMatches();
-                }
-                return true;
-            }
-
-            return true;
-        }
-
-        private static void Move(int delta)
-        {
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                selectedIndex = delta > 0
-                    ? typeahead.GetNextMatch(selectedIndex)
-                    : typeahead.GetPreviousMatch(selectedIndex);
-            else
-                selectedIndex = delta > 0
-                    ? MenuHelper.SelectNext(selectedIndex, files.Count)
-                    : MenuHelper.SelectPrevious(selectedIndex, files.Count);
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrent();
-        }
-
-        private static void LoadSelected()
-        {
-            if (selectedIndex < 0 || selectedIndex >= files.Count) return;
-            string fileName = Path.GetFileNameWithoutExtension(files[selectedIndex].FileName);
+            if (index < 0 || index >= files.Count) return;
+            string fileName = Path.GetFileNameWithoutExtension(files[index].FileName);
             DoFileInteractionMethod.Invoke(dialog, new object[] { fileName });
         }
 
-        private static void DeleteSelected()
+        /// <summary>
+        /// Opens the SAME vanilla ConfirmDelete dialog the per-row delete button opens
+        /// (decompiled Dialog_FileList.cs:105-113) and, on confirmation, runs the same two
+        /// steps its own inline delegate runs before handing control back to
+        /// <paramref name="onDeleted"/> for the cursor and the announcement.
+        /// </summary>
+        internal static void RequestDelete(int index, Action onDeleted)
         {
-            if (selectedIndex < 0 || selectedIndex >= files.Count) return;
-            var fileInfo = files[selectedIndex].FileInfo;
+            if (index < 0 || index >= files.Count) return;
+            var fileInfo = files[index].FileInfo;
             Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                 "ConfirmDelete".Translate(fileInfo.Name),
                 delegate
@@ -189,55 +91,12 @@ namespace RimWorldAccess
                     ReloadFilesMethod.Invoke(dialog, null);
                     RebuildFromDialog();
                     TolkHelper.SpeakData($"{fileInfo.Name}, {(string)"RimWorldAccess.Ideology.Builder.Status.Removed".Translate()}");
-                    AnnounceCurrent();
+                    if (onDeleted != null)
+                    {
+                        onDeleted();
+                    }
                 },
                 destructive: true));
         }
-
-        #endregion
-
-        #region Announcements
-
-        private static void AnnounceOpening()
-        {
-            var sb = new StringBuilder();
-            sb.Append("LoadGameButton".Translate());
-            if (files.Count > 0)
-            {
-                sb.Append(". ").Append(files.Count);
-                sb.Append(". ").Append(BuildCurrentText());
-            }
-            else
-            {
-                sb.Append(". ").Append("NoneLower".Translate());
-            }
-            TolkHelper.SpeakData(sb.ToString(), SpeechPriority.High);
-        }
-
-        private static void AnnounceCurrent()
-        {
-            string text = BuildCurrentText();
-            if (!string.IsNullOrEmpty(text))
-                TolkHelper.SpeakData(text);
-        }
-
-        private static string BuildCurrentText()
-        {
-            if (files.Count == 0) return "NoneLower".Translate();
-            if (selectedIndex < 0 || selectedIndex >= files.Count) selectedIndex = 0;
-
-            var file = files[selectedIndex];
-            var sb = new StringBuilder();
-            sb.Append(Path.GetFileNameWithoutExtension(file.FileName));
-            if (!file.GameVersion.NullOrEmpty())
-                sb.Append(". ").Append(file.GameVersion);
-
-            string position = MenuHelper.FormatPosition(selectedIndex, files.Count);
-            if (!string.IsNullOrEmpty(position))
-                sb.Append(". ").Append(position);
-            return sb.ToString();
-        }
-
-        #endregion
     }
 }

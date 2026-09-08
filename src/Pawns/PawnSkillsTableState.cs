@@ -1,34 +1,81 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using Verse;
-using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Read-only pawn-skills table. Rows are colonists (colonist bar order);
-    /// columns are SkillDefs in vanilla SkillUI order (listOrder descending).
-    /// Opened via Alt+P. Navigation mirrors WorkTableState but without editing
-    /// or painting — this view only surfaces information.
+    /// Data/lifecycle owner for the read-only pawn-skills table (Alt+P):
+    /// the colonist row order (bar order, or the player's active sort) and
+    /// the snapshot used to restore that order when a sort clears.
+    ///
+    /// Navigation, typeahead, and every announcement now live on
+    /// <see cref="RimWorldAccess.Shell.PawnSkillsTableScope"/> (the table-model migration;
+    /// <c>TabularMenuHelper</c> is retired for this screen). This class keeps only what the
+    /// state-mirrored lifecycle needs: <see cref="IsActive"/>,
+    /// <see cref="Open"/>, <see cref="Close"/>, row access for the scope's
+    /// table contract, and the sort-data mutators
+    /// <c>PawnSkillsTableScope.ApplyContentSort</c> calls into (comparisons
+    /// themselves stay in <see cref="PawnSkillsTableHelper"/>, wired to the
+    /// game's own skill/passion values — never display strings).
+    ///
+    /// <see cref="IsActive"/> is read by <c>MapNavigationPatch</c> and
+    /// <c>ShellGuards</c>; <see cref="Open"/> is called by the ambient
+    /// Alt+P claim in <c>MapScope.QuickInfo.Game.cs</c>. Both must stay
+    /// public static regardless of how the rest of this class is shaped.
     /// </summary>
     public static class PawnSkillsTableState
     {
         public static bool IsActive { get; private set; }
 
         private static List<Pawn> pawns = new List<Pawn>();
-        private static TabularMenuHelper<Pawn> tableHelper;
+        private static List<Pawn> defaultOrder = new List<Pawn>();
+        private static Func<IReadOnlyList<Pawn>> rowOrderSource;
 
-        public static TabularMenuHelper<Pawn> TableHelper => tableHelper;
-        public static TypeaheadSearchHelper Typeahead => tableHelper?.Typeahead;
-        public static int CurrentRowIndex => tableHelper?.CurrentRowIndex ?? 0;
-        public static int CurrentColumnIndex => tableHelper?.CurrentColumnIndex ?? 0;
-        public static int PawnCount => pawns.Count;
+        /// <summary>
+        /// Hands the row order to the live vanilla <c>PawnTable</c> the skills window draws
+        /// (set on mount, cleared on unmount). That table sorts on its own header clicks as
+        /// well as on the keyboard's, so reading the order back out of it is what keeps the
+        /// spoken rows and the drawn rows identical.
+        /// </summary>
+        public static void SetRowOrderSource(Func<IReadOnlyList<Pawn>> source)
+        {
+            rowOrderSource = source;
+        }
 
-        public static Pawn CurrentPawn =>
-            pawns.Count > 0 && CurrentRowIndex >= 0 && CurrentRowIndex < pawns.Count
-                ? pawns[CurrentRowIndex]
-                : null;
+        /// <summary>Current row order: the window's table while it exists, else the list below.</summary>
+        public static IReadOnlyList<Pawn> Pawns
+        {
+            get
+            {
+                IReadOnlyList<Pawn> live = rowOrderSource != null ? rowOrderSource() : null;
+                return live ?? pawns;
+            }
+        }
+
+        /// <summary>The colonist-bar order captured at <see cref="Open"/> — the table's unsorted order.</summary>
+        public static IReadOnlyList<Pawn> DefaultOrder
+        {
+            get { return defaultOrder; }
+        }
+
+        public static Pawn PawnAt(int index)
+        {
+            IReadOnlyList<Pawn> rows = Pawns;
+            return index >= 0 && index < rows.Count ? rows[index] : null;
+        }
+
+        public static int IndexOf(Pawn pawn)
+        {
+            IReadOnlyList<Pawn> rows = Pawns;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                if (rows[i] == pawn) return i;
+            }
+            return -1;
+        }
 
         #region Lifecycle
 
@@ -58,187 +105,57 @@ namespace RimWorldAccess
                 return;
             }
 
-            tableHelper = new TabularMenuHelper<Pawn>(
-                getColumnCount: () => PawnSkillsTableHelper.TotalColumnCount,
-                getItemLabel: PawnSkillsTableHelper.GetPawnLabel,
-                getColumnName: PawnSkillsTableHelper.GetColumnName,
-                getColumnValue: PawnSkillsTableHelper.GetColumnValue,
-                sortByColumn: (items, col, desc) => PawnSkillsTableHelper.SortPawnsByColumn(items, col, desc),
-                getColumnTooltip: PawnSkillsTableHelper.GetColumnTooltip,
-                isColumnSortable: PawnSkillsTableHelper.IsColumnSortable);
-
-            tableHelper.Reset();
-            tableHelper.SetDefaultOrder(pawns);
-
-            // Start on the first skill column (not Name) so Alt+S immediately sorts by a skill.
-            tableHelper.CurrentColumnIndex = PawnSkillsTableHelper.Skills.Count > 0 ? 1 : 0;
-
+            defaultOrder = new List<Pawn>(pawns);
             IsActive = true;
-            TolkHelper.SpeakData("RimWorldAccess.Pawns.SkillsTable.Opened".Translate(pawns.Count.ToString(), PawnSkillsTableHelper.Skills.Count.ToString()).ToString());
-            AnnounceInitialCell();
+            // The opening announcement (colonist/skill counts + the first
+            // cell) is PawnSkillsTableScope.OnFocus's job, not this method's:
+            // the mirror that pushes the scope hasn't run yet at this point
+            // (mirror pushes land on the next dispatcher pass — see
+            // the FocusScope class header), so there is no live scope here
+            // to announce through the composer.
         }
 
         public static void Close()
         {
             if (!IsActive) return;
-            CleanupState();
+            IsActive = false;
+            pawns.Clear();
+            defaultOrder.Clear();
             TolkHelper.Speak("RimWorldAccess.Pawns.SkillsTable.Closed".Loc());
         }
 
-        private static void CleanupState()
+        /// <summary>
+        /// Silent hard reset for session-boundary hygiene — everything <see cref="Close"/>
+        /// drops, minus the announcement (nothing closed from the player's side), plus the
+        /// row-order hook, so a delegate over the previous session's table can never
+        /// outlive it. Both lists hold pawns from a game that no longer exists.
+        /// </summary>
+        internal static void ResetHard()
         {
             IsActive = false;
             pawns.Clear();
-            tableHelper?.ClearSearch();
-            tableHelper = null;
+            defaultOrder.Clear();
+            rowOrderSource = null;
         }
+
+        #endregion
+
+        #region Sort data (PawnSkillsTableScope.ApplyContentSort calls these)
 
         /// <summary>
-        /// Initial-entry announcement includes column tooltip (skill description).
-        /// BuildCellAnnouncement would normally suppress the tooltip on row moves;
-        /// the first cell has no prior context, so we speak the description once.
+        /// Re-order by a column using the game-wired comparer in <see cref="PawnSkillsTableHelper"/>,
+        /// always from the captured order so repeated sorts compound no further than
+        /// vanilla's do (PawnTable re-sorts its pawns getter's output every recache).
         /// </summary>
-        private static void AnnounceInitialCell()
+        public static void SortByColumn(int columnIndex, bool descending)
         {
-            if (pawns.Count == 0) return;
-            Pawn pawn = CurrentPawn;
-            if (pawn == null) return;
-
-            string cell = tableHelper.BuildCellAnnouncement(pawn, pawns.Count, includeItemName: true);
-            string tooltip = PawnSkillsTableHelper.GetColumnTooltip(pawn, CurrentColumnIndex);
-            TolkHelper.SpeakData(string.IsNullOrEmpty(tooltip) ? cell : $"{cell}. {tooltip}");
+            pawns = PawnSkillsTableHelper.SortPawnsByColumn(defaultOrder, columnIndex, descending);
         }
 
-        #endregion
-
-        #region Navigation
-
-        public static void SelectNextPawn()
+        /// <summary>Restore the colonist-bar order captured at <see cref="Open"/> (the sort-cleared state).</summary>
+        public static void RestoreDefaultOrder()
         {
-            if (pawns.Count == 0) return;
-            tableHelper.SelectNextRow(pawns.Count);
-            AnnounceCurrentCell(includePawnName: true, includeColumnName: false);
-        }
-
-        public static void SelectPreviousPawn()
-        {
-            if (pawns.Count == 0) return;
-            tableHelper.SelectPreviousRow(pawns.Count);
-            AnnounceCurrentCell(includePawnName: true, includeColumnName: false);
-        }
-
-        public static void SelectNextColumn()
-        {
-            if (pawns.Count == 0) return;
-            tableHelper.SelectNextColumn();
-            AnnounceCurrentCell(includePawnName: false);
-        }
-
-        public static void SelectPreviousColumn()
-        {
-            if (pawns.Count == 0) return;
-            tableHelper.SelectPreviousColumn();
-            AnnounceCurrentCell(includePawnName: false);
-        }
-
-        public static void JumpToFirst()
-        {
-            if (pawns.Count == 0) return;
-            tableHelper.JumpToFirst(pawns.Count);
-            AnnounceCurrentCell(includePawnName: true, includeColumnName: false);
-        }
-
-        public static void JumpToLast()
-        {
-            if (pawns.Count == 0) return;
-            tableHelper.JumpToLast(pawns.Count);
-            AnnounceCurrentCell(includePawnName: true, includeColumnName: false);
-        }
-
-        #endregion
-
-        #region Sorting / Typeahead
-
-        public static void ToggleSortByCurrentColumn()
-        {
-            if (pawns.Count == 0) return;
-            var result = tableHelper.ToggleSortByCurrentColumn(pawns, out string direction, out bool sortCleared);
-            if (result == null)
-            {
-                TolkHelper.SpeakData("RimWorldAccess.Animals.Sort.CannotSort".Translate(tableHelper.GetCurrentColumnName()).ToString());
-                return;
-            }
-            pawns = result.ToList();
-            if (sortCleared)
-            {
-                SoundDefOf.Tick_Low.PlayOneShotOnCamera();
-                TolkHelper.Speak("RimWorldAccess.Animals.Sort.Cleared".Loc());
-            }
-            else
-            {
-                SoundDefOf.Tick_High.PlayOneShotOnCamera();
-                TolkHelper.SpeakData("RimWorldAccess.Animals.Sort.SortedBy".Translate(tableHelper.GetCurrentColumnName(), direction).ToString());
-            }
-            AnnounceCurrentCell(includePawnName: true);
-        }
-
-        public static bool HandleTypeahead(char c)
-        {
-            if (pawns.Count == 0) return false;
-            if (tableHelper.HandleTypeahead(c, pawns, out _))
-            {
-                AnnounceWithSearch();
-                return true;
-            }
-            tableHelper.Typeahead.SpeakNoMatches();
-            return false;
-        }
-
-        public static bool HandleBackspace()
-        {
-            if (pawns.Count == 0) return false;
-            if (tableHelper.HandleBackspace(pawns, out _))
-            {
-                if (tableHelper.Typeahead.HasActiveSearch)
-                    AnnounceWithSearch();
-                else
-                    AnnounceCurrentCell(includePawnName: true);
-                return true;
-            }
-            return false;
-        }
-
-        public static bool ClearSearchIfActive()
-        {
-            if (tableHelper?.Typeahead.HasActiveSearch == true)
-            {
-                tableHelper.Typeahead.ClearSearchAndAnnounce();
-                AnnounceCurrentCell(includePawnName: true);
-                return true;
-            }
-            return false;
-        }
-
-        #endregion
-
-        #region Announcements
-
-        public static void AnnounceCurrentCell(bool includePawnName, bool includeColumnName = true)
-        {
-            if (pawns.Count == 0) return;
-            Pawn pawn = CurrentPawn;
-            if (pawn == null) return;
-            string announcement = tableHelper.BuildCellAnnouncement(pawn, pawns.Count, includePawnName, includeColumnName);
-            TolkHelper.SpeakData(announcement);
-        }
-
-        public static void AnnounceWithSearch()
-        {
-            if (pawns.Count == 0) return;
-            Pawn pawn = CurrentPawn;
-            if (pawn == null) return;
-            string announcement = tableHelper.BuildCellAnnouncementWithSearch(pawn, pawns.Count);
-            TolkHelper.SpeakData(announcement);
+            pawns = new List<Pawn>(defaultOrder);
         }
 
         #endregion

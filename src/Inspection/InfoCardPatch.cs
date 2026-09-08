@@ -81,7 +81,7 @@ namespace RimWorldAccess
 
     /// <summary>
     /// Harmony patches for Dialog_InfoCard to enable keyboard accessibility.
-    /// Uses PostOpen/PostClose lifecycle and delegates input handling to UnifiedKeyboardPatch.
+    /// Uses PostOpen/PostClose lifecycle and delegates input handling to the shell scope.
     /// </summary>
     public static class InfoCardPatch
     {
@@ -93,7 +93,7 @@ namespace RimWorldAccess
         /// <summary>
         /// Postfix patch for DoWindowContents to handle delayed initialization.
         /// Stats aren't populated until a few frames after opening, so we wait before announcing.
-        /// Keyboard input is handled by UnifiedKeyboardPatch, not here.
+        /// Keyboard input is handled by InfoCardScope, not here.
         /// </summary>
         [HarmonyPatch(typeof(Dialog_InfoCard), "DoWindowContents")]
         public static class DoWindowContents_Patch
@@ -112,6 +112,30 @@ namespace RimWorldAccess
                 {
                     hasAnnounced = true;
                     InfoCardState.RebuildAndAnnounce();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Prefix patch for DoWindowContents that drives vanilla's own tab and stat
+        /// selection from the accessible tree's cursor (see
+        /// <see cref="InfoCardVisualDriver"/>). Must run as a PREFIX: the postfix above
+        /// runs after FillCard has already drawn (decompiled Verse/Dialog_InfoCard.cs:570),
+        /// which is too late for either nudge to be visible this frame.
+        /// </summary>
+        [HarmonyPatch(typeof(Dialog_InfoCard), "DoWindowContents")]
+        public static class DoWindowContents_DriverPatch
+        {
+            [HarmonyPrefix]
+            public static void Prefix(Dialog_InfoCard __instance)
+            {
+                try
+                {
+                    InfoCardVisualDriver.Drive(__instance);
+                }
+                catch (Exception ex)
+                {
+                    ModLogger.LimitedError("Info card visual driver prefix error", ex);
                 }
             }
         }

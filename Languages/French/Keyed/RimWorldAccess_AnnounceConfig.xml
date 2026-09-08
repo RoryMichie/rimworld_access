@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Configure Spoken Announcements screen (src/Shell/Screens/AnnouncementConfigDialog.Game.cs
+    — Dialog_ConfigureAnnouncements / AnnouncementConfigScope). Opened from a button in both
+    RimWorld Access settings surfaces (see RimWorldAccess_Core.xml's
+    RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button).
+
+    The seven part names/examples cover the seven parts the screen lists; the example
+    fragments show a translator exactly what that part sounds like in an announcement so they
+    can adapt the sample text to their own language's phrasing.
+  -->
+
+  <RimWorldAccess.AnnounceConfig.Title>Configurer les annonces vocales</RimWorldAccess.AnnounceConfig.Title>
+  <RimWorldAccess.AnnounceConfig.Intro>Choisissez quelles parties d'une annonce sont prononcées et l'ordre dans lequel elles sont jouées. Les changements prennent effet immédiatement, ce qui vous permet d'entendre le résultat en parcourant cette liste. Appuyez sur Espace ou Entrée pour activer ou désactiver une partie, et sur Ctrl avec les flèches Haut et Bas pour la déplacer.</RimWorldAccess.AnnounceConfig.Intro>
+  <RimWorldAccess.AnnounceConfig.PartsRegion>Parties de l'annonce</RimWorldAccess.AnnounceConfig.PartsRegion>
+
+  <!-- The Name part's row is always drawn checked and disabled; see
+       RimWorldAccess.AnnounceConfig.NameAlwaysOn below. -->
+  <RimWorldAccess.AnnounceConfig.Part.Label>Nom</RimWorldAccess.AnnounceConfig.Part.Label>
+  <RimWorldAccess.AnnounceConfig.Part.Hotkey>Raccourci clavier</RimWorldAccess.AnnounceConfig.Part.Hotkey>
+  <RimWorldAccess.AnnounceConfig.Part.RoleAndState>Type de contrôle et état</RimWorldAccess.AnnounceConfig.Part.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Part.Level>Niveau de l'arborescence</RimWorldAccess.AnnounceConfig.Part.Level>
+  <RimWorldAccess.AnnounceConfig.Part.Position>Position dans la liste</RimWorldAccess.AnnounceConfig.Part.Position>
+  <RimWorldAccess.AnnounceConfig.Part.Extras>Description et détails</RimWorldAccess.AnnounceConfig.Part.Extras>
+  <RimWorldAccess.AnnounceConfig.Part.Hint>Indications d'interaction</RimWorldAccess.AnnounceConfig.Part.Hint>
+
+  <RimWorldAccess.AnnounceConfig.Example.Label>par exemple : Autoriser les cadavres frais</RimWorldAccess.AnnounceConfig.Example.Label>
+  <RimWorldAccess.AnnounceConfig.Example.Hotkey>par exemple : Alt+C</RimWorldAccess.AnnounceConfig.Example.Hotkey>
+  <RimWorldAccess.AnnounceConfig.Example.RoleAndState>par exemple : case à cocher, cochée</RimWorldAccess.AnnounceConfig.Example.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Example.Level>par exemple : niveau 2</RimWorldAccess.AnnounceConfig.Example.Level>
+  <RimWorldAccess.AnnounceConfig.Example.Position>par exemple : 4 sur 13</RimWorldAccess.AnnounceConfig.Example.Position>
+  <RimWorldAccess.AnnounceConfig.Example.Extras>par exemple : Inclut les pourris</RimWorldAccess.AnnounceConfig.Example.Extras>
+  <RimWorldAccess.AnnounceConfig.Example.Hint>par exemple : Appuyez sur Entrée pour sélectionner</RimWorldAccess.AnnounceConfig.Example.Hint>
+
+  <!-- Spoken (as Extras, after the example fragment) and appended in place of the toggle
+       when the player tries to act on the Name part's row; it can be reordered but never
+       turned off, since silencing it would leave the player unable to tell what is focused. -->
+  <RimWorldAccess.AnnounceConfig.NameAlwaysOn>Le nom de l'élément est toujours annoncé.</RimWorldAccess.AnnounceConfig.NameAlwaysOn>
+
+  <RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition>Position des lignes et des colonnes dans les tableaux</RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition>
+  <RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition.Example>par exemple : ligne 3 sur 8, colonne 2 sur 5</RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition.Example>
+  <RimWorldAccess.AnnounceConfig.Extra.TableDimensions>Taille du tableau à l'entrée dans un tableau</RimWorldAccess.AnnounceConfig.Extra.TableDimensions>
+  <RimWorldAccess.AnnounceConfig.Extra.TableDimensions.Example>par exemple : tableau, 5 colonnes, 8 lignes</RimWorldAccess.AnnounceConfig.Extra.TableDimensions.Example>
+  <RimWorldAccess.AnnounceConfig.Extra.SectionCount>Nombre de sections d'un écran, et celle où vous êtes</RimWorldAccess.AnnounceConfig.Extra.SectionCount>
+  <RimWorldAccess.AnnounceConfig.Extra.SectionCount.Example>par exemple : 2 sections, ou section 2 sur 3</RimWorldAccess.AnnounceConfig.Extra.SectionCount.Example>
+
+  <!-- The Preview button's canned demo item, composed live through the same ComposeFocus
+       path as every real announcement, so it always reflects the current working toggles/order. -->
+  <RimWorldAccess.AnnounceConfig.Preview.Button>Prévisualiser l'annonce</RimWorldAccess.AnnounceConfig.Preview.Button>
+  <RimWorldAccess.AnnounceConfig.Preview.Label>Élément d'exemple</RimWorldAccess.AnnounceConfig.Preview.Label>
+  <RimWorldAccess.AnnounceConfig.Preview.Hotkey>Alt+P</RimWorldAccess.AnnounceConfig.Preview.Hotkey>
+  <RimWorldAccess.AnnounceConfig.Preview.Extras>Voici un exemple de description qui montre le type de détail que le texte propre à un élément fournit.</RimWorldAccess.AnnounceConfig.Preview.Extras>
+  <RimWorldAccess.AnnounceConfig.Preview.Hint>Appuyez sur Entrée pour sélectionner.</RimWorldAccess.AnnounceConfig.Preview.Hint>
+
+  <!-- Spoken once when the Restore defaults button or its chord runs. The button's own caption
+       reuses Core's RestoreToDefaultSettings, the same way Save and Cancel reuse Core's. -->
+  <RimWorldAccess.AnnounceConfig.ResetToDefaults.Done>Paramètres d'annonce restaurés aux valeurs par défaut.</RimWorldAccess.AnnounceConfig.ResetToDefaults.Done>
+</LanguageData>

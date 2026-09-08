@@ -112,7 +112,6 @@
        UnknownKey is a defensive fallback that should never reach a
        user in normal play.
        ================================================================= -->
-  <RimWorldAccess.Map.Detail.UnknownKey>未知按键</RimWorldAccess.Map.Detail.UnknownKey>
 
   <!-- =================================================================
        Go-to dialog (GoToState, Ctrl+G).
@@ -165,6 +164,11 @@
   <RimWorldAccess.Map.Pawn.Idle>闲置</RimWorldAccess.Map.Pawn.Idle>
   <RimWorldAccess.Map.Pawn.Selection>{0} - {1}</RimWorldAccess.Map.Pawn.Selection>
   <RimWorldAccess.Map.Pawn.SelectionWithCover>{0}, {1} - {2}</RimWorldAccess.Map.Pawn.SelectionWithCover>
+  <RimWorldAccess.Map.Pawn.Follow.ActivityAndLocation>{0}, {1}</RimWorldAccess.Map.Pawn.Follow.ActivityAndLocation>
+
+  <RimWorldAccess.Map.Thing.Selection>{0}, {1}</RimWorldAccess.Map.Thing.Selection>
+  <RimWorldAccess.Map.Selection.Multiple>已选择 {0} 个</RimWorldAccess.Map.Selection.Multiple>
+  <RimWorldAccess.Map.Selection.Cleared>选择已清除</RimWorldAccess.Map.Selection.Cleared>
 
   <!-- =================================================================
        Performance announcement (PerformanceAnnouncementState, Shift+T).
@@ -242,21 +246,28 @@
 
   <!-- =================================================================
        Jump-mode navigation (MapNavigationState).
-       PageUp/PageDown cycles between modes; Ctrl+arrows jumps in the
+       Shift+Up/Down cycles between modes; Ctrl+arrows jumps in the
        active mode.
        Distance:        {0} = the new preset jump distance (in tiles).
        PresetDistanceMode: {0} = the preset jump distance.
-       Boundary / NoWallFound / AlreadyAdjacent: spoken when the jump
-       cannot proceed.
+       Boundary / Blocked / NoTerrainChange / NoStructureChange: spoken
+       when the jump cannot proceed.
+       Moved:           {0} = tiles crossed, leading a scanning jump's
+       landing announcement.
        ================================================================= -->
   <RimWorldAccess.Map.Jump.Distance>跳转距离: {0}</RimWorldAccess.Map.Jump.Distance>
   <RimWorldAccess.Map.Jump.MinimumDistance>最小距离</RimWorldAccess.Map.Jump.MinimumDistance>
   <RimWorldAccess.Map.Jump.Mode.PresetDistance>跳转模式: 预设距离, {0} 格</RimWorldAccess.Map.Jump.Mode.PresetDistance>
-  <RimWorldAccess.Map.Jump.Mode.AdjacentToWall>跳转模式: 紧邻墙壁</RimWorldAccess.Map.Jump.Mode.AdjacentToWall>
+  <RimWorldAccess.Map.Jump.Mode.Impassable>跳转模式: 不可通行</RimWorldAccess.Map.Jump.Mode.Impassable>
+  <RimWorldAccess.Map.Jump.Mode.Terrain>跳转模式: 地形</RimWorldAccess.Map.Jump.Mode.Terrain>
+  <RimWorldAccess.Map.Jump.Mode.Structure>跳转模式: 建筑</RimWorldAccess.Map.Jump.Mode.Structure>
   <RimWorldAccess.Map.Jump.Mode.Unknown>跳转模式: 未知</RimWorldAccess.Map.Jump.Mode.Unknown>
   <RimWorldAccess.Map.Jump.Boundary>地图边界</RimWorldAccess.Map.Jump.Boundary>
-  <RimWorldAccess.Map.Jump.AlreadyAdjacent>已紧邻墙壁</RimWorldAccess.Map.Jump.AlreadyAdjacent>
-  <RimWorldAccess.Map.Jump.NoWallFound>未找到墙壁</RimWorldAccess.Map.Jump.NoWallFound>
+  <RimWorldAccess.Map.Jump.Blocked>被阻挡</RimWorldAccess.Map.Jump.Blocked>
+  <RimWorldAccess.Map.Jump.NoTerrainChange>该方向没有地形变化</RimWorldAccess.Map.Jump.NoTerrainChange>
+  <RimWorldAccess.Map.Jump.NoStructureChange>该方向没有建筑变化</RimWorldAccess.Map.Jump.NoStructureChange>
+  <RimWorldAccess.Map.Jump.Moved.One>1 格</RimWorldAccess.Map.Jump.Moved.One>
+  <RimWorldAccess.Map.Jump.Moved.Many>{0} 格</RimWorldAccess.Map.Jump.Moved.Many>
 
   <!-- =================================================================
        Map display name fallback (MapNavigationState.GetMapDisplayName).
@@ -314,12 +325,12 @@
   <RimWorldAccess.Map.Scanner.NoItemSelected>未选择项目</RimWorldAccess.Map.Scanner.NoItemSelected>
   <RimWorldAccess.Map.Scanner.EmptyCategory>此类别中没有项目</RimWorldAccess.Map.Scanner.EmptyCategory>
 
-  <!-- Category / subcategory switch announcements.
-       One/Many split for the item count.
+  <!-- Category / subcategory heading. The first item of the new category
+       speaks right after it as its own utterance, so no count belongs here.
        {0} = localized category or subcategory name (see CatName.* /
-       SubName.* below), {1} = item count. -->
-  <RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>{0} - 1 项</RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>
-  <RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>{0} - {1} 项</RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>
+       SubName.* below). -->
+  <RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>{0}，1 项</RimWorldAccess.Map.Scanner.CategoryAnnouncementOne>
+  <RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>{0}，{1} 项</RimWorldAccess.Map.Scanner.CategoryAnnouncementMany>
 
   <!-- End-key distance/direction readout. -->
   <RimWorldAccess.Map.Scanner.DistanceDirection>{1} {0} 格</RimWorldAccess.Map.Scanner.DistanceDirection>
@@ -409,6 +420,7 @@
   <RimWorldAccess.Map.Scanner.SubName.Guests>访客</RimWorldAccess.Map.Scanner.SubName.Guests>
   <RimWorldAccess.Map.Scanner.SubName.Hostile>敌对</RimWorldAccess.Map.Scanner.SubName.Hostile>
   <RimWorldAccess.Map.Scanner.SubName.PlayerMechs>玩家机械体</RimWorldAccess.Map.Scanner.SubName.PlayerMechs>
+  <RimWorldAccess.Map.Scanner.SubName.Controllable>可控单位</RimWorldAccess.Map.Scanner.SubName.Controllable>
   <RimWorldAccess.Map.Scanner.SubName.HostileMechs>敌对机械体</RimWorldAccess.Map.Scanner.SubName.HostileMechs>
   <RimWorldAccess.Map.Scanner.SubName.Pen>畜栏</RimWorldAccess.Map.Scanner.SubName.Pen>
   <RimWorldAccess.Map.Scanner.SubName.NonPen>非畜栏</RimWorldAccess.Map.Scanner.SubName.NonPen>
@@ -519,14 +531,14 @@
   <!-- Cell-info parenthesized suffix: " ({BuildingCellHelper})".
        Inlined onto the thing label, so leading space is intentional. -->
   <RimWorldAccess.Map.Tile.CellSuffix> ({0})</RimWorldAccess.Map.Tile.CellSuffix>
-  <!-- " wall" appended to smoothed-stone walls. -->
-  <RimWorldAccess.Map.Tile.WallSuffix>墙</RimWorldAccess.Map.Tile.WallSuffix>
+  <!-- Smoothed-stone wall label. {0} = the building's short label. -->
+  <RimWorldAccess.Map.Tile.WallLabel>{0}墙</RimWorldAccess.Map.Tile.WallLabel>
   <!-- Work-left fragment for unfinished things (e.g., joinery in progress). -->
   <RimWorldAccess.Map.Tile.WorkLeftAppend>剩余工作量: {0}</RimWorldAccess.Map.Tile.WorkLeftAppend>
   <!-- "Forbidden " prefix on item labels. -->
   <RimWorldAccess.Map.Tile.ForbiddenPrefix>已禁用 {0}</RimWorldAccess.Map.Tile.ForbiddenPrefix>
-  <!-- " floor" appended to smoothed-stone terrain labels. -->
-  <RimWorldAccess.Map.Tile.FloorSuffix>地板</RimWorldAccess.Map.Tile.FloorSuffix>
+  <!-- Smoothed-stone terrain label. {0} = the terrain's label. -->
+  <RimWorldAccess.Map.Tile.FloorLabel>{0}地板</RimWorldAccess.Map.Tile.FloorLabel>
   <!-- Roof status. -->
 
   <!-- Stack count appended to item label (e.g. "wood x5"). -->
@@ -655,6 +667,8 @@
   <RimWorldAccess.Map.Scanner.PressHomeForCenter>按 Home 键定位到中心</RimWorldAccess.Map.Scanner.PressHomeForCenter>
   <RimWorldAccess.Map.Scanner.JumpedTilesToCenter>向中心{1}跳转了 {0} 格</RimWorldAccess.Map.Scanner.JumpedTilesToCenter>
   <RimWorldAccess.Map.Scanner.JumpedToCenter>已跳转到中心</RimWorldAccess.Map.Scanner.JumpedToCenter>
+  <RimWorldAccess.Map.Drag.PaintExtent>{0} 乘 {1}, {2} 格</RimWorldAccess.Map.Drag.PaintExtent>
+  <RimWorldAccess.Map.Drag.SelectExtent>{0} 乘 {1}</RimWorldAccess.Map.Drag.SelectExtent>
   <RimWorldAccess.Map.Scanner.SubName.Polluted>受污染</RimWorldAccess.Map.Scanner.SubName.Polluted>
   <RimWorldAccess.Map.Scanner.SubName.ThickRoof>山体顶板</RimWorldAccess.Map.Scanner.SubName.ThickRoof>
   <RimWorldAccess.Map.Scanner.SubName.ThinRoof>薄岩顶</RimWorldAccess.Map.Scanner.SubName.ThinRoof>

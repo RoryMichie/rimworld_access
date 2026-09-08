@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using RimWorld;
+using RimWorldAccess.Shell;
 
 namespace RimWorldAccess
 {
@@ -63,5 +64,35 @@ namespace RimWorldAccess
         /// recorded while building the summary.
         /// </summary>
         (string name, string explanation)? GetStatExplanation(int summaryIndex);
+
+        /// <summary>
+        /// The short stat-name label for the summary line at the given index (e.g. "Mass
+        /// Capacity"), independent of whether a breakdown exists (unlike
+        /// <see cref="GetStatExplanation"/>, which returns null for lines with no breakdown,
+        /// e.g. Food) — table-model T3's Summary stat table needs a name for every row, not
+        /// just the ones with an Alt+I explanation. "" when the index is out of range.
+        /// </summary>
+        string GetStatName(int summaryIndex);
+
+        /// <summary>
+        /// View over the dialog's own live Pawns-tab TransferableOneWayWidget (table-model
+        /// T3): the game's column switches, rot tile, and mass-cell mode read off the exact
+        /// instance the dialog renders with, so the column set is the game's decision by
+        /// construction. Re-read per access — the dialogs replace their widgets on recache.
+        /// </summary>
+        TransferableTableColumns.WidgetView PawnsView { get; }
+
+        /// <summary>View over the dialog's own live Items-tab TransferableOneWayWidget. See <see cref="PawnsView"/>.</summary>
+        TransferableTableColumns.WidgetView ItemsView { get; }
+
+        /// <summary>The dialog's own tooltip for the identity/count column (vanilla's sourceCountDesc), or null.</summary>
+        string CountColumnTooltip { get; }
+
+        /// <summary>
+        /// Whether the dialog draws a Pawns tab at all. The two vanilla dialogs always do;
+        /// Vehicle Framework's cargo dialog is a single items table with no tab bar, so its
+        /// scope presents only Items (and Summary).
+        /// </summary>
+        bool HasPawnsTab { get; }
     }
 }

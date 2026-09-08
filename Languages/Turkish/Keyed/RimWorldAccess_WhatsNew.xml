@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    What's New module strings (src/Shell/Screens/WhatsNewState.cs + WhatsNewCatalog.cs). The mod keeps a
+    record of announcements, one per released version (see WhatsNewCatalog, newest first). When
+    the player has unread announcements (e.g. after an update) they are surfaced on the main menu,
+    shown one at a time as a buffer the player arrows through line by line.
+
+    Per-version messages are keyed by version with dots replaced by underscores, e.g.
+    RimWorldAccess.WhatsNew.Message.2_0_0 for version 2.0.0. When a version has no message of its
+    own, RimWorldAccess.WhatsNew.Message.Default is shown instead. Paragraphs are separated by
+    "\n"; each becomes one line the player arrows to.
+
+    When cutting a release, add a new Message.<version> block here (and translate it in the other
+    language folders) and add the version to WhatsNewCatalog. The message is player-facing prose,
+    not a raw changelog dump — the full changelog lives on the website, one button-press away.
+  -->
+
+  <!-- Header (the first line of each announcement). Header is used when there is more than one
+       announcement: {0} = version, {1} = this announcement's number, {2} = total. HeaderSingle is
+       used for a lone announcement (the normal case): {0} = version. -->
+  <RimWorldAccess.WhatsNew.Header>RimWorld Access {0}. Seslendirme {1} / {2}.</RimWorldAccess.WhatsNew.Header>
+  <RimWorldAccess.WhatsNew.HeaderSingle>RimWorld Access {0}.</RimWorldAccess.WhatsNew.HeaderSingle>
+
+  <!-- Per-version messages. Paragraphs separated by "\n".
+       DRAFT: this 2.0.0 welcome is a working draft; rewrite it in your own words before release,
+       then it (and any future announcements) get translated into the other languages. -->
+  <RimWorldAccess.WhatsNew.Message.2_0_0>Yenilikler'e hoş geldin! Bu mesaj, RimWorld Access her güncellendiğinde neyin değiştiğini sana anlatmak için görünür.\n
+RimWorld Access şu anda 2.0.0 sürümünde, yeni sahipliği altındaki ilk sürüm. Oynadığın için ve RimWorld'ü görme engelli ve az gören oyuncular için oynanabilir kılmaya yardım ettiğin için teşekkürler.\n
+Tam ve ayrıntılı değişiklik günlüğü için, web sitesinde okumak üzere 'Değişiklik günlüğünü aç' seçeneğini seç.\n
+Bunu istediğin zaman ana menüdeki veya duraklatma menüsündeki Yenilikler'den yeniden açabilirsin. Bunların kendiliğinden görünmesini istemiyorsan, 'Bunları bir daha gösterme' seçeneğini seç; mod güncellendiğinde yine de kısa bir bildirim duyacaksın.\n
+İşin bittiğinde Escape'e bas veya Kapat'ı seç. Tekrar teşekkürler, iyi oyunlar!</RimWorldAccess.WhatsNew.Message.2_0_0>
+
+  <!-- Fallback message when a version has no message of its own. -->
+  <RimWorldAccess.WhatsNew.Message.Default>RimWorld Access güncellendi. Web sitesinde neyin değiştiğini okumak için 'Değişiklik günlüğünü aç' seçeneğini seç.</RimWorldAccess.WhatsNew.Message.Default>
+
+  <!-- Buttons reached by arrowing past the last line of the message. -->
+  <!-- {0} = number of announcements still unread. -->
+  <RimWorldAccess.WhatsNew.Button.NextAnnouncement>Sonraki seslendirmeye geç ({0} kaldı)</RimWorldAccess.WhatsNew.Button.NextAnnouncement>
+  <!-- {0} = total number of announcements in the record (always 2 or more when this button shows). -->
+  <RimWorldAccess.WhatsNew.Button.MarkAllRead>Tüm {0} seslendirmeyi okundu olarak işaretle</RimWorldAccess.WhatsNew.Button.MarkAllRead>
+  <RimWorldAccess.WhatsNew.Button.OpenChangelog>Değişiklik günlüğünü tarayıcıda aç</RimWorldAccess.WhatsNew.Button.OpenChangelog>
+  <RimWorldAccess.WhatsNew.Button.Close>Kapat</RimWorldAccess.WhatsNew.Button.Close>
+  <RimWorldAccess.WhatsNew.Button.DontShowAgain>Bunları bir daha gösterme</RimWorldAccess.WhatsNew.Button.DontShowAgain>
+
+  <!-- Spoken feedback. -->
+  <RimWorldAccess.WhatsNew.OpeningChangelog>Değişiklik günlüğü tarayıcında açılıyor.</RimWorldAccess.WhatsNew.OpeningChangelog>
+  <RimWorldAccess.WhatsNew.AllMarkedRead>Tüm seslendirmeler okundu olarak işaretlendi.</RimWorldAccess.WhatsNew.AllMarkedRead>
+  <RimWorldAccess.WhatsNew.Suppressed>Tamam. Sonraki güncellemelerde yalnızca kısa bir bildirim alacaksın. Bu mesajları Ayarlar, RimWorld Access bölümünden tekrar açabilirsin.</RimWorldAccess.WhatsNew.Suppressed>
+  <RimWorldAccess.WhatsNew.Closed>Yenilikler kapatıldı.</RimWorldAccess.WhatsNew.Closed>
+
+  <!-- Brief notice spoken instead of the full reader when the player has turned auto-popups off.
+       {0} is the newest version. -->
+  <RimWorldAccess.WhatsNew.UpdateWhisper>RimWorld Access {0} sürümüne güncellendi. Neyin değiştiğini okumak için menüden Yenilikler'i aç.</RimWorldAccess.WhatsNew.UpdateWhisper>
+
+  <!-- Menu items (main menu and in-game pause menu). -->
+  <RimWorldAccess.WhatsNew.MenuItem.WhatsNew>Yenilikler</RimWorldAccess.WhatsNew.MenuItem.WhatsNew>
+  <RimWorldAccess.WhatsNew.MenuItem.Website>RimWorld Access web sitesi</RimWorldAccess.WhatsNew.MenuItem.Website>
+
+</LanguageData>

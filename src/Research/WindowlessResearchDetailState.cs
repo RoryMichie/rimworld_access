@@ -1,6 +1,7 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Reflection;
+using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.Sound;
@@ -8,42 +9,57 @@ using Verse.Sound;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages the detail view for a specific research project.
-    /// Uses a tree structure with expandable categories for prerequisites, unlocks, and dependents.
-    /// Uses TreeNavigationHelper for all navigation logic.
+    /// Data/lifecycle facade for the detail view of a specific research project: lifecycle,
+    /// the drill-down navigation stack, activate/info-card dispatch, and the research-start path.
+    /// Stateless content and announcement builders live on
+    /// <see cref="WindowlessResearchDetailHelper"/>; cursor and typeahead machinery on
+    /// <see cref="RimWorldAccess.Shell.ResearchDetailScope"/>, which this facade drives through
+    /// bridge callbacks wired once by ResearchScopeMirror. The callbacks fire on every Open, since
+    /// drilling from one project into another leaves the scope continuously pushed and offers no
+    /// "just became visible" hook to rebuild on.
     /// </summary>
     public static class WindowlessResearchDetailState
     {
         private static bool isActive = false;
         private static ResearchProjectDef currentProject = null;
         private static Stack<ResearchProjectDef> navigationStack = new Stack<ResearchProjectDef>();
-        private static TreeNavigationHelper treeNav = new TreeNavigationHelper("ResearchDetail");
+
+        // Vanilla's own Research-button click branch (MainTabWindow_Research.cs:631-654).
+        private static readonly MethodInfo mi_attemptBeginResearch =
+            AccessTools.Method(typeof(MainTabWindow_Research), "AttemptBeginResearch");
 
         public static bool IsActive => isActive;
-        public static bool HasActiveSearch => treeNav.HasActiveSearch;
-        public static bool HasNoMatches => treeNav.HasNoMatches;
 
-        static WindowlessResearchDetailState()
+        /// <summary>The project the detail view is currently showing.</summary>
+        internal static ResearchProjectDef CurrentProject
         {
-            treeNav.FormatItemAnnouncement = FormatAnnouncement;
-            treeNav.FormatSearchAnnouncement = FormatSearchAnnouncement;
-            treeNav.OnActivate = HandleActivate;
-            treeNav.OnInfo = HandleInfoCard;
-            treeNav.TrackLastChild = true;
+            get { return currentProject; }
         }
 
+        /// <summary>Wired once by ResearchScopeMirror's static constructor to ResearchDetailScope.BuildAndAnnounce.</summary>
+        internal static Action<ResearchProjectDef> BuildAndAnnounceCallback;
+
+        /// <summary>Wired once by ResearchScopeMirror's static constructor to ResearchDetailScope.RefreshTreePreservingCursor.</summary>
+        internal static Action<ResearchProjectDef> RefreshTreeCallback;
+
         /// <summary>
-        /// Opens the detail view for a specific research project.
+        /// Opens the detail view for a project, always rebuilding the tree and re-announcing even
+        /// when another project was already showing, so drilling between projects works.
         /// </summary>
         public static void Open(ResearchProjectDef project)
         {
+            // Vanilla's tile click handler is gated behind !IsHidden
+            // (MainTabWindow_Research.cs:997), so a hidden project has no reachable detail pane.
+            if (project != null && project.IsHidden)
+            {
+                SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                TolkHelper.SpeakData(WindowlessResearchDetailHelper.HiddenResearchLabel(), SpeechPriority.High);
+                return;
+            }
+
             currentProject = project;
             isActive = true;
-
-            var root = BuildDetailTree(project);
-            treeNav.Initialize(root);
-
-            treeNav.ReannounceCurrentItem();
+            BuildAndAnnounceCallback?.Invoke(project);
         }
 
         /// <summary>
@@ -73,801 +89,82 @@ namespace RimWorldAccess
             {
                 isActive = false;
                 currentProject = null;
-                treeNav.Reset();
                 navigationStack.Clear();
                 TolkHelper.Speak("RimWorldAccess.Research.Detail.ReturnedToMenu".Loc());
             }
         }
 
-        #region Navigation Wrappers (called by UnifiedKeyboardPatch)
-
         /// <summary>
-        /// Navigates to the next item.
+        /// Silent session-boundary reset: unlike <see cref="Close"/> it announces nothing and
+        /// clears the navigation stack outright rather than reopening the previous project.
         /// </summary>
-        public static void SelectNext()
+        internal static void ResetHard()
         {
-            treeNav.SelectNext();
+            isActive = false;
+            currentProject = null;
+            navigationStack.Clear();
         }
-
-        /// <summary>
-        /// Navigates to the previous item.
-        /// </summary>
-        public static void SelectPrevious()
-        {
-            treeNav.SelectPrevious();
-        }
-
-        /// <summary>
-        /// Expands the current category (Right arrow).
-        /// </summary>
-        public static void Expand()
-        {
-            treeNav.ExpandOrDrillDown();
-        }
-
-        /// <summary>
-        /// Collapses the current category or navigates to parent (Left arrow).
-        /// </summary>
-        public static void Collapse()
-        {
-            treeNav.CollapseOrDrillUp();
-        }
-
-        /// <summary>
-        /// Expands all sibling categories at the same level as the current item.
-        /// </summary>
-        public static void ExpandAllSiblings()
-        {
-            treeNav.ExpandAllSiblings();
-        }
-
-        /// <summary>
-        /// Executes the action for the current item (Enter key).
-        /// </summary>
-        public static void ExecuteCurrentItem()
-        {
-            if (treeNav.SelectedItem == null || currentProject == null) return;
-
-            var item = treeNav.SelectedItem;
-
-            // Try custom activate first (OnActivate handles all types)
-            if (HandleActivate(item))
-                return;
-
-            // Default: toggle expand/collapse for categories
-            if (item.IsExpandable)
-            {
-                if (item.IsExpanded)
-                    treeNav.CollapseOrDrillUp();
-                else
-                    treeNav.ExpandOrDrillDown();
-            }
-        }
-
-        /// <summary>
-        /// Opens an info card for the currently selected item.
-        /// </summary>
-        public static void OpenInfoCard()
-        {
-            if (treeNav.SelectedItem == null || currentProject == null) return;
-            HandleInfoCard(treeNav.SelectedItem);
-        }
-
-        /// <summary>
-        /// Jumps to the first sibling at the same level (Home key).
-        /// </summary>
-        public static void JumpToFirst()
-        {
-            treeNav.JumpToFirst(false);
-        }
-
-        /// <summary>
-        /// Jumps to the last item in the current scope (End key).
-        /// </summary>
-        public static void JumpToLast()
-        {
-            treeNav.JumpToLast(false);
-        }
-
-        /// <summary>
-        /// Jumps to the absolute first item (Ctrl+Home).
-        /// </summary>
-        public static void JumpToAbsoluteFirst()
-        {
-            treeNav.JumpToFirst(true);
-        }
-
-        /// <summary>
-        /// Jumps to the absolute last item (Ctrl+End).
-        /// </summary>
-        public static void JumpToAbsoluteLast()
-        {
-            treeNav.JumpToLast(true);
-        }
-
-        /// <summary>
-        /// Clears the typeahead search and announces "Search cleared".
-        /// </summary>
-        public static void ClearTypeaheadSearch()
-        {
-            treeNav.Typeahead.ClearSearchAndAnnounce();
-            treeNav.ReannounceCurrentItem();
-        }
-
-        /// <summary>
-        /// Processes backspace for typeahead search.
-        /// </summary>
-        public static bool ProcessBackspace()
-        {
-            if (!treeNav.HasActiveSearch) return false;
-
-            var labels = treeNav.VisibleItems.Select(item => item.Label).ToList();
-            if (treeNav.Typeahead.ProcessBackspace(labels, out int newIndex))
-            {
-                if (newIndex >= 0) treeNav.SetSelectedIndex(newIndex);
-                SoundDefOf.Click.PlayOneShotOnCamera();
-                AnnounceWithSearch();
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Processes a character input for typeahead search.
-        /// </summary>
-        public static bool ProcessTypeaheadCharacter(char c)
-        {
-            var labels = treeNav.VisibleItems.Select(item => item.Label).ToList();
-            if (treeNav.Typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    treeNav.SetSelectedIndex(newIndex);
-                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                treeNav.Typeahead.SpeakNoMatches();
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Navigates to the next match in the typeahead search results.
-        /// </summary>
-        public static bool SelectNextMatch()
-        {
-            if (!treeNav.HasActiveSearch) return false;
-
-            int next = treeNav.Typeahead.GetNextMatch(treeNav.SelectedIndex);
-            if (next >= 0)
-            {
-                treeNav.SetSelectedIndex(next);
-                SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                AnnounceWithSearch();
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Navigates to the previous match in the typeahead search results.
-        /// </summary>
-        public static bool SelectPreviousMatch()
-        {
-            if (!treeNav.HasActiveSearch) return false;
-
-            int prev = treeNav.Typeahead.GetPreviousMatch(treeNav.SelectedIndex);
-            if (prev >= 0)
-            {
-                treeNav.SetSelectedIndex(prev);
-                SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                AnnounceWithSearch();
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Announces the current selection with typeahead search info.
-        /// </summary>
-        private static void AnnounceWithSearch()
-        {
-            var item = treeNav.SelectedItem;
-            if (item == null) return;
-
-            if (treeNav.HasActiveSearch)
-            {
-                TolkHelper.SpeakData(treeNav.Typeahead.BuildItemAnnouncement(item.Label));
-            }
-            else
-            {
-                treeNav.ReannounceCurrentItem();
-            }
-        }
-
-        #endregion
-
-        #region Tree Building
-
-        /// <summary>
-        /// Builds the tree structure for the detail view.
-        /// </summary>
-        private static InspectionTreeItem BuildDetailTree(ResearchProjectDef project)
-        {
-            var root = new InspectionTreeItem
-            {
-                Label = project.LabelCap,
-                IndentLevel = -1,
-                IsExpanded = true,
-                IsExpandable = false
-            };
-
-            // Node 1: Description (Info, non-expandable)
-            string descContent = BuildDescriptionContent(project);
-            var descNode = new InspectionTreeItem
-            {
-                Type = InspectionTreeItem.ItemType.DetailText,
-                Label = "RimWorldAccess.Research.Detail.DescriptionLabel".Translate(),
-                Description = descContent,
-                Data = DetailNodeType.Info,
-                IndentLevel = 0,
-                IsExpandable = false,
-                Parent = root
-            };
-            root.Children.Add(descNode);
-
-            // Node 2: Prerequisites (Category, expandable)
-            var prereqNode = BuildPrerequisitesNode(project, root);
-            if (prereqNode != null)
-                root.Children.Add(prereqNode);
-
-            // Node 3: Unlocks (Category, expandable)
-            var unlocksNode = BuildUnlocksNode(project, root);
-            if (unlocksNode != null)
-                root.Children.Add(unlocksNode);
-
-            // Node 4: Dependents (Category, expandable)
-            var dependentsNode = BuildDependentsNode(project, root);
-            if (dependentsNode != null)
-                root.Children.Add(dependentsNode);
-
-            // Node 5: Start/Stop Research (Action)
-            bool isCurrent = Find.ResearchManager.IsCurrentProject(project);
-            var actionNode = new InspectionTreeItem
-            {
-                Type = InspectionTreeItem.ItemType.Action,
-                Label = isCurrent
-                    ? "RimWorldAccess.Research.Detail.StopResearch".Translate().ToString()
-                    : "RimWorldAccess.Research.Detail.StartResearch".Translate().ToString(),
-                Description = isCurrent
-                    ? "RimWorldAccess.Research.Detail.StopResearchHint".Translate().ToString()
-                    : "RimWorldAccess.Research.Detail.StartResearchHint".Translate().ToString(),
-                Data = DetailNodeType.Action,
-                IndentLevel = 0,
-                IsExpandable = false,
-                Parent = root
-            };
-            root.Children.Add(actionNode);
-
-            return root;
-        }
-
-        /// <summary>
-        /// Builds the prerequisites node with children.
-        /// </summary>
-        private static InspectionTreeItem BuildPrerequisitesNode(ResearchProjectDef project, InspectionTreeItem root)
-        {
-            var children = new List<InspectionTreeItem>();
-
-            // Research prerequisites (visible)
-            if (project.prerequisites != null && project.prerequisites.Count > 0)
-            {
-                foreach (var prereq in project.prerequisites.OrderBy(p => p.LabelCap.ToString()))
-                {
-                    string status = prereq.IsFinished
-                        ? "RimWorldAccess.Research.Status.CompletedWord".Translate().ToString()
-                        : "RimWorldAccess.Research.Status.LockedWord".Translate().ToString();
-                    children.Add(new InspectionTreeItem
-                    {
-                        Type = InspectionTreeItem.ItemType.Item,
-                        Label = "RimWorldAccess.Research.Detail.ResearchRow".Translate(
-                            prereq.LabelCap, prereq.CostApparent.ToString("F0"), status),
-                        Data = DetailNodeType.ResearchItem,
-                        LinkedDef = prereq,
-                        IndentLevel = 1,
-                        IsExpandable = false
-                    });
-                }
-            }
-
-            // Hidden prerequisites - just show count without revealing what they are
-            if (project.hiddenPrerequisites != null && project.hiddenPrerequisites.Count > 0)
-            {
-                int missingHiddenCount = project.hiddenPrerequisites.Count(p => !p.IsFinished);
-                int totalHiddenCount = project.hiddenPrerequisites.Count;
-
-                string hiddenStatus = missingHiddenCount == 0
-                    ? "RimWorldAccess.Research.Detail.HiddenAllCompleted".Translate().ToString()
-                    : "RimWorldAccess.Research.Detail.HiddenIncompleteCount".Translate(missingHiddenCount).ToString();
-                string hiddenLabel = totalHiddenCount == 1
-                    ? "RimWorldAccess.Research.Detail.HiddenOne".Translate(hiddenStatus).ToString()
-                    : "RimWorldAccess.Research.Detail.HiddenMany".Translate(totalHiddenCount, hiddenStatus).ToString();
-
-                children.Add(new InspectionTreeItem
-                {
-                    Type = InspectionTreeItem.ItemType.DetailText,
-                    Label = hiddenLabel,
-                    Data = DetailNodeType.Info,
-                    IndentLevel = 1,
-                    IsExpandable = false
-                });
-            }
-
-            // Required research building. Availability here means the physical bench is BUILT on
-            // some colony map - it must NOT be conflated with the facility requirement below.
-            // (PlayerHasAnyAppropriateResearchBench returns false when a required facility like the
-            // multi-analyzer is missing, which made a present bench wrongly report "Not available".)
-            if (project.requiredResearchBuilding != null)
-            {
-                bool benchPresent = Find.Maps.Any(map =>
-                    map.listerBuildings.allBuildingsColonist.Find(
-                        b => b.def == project.requiredResearchBuilding) != null);
-                string benchStatus = benchPresent
-                    ? "RimWorldAccess.Research.Detail.BenchAvailable".Translate().ToString()
-                    : "RimWorldAccess.Research.Detail.BenchNotAvailable".Translate().ToString();
-                children.Add(new InspectionTreeItem
-                {
-                    Type = InspectionTreeItem.ItemType.DetailText,
-                    Label = "RimWorldAccess.Research.Detail.RequiresBench".Translate(
-                        project.requiredResearchBuilding.LabelCap, benchStatus),
-                    Data = DetailNodeType.Info,
-                    IndentLevel = 1,
-                    IsExpandable = false
-                });
-            }
-
-            // Required research facilities. Mirror vanilla: pick the best-matching built bench and
-            // report each facility relative to it - active, present-but-inactive, or absent.
-            if (project.requiredResearchFacilities != null && project.requiredResearchFacilities.Count > 0)
-            {
-                CompAffectedByFacilities bestBenchComp = FindBenchFulfillingMostRequirements(
-                    project.requiredResearchBuilding, project.requiredResearchFacilities)
-                    ?.TryGetComp<CompAffectedByFacilities>();
-
-                foreach (var facility in project.requiredResearchFacilities)
-                {
-                    Thing present = null;
-                    Thing active = null;
-                    if (bestBenchComp != null)
-                    {
-                        var linked = bestBenchComp.LinkedFacilitiesListForReading;
-                        present = linked.Find(x => x.def == facility);
-                        active = linked.Find(x => x.def == facility && bestBenchComp.IsFacilityActive(x));
-                    }
-
-                    string facilityStatus;
-                    if (active != null)
-                        facilityStatus = "RimWorldAccess.Research.Detail.BenchAvailable".Translate().ToString();
-                    else if (present != null)
-                        facilityStatus = "InactiveFacility".Translate().ToString();
-                    else
-                        facilityStatus = "RimWorldAccess.Research.Detail.BenchNotAvailable".Translate().ToString();
-
-                    children.Add(new InspectionTreeItem
-                    {
-                        Type = InspectionTreeItem.ItemType.DetailText,
-                        Label = "RimWorldAccess.Research.Detail.RequiresFacility".Translate(
-                            facility.LabelCap, facilityStatus),
-                        Data = DetailNodeType.Info,
-                        IndentLevel = 1,
-                        IsExpandable = false
-                    });
-                }
-            }
-
-            // Techprint requirement (Royalty DLC)
-            if (project.TechprintCount > 0)
-            {
-                int applied = project.TechprintsApplied;
-                int required = project.TechprintCount;
-                string techprintStatus = applied >= required
-                    ? "RimWorldAccess.Research.Detail.TechprintsComplete".Translate().ToString()
-                    : "RimWorldAccess.Research.Detail.TechprintsProgress".Translate(applied, required).ToString();
-                children.Add(new InspectionTreeItem
-                {
-                    Type = InspectionTreeItem.ItemType.DetailText,
-                    Label = "RimWorldAccess.Research.Detail.RequiresTechprints".Translate(techprintStatus),
-                    Data = DetailNodeType.Info,
-                    IndentLevel = 1,
-                    IsExpandable = false
-                });
-            }
-
-            // Mechanitor requirement (Biotech DLC)
-            if (project.requiresMechanitor)
-            {
-                string mechStatus = project.PlayerMechanitorRequirementMet
-                    ? "RimWorldAccess.Research.Detail.MechanitorMet".Translate().ToString()
-                    : "RimWorldAccess.Research.Detail.MechanitorNotMet".Translate().ToString();
-                children.Add(new InspectionTreeItem
-                {
-                    Type = InspectionTreeItem.ItemType.DetailText,
-                    Label = "RimWorldAccess.Research.Detail.RequiresMechanitor".Translate(mechStatus),
-                    Data = DetailNodeType.Info,
-                    IndentLevel = 1,
-                    IsExpandable = false
-                });
-            }
-
-            // Required analyzed things (Biotech DLC)
-            if (project.requiredAnalyzed != null && project.requiredAnalyzed.Count > 0)
-            {
-                int completed = project.AnalyzedThingsCompleted;
-                int required = project.RequiredAnalyzedThingCount;
-                string analyzeStatus = completed >= required
-                    ? "RimWorldAccess.Research.Detail.AnalyzeComplete".Translate().ToString()
-                    : "RimWorldAccess.Research.Detail.AnalyzeProgress".Translate(completed, required).ToString();
-                string thingNames = string.Join(", ", project.requiredAnalyzed.Select(t => t.LabelCap.ToString()));
-                children.Add(new InspectionTreeItem
-                {
-                    Type = InspectionTreeItem.ItemType.DetailText,
-                    Label = "RimWorldAccess.Research.Detail.RequiresAnalyzing".Translate(thingNames, analyzeStatus),
-                    Data = DetailNodeType.Info,
-                    IndentLevel = 1,
-                    IsExpandable = false
-                });
-            }
-
-            // Grav engine inspection (Odyssey DLC)
-            if (project.requireGravEngineInspected)
-            {
-                string inspectStatus = project.InspectionRequirementsMet
-                    ? "RimWorldAccess.Research.Detail.GravEngineInspected".Translate().ToString()
-                    : "RimWorldAccess.Research.Detail.GravEngineNotInspected".Translate().ToString();
-                children.Add(new InspectionTreeItem
-                {
-                    Type = InspectionTreeItem.ItemType.DetailText,
-                    Label = "RimWorldAccess.Research.Detail.RequiresGravEngine".Translate(inspectStatus),
-                    Data = DetailNodeType.Info,
-                    IndentLevel = 1,
-                    IsExpandable = false
-                });
-            }
-
-            // Even if no prerequisites, show the node with a message
-            var node = new InspectionTreeItem
-            {
-                Type = InspectionTreeItem.ItemType.Category,
-                Label = children.Count > 0
-                    ? "RimWorldAccess.Research.Detail.PrerequisitesWithCount".Translate(children.Count).ToString()
-                    : "RimWorldAccess.Research.Detail.PrerequisitesNone".Translate().ToString(),
-                Data = DetailNodeType.Category,
-                IndentLevel = 0,
-                IsExpandable = children.Count > 0,
-                Parent = root
-            };
-
-            // Set parent references and add children
-            foreach (var child in children)
-            {
-                child.Parent = node;
-                node.Children.Add(child);
-            }
-
-            return node;
-        }
-
-        /// <summary>
-        /// Builds the unlocks node with children.
-        /// </summary>
-        private static InspectionTreeItem BuildUnlocksNode(ResearchProjectDef project, InspectionTreeItem root)
-        {
-            var children = new List<InspectionTreeItem>();
-
-            // Get all unlocked things
-            foreach (var def in DefDatabase<ThingDef>.AllDefsListForReading)
-            {
-                if (def.researchPrerequisites != null && def.researchPrerequisites.Contains(project))
-                {
-                    string category = def.building != null
-                        ? "RimWorldAccess.Research.Detail.UnlockCategoryBuilding".Translate().ToString()
-                        : def.plant != null
-                            ? "RimWorldAccess.Research.Detail.UnlockCategoryPlant".Translate().ToString()
-                            : "RimWorldAccess.Research.Detail.UnlockCategoryItem".Translate().ToString();
-                    var itemNode = CreateUnlockedItemNode(def.LabelCap, category, def.description, def);
-                    children.Add(itemNode);
-                }
-            }
-
-            // Get unlocked recipes
-            foreach (var def in DefDatabase<RecipeDef>.AllDefsListForReading)
-            {
-                if (def.researchPrerequisite == project ||
-                    (def.researchPrerequisites != null && def.researchPrerequisites.Contains(project)))
-                {
-                    // Use recipe description, or product description if available
-                    string description = def.description;
-                    if (string.IsNullOrEmpty(description) && def.ProducedThingDef != null)
-                    {
-                        description = def.ProducedThingDef.description;
-                    }
-                    var itemNode = CreateUnlockedItemNode(def.LabelCap, "RimWorldAccess.Research.Detail.UnlockCategoryRecipe".Translate().ToString(), description, def);
-                    children.Add(itemNode);
-                }
-            }
-
-            // Sort by label
-            children = children.OrderBy(c => c.Label).ToList();
-
-            var node = new InspectionTreeItem
-            {
-                Type = InspectionTreeItem.ItemType.Category,
-                Label = children.Count > 0
-                    ? "RimWorldAccess.Research.Detail.UnlocksWithCount".Translate(children.Count).ToString()
-                    : "RimWorldAccess.Research.Detail.UnlocksNone".Translate().ToString(),
-                Data = DetailNodeType.Category,
-                IndentLevel = 0,
-                IsExpandable = children.Count > 0,
-                Parent = root
-            };
-
-            // Set parent references and add children
-            foreach (var child in children)
-            {
-                child.Parent = node;
-                node.Children.Add(child);
-            }
-
-            return node;
-        }
-
-        /// <summary>
-        /// Creates an unlocked item node with description inline in the label.
-        /// </summary>
-        private static InspectionTreeItem CreateUnlockedItemNode(string label, string category, string description, Def linkedDef = null)
-        {
-            // Clean up description
-            string cleanDesc = "";
-            if (!string.IsNullOrEmpty(description))
-            {
-                cleanDesc = description;
-                if (cleanDesc.Contains("<"))
-                {
-                    cleanDesc = System.Text.RegularExpressions.Regex.Replace(cleanDesc, "<[^>]+>", "");
-                }
-                cleanDesc = cleanDesc.Trim();
-                cleanDesc = System.Text.RegularExpressions.Regex.Replace(cleanDesc, @"\s+", " ");
-            }
-
-            // Build label with description inline
-            string fullLabel = $"{label} ({category})";
-            if (!string.IsNullOrEmpty(cleanDesc))
-            {
-                fullLabel += $" - {cleanDesc}";
-            }
-
-            return new InspectionTreeItem
-            {
-                Type = InspectionTreeItem.ItemType.Item,
-                Label = fullLabel,
-                Data = DetailNodeType.UnlockedItem,
-                LinkedDef = linkedDef,
-                IndentLevel = 1,
-                IsExpandable = false
-            };
-        }
-
-        /// <summary>
-        /// Builds the dependents node with children.
-        /// </summary>
-        private static InspectionTreeItem BuildDependentsNode(ResearchProjectDef project, InspectionTreeItem root)
-        {
-            var children = new List<InspectionTreeItem>();
-
-            var dependents = DefDatabase<ResearchProjectDef>.AllDefsListForReading
-                .Where(p => p.prerequisites != null && p.prerequisites.Contains(project))
-                .OrderBy(p => p.LabelCap.ToString())
-                .ToList();
-
-            foreach (var dep in dependents)
-            {
-                string status = dep.IsFinished
-                    ? "RimWorldAccess.Research.Status.CompletedWord".Translate().ToString()
-                    : dep.CanStartNow
-                        ? "RimWorldAccess.Research.Status.AvailableWord".Translate().ToString()
-                        : "RimWorldAccess.Research.Status.LockedWord".Translate().ToString();
-                children.Add(new InspectionTreeItem
-                {
-                    Type = InspectionTreeItem.ItemType.Item,
-                    Label = "RimWorldAccess.Research.Detail.ResearchRow".Translate(
-                        dep.LabelCap, dep.CostApparent.ToString("F0"), status),
-                    Data = DetailNodeType.ResearchItem,
-                    LinkedDef = dep,
-                    IndentLevel = 1,
-                    IsExpandable = false
-                });
-            }
-
-            var node = new InspectionTreeItem
-            {
-                Type = InspectionTreeItem.ItemType.Category,
-                Label = children.Count > 0
-                    ? "RimWorldAccess.Research.Detail.DependentsWithCount".Translate(children.Count).ToString()
-                    : "RimWorldAccess.Research.Detail.DependentsNone".Translate().ToString(),
-                Data = DetailNodeType.Category,
-                IndentLevel = 0,
-                IsExpandable = children.Count > 0,
-                Parent = root
-            };
-
-            // Set parent references and add children
-            foreach (var child in children)
-            {
-                child.Parent = node;
-                node.Children.Add(child);
-            }
-
-            return node;
-        }
-
-        /// <summary>
-        /// Builds the description content.
-        /// </summary>
-        private static string BuildDescriptionContent(ResearchProjectDef project)
-        {
-            var sb = new StringBuilder();
-
-            sb.AppendLine("RimWorldAccess.Research.Desc.ProjectLine".Translate(project.LabelCap).ToString());
-            sb.AppendLine();
-
-            if (!string.IsNullOrEmpty(project.description))
-            {
-                sb.AppendLine(project.description);
-                sb.AppendLine();
-            }
-
-            if (project.CostApparent > 0)
-            {
-                sb.AppendLine("RimWorldAccess.Research.Desc.ResearchCost".Translate(project.CostApparent.ToString("F0")).ToString());
-            }
-            else if (project.knowledgeCost > 0)
-            {
-                sb.AppendLine("RimWorldAccess.Research.Desc.KnowledgeCost".Translate(project.knowledgeCost.ToString("F0")).ToString());
-            }
-
-            if (project.knowledgeCategory != null)
-            {
-                sb.AppendLine("RimWorldAccess.Research.Desc.KnowledgeCategory".Translate(project.knowledgeCategory.LabelCap).ToString());
-            }
-
-            if (Find.ResearchManager.IsCurrentProject(project))
-            {
-                float progress = project.ProgressPercent * 100f;
-                sb.AppendLine("RimWorldAccess.Research.Desc.Progress".Translate(progress.ToString("F1")).ToString());
-            }
-            else if (project.IsFinished)
-            {
-                sb.AppendLine("RimWorldAccess.Research.Desc.StatusCompleted".Translate().ToString());
-            }
-            else if (project.CanStartNow)
-            {
-                sb.AppendLine("RimWorldAccess.Research.Desc.StatusAvailable".Translate().ToString());
-            }
-            else
-            {
-                sb.AppendLine("RimWorldAccess.Research.Desc.StatusLocked".Translate().ToString());
-            }
-
-            if (project.requiredResearchBuilding != null)
-            {
-                sb.AppendLine("RimWorldAccess.Research.Desc.RequiredBench".Translate(project.requiredResearchBuilding.LabelCap).ToString());
-            }
-
-            if (project.requiredResearchFacilities != null && project.requiredResearchFacilities.Count > 0)
-            {
-                sb.Append("RimWorldAccess.Research.Desc.RequiredFacilitiesPrefix".Translate().ToString());
-                sb.AppendLine(string.Join(", ", project.requiredResearchFacilities.Select(f => f.LabelCap.ToString())));
-            }
-
-            return sb.ToString().TrimEnd();
-        }
-
-        #endregion
-
-        #region Announcement Formatters
-
-        private static string FormatAnnouncement(InspectionTreeItem item)
-        {
-            var nodeType = item.Data is DetailNodeType dt ? dt : DetailNodeType.Info;
-
-            // Build announcement: "{name} {state}. {X of Y}. level N"
-            var sb = new StringBuilder();
-            sb.Append(item.Label.TrimEnd('.', '!', '?'));
-
-            // Add expand/collapse state for expandable categories
-            if (nodeType == DetailNodeType.Category)
-            {
-                sb.Append(TreeNavigationHelper.FormatExpansionSpaceSuffix(item));
-            }
-
-            // Add position
-            var (position, total) = treeNav.GetSiblingPosition(item);
-            string positionPart = MenuHelper.FormatPosition(position - 1, total);
-            sb.Append(string.IsNullOrEmpty(positionPart) ? "." : $". {positionPart}.");
-
-            // Add level suffix at the end (only announced when level changes)
-            sb.Append(MenuHelper.GetLevelSuffix("ResearchDetail", item.IndentLevel));
-
-            // For info nodes, append content after main announcement
-            if (nodeType == DetailNodeType.Info && !string.IsNullOrEmpty(item.Description))
-            {
-                sb.Append("\n\n");
-                sb.Append(item.Description);
-            }
-
-            return sb.ToString();
-        }
-
-        private static string FormatSearchAnnouncement(InspectionTreeItem item, TypeaheadSearchHelper typeahead)
-        {
-            if (typeahead.HasActiveSearch)
-            {
-                return typeahead.BuildItemAnnouncement(item.Label);
-            }
-            return FormatAnnouncement(item);
-        }
-
-        #endregion
 
         #region Custom Actions
 
-        private static bool HandleActivate(InspectionTreeItem item)
+        /// <summary>
+        /// Enter on the given tree node. Category nodes are NOT handled here: the scope's own
+        /// fallback toggles them through the shared expand/collapse machinery.
+        /// </summary>
+        internal static void HandleActivate(InspectionTreeItem item)
         {
-            if (currentProject == null) return false;
+            if (currentProject == null) return;
 
             var nodeType = item.Data is DetailNodeType dt ? dt : DetailNodeType.Info;
 
             switch (nodeType)
             {
-                case DetailNodeType.Category:
-                    // Let default toggle expand/collapse handle it
-                    return false;
-
                 case DetailNodeType.ResearchItem:
-                    // Drill into this research project
                     if (item.LinkedDef is ResearchProjectDef linkedProject)
                     {
                         OpenWithBackNavigation(linkedProject);
-                        return true;
                     }
-                    return false;
+                    break;
 
                 case DetailNodeType.UnlockedItem:
-                    // Re-read the label (which contains the description inline)
                     TolkHelper.SpeakData(item.Label);
-                    return true;
+                    break;
 
                 case DetailNodeType.Action:
                     ExecuteResearchAction();
-                    return true;
+                    break;
+
+                case DetailNodeType.DebugFinish:
+                    Find.ResearchManager.SetCurrentProject(currentProject);
+                    Find.ResearchManager.FinishProject(currentProject);
+                    TolkHelper.Speak("RimWorldAccess.Research.Action.DebugFinished".Loc(currentProject.LabelCap));
+                    RefreshTreeCallback?.Invoke(currentProject);
+                    break;
+
+                case DetailNodeType.DebugApplyTechprint:
+                    Find.ResearchManager.ApplyTechprint(currentProject, null);
+                    SoundDefOf.TechprintApplied.PlayOneShotOnCamera();
+                    TolkHelper.Speak("RimWorldAccess.Research.Action.DebugTechprintApplied".Loc(
+                        currentProject.TechprintsApplied, currentProject.TechprintCount));
+                    RefreshTreeCallback?.Invoke(currentProject);
+                    break;
 
                 case DetailNodeType.Info:
-                    // Read the content
                     if (!string.IsNullOrEmpty(item.Description))
                     {
                         TolkHelper.SpeakData(item.Description);
-                        return true;
                     }
-                    return false;
+                    break;
             }
-
-            return false;
         }
 
-        private static bool HandleInfoCard(InspectionTreeItem item)
+        /// <summary>
+        /// Alt+I on the given tree node. Same spoiler gate as Open(): never let a hidden project's
+        /// real name/description reach the info card.
+        /// </summary>
+        internal static void HandleInfoCard(InspectionTreeItem item)
         {
-            if (currentProject == null) return false;
+            if (currentProject == null) return;
 
             var nodeType = item.Data is DetailNodeType dt ? dt : DetailNodeType.Info;
 
@@ -876,27 +173,32 @@ namespace RimWorldAccess
                 case DetailNodeType.ResearchItem:
                     if (item.LinkedDef is ResearchProjectDef linkedProject)
                     {
+                        if (linkedProject.IsHidden)
+                        {
+                            SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                            TolkHelper.SpeakData(WindowlessResearchDetailHelper.HiddenResearchLabel(), SpeechPriority.High);
+                            return;
+                        }
                         Find.WindowStack.Add(new Dialog_InfoCard(linkedProject));
-                        return true;
                     }
-                    return false;
+                    break;
 
                 case DetailNodeType.UnlockedItem:
                     InfoCardState.TryOpenInfoCardForDef(item.LinkedDef);
-                    return true;
+                    break;
 
                 case DetailNodeType.Info:
                 case DetailNodeType.Action:
+                case DetailNodeType.DebugFinish:
+                case DetailNodeType.DebugApplyTechprint:
                     Find.WindowStack.Add(new Dialog_InfoCard(currentProject));
-                    return true;
+                    break;
 
                 case DetailNodeType.Category:
                     SoundDefOf.ClickReject.PlayOneShotOnCamera();
                     TolkHelper.Speak("RimWorldAccess.Research.Detail.NoInfoCardForSection".Loc());
-                    return true;
+                    break;
             }
-
-            return false;
         }
 
         #endregion
@@ -910,181 +212,69 @@ namespace RimWorldAccess
         {
             if (currentProject == null) return;
 
-            // Check if already researching this project
             if (Find.ResearchManager.IsCurrentProject(currentProject))
             {
                 Find.ResearchManager.StopProject(currentProject);
                 TolkHelper.Speak("RimWorldAccess.Research.Action.Stopped".Loc(currentProject.LabelCap));
-                RefreshTree();
+                RefreshTreeCallback?.Invoke(currentProject);
                 return;
             }
 
-            // Check if already completed
             if (currentProject.IsFinished)
             {
                 TolkHelper.Speak("RimWorldAccess.Research.Action.AlreadyCompleted".Loc(currentProject.LabelCap));
                 return;
             }
 
-            // Check prerequisites
-            if (!currentProject.PrerequisitesCompleted)
+            // CanStartNow is the full vanilla gate — prerequisites, techprints, bench, mechanitor,
+            // grav-engine inspection, study requirements, hidden — so never hand-copy a subset.
+            if (!currentProject.CanStartNow)
             {
-                var missingPrereqs = GetMissingPrerequisites();
-                TolkHelper.Speak("RimWorldAccess.Research.Action.MissingPrereqs".Loc(missingPrereqs), SpeechPriority.High);
+                TolkHelper.Speak("RimWorldAccess.Research.Action.Locked".Loc(
+                    WindowlessResearchDetailHelper.BuildLockedReasons(currentProject)), SpeechPriority.High);
                 return;
             }
 
-            // Check techprint requirements
-            if (currentProject.TechprintCount > 0 && !currentProject.TechprintRequirementMet)
-            {
-                int applied = Find.ResearchManager.GetTechprints(currentProject);
-                TolkHelper.Speak("RimWorldAccess.Research.Action.NeedTechprints".Loc(currentProject.TechprintCount, applied), SpeechPriority.High);
-                return;
-            }
-
-            // Check study requirements
-            if (currentProject.requiredAnalyzed != null && currentProject.requiredAnalyzed.Count > 0)
-            {
-                if (!currentProject.AnalyzedThingsRequirementsMet)
-                {
-                    TolkHelper.Speak("RimWorldAccess.Research.Action.StudyFirst".Loc(), SpeechPriority.High);
-                    return;
-                }
-            }
-
-            // Capture previous project from the same track (regular research and each anomaly
-            // knowledge category occupy independent slots, so starting an anomaly project does
-            // not stop a regular one and vice versa).
+            // Regular research and each anomaly knowledge category occupy independent slots, so
+            // only the same track's project is displaced.
             var previousProject = Find.ResearchManager.GetProject(currentProject.knowledgeCategory);
 
-            // Start research
-            Find.ResearchManager.SetCurrentProject(currentProject);
+            // Rides vanilla's AttemptBeginResearch on a transient, never-opened window instance so
+            // the missing-memes confirmation, sound, tutor event, and no-bench caution all fire.
+            var researchWindow = new MainTabWindow_Research();
+            mi_attemptBeginResearch.Invoke(researchWindow, new object[] { currentProject });
 
-            // Announce with replacement info if applicable
-            if (previousProject != null && previousProject != currentProject)
+            if (Find.ResearchManager.IsCurrentProject(currentProject))
             {
-                float previousProgress = previousProject.ProgressPercent * 100f;
-                TolkHelper.Speak("RimWorldAccess.Research.Action.StartedReplacing".Loc(
-                    currentProject.LabelCap, previousProject.LabelCap, previousProgress.ToString("F0")));
-            }
-            else
-            {
-                TolkHelper.Speak("RimWorldAccess.Research.Action.Started".Loc(currentProject.LabelCap));
-            }
-            RefreshTree();
-        }
-
-        /// <summary>
-        /// Refreshes the tree after changes (like starting/stopping research).
-        /// </summary>
-        private static void RefreshTree()
-        {
-            int previousIndex = treeNav.SelectedIndex;
-            var root = BuildDetailTree(currentProject);
-            treeNav.Initialize(root, previousIndex);
-            treeNav.ReannounceCurrentItem();
-        }
-
-        /// <summary>
-        /// Gets a formatted list of missing prerequisites.
-        /// </summary>
-        private static string GetMissingPrerequisites()
-        {
-            if (currentProject == null)
-                return "RimWorldAccess.Research.MissingPrereqs.Unknown".Translate();
-
-            var parts = new List<string>();
-
-            // Visible prerequisites
-            if (currentProject.prerequisites != null)
-            {
-                var missing = currentProject.prerequisites
-                    .Where(p => !p.IsFinished)
-                    .Select(p => p.LabelCap.ToString());
-                parts.AddRange(missing);
-            }
-
-            // Hidden prerequisites - just mention they exist
-            if (currentProject.hiddenPrerequisites != null)
-            {
-                int missingHiddenCount = currentProject.hiddenPrerequisites.Count(p => !p.IsFinished);
-                if (missingHiddenCount > 0)
+                // Started synchronously — no Ideology missing-memes confirmation was needed.
+                if (previousProject != null && previousProject != currentProject)
                 {
-                    string hiddenText = missingHiddenCount == 1
-                        ? "RimWorldAccess.Research.MissingPrereqs.HiddenOne".Translate().ToString()
-                        : "RimWorldAccess.Research.MissingPrereqs.HiddenMany".Translate(missingHiddenCount).ToString();
-                    parts.Add(hiddenText);
+                    float previousProgress = previousProject.ProgressPercent * 100f;
+                    TolkHelper.Speak("RimWorldAccess.Research.Action.StartedReplacing".Loc(
+                        currentProject.LabelCap, previousProject.LabelCap, previousProgress.ToString("F0")));
                 }
-            }
-
-            return parts.Count > 0 ? string.Join(", ", parts) : "RimWorldAccess.Research.MissingPrereqs.Unknown".Translate().ToString();
-        }
-
-        /// <summary>
-        /// Finds the built colony research bench that best fulfils the project's facility
-        /// requirements, mirroring vanilla MainTabWindow_Research.FindBenchFulfillingMostRequirements.
-        /// Facility availability is then reported relative to this single bench.
-        /// </summary>
-        private static Building_ResearchBench FindBenchFulfillingMostRequirements(
-            ThingDef requiredBench, List<ThingDef> requiredFacilities)
-        {
-            Building_ResearchBench best = null;
-            float bestScore = 0f;
-            foreach (Map map in Find.Maps)
-            {
-                foreach (Building building in map.listerBuildings.allBuildingsColonist)
+                else
                 {
-                    if (building is Building_ResearchBench bench &&
-                        (requiredBench == null || bench.def == requiredBench))
-                    {
-                        float score = GetResearchBenchRequirementsScore(bench, requiredFacilities);
-                        if (best == null || score > bestScore)
-                        {
-                            bestScore = score;
-                            best = bench;
-                        }
-                    }
+                    TolkHelper.Speak("RimWorldAccess.Research.Action.Started".Loc(currentProject.LabelCap));
                 }
+                RefreshTreeCallback?.Invoke(currentProject);
             }
-            return best;
-        }
-
-        /// <summary>
-        /// Scores a bench by how many required facilities it has linked - 1 point for an active
-        /// facility, 0.6 for one present but inactive. Mirrors vanilla's scoring exactly.
-        /// </summary>
-        private static float GetResearchBenchRequirementsScore(
-            Building_ResearchBench bench, List<ThingDef> requiredFacilities)
-        {
-            float num = 0f;
-            CompAffectedByFacilities comp = bench.GetComp<CompAffectedByFacilities>();
-            if (comp == null)
-                return 0f;
-
-            var linked = comp.LinkedFacilitiesListForReading;
-            for (int i = 0; i < requiredFacilities.Count; i++)
-            {
-                ThingDef facility = requiredFacilities[i];
-                if (linked.Find(x => x.def == facility && comp.IsFacilityActive(x)) != null)
-                    num += 1f;
-                else if (linked.Find(x => x.def == facility) != null)
-                    num += 0.6f;
-            }
-            return num;
+            // Else AttemptBeginResearch opened the missing-memes confirmation instead; the shell's
+            // dialog interception announces it, and vanilla starts the project on confirm.
         }
 
         #endregion
     }
 
-    /// <summary>
-    /// Type of detail node.
-    /// </summary>
+    /// <summary>Type of detail node.</summary>
     public enum DetailNodeType
     {
         Info,           // Description section
         Category,       // Prerequisites, Unlocks, Dependents headers
         ResearchItem,   // A research project that can be drilled into
         UnlockedItem,   // A building/recipe that can be inspected
-        Action          // Start/Stop research button
+        Action,         // Start/Stop research button
+        DebugFinish,            // DEV: finish the project now
+        DebugApplyTechprint     // DEV: apply one techprint
     }
 }

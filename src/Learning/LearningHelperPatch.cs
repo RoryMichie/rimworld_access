@@ -39,8 +39,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Speaks any buffered lesson activations as a single announcement. Called every frame from
-        /// <see cref="UnifiedKeyboardPatch"/>; it waits until the activation frame has passed so all
+        /// Speaks any buffered lesson activations as a single announcement. Called every frame
+        /// from <see cref="RimWorldAccess.Shell.LearningHelperScopeMirror"/>; it waits until the
+        /// activation frame has passed so all
         /// same-frame activations coalesce, then combines their (override-aware) labels into one line.
         /// </summary>
         public static void FlushPending()

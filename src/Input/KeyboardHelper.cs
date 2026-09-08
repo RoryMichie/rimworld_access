@@ -1,4 +1,3 @@
-using System;
 using HarmonyLib;
 using UnityEngine;
 using Verse;
@@ -7,43 +6,60 @@ namespace RimWorldAccess
 {
     public static class KeyboardHelper
     {
-        /// <summary>
-        /// True if the last RemapCharacterToKeyCode call remapped a character event to a KeyCode.
-        /// When true, ctrl/alt modifier flags may be artifacts of AltGr and should be ignored.
-        /// </summary>
+        /// <summary>True when the last RemapCharacterToKeyCode remapped a character event to a KeyCode; ctrl/alt flags may then be AltGr artifacts and should be ignored.</summary>
         public static bool WasCharacterRemapped { get; private set; }
 
-        /// <summary>
-        /// True if either ALT key is physically held down.
-        /// Use instead of Event.current.alt for AZERTY keyboard compatibility —
-        /// Event.current.alt may not reliably detect Left Alt on some keyboard layouts
-        /// where Windows intercepts it for menu acceleration before Unity receives it.
-        /// </summary>
-        public static bool IsAltHeld => Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+#if DEBUG
+        // Dev-bridge injection seam (ShellDev.Inject): the modifier helpers read PHYSICAL key state
+        // via Input.GetKey, which a synthetic Event cannot fake, so these flags stand in while an
+        // injected event is replayed. DEBUG-only; Release keeps the bare physical reads.
+        internal static bool InjectionOverrideActive;
+        internal static bool InjectedCtrl;
+        internal static bool InjectedAlt;
+#else
+        // Release stub for the injection seam: a const false, so callers outside DEBUG blocks still
+        // compile and the compiler folds every `!InjectionOverrideActive` term away.
+        internal const bool InjectionOverrideActive = false;
+#endif
 
         /// <summary>
-        /// True if a Ctrl-equivalent key is physically held down.
-        /// On macOS, includes Cmd (Command) keys since Cmd is the primary modifier.
-        /// Use instead of Input.GetKey(KeyCode.LeftControl) for cross-platform compatibility.
-        ///
-        /// Tab special case (cross-platform abstraction): on macOS, neither Cmd+Tab
-        /// (OS app switcher) nor physical Ctrl+Tab reaches Unity OnGUI — only
-        /// Alt+Tab (Option+Tab) is deliverable. So when the current event's key is
-        /// Tab and we're on macOS, this property treats Alt as the Ctrl substitute.
-        /// Net effect: code can write `if (key == KeyCode.Tab &amp;&amp; IsCtrlHeld)` and the
-        /// shortcut fires on Windows/Linux Ctrl+Tab and on macOS Option+Tab without
-        /// per-platform branching.
+        /// True if either ALT key is physically held. Use instead of Event.current.alt: on some layouts
+        /// Windows intercepts Left Alt for menu acceleration before Unity sees it.
+        /// </summary>
+        public static bool IsAltHeld
+        {
+            get
+            {
+#if DEBUG
+                if (InjectionOverrideActive)
+                    return InjectedAlt;
+#endif
+                return Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+            }
+        }
+
+        /// <summary>
+        /// True if a Ctrl-equivalent key is physically held, including Cmd on macOS. Use instead of
+        /// Input.GetKey(KeyCode.LeftControl) for cross-platform compatibility.
+        /// Tab special case: on macOS neither Cmd+Tab (OS app switcher) nor physical Ctrl+Tab reaches
+        /// Unity OnGUI, only Alt+Tab, so while the current event's key is Tab this treats Alt as the
+        /// Ctrl substitute — `key == KeyCode.Tab &amp;&amp; IsCtrlHeld` then works on every platform.
         /// </summary>
         public static bool IsCtrlHeld
         {
             get
             {
+#if DEBUG
+                // Injected chords express Ctrl intent directly; the Mac Tab substitution models
+                // physical keyboards only.
+                if (InjectionOverrideActive)
+                    return InjectedCtrl;
+#endif
                 if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
                     return true;
                 if (!NativeLibraryLoader.IsMacOS)
                     return false;
-                // Mac Tab substitution: Option (Alt) stands in for Ctrl when the
-                // current event's key is Tab, since Ctrl+Tab is undeliverable on Mac.
+                // Mac Tab substitution: Option stands in for Ctrl, which is undeliverable with Tab.
                 if (Event.current != null && Event.current.keyCode == KeyCode.Tab)
                     return Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
                 // Outside the Tab special case, Cmd substitutes for Ctrl as usual.
@@ -52,12 +68,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// User-facing label for the Ctrl modifier on the current platform.
-        /// Use in tooltips/overlays so help text matches the keyboard the user has.
-        /// On macOS the displayed name is "Option" because the cross-platform Ctrl+Tab
-        /// shortcut maps to Option+Tab on Mac (see IsCtrlHeld); for non-Tab shortcuts,
-        /// you may want to use a literal label that matches your shortcut (e.g., Cmd
-        /// for Mac users who naturally substitute Cmd for Ctrl).
+        /// User-facing label for the Ctrl modifier on this platform, so help text matches the keyboard
+        /// the user has. "Option" on macOS, because the cross-platform Ctrl+Tab shortcut maps to
+        /// Option+Tab there (see IsCtrlHeld).
         /// </summary>
         public static string CtrlLabel =>
             NativeLibraryLoader.IsMacOS ? "Option" : "Ctrl";
@@ -67,37 +80,31 @@ namespace RimWorldAccess
         private static int lastRightBracketFrame = -1;
 
         /// <summary>
-        /// True if a physical ] (KeyCode.RightBracket) keyDown was already seen earlier in the
-        /// current Unity frame. Lets the character handler discard the follow-up character event
-        /// of a ] press, which on non-US layouts (e.g. Ukrainian) can be a letter that would
-        /// otherwise leak into typeahead. The ] colonist-orders action takes precedence.
+        /// True if a physical ] keyDown was already seen earlier this frame, so the character handler
+        /// can discard the follow-up character event — on non-US layouts it can be a letter that would
+        /// leak into typeahead. The ] colonist-orders action takes precedence.
         /// </summary>
         public static bool WasRightBracketThisFrame => lastRightBracketFrame == Time.frameCount;
 
-        // Same frame tracking for KeyCode.KeypadMultiply (asterisk).
-        // On US keyboards, numpad * sends keyCode=KeypadMultiply then character='*' in the same frame.
-        // On AZERTY keyboards, the dedicated * key sends only character='*' with keyCode=None.
+        // Frame tracking for KeypadMultiply: US numpad * sends keyCode then character='*' in one
+        // frame, while an AZERTY dedicated * key sends only character='*' with keyCode=None.
         private static int lastKeypadMultiplyFrame = -1;
 
-        // Frame tracking for Shift+Slash (question mark on US keyboards).
-        // On US keyboards, Shift+/ sends keyCode=Slash+shift=true then character='?' in the same frame.
-        // On non-US keyboards, ? may be a direct key sending only character='?' with keyCode=None.
+        // Frame tracking for Shift+Slash: US sends keyCode=Slash+shift then character='?' in one
+        // frame, while on other layouts ? can be a direct key sending only the character.
         private static int lastSlashShiftFrame = -1;
 
-        // Frame tracking for real letter/digit keyCodes (A-Z, 0-9). When a physical letter/digit
-        // key produces a real keyCode this frame, we record it so the follow-up character event
-        // for the SAME key (Unity's twin keyCode=None event) is not also remapped to a keyCode —
-        // which would otherwise fire a modifier shortcut twice on layouts that send both events.
+        // Frame tracking for real letter/digit keyCodes, so the follow-up character event for the SAME
+        // key (Unity's twin keyCode=None event) is not also remapped — which would fire a modifier
+        // shortcut twice on layouts that send both.
         private static KeyCode lastAlphaNumKeyCode = KeyCode.None;
         private static int lastAlphaNumFrame = -1;
 
         /// <summary>
-        /// Remaps character-only KeyDown events to their equivalent KeyCode.
-        /// On non-US keyboards (e.g., German), layout-dependent characters like ] are produced
-        /// via AltGr combinations, which Unity reports as keyCode=None with the character set.
-        /// On US keyboards, Unity already sends keyCode=RightBracket followed by a separate
-        /// character=']' event in the same frame; frame tracking prevents double-processing.
-        /// Call after getting Event.current.keyCode, before any KeyCode.None early-return guard.
+        /// Remaps character-only KeyDown events to their equivalent KeyCode: on non-US layouts,
+        /// characters like ] arrive via AltGr as keyCode=None with only the character set. US layouts
+        /// send both events in one frame, which the frame tracking above discards. Call after reading
+        /// Event.current.keyCode, before any KeyCode.None early-return guard.
         /// </summary>
         public static KeyCode RemapCharacterToKeyCode(KeyCode key)
         {
@@ -117,16 +124,15 @@ namespace RimWorldAccess
                 return key;
             }
 
-            // If we see Shift+Alpha8 (US keyboard main-row *), record the frame
-            // just like numpad * so the follow-up character='*' event won't be remapped.
+            // Shift+Alpha8 (US main-row *): record the frame like numpad *, so the follow-up
+            // character='*' event is not remapped.
             if (key == KeyCode.Alpha8 && Event.current.shift)
             {
                 lastKeypadMultiplyFrame = Time.frameCount;
                 return key;
             }
 
-            // If we see Shift+Slash (US keyboard ?), record the frame
-            // so the follow-up character='?' event won't be double-processed.
+            // Shift+Slash (US ?): record the frame so the follow-up character='?' is not remapped.
             if (key == KeyCode.Slash && Event.current.shift)
             {
                 lastSlashShiftFrame = Time.frameCount;
@@ -144,16 +150,12 @@ namespace RimWorldAccess
                 return key;
             }
 
-            // Recover letter/digit SHORTCUTS that arrive as a character-only event (keyCode=None).
-            // On some keyboard layouts (e.g. AZERTY), a modifier+letter combo such as Alt+R is
-            // delivered by Unity with keyCode=None and only Event.current.character set, so every
-            // downstream handler that gates on `key == KeyCode.None` bails before the shortcut runs
-            // (rename pawn, sort mods, etc.). When an action modifier is held, map the ASCII letter
-            // or digit back to its KeyCode so those handlers see the real key. Gated on a held
-            // Alt/Ctrl so ordinary typing (and typeahead) still flows through as character events.
-            // Restricted to ASCII a-z/0-9 so AltGr-produced symbols and accented characters are left
-            // alone. Skipped when the same key already produced a real keyCode this frame, to avoid
-            // firing the shortcut twice on layouts that send both events.
+            // Recover letter/digit SHORTCUTS arriving as character-only events: on layouts like AZERTY
+            // a modifier+letter combo such as Alt+R comes through with keyCode=None, so every handler
+            // gating on `key == KeyCode.None` bails before the shortcut runs. Gated on a held Alt/Ctrl
+            // so ordinary typing still flows through as character events, restricted to ASCII a-z/0-9
+            // so AltGr symbols and accented characters are untouched, and skipped when the same key
+            // already produced a real keyCode this frame.
             if (IsAltHeld || IsCtrlHeld)
             {
                 char ch = Event.current.character;
@@ -176,27 +178,22 @@ namespace RimWorldAccess
             switch (Event.current.character)
             {
                 case ']':
-                    // Only remap if we didn't already see a real RightBracket keyCode this frame.
-                    // On US keyboards, both events fire in the same frame — skip the character one.
-                    // On German keyboards, the keyCode event was Alpha9, not RightBracket, so
-                    // lastRightBracketFrame won't match and we correctly remap.
+                    // Skip when a real RightBracket keyCode already arrived this frame (US layouts).
+                    // German layouts send Alpha9 instead, so the frame will not match and we remap.
                     if (Time.frameCount == lastRightBracketFrame)
                         return key;
                     WasCharacterRemapped = true;
                     return KeyCode.RightBracket;
                 case '*':
-                    // On AZERTY keyboards, * is a dedicated key that sends keyCode=None + character='*'.
-                    // On US keyboards, Shift+8 sends keyCode=Alpha8 (not KeypadMultiply), so no frame
-                    // conflict. Numpad * sends KeypadMultiply then character='*' — frame tracking
-                    // prevents double-processing.
+                    // AZERTY sends a dedicated * as keyCode=None + character='*'. US Shift+8 sends
+                    // Alpha8, so there is no frame conflict; numpad * is covered by frame tracking.
                     if (Time.frameCount == lastKeypadMultiplyFrame)
                         return key;
                     WasCharacterRemapped = true;
                     return KeyCode.KeypadMultiply;
                 case '?':
-                    // On non-US keyboards, ? may be a direct key that sends keyCode=None + character='?'.
-                    // On US keyboards, Shift+/ sends keyCode=Slash+shift=true then character='?' —
-                    // frame tracking prevents double-processing.
+                    // Non-US layouts can send ? as keyCode=None + character='?'; the US Shift+/ pair is
+                    // covered by frame tracking.
                     if (Time.frameCount == lastSlashShiftFrame)
                         return key;
                     WasCharacterRemapped = true;
@@ -206,18 +203,12 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Applies RemapCharacterToKeyCode globally by writing back to Event.current.keyCode.
-        /// This ensures all downstream patches and handlers see the remapped keyCode without
-        /// needing to call RemapCharacterToKeyCode individually.
-        /// </summary>
+        /// <summary>Applies <see cref="RemapCharacterToKeyCode"/> globally by writing back to Event.current.keyCode, so every downstream patch sees the remapped key.</summary>
         public static void ApplyGlobalRemap()
         {
-            // macOS: Remap Cmd → Ctrl so all Windows-style Ctrl shortcuts work with Cmd.
-            // This runs before any other keyboard processing, so all downstream code
-            // that checks Event.current.control will see Cmd presses as Ctrl.
-            // Note: Tab is a non-issue here — Cmd+Tab and Ctrl+Tab both never reach
-            // Unity on macOS, so all Tab-based shortcuts use Alt (Option) instead.
+            // macOS: remap Cmd to Ctrl before any other keyboard processing, so downstream checks of
+            // Event.current.control see Cmd presses. Tab is unaffected — neither Cmd+Tab nor Ctrl+Tab
+            // reaches Unity on macOS, so Tab shortcuts use Option instead.
             if (NativeLibraryLoader.IsMacOS && (Event.current.modifiers & EventModifiers.Command) != 0)
             {
                 Event.current.modifiers |= EventModifiers.Control;
@@ -233,118 +224,11 @@ namespace RimWorldAccess
                 Event.current.keyCode = remapped;
         }
 
-        /// <summary>
-        /// Returns true if ANY modal accessibility menu is currently active.
-        /// When true, ALL keyboard input should go to that menu, not the game.
-        /// </summary>
-        public static bool IsAnyAccessibilityMenuActive()
-        {
-            // Safety: Don't run during loading - only when game is actually playing or in main menu
-            // Entry = main menu, Playing = in-game, MapInitializing = loading a map
-            if (Current.ProgramState != ProgramState.Playing && Current.ProgramState != ProgramState.Entry)
-                return false;
-
-            // NOTE: MapNavigationState.IsInitialized is NOT included here - it's too broad.
-            // Map navigation is always "active" when on the map, but we don't want to block
-            // ALL keyboard input. Instead, MapNavigationPatch handles arrow keys directly
-            // and consumes them there.
-
-            // Windowless menus (main accessibility menus)
-            return WindowlessFloatMenuState.IsActive
-                || WindowlessInventoryState.IsActive
-                || WindowlessInspectionState.IsActive
-                || WindowlessSaveMenuState.IsActive
-                || WindowlessOptionsMenuState.IsActive
-                || WindowlessPauseMenuState.IsActive
-                || WindowlessResearchMenuState.IsActive
-                || WindowlessResearchDetailState.IsActive
-                || WindowlessScheduleState.IsActive
-                || WindowlessDialogState.IsActive
-                || WindowlessConfirmationState.IsActive
-                || WindowlessAreaState.IsActive
-                // Policy editor
-                || PolicyEditorState.IsActive
-                // Main gameplay menus
-                // Note: SettlementBrowserState and QuestLocationsBrowserState are
-                // intentionally NOT included here - they're world-view-specific and handle their own
-                // input via UnifiedKeyboardPatch priorities
-                || CaravanInspectState.IsActive
-                || (CaravanFormationState.IsActive && !CaravanFormationState.IsChoosingDestination)
-                || LordJobDialogState.IsActive
-                || QuestMenuState.IsActive
-                || NotificationMenuState.IsActive
-                || AssignMenuState.IsActive
-                || WorkMenuState.IsActive
-                || WorkTableState.IsActive
-                || StorageSettingsMenuState.IsActive
-                || ZoneRenameState.IsActive
-                || StorageRenameState.IsActive
-                || PlantSelectionMenuState.IsActive
-                || MechControlGroupState.IsActive
-                || GizmoNavigationState.IsActive
-                || TradeNavigationState.IsActive
-                || SellableItemsState.IsActive
-                // Bills and building menus
-                || BillsMenuState.IsActive
-                || BillConfigState.IsActive
-                || FishingZoneMenuState.IsActive
-                || RangeEditMenuState.IsActive
-                || TempControlMenuState.IsActive
-                // Building component controls
-                || ForbidControlState.IsActive
-                || DoorControlState.IsActive
-                || RefuelableComponentState.IsActive
-                || UninstallControlState.IsActive
-                || BedAssignmentState.IsActive
-                || BuildingOwnerAssignmentState.IsActive
-                // Pawn inspection tabs
-                || HealthTabState.IsActive
-                || PrisonerTabState.IsActive
-                // Filter navigation
-                || ThingFilterMenuState.IsActive
-                || ThingFilterNavigationState.IsActive
-                // Other menus
-                || ArchitectState.IsActive
-                || ArchitectTreeState.IsActive
-                || AnimalsMenuState.IsActive
-                || WildlifeMenuState.IsActive
-                || PawnSkillsTableState.IsActive
-                || MechsMenuState.IsActive
-                || ModListState.IsActive
-                || StorytellerSelectionState.IsActive
-                || PlaySettingsMenuState.IsActive
-                || AreaPaintingState.IsActive
-                // Split caravan and related menus
-                || SplitCaravanState.IsActive
-                || GearEquipMenuState.IsActive
-                || QuantityMenuState.IsActive
-                || AreaSelectionMenuState.IsActive
-                || PawnAreaMenuState.IsActive
-                // History tab
-                || HistoryState.IsActive
-                || HistoryStatisticsState.IsActive
-                || HistoryMessagesState.IsActive
-                // Building placement modes
-                || ViewingModeState.IsActive
-                || ShapePlacementState.IsActive
-                // Info Card (modal dialog overlay)
-                || InfoCardState.IsActive
-                // Biotech modal dialogs
-                || GrowthMomentState.IsActive
-                // Factions tab
-                || FactionTabState.IsActive
-                // Ideology tab
-                || IdeologyTabState.IsActive
-                // Extra menus
-                || ExtraMenusState.IsActive
-                // Learning helper
-                || LearningHelperState.IsActive;
-        }
     }
 
     /// <summary>
-    /// Highest-priority UIRootOnGUI prefix that remaps keyboard layout-dependent characters
-    /// (e.g., AZERTY *) to their canonical KeyCodes before any other patch reads Event.current.
+    /// Highest-priority UIRootOnGUI prefix, remapping layout-dependent characters to their canonical
+    /// KeyCodes before any other patch reads Event.current.
     /// </summary>
     [HarmonyPatch(typeof(UIRoot))]
     [HarmonyPatch("UIRootOnGUI")]

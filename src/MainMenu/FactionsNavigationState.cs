@@ -1,498 +1,170 @@
-using HarmonyLib;
 using RimWorld;
-using RimWorld.Planet;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Verse;
+using Verse.Sound;
 
 namespace RimWorldAccess
 {
+    /// <summary>Outcome of a faction-delete request (the scope composes the spoken result).</summary>
+    internal enum FactionDeleteResult
+    {
+        Removed,
+        LockedByScenario,
+        TutorialBlocked,
+        NotFound,
+    }
+
+    /// <summary>One visible faction row: its def, its ACTUAL index in the page's faction list, and its scenario-lock state.</summary>
+    internal struct FactionRowInfo
+    {
+        public FactionDef Def;
+        public int ListIndex;
+        public bool Locked;
+    }
+
     /// <summary>
-    /// Manages navigation state for the faction configuration section of Page_CreateWorldParams.
-    /// Handles both the faction list and the "Add Faction" overlay menu.
-    /// Uses modern patterns: MenuHelper for navigation, TypeaheadSearchHelper for search.
+    /// Headless state helper for the faction configuration of
+    /// Page_CreateWorldParams. Since the migration to
+    /// <see cref="RimWorldAccess.Shell.WorldParamsScreenScope"/>, the Factions
+    /// region owns the selection cursor, typeahead, and every row announcement,
+    /// so this class keeps only what the scope and the add-menu overlay ride as
+    /// game vehicles: the visible-row query (paired with each row's real list
+    /// index and lock state), the delete/reset mutation cores, the MUTATION-C
+    /// warning mirror, and the forwarders onto <see cref="FactionAddMenuState"/>
+    /// (the add menu's own navigation and typeahead forwarders are retired:
+    /// WorldParamsAddFactionScope owns them now).
+    /// Reflected access into the shared page instance goes through
+    /// <see cref="WorldParamsPageBridge"/>.
+    ///
+    /// RETIRED (replaced the old FocusScope + state-machine): the selectedIndex
+    /// cursor, the faction-list typeahead, the
+    /// Activate/Deactivate section toggle, NavigateUp/Down/Home/End,
+    /// AnnounceCurrentFaction/AnnounceFactionWithSearch/AnnounceWarnings, and
+    /// NotifyFactionsChangedExternally (its only jobs — re-clamp the now-removed
+    /// cursor and re-announce via the removed announce path — are subsumed by the
+    /// scope's region model, which rebuilds its faction rows and re-announces the
+    /// current row after every reset).
     /// </summary>
     public static class FactionsNavigationState
     {
-        // ===== STATE =====
-        public static bool IsActive { get; private set; }
-        public static bool IsAddMenuOpen { get; private set; }
-
-        private static Page_CreateWorldParams currentInstance;
-        private static int selectedIndex = 0;
-
-        // Add menu overlay state
-        private static List<AddMenuOption> addMenuOptions = new List<AddMenuOption>();
-        private static int addMenuIndex = 0;
-
-        // Typeahead search helpers
-        private static TypeaheadSearchHelper factionTypeahead = new TypeaheadSearchHelper();
-        private static TypeaheadSearchHelper addMenuTypeahead = new TypeaheadSearchHelper();
-
-        // ===== PUBLIC PROPERTIES =====
-        public static bool HasActiveTypeahead => factionTypeahead.HasActiveSearch || addMenuTypeahead.HasActiveSearch;
-        public static bool HasFactionListTypeahead => factionTypeahead.HasActiveSearch;
-        public static bool HasAddMenuTypeahead => addMenuTypeahead.HasActiveSearch;
-
-        // ===== ADD MENU OPTION CLASS =====
-        private class AddMenuOption
-        {
-            public FactionDef Faction { get; set; }
-            public string Label { get; set; }
-            public bool IsDisabled { get; set; }
-            public string DisabledReason { get; set; }
-        }
+        public static bool IsAddMenuOpen => FactionAddMenuState.IsOpen;
 
         // ===== LIFECYCLE =====
 
-        public static void Initialize(Page_CreateWorldParams instance)
-        {
-            currentInstance = instance;
-        }
-
         public static void Reset()
         {
-            IsActive = false;
-            IsAddMenuOpen = false;
-            currentInstance = null;
-            selectedIndex = 0;
-            addMenuIndex = 0;
-            addMenuOptions.Clear();
-            factionTypeahead.ClearSearch();
-            addMenuTypeahead.ClearSearch();
+            WorldParamsPageBridge.Unbind();
+            FactionAddMenuState.Reset();
         }
+
+        // ===== FACTION LIST QUERY =====
 
         /// <summary>
-        /// Called when Tab switches to factions section.
+        /// The visible faction rows in draw order, each paired with its ACTUAL
+        /// index in the page's faction list (the index vanilla's own DoRow
+        /// removes by) and its scenario-lock state. The scope builds one row per
+        /// entry; the delete chord passes back the chosen row's
+        /// <see cref="FactionRowInfo.ListIndex"/>.
         /// </summary>
-        public static void Activate()
+        internal static List<FactionRowInfo> GetVisibleFactionRows()
         {
-            IsActive = true;
-            // Don't reset selectedIndex - remember where we were
-            factionTypeahead.ClearSearch();
-
-            var factions = GetVisibleFactions();
-
-            // Validate selectedIndex is still in bounds
-            if (selectedIndex >= factions.Count)
+            var rows = new List<FactionRowInfo>();
+            var factions = WorldParamsPageBridge.Factions;
+            for (int i = 0; i < factions.Count; i++)
             {
-                selectedIndex = Math.Max(0, factions.Count - 1);
+                if (!factions[i].displayInFactionSelection)
+                {
+                    continue;
+                }
+                rows.Add(new FactionRowInfo
+                {
+                    Def = factions[i],
+                    ListIndex = i,
+                    Locked = IsFactionLocked(factions[i]),
+                });
             }
-
-            if (factions.Count > 0)
-            {
-                // Announce section name, then current faction, then Alt+A hint
-                TolkHelper.Speak("RimWorldAccess.Factions.Title".Loc());
-                AnnounceCurrentFaction();
-                TolkHelper.Speak("RimWorldAccess.Factions.PressAddHint".Loc(), SpeechPriority.Low);
-            }
-            else
-            {
-                TolkHelper.Speak("RimWorldAccess.Factions.NoFactionsInList".Loc());
-            }
-
-            // Announce warnings if any
-            AnnounceWarnings();
-        }
-
-        /// <summary>
-        /// Called when switching away from factions section.
-        /// </summary>
-        public static void Deactivate()
-        {
-            IsActive = false;
-            IsAddMenuOpen = false;
-            factionTypeahead.ClearSearch();
-            addMenuTypeahead.ClearSearch();
-        }
-
-        // ===== FACTION LIST NAVIGATION =====
-
-        public static void NavigateUp()
-        {
-            var factions = GetVisibleFactions();
-            if (factions.Count == 0) return;
-
-            factionTypeahead.ClearSearch();
-            selectedIndex = MenuHelper.SelectPrevious(selectedIndex, factions.Count);
-            AnnounceCurrentFaction();
-        }
-
-        public static void NavigateDown()
-        {
-            var factions = GetVisibleFactions();
-            if (factions.Count == 0) return;
-
-            factionTypeahead.ClearSearch();
-            selectedIndex = MenuHelper.SelectNext(selectedIndex, factions.Count);
-            AnnounceCurrentFaction();
-        }
-
-        public static void NavigateHome()
-        {
-            var factions = GetVisibleFactions();
-            if (factions.Count == 0) return;
-
-            factionTypeahead.ClearSearch();
-            selectedIndex = 0;
-            AnnounceCurrentFaction();
-        }
-
-        public static void NavigateEnd()
-        {
-            var factions = GetVisibleFactions();
-            if (factions.Count == 0) return;
-
-            factionTypeahead.ClearSearch();
-            selectedIndex = factions.Count - 1;
-            AnnounceCurrentFaction();
+            return rows;
         }
 
         // ===== FACTION LIST ACTIONS =====
 
-        public static void DeleteSelectedFaction()
+        /// <summary>
+        /// The kept delete mutation core (lock check + tutorial gate +
+        /// RemoveAt), refactored to take the ACTUAL faction-list index of the
+        /// cursor's row so it removes exactly that occurrence — the same
+        /// RemoveAt(index) vanilla's WorldFactionsUIUtility.DoRow performs
+        /// (decompiled :185-190), not the first def match the retired
+        /// cursor-reading version used. The scope announces the outcome.
+        /// </summary>
+        internal static FactionDeleteResult DeleteFactionAt(int listIndex)
         {
-            var factions = GetFactionsList();
-            var visibleFactions = GetVisibleFactions();
-
-            if (visibleFactions.Count == 0 || selectedIndex < 0 || selectedIndex >= visibleFactions.Count)
+            var factions = WorldParamsPageBridge.Factions;
+            if (listIndex < 0 || listIndex >= factions.Count)
             {
-                TolkHelper.Speak("RimWorldAccess.Factions.NoFactionSelected".Loc());
-                return;
+                return FactionDeleteResult.NotFound;
             }
 
-            FactionDef selectedFaction = visibleFactions[selectedIndex];
+            FactionDef faction = factions[listIndex];
 
-            // Check if locked by scenario
-            if (IsFactionLocked(selectedFaction))
+            if (IsFactionLocked(faction))
             {
-                TolkHelper.Speak("RimWorldAccess.Factions.CannotRemoveLocked".Loc(selectedFaction.LabelCap));
-                return;
+                return FactionDeleteResult.LockedByScenario;
             }
 
-            // Check tutorial
             if (!TutorSystem.AllowAction("ConfiguringWorldFactions"))
             {
-                TolkHelper.Speak("RimWorldAccess.Factions.CannotModifyTutorial".Loc());
-                return;
+                return FactionDeleteResult.TutorialBlocked;
             }
 
-            // Find and remove from the actual list
-            int actualIndex = factions.IndexOf(selectedFaction);
-            if (actualIndex >= 0)
-            {
-                factions.RemoveAt(actualIndex);
-
-                // Adjust selection
-                visibleFactions = GetVisibleFactions();
-                if (selectedIndex >= visibleFactions.Count)
-                {
-                    selectedIndex = Math.Max(0, visibleFactions.Count - 1);
-                }
-
-                TolkHelper.Speak("RimWorldAccess.Factions.RemovedRemaining".Loc(selectedFaction.LabelCap, visibleFactions.Count));
-
-                if (visibleFactions.Count > 0)
-                {
-                    AnnounceCurrentFaction();
-                }
-                else
-                {
-                    TolkHelper.Speak("RimWorldAccess.Factions.NoneRemaining".Loc());
-                }
-
-                // Check for warnings after removal
-                AnnounceWarnings();
-            }
+            factions.RemoveAt(listIndex);
+            return FactionDeleteResult.Removed;
         }
 
-        // ===== ADD MENU =====
+        // ===== RESET =====
 
-        public static void OpenAddMenu()
+        /// <summary>
+        /// Rides Page_CreateWorldParams's own private ResetFactionCounts() (Category B
+        /// via reflection -- no public wrapper exists) -- vanilla's "Reset factions"
+        /// button, including its Tick_Tiny click sound (Page_CreateWorldParams.cs:186-190).
+        /// Rebuilds the whole faction list from each FactionDef's
+        /// startingCountAtWorldCreation; the scope refreshes its rows and re-announces.
+        /// </summary>
+        public static void ResetFactions()
         {
-            // Check tutorial
-            if (!TutorSystem.AllowAction("ConfiguringWorldFactions"))
-            {
-                TolkHelper.Speak("RimWorldAccess.Factions.CannotModifyTutorial".Loc());
-                return;
-            }
+            if (!WorldParamsPageBridge.IsBound) return;
 
-            RefreshAddMenuOptions();
+            WorldParamsPageBridge.ResetFactionCounts();
+            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
 
-            if (addMenuOptions.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.Factions.NoneAvailableToAdd".Loc());
-                return;
-            }
-
-            IsAddMenuOpen = true;
-            addMenuIndex = 0;
-            addMenuTypeahead.ClearSearch();
-
-            TolkHelper.Speak("RimWorldAccess.Factions.AddMenuOpened".Loc());
-            AnnounceAddMenuOption();
+            TolkHelper.Speak("RimWorldAccess.Factions.ResetDone".Loc());
         }
+
+        // ===== ADD MENU (forwarders onto FactionAddMenuState) =====
+
+        public static void OpenAddMenu() => FactionAddMenuState.Open();
 
         public static void CloseAddMenu()
         {
-            IsAddMenuOpen = false;
-            addMenuTypeahead.ClearSearch();
-            TolkHelper.Speak("RimWorldAccess.Factions.AddMenuClosed".Loc());
-
-            // Re-announce current faction
-            var visibleFactions = GetVisibleFactions();
-            if (visibleFactions.Count > 0)
-            {
-                AnnounceCurrentFaction();
-            }
+            FactionAddMenuState.Close();
+            // Re-read whichever Factions-region row the cursor rests on, so focus
+            // is clear when the overlay goes away (the scope owns the cursor now).
+            RimWorldAccess.Shell.WorldParamsScreenScope.Active?.ReannounceCurrent();
         }
 
-        public static void AddMenuNavigateUp()
-        {
-            if (addMenuOptions.Count == 0) return;
-
-            addMenuTypeahead.ClearSearch();
-            addMenuIndex = MenuHelper.SelectPrevious(addMenuIndex, addMenuOptions.Count);
-            AnnounceAddMenuOption();
-        }
-
-        public static void AddMenuNavigateDown()
-        {
-            if (addMenuOptions.Count == 0) return;
-
-            addMenuTypeahead.ClearSearch();
-            addMenuIndex = MenuHelper.SelectNext(addMenuIndex, addMenuOptions.Count);
-            AnnounceAddMenuOption();
-        }
-
-        public static void AddMenuNavigateHome()
-        {
-            if (addMenuOptions.Count == 0) return;
-
-            addMenuTypeahead.ClearSearch();
-            addMenuIndex = 0;
-            AnnounceAddMenuOption();
-        }
-
-        public static void AddMenuNavigateEnd()
-        {
-            if (addMenuOptions.Count == 0) return;
-
-            addMenuTypeahead.ClearSearch();
-            addMenuIndex = addMenuOptions.Count - 1;
-            AnnounceAddMenuOption();
-        }
-
-        public static void AddMenuConfirm()
-        {
-            if (addMenuOptions.Count == 0 || addMenuIndex < 0 || addMenuIndex >= addMenuOptions.Count)
-            {
-                TolkHelper.Speak("RimWorldAccess.Factions.NoFactionSelected".Loc());
-                return;
-            }
-
-            AddMenuOption option = addMenuOptions[addMenuIndex];
-
-            if (option.IsDisabled)
-            {
-                TolkHelper.Speak("RimWorldAccess.Factions.CannotAddReason".Loc(option.Faction.LabelCap, option.DisabledReason));
-                return;
-            }
-
-            // Add the faction
-            var factions = GetFactionsList();
-            factions.Add(option.Faction);
-
-            int newCount = factions.Count(f => f == option.Faction);
-            TolkHelper.Speak("RimWorldAccess.Factions.AddedNowInList".Loc(option.Faction.LabelCap, newCount));
-
-            // Refresh the menu options (counts may have changed, some may now be disabled)
-            RefreshAddMenuOptions();
-
-            // Stay in add menu so user can add more factions
-            if (addMenuIndex >= addMenuOptions.Count)
-            {
-                addMenuIndex = Math.Max(0, addMenuOptions.Count - 1);
-            }
-
-            if (addMenuOptions.Count > 0)
-            {
-                AnnounceAddMenuOption();
-            }
-        }
-
-        // ===== TYPEAHEAD - FACTION LIST =====
-
-        public static bool HandleFactionTypeahead(char character)
-        {
-            var visibleFactions = GetVisibleFactions();
-            if (visibleFactions.Count == 0) return false;
-
-            var labels = visibleFactions.Select(f => f.LabelCap.ToString()).ToList();
-            if (factionTypeahead.ProcessCharacterInput(character, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    AnnounceFactionWithSearch();
-                }
-            }
-            else
-            {
-                factionTypeahead.SpeakNoMatches();
-            }
-            return true;
-        }
-
-        public static bool HandleFactionTypeaheadBackspace()
-        {
-            if (!factionTypeahead.HasActiveSearch) return false;
-
-            var visibleFactions = GetVisibleFactions();
-            var labels = visibleFactions.Select(f => f.LabelCap.ToString()).ToList();
-            if (factionTypeahead.ProcessBackspace(labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    AnnounceFactionWithSearch();
-                }
-            }
-            return true;
-        }
-
-        public static bool ClearFactionTypeahead()
-        {
-            if (factionTypeahead.ClearSearchAndAnnounce())
-            {
-                AnnounceCurrentFaction();
-                return true;
-            }
-            return false;
-        }
-
-        public static bool SelectNextFactionMatch()
-        {
-            if (!factionTypeahead.HasActiveSearch) return false;
-            int next = factionTypeahead.GetNextMatch(selectedIndex);
-            if (next >= 0)
-            {
-                selectedIndex = next;
-                AnnounceFactionWithSearch();
-            }
-            return true;
-        }
-
-        public static bool SelectPreviousFactionMatch()
-        {
-            if (!factionTypeahead.HasActiveSearch) return false;
-            int prev = factionTypeahead.GetPreviousMatch(selectedIndex);
-            if (prev >= 0)
-            {
-                selectedIndex = prev;
-                AnnounceFactionWithSearch();
-            }
-            return true;
-        }
-
-        // ===== TYPEAHEAD - ADD MENU =====
-
-        public static bool HandleAddMenuTypeahead(char character)
-        {
-            if (addMenuOptions.Count == 0) return false;
-
-            var labels = addMenuOptions.Select(o => o.Faction.LabelCap.ToString()).ToList();
-            if (addMenuTypeahead.ProcessCharacterInput(character, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    addMenuIndex = newIndex;
-                    AnnounceAddMenuWithSearch();
-                }
-            }
-            else
-            {
-                addMenuTypeahead.SpeakNoMatches();
-            }
-            return true;
-        }
-
-        public static bool HandleAddMenuTypeaheadBackspace()
-        {
-            if (!addMenuTypeahead.HasActiveSearch) return false;
-
-            var labels = addMenuOptions.Select(o => o.Faction.LabelCap.ToString()).ToList();
-            if (addMenuTypeahead.ProcessBackspace(labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    addMenuIndex = newIndex;
-                    AnnounceAddMenuWithSearch();
-                }
-            }
-            return true;
-        }
-
-        public static bool ClearAddMenuTypeahead()
-        {
-            if (addMenuTypeahead.ClearSearchAndAnnounce())
-            {
-                AnnounceAddMenuOption();
-                return true;
-            }
-            return false;
-        }
-
-        public static bool SelectNextAddMenuMatch()
-        {
-            if (!addMenuTypeahead.HasActiveSearch) return false;
-            int next = addMenuTypeahead.GetNextMatch(addMenuIndex);
-            if (next >= 0)
-            {
-                addMenuIndex = next;
-                AnnounceAddMenuWithSearch();
-            }
-            return true;
-        }
-
-        public static bool SelectPreviousAddMenuMatch()
-        {
-            if (!addMenuTypeahead.HasActiveSearch) return false;
-            int prev = addMenuTypeahead.GetPreviousMatch(addMenuIndex);
-            if (prev >= 0)
-            {
-                addMenuIndex = prev;
-                AnnounceAddMenuWithSearch();
-            }
-            return true;
-        }
+        public static void AddMenuConfirm(int index) => FactionAddMenuState.Confirm(index);
 
         // ===== HELPERS =====
 
-        private static List<FactionDef> GetFactionsList()
-        {
-            if (currentInstance == null) return new List<FactionDef>();
-            return (List<FactionDef>)AccessTools.Field(typeof(Page_CreateWorldParams), "factions").GetValue(currentInstance);
-        }
-
-        private static List<FactionDef> GetVisibleFactions()
-        {
-            return GetFactionsList().Where(f => f.displayInFactionSelection).ToList();
-        }
-
-        private static bool IsFactionLocked(FactionDef faction)
+        internal static bool IsFactionLocked(FactionDef faction)
         {
             // Check scenario parts for preventRemovalOfFaction
             // During world creation, Current.Game.Scenario should be set
             Scenario scenario = Current.Game?.Scenario;
             if (scenario == null) return false;
 
-            // Use AllParts (public property) to iterate scenario parts
             foreach (ScenPart part in scenario.AllParts)
             {
-                // Check if this part's def prevents removal of this faction
                 if (part.def.preventRemovalOfFaction == faction)
                 {
                     return true;
@@ -501,62 +173,18 @@ namespace RimWorldAccess
             return false;
         }
 
-        private static AcceptanceReport CanAddFaction(FactionDef f)
-        {
-            var factions = GetFactionsList();
-
-            // Check total non-hidden limit (12)
-            if (!f.hidden && factions.Count(x => !x.hidden) >= 12)
-            {
-                return (string)"RimWorldAccess.Factions.MaxAllowed".Translate(12);
-            }
-
-            // Check per-faction limit
-            if (f.maxConfigurableAtWorldCreation > 0 && factions.Count(x => x == f) >= f.maxConfigurableAtWorldCreation)
-            {
-                return (string)"RimWorldAccess.Factions.MaxOfType".Translate(f.maxConfigurableAtWorldCreation);
-            }
-
-            return true;
-        }
-
-        private static void RefreshAddMenuOptions()
-        {
-            addMenuOptions.Clear();
-            var currentFactions = GetFactionsList();
-
-            foreach (FactionDef def in FactionGenerator.ConfigurableFactions)
-            {
-                if (!def.displayInFactionSelection) continue;
-
-                var option = new AddMenuOption { Faction = def };
-                int count = currentFactions.Count(x => x == def);
-
-                AcceptanceReport canAdd = CanAddFaction(def);
-
-                if (!canAdd)
-                {
-                    option.IsDisabled = true;
-                    option.DisabledReason = canAdd.Reason;
-                    option.Label = "RimWorldAccess.Factions.LabelWithReason".Translate(def.LabelCap, canAdd.Reason);
-                }
-                else if (count > 0)
-                {
-                    option.Label = "RimWorldAccess.Factions.LabelWithCount".Translate(def.LabelCap, count);
-                }
-                else
-                {
-                    option.Label = def.LabelCap.ToString();
-                }
-
-                addMenuOptions.Add(option);
-            }
-        }
-
-        private static List<string> GetCurrentWarnings()
+        // MUTATION-C: mirrors WorldFactionsUIUtility.DoWindowContents's warning block
+        // (RimWorld.Planet.WorldFactionsUIUtility.cs:97-129) -- no invokable vehicle
+        // exists (it builds a StringBuilder for direct IMGUI drawing), so the warning
+        // set and its Odyssey-gated duplicates are hand-copied here. Matched by
+        // FactionDefOf, not defName strings -- string matching on defName is exactly
+        // the "don't match on translated/identity strings" trap this codebase's
+        // doctrine warns about (FactionDefOf survives renames/mod overrides the same
+        // way vanilla's own check does).
+        internal static List<string> GetCurrentWarnings()
         {
             var warnings = new List<string>();
-            var factions = GetFactionsList();
+            var factions = WorldParamsPageBridge.Factions;
             int visibleCount = factions.Count(x => !x.hidden);
 
             if (visibleCount == 0)
@@ -565,136 +193,37 @@ namespace RimWorldAccess
                 return warnings;
             }
 
-            // Empire warning (Royalty)
-            if (ModsConfig.RoyaltyActive)
+            if (ModsConfig.RoyaltyActive && !factions.Contains(FactionDefOf.Empire))
             {
-                bool hasEmpire = factions.Any(f => f.defName == "Empire");
-                if (!hasEmpire)
-                {
-                    warnings.Add("RimWorldAccess.Factions.WarningMissingEmpire".Translate());
-                }
+                warnings.Add("RimWorldAccess.Factions.WarningMissingEmpire".Translate());
             }
 
-            // Mechanoid warning
-            bool hasMechanoid = factions.Any(f => f.defName == "Mechanoid");
-            if (!hasMechanoid)
+            if (!factions.Contains(FactionDefOf.Mechanoid))
             {
                 warnings.Add("RimWorldAccess.Factions.WarningMissingMechanoid".Translate());
             }
 
-            // Insect warning
-            bool hasInsect = factions.Any(f => f.defName == "Insect");
-            if (!hasInsect)
+            if (!factions.Contains(FactionDefOf.Insect))
             {
                 warnings.Add("RimWorldAccess.Factions.WarningMissingInsect".Translate());
             }
 
+            // Odyssey shows a SECOND, Odyssey-specific warning for the same two
+            // factions -- vanilla duplicates rather than replaces the base ones
+            // (WorldFactionsUIUtility.cs:118-128).
+            if (ModsConfig.OdysseyActive)
+            {
+                if (!factions.Contains(FactionDefOf.Mechanoid))
+                {
+                    warnings.Add("RimWorldAccess.Factions.WarningMissingMechanoidOdyssey".Translate());
+                }
+                if (!factions.Contains(FactionDefOf.Insect))
+                {
+                    warnings.Add("RimWorldAccess.Factions.WarningMissingInsectOdyssey".Translate());
+                }
+            }
+
             return warnings;
-        }
-
-        // ===== ANNOUNCEMENTS =====
-
-        private static void AnnounceCurrentFaction()
-        {
-            var visibleFactions = GetVisibleFactions();
-            if (selectedIndex < 0 || selectedIndex >= visibleFactions.Count) return;
-
-            FactionDef faction = visibleFactions[selectedIndex];
-            string position = MenuHelper.FormatPosition(selectedIndex, visibleFactions.Count);
-
-            string text = faction.LabelCap.ToString();
-
-            // Include description (use Description property to get xenotype info if Biotech active)
-            if (!string.IsNullOrEmpty(faction.Description))
-            {
-                text += "RimWorldAccess.Factions.WithDescriptionSuffix".Translate(faction.Description.StripTags());
-            }
-
-            if (!string.IsNullOrEmpty(position))
-            {
-                text += "RimWorldAccess.Factions.PositionSpaceSuffix".Translate(position);
-            }
-
-            // Note if locked
-            if (IsFactionLocked(faction))
-            {
-                text += "RimWorldAccess.Factions.LockedSuffix".Translate();
-            }
-
-            TolkHelper.SpeakData(text);
-        }
-
-        private static void AnnounceFactionWithSearch()
-        {
-            var visibleFactions = GetVisibleFactions();
-            if (selectedIndex < 0 || selectedIndex >= visibleFactions.Count) return;
-
-            FactionDef faction = visibleFactions[selectedIndex];
-
-            if (factionTypeahead.HasActiveSearch)
-            {
-                TolkHelper.SpeakData(factionTypeahead.BuildItemAnnouncement(faction.LabelCap));
-            }
-            else
-            {
-                AnnounceCurrentFaction();
-            }
-        }
-
-        private static void AnnounceAddMenuOption()
-        {
-            if (addMenuIndex < 0 || addMenuIndex >= addMenuOptions.Count) return;
-
-            AddMenuOption option = addMenuOptions[addMenuIndex];
-            string position = MenuHelper.FormatPosition(addMenuIndex, addMenuOptions.Count);
-
-            string text = option.Label;
-
-            // Include description (use Description property to get xenotype info if Biotech active)
-            if (!string.IsNullOrEmpty(option.Faction.Description))
-            {
-                text += "RimWorldAccess.Factions.WithDescriptionSuffix".Translate(option.Faction.Description.StripTags());
-            }
-
-            if (!string.IsNullOrEmpty(position))
-            {
-                text += "RimWorldAccess.Factions.PositionSpaceSuffix".Translate(position);
-            }
-
-            if (option.IsDisabled)
-            {
-                text += "RimWorldAccess.Factions.DisabledSuffix".Translate();
-            }
-
-            TolkHelper.SpeakData(text);
-        }
-
-        private static void AnnounceAddMenuWithSearch()
-        {
-            if (addMenuIndex < 0 || addMenuIndex >= addMenuOptions.Count) return;
-
-            AddMenuOption option = addMenuOptions[addMenuIndex];
-
-            if (addMenuTypeahead.HasActiveSearch)
-            {
-                string status = option.IsDisabled ? (string)"RimWorldAccess.Factions.DisabledSuffix".Translate() : "";
-                TolkHelper.SpeakData(addMenuTypeahead.BuildItemAnnouncement(option.Faction.LabelCap + status));
-            }
-            else
-            {
-                AnnounceAddMenuOption();
-            }
-        }
-
-        private static void AnnounceWarnings()
-        {
-            var warnings = GetCurrentWarnings();
-            if (warnings.Count > 0)
-            {
-                // Announce first warning with a slight delay to not overlap with faction announcement
-                string warningText = string.Join(" ", warnings);
-                TolkHelper.SpeakData(warningText, SpeechPriority.Low);
-            }
         }
     }
 }

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <!-- 描述性颜色名称。模板将修饰词置于色相词之前。 -->
+
+  <RimWorldAccess.Color.Hue.Red>红色</RimWorldAccess.Color.Hue.Red>
+  <RimWorldAccess.Color.Hue.Orange>橙色</RimWorldAccess.Color.Hue.Orange>
+  <RimWorldAccess.Color.Hue.Amber>琥珀色</RimWorldAccess.Color.Hue.Amber>
+  <RimWorldAccess.Color.Hue.Yellow>黄色</RimWorldAccess.Color.Hue.Yellow>
+  <RimWorldAccess.Color.Hue.Lime>青柠色</RimWorldAccess.Color.Hue.Lime>
+  <RimWorldAccess.Color.Hue.Green>绿色</RimWorldAccess.Color.Hue.Green>
+  <RimWorldAccess.Color.Hue.Teal>蓝绿色</RimWorldAccess.Color.Hue.Teal>
+  <RimWorldAccess.Color.Hue.Cyan>青色</RimWorldAccess.Color.Hue.Cyan>
+  <RimWorldAccess.Color.Hue.Azure>天蓝色</RimWorldAccess.Color.Hue.Azure>
+  <RimWorldAccess.Color.Hue.Blue>蓝色</RimWorldAccess.Color.Hue.Blue>
+  <RimWorldAccess.Color.Hue.Indigo>靛蓝色</RimWorldAccess.Color.Hue.Indigo>
+  <RimWorldAccess.Color.Hue.Violet>紫罗兰色</RimWorldAccess.Color.Hue.Violet>
+  <RimWorldAccess.Color.Hue.Purple>紫色</RimWorldAccess.Color.Hue.Purple>
+  <RimWorldAccess.Color.Hue.Magenta>品红色</RimWorldAccess.Color.Hue.Magenta>
+  <RimWorldAccess.Color.Hue.Pink>粉色</RimWorldAccess.Color.Hue.Pink>
+  <RimWorldAccess.Color.Hue.Rose>玫瑰色</RimWorldAccess.Color.Hue.Rose>
+
+  <RimWorldAccess.Color.MidVivid>{0}</RimWorldAccess.Color.MidVivid>
+  <RimWorldAccess.Color.MidMuted>灰暗的{0}</RimWorldAccess.Color.MidMuted>
+  <RimWorldAccess.Color.MidPale>淡{0}</RimWorldAccess.Color.MidPale>
+  <RimWorldAccess.Color.DarkVivid>深{0}</RimWorldAccess.Color.DarkVivid>
+  <RimWorldAccess.Color.DarkMuted>深灰暗的{0}</RimWorldAccess.Color.DarkMuted>
+  <RimWorldAccess.Color.DarkPale>暗淡的{0}</RimWorldAccess.Color.DarkPale>
+  <RimWorldAccess.Color.LightVivid>浅{0}</RimWorldAccess.Color.LightVivid>
+  <RimWorldAccess.Color.LightMuted>浅灰暗的{0}</RimWorldAccess.Color.LightMuted>
+  <RimWorldAccess.Color.LightPale>淡{0}</RimWorldAccess.Color.LightPale>
+
+  <RimWorldAccess.Color.Black>黑色</RimWorldAccess.Color.Black>
+  <RimWorldAccess.Color.White>白色</RimWorldAccess.Color.White>
+  <RimWorldAccess.Color.Gray>灰色</RimWorldAccess.Color.Gray>
+  <RimWorldAccess.Color.GrayDark>深灰色</RimWorldAccess.Color.GrayDark>
+  <RimWorldAccess.Color.GrayLight>浅灰色</RimWorldAccess.Color.GrayLight>
+
+</LanguageData>

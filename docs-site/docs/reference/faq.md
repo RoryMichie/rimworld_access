@@ -10,7 +10,7 @@ A lot of content mods, meaning mods that add new items, animals, events, or fact
 
 The trouble is mods that build their own UI. When a mod adds a custom screen that doesn't follow how vanilla RimWorld does things, the mod's screen gets no accessibility treatment from RimWorld Access. Making it accessible isn't a matter of flipping a switch. It means installing the mod, building a save that actually exercises that UI, writing and testing new Harmony patches for it, and then maintaining those patches whenever the mod updates. And that's for one mod.
 
-Every time a new mod gets support, it opens the door to requests for the next one. The queue is effectively infinite. People in the Discord are finding new mods every week. I can't keep up with that, and trying to is how burnout happens.
+Every time a new mod gets support, it opens the door to requests for the next one. The queue is effectively infinite. People in the [Discord](https://discord.rimworldaccess.com) are finding new mods every week. I can't keep up with that, and trying to is how burnout happens.
 
 There's also a localization problem most people don't think about. Many mods haven't been translated into the languages RimWorld Access supports. When a mod's text isn't localized, players hear the raw English strings, and the question comes back to me rather than to the mod author. That's not something I'm willing to volunteer for.
 
@@ -38,7 +38,7 @@ What this documentation covers is the mechanics: how to place buildings, how roo
 
 The [colony building guide](https://rimworldwiki.com/wiki/Colony_Building_Guide) on the RimWorld wiki is a good place to start. It's written for players generally, and the advice translates.
 
-For the "how does this actually look in practice" question, the goal is eventually to collect save files from community members that demonstrate well-built bases, so you can load them up and explore. That's not ready yet. The best current resource is the RimWorld Access Discord, where players share their approaches and can answer specific layout questions.
+For the "how does this actually look in practice" question, the goal is eventually to collect save files from community members that demonstrate well-built bases, so you can load them up and explore. That's not ready yet. The best current resource is the [RimWorld Access Discord](https://discord.rimworldaccess.com), where players share their approaches and can answer specific layout questions.
 
 ## Can I play with other mods?
 

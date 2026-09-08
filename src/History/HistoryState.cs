@@ -1,33 +1,33 @@
-using System;
 using RimWorld;
 using Verse;
-using UnityEngine;
 
 namespace RimWorldAccess
 {
     /// <summary>
     /// Main state management for the History tab accessibility.
-    /// Manages tab switching between Statistics and Messages tabs.
-    /// (Graph tab is skipped for now - will be implemented later.)
+    /// Manages tab switching between Graph, Messages, and Statistics tabs.
     /// </summary>
     public static class HistoryState
     {
         /// <summary>
-        /// Tab indices that match RimWorld's HistoryTab enum:
-        /// Graph = 0, Messages = 1, Statistics = 2
+        /// Tab indices — identical to RimWorld's own private HistoryTab enum
+        /// (MainTabWindow_History.cs:14-19: Graph = 0, Messages = 1,
+        /// Statistics = 2), so no separate RimWorld-index mapping is needed
+        /// for visual sync.
         /// </summary>
         public enum Tab
         {
-            Statistics = 0,  // Our first tab (RimWorld's tab index 2)
-            Messages = 1     // Our second tab (RimWorld's tab index 1)
+            Graph = 0,
+            Messages = 1,
+            Statistics = 2
         }
 
-        // RimWorld's actual tab indices for visual sync
-        private const int RimWorldTabStatistics = 2;
-        private const int RimWorldTabMessages = 1;
+        private const int TabCount = 3;
 
         private static bool isActive = false;
-        private static Tab currentTab = Tab.Statistics;
+        // Matches vanilla's own default (MainTabWindow_History.curTab starts
+        // at HistoryTab.Graph).
+        private static Tab currentTab = Tab.Graph;
 
         /// <summary>
         /// Gets whether the History menu is currently active.
@@ -47,12 +47,13 @@ namespace RimWorldAccess
         {
             isActive = true;
 
-            // Default to Statistics tab (simpler to implement and test first)
-            currentTab = Tab.Statistics;
+            // Matches vanilla's own default tab (Graph) rather than forcing
+            // one — SyncVisualTab is a no-op here since PreOpen already set
+            // curTab to Graph before HistoryPatch's PostOpen postfix runs.
+            currentTab = Tab.Graph;
             SyncVisualTab();
 
-            // Open the Statistics sub-state
-            HistoryStatisticsState.Open();
+            HistoryGraphState.Open();
 
             TolkHelper.Speak("RimWorldAccess.History.Intro".Loc());
         }
@@ -64,11 +65,12 @@ namespace RimWorldAccess
         public static void Close()
         {
             // Close all sub-states
+            HistoryGraphState.Close();
             HistoryStatisticsState.Close();
             HistoryMessagesState.Close();
 
             isActive = false;
-            currentTab = Tab.Statistics;
+            currentTab = Tab.Graph;
         }
 
         /// <summary>
@@ -78,7 +80,9 @@ namespace RimWorldAccess
         {
             CloseCurrentTabState();
 
-            currentTab = (Tab)(((int)currentTab + 1) % 2);
+            if ((int)currentTab == TabCount - 1)
+                MenuHelper.PlayWrapTone();
+            currentTab = (Tab)(((int)currentTab + 1) % TabCount);
 
             SyncVisualTab();
             AnnounceCurrentTab();
@@ -92,7 +96,9 @@ namespace RimWorldAccess
         {
             CloseCurrentTabState();
 
-            currentTab = (Tab)(((int)currentTab + 2 - 1) % 2);
+            if ((int)currentTab == 0)
+                MenuHelper.PlayWrapTone();
+            currentTab = (Tab)(((int)currentTab + TabCount - 1) % TabCount);
 
             SyncVisualTab();
             AnnounceCurrentTab();
@@ -106,6 +112,9 @@ namespace RimWorldAccess
         {
             switch (currentTab)
             {
+                case Tab.Graph:
+                    HistoryGraphState.Close();
+                    break;
                 case Tab.Statistics:
                     HistoryStatisticsState.Close();
                     break;
@@ -122,6 +131,9 @@ namespace RimWorldAccess
         {
             switch (currentTab)
             {
+                case Tab.Graph:
+                    HistoryGraphState.Open();
+                    break;
                 case Tab.Statistics:
                     HistoryStatisticsState.Open();
                     break;
@@ -132,12 +144,13 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Syncs the visual UI tab to match our internal state.
+        /// Syncs the visual UI tab to match our internal state. Our enum's
+        /// values are identical to RimWorld's own HistoryTab enum, so the
+        /// index needs no translation.
         /// </summary>
         private static void SyncVisualTab()
         {
-            int rimWorldTab = currentTab == Tab.Statistics ? RimWorldTabStatistics : RimWorldTabMessages;
-            HistoryHelper.SetCurrentTab(rimWorldTab);
+            HistoryHelper.SetCurrentTab((int)currentTab);
         }
 
         /// <summary>
@@ -153,33 +166,12 @@ namespace RimWorldAccess
         /// </summary>
         public static string GetTabName()
         {
-            return currentTab == Tab.Statistics
-                ? "RimWorldAccess.History.Tab.Statistics".Translate()
-                : "RimWorldAccess.History.Tab.Messages".Translate();
-        }
-
-        /// <summary>
-        /// Handles keyboard input for tab-level operations.
-        /// Returns true if input was handled.
-        /// </summary>
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!isActive)
-                return false;
-
-            // Tab/Shift+Tab switches tabs
-            if (key == KeyCode.Tab && !ctrl && !alt)
+            switch (currentTab)
             {
-                if (shift)
-                    PreviousTab();
-                else
-                    NextTab();
-                return true;
+                case Tab.Graph: return "RimWorldAccess.History.Tab.Graph".Translate();
+                case Tab.Messages: return "RimWorldAccess.History.Tab.Messages".Translate();
+                default: return "RimWorldAccess.History.Tab.Statistics".Translate();
             }
-
-            // Block ALL unhandled keys to prevent game's native handlers from processing them
-            // This makes the History tab modal - it captures all keyboard input while active
-            return true;
         }
 
         /// <summary>
@@ -190,6 +182,8 @@ namespace RimWorldAccess
         {
             get
             {
+                if (currentTab == Tab.Graph && HistoryGraphState.HasActiveSearch)
+                    return true;
                 if (currentTab == Tab.Statistics && HistoryStatisticsState.HasActiveSearch)
                     return true;
                 if (currentTab == Tab.Messages && HistoryMessagesState.HasActiveSearch)

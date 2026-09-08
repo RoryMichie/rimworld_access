@@ -46,8 +46,6 @@
        label, resolved at call time. -->
   <RimWorldAccess.Ideology.RitualSound.Playing>{0}, відтворюється.</RimWorldAccess.Ideology.RitualSound.Playing>
   <RimWorldAccess.Ideology.RitualSound.Stopped>{0}, зупинено.</RimWorldAccess.Ideology.RitualSound.Stopped>
-  <RimWorldAccess.Ideology.RitualSound.Preview>Прослухати звук ритуалу</RimWorldAccess.Ideology.RitualSound.Preview>
-  <RimWorldAccess.Ideology.RitualSound.Stop>Зупинити звук ритуалу</RimWorldAccess.Ideology.RitualSound.Stop>
 
   <!-- Tab open/close composition.
          TabClosed: spoken when Escape closes the tab. {0} = tab label.
@@ -68,27 +66,89 @@
          {0} = ideology name, {1} = vanilla "NoneLower" translation. -->
   <RimWorldAccess.Ideology.Tree.Empty>{0}. {1}</RimWorldAccess.Ideology.Tree.Empty>
 
+  <!-- Residual precept section label (IdeologyHelper.BuildIdeologyTree). Vanilla's own
+       precept ladder (IdeoUIUtility.DoPrecepts) has no catch-all category, so there is no
+       vanilla key to reuse; this covers precepts from a modded preceptClass that none of
+       the nine standard sections claim, so they still reach the tree instead of vanishing. -->
+  <RimWorldAccess.Ideology.OtherPrecepts>Інші правила</RimWorldAccess.Ideology.OtherPrecepts>
+
   <!-- IdeoBuilder module strings (src/IdeoBuilder/).
        Navigation hints for the two-tab builder shell. -->
   <RimWorldAccess.Ideology.Builder.TabForIdeoList>Tab для списку ідеологій</RimWorldAccess.Ideology.Builder.TabForIdeoList>
-  <RimWorldAccess.Ideology.Builder.TabToReturnToList>Tab для повернення до списку</RimWorldAccess.Ideology.Builder.TabToReturnToList>
 
   <!-- Spoken when a section or action is disabled but has no specific reason string. -->
   <RimWorldAccess.Ideology.Builder.Unavailable>Недоступно</RimWorldAccess.Ideology.Builder.Unavailable>
 
   <!-- Spoken when the ] edit-menu is opened on a precept that has no editable options. -->
   <RimWorldAccess.Ideology.Builder.NoEditOptions>Немає параметрів для редагування</RimWorldAccess.Ideology.Builder.NoEditOptions>
-  <!-- Hidden display-English sweep (returned/assigned strings localized). -->
-  <RimWorldAccess.Ideology.Builder.PreceptSection.Active>Активні правила, {0}</RimWorldAccess.Ideology.Builder.PreceptSection.Active>
-  <RimWorldAccess.Ideology.Builder.PreceptSection.NotSet>Не встановлено, {0}</RimWorldAccess.Ideology.Builder.PreceptSection.NotSet>
+  <!-- Hidden display-English sweep (returned/assigned strings localized).
+       The two section names are BARE names: the precept editor is a tree again, so the
+       child count rides the shared expansion suffix instead of the section label. -->
+  <RimWorldAccess.Ideology.Builder.PreceptSection.ActiveName>Активні правила</RimWorldAccess.Ideology.Builder.PreceptSection.ActiveName>
+  <RimWorldAccess.Ideology.Builder.PreceptSection.NotSetName>Не встановлено</RimWorldAccess.Ideology.Builder.PreceptSection.NotSetName>
   <RimWorldAccess.Ideology.Builder.PreceptSummary>{0} встановлено, {1} не встановлено</RimWorldAccess.Ideology.Builder.PreceptSummary>
   <RimWorldAccess.Ideology.Builder.PreceptCurrent>поточне</RimWorldAccess.Ideology.Builder.PreceptCurrent>
+
+  <!-- Spoken on Left/Right over a multi-select issue row in the precept editor (Phase 2 slice
+       S4) — these issues toggle several precepts at once, so cycling has no single "next value"
+       to land on; the hint points the player at Enter (the value picker) instead. -->
+
   <RimWorldAccess.Ideology.PressEnterToReform>Натисніть Enter, щоб реформувати</RimWorldAccess.Ideology.PressEnterToReform>
   <RimWorldAccess.Ideology.Builder.Status.Selected>вибрано</RimWorldAccess.Ideology.Builder.Status.Selected>
   <RimWorldAccess.Ideology.Builder.Status.Removed>видалено</RimWorldAccess.Ideology.Builder.Status.Removed>
   <RimWorldAccess.Ideology.Builder.Status.Reformed>реформовано</RimWorldAccess.Ideology.Builder.Status.Reformed>
   <RimWorldAccess.Ideology.Builder.Status.Yours>ваша</RimWorldAccess.Ideology.Builder.Status.Yours>
+
   <RimWorldAccess.Ideology.Builder.DiscardConfirm>Повернення назад призведе до втрати цієї власної віри. Продовжити?</RimWorldAccess.Ideology.Builder.DiscardConfirm>
   <RimWorldAccess.Ideology.Builder.DiscardContinue>Продовжити</RimWorldAccess.Ideology.Builder.DiscardContinue>
   <RimWorldAccess.Ideology.Builder.DiscardCancel>Скасувати</RimWorldAccess.Ideology.Builder.DiscardCancel>
+
+  <!-- Randomize-all confirmation, shown by both the worldgen hub and the Archonexus-facing
+       section editor (Alt+R replaces the entire ideoligion; vanilla shows no warning). -->
+  <RimWorldAccess.Ideology.Builder.RandomizeAllConfirm>Рандомізація замінить всю ідеологію. Продовжити?</RimWorldAccess.Ideology.Builder.RandomizeAllConfirm>
+  <RimWorldAccess.Ideology.Builder.RandomizeAllContinue>Продовжити</RimWorldAccess.Ideology.Builder.RandomizeAllContinue>
+  <RimWorldAccess.Ideology.Builder.RandomizeAllCancel>Скасувати</RimWorldAccess.Ideology.Builder.RandomizeAllCancel>
+
+  <!-- IdeoBuilderScreenScope: the two regions of the worldgen builder hub. -->
+  <RimWorldAccess.Ideology.Builder.EditorRegion>Ідеологія</RimWorldAccess.Ideology.Builder.EditorRegion>
+  <RimWorldAccess.Ideology.Builder.ListRegion>Ідеології</RimWorldAccess.Ideology.Builder.ListRegion>
+
+  <!-- Description-lock checkbox row label (the icon-only lock button next to the narrative text
+       has no vanilla label of its own — IdeoUIUtility.DoDescription, decompiled :1086-1104). -->
+  <RimWorldAccess.Ideology.Builder.DescriptionLock>Заблокувати опис</RimWorldAccess.Ideology.Builder.DescriptionLock>
+
+  <!-- Dev-mode "+" button next to the fluid development-points row (IdeoUIUtility.DoFluidIdeo,
+       decompiled :983-986); vanilla draws it as a bare "+" with no accessible label. -->
+  <RimWorldAccess.Ideology.Builder.DevMaxPoints>DEV: Максимум балів розвитку</RimWorldAccess.Ideology.Builder.DevMaxPoints>
+
+  <!-- Label for the read-only validation/impact row at the end of the editor region (mirrors
+       Page_ConfigureIdeo.DoWindowContents' bottom-right warning/impact readout). -->
+  <RimWorldAccess.Ideology.Builder.StatusLabel>Стан</RimWorldAccess.Ideology.Builder.StatusLabel>
+
+  <!-- StyleItemsDialogScope (focus-ring census wave 3, slice W3-9). A category row's aggregate frequency when its
+       items disagree — vanilla's own RadioButSemiOn semi-selected mark has no text label of its
+       own, so this is new. -->
+  <RimWorldAccess.Ideology.Builder.Appearance.MixedFrequency>Змішано</RimWorldAccess.Ideology.Builder.Appearance.MixedFrequency>
+
+  <!-- Gender fragment appended to an item or category row's Extras. {0} = the gender label
+       ("Male"/"Female"/"Male and female"). -->
+  <RimWorldAccess.Ideology.Builder.Appearance.GenderFragment>Стать: {0}</RimWorldAccess.Ideology.Builder.Appearance.GenderFragment>
+
+  <!-- IdeologyViewerScreenScope: the F12 Ideology
+       tab's three regions. Kept distinct from the worldgen builder's Builder.EditorRegion/
+       Builder.ListRegion keys — this tab's third region is the dev-only editor, not the builder's
+       always-present one, and "Details" names the read-only tree that has no equivalent there. -->
+  <RimWorldAccess.Ideology.Viewer.ListRegion>Ідеології</RimWorldAccess.Ideology.Viewer.ListRegion>
+  <RimWorldAccess.Ideology.Viewer.DetailsRegion>Подробиці</RimWorldAccess.Ideology.Viewer.DetailsRegion>
+  <RimWorldAccess.Ideology.Viewer.EditorRegion>Редактор</RimWorldAccess.Ideology.Viewer.EditorRegion>
+
+  <!-- Hint suffix baked into the two injected appearance-editor tree rows (S1 follow-up finding
+       #8b), the same way the Fluid section's own label bakes in PressEnterToReform above — this
+       tree's formatter has no separate spoken-role mechanism. -->
+  <RimWorldAccess.Ideology.Viewer.PressEnterToEdit>Натисніть Enter, щоб редагувати</RimWorldAccess.Ideology.Viewer.PressEnterToEdit>
+
+  <!-- IdeoReformScreenScope: the fluid-ideoligion
+       reform dialog's one content region, whose name flips with the dialog's own stage. -->
+  <RimWorldAccess.Ideology.Reform.ChangesRegion>Зміни</RimWorldAccess.Ideology.Reform.ChangesRegion>
+  <RimWorldAccess.Ideology.Reform.EditRegion>Редагування</RimWorldAccess.Ideology.Reform.EditRegion>
 </LanguageData>

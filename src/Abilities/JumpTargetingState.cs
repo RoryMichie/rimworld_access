@@ -1,7 +1,6 @@
 using System.Text;
 using RimWorld;
 using RimWorld.Utility;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
@@ -58,24 +57,6 @@ namespace RimWorldAccess
             casterPosition = IntVec3.Invalid;
             casterMap = null;
             jumpRange = 0f;
-        }
-
-        /// <summary>
-        /// Handles keyboard input during jump targeting.
-        /// Returns true if input was handled.
-        /// </summary>
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!isActive)
-                return false;
-
-            if (key == KeyCode.R && !shift && !ctrl && !alt)
-            {
-                AnnounceRangeInfo();
-                return true;
-            }
-
-            return false;
         }
 
         /// <summary>

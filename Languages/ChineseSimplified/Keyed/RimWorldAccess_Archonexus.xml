@@ -41,16 +41,16 @@
        NoColonistsNeedConverting: spoken when "Assign colonists" is triggered but
          all colonists already follow the chosen ideoligion.
        ErrorConfirming: spoken on exception during the "Next" commit. -->
-  <RimWorldAccess.Archonexus.Reform.OpenInstructions>上下键浏览，输入搜索，Tab 查看完整详情，回车键设为主要，Alt S 确认。</RimWorldAccess.Archonexus.Reform.OpenInstructions>
   <RimWorldAccess.Archonexus.Reform.CannotCancel>无法取消重塑文化形态。按 Alt S 确认并继续。</RimWorldAccess.Archonexus.Reform.CannotCancel>
-  <RimWorldAccess.Archonexus.Reform.NoIdeoDetailsHere>此处没有文化形态详情。请先移动到一个文化形态上。</RimWorldAccess.Archonexus.Reform.NoIdeoDetailsHere>
   <RimWorldAccess.Archonexus.Reform.AlreadyPrimary>{0} 已经是主要文化形态。</RimWorldAccess.Archonexus.Reform.AlreadyPrimary>
   <RimWorldAccess.Archonexus.Reform.SetAsPrimary>{0} 已设为主要文化形态。</RimWorldAccess.Archonexus.Reform.SetAsPrimary>
+  <RimWorldAccess.Archonexus.Reform.CurrentPrimaryFragment>当前主要</RimWorldAccess.Archonexus.Reform.CurrentPrimaryFragment>
   <RimWorldAccess.Archonexus.Reform.NoColonistsNeedConverting>没有殖民者需要教化。</RimWorldAccess.Archonexus.Reform.NoColonistsNeedConverting>
   <RimWorldAccess.Archonexus.Reform.ErrorConfirming>确认文化形态时出错</RimWorldAccess.Archonexus.Reform.ErrorConfirming>
+  <RimWorldAccess.Archonexus.Reform.ListRegion>文化形态</RimWorldAccess.Archonexus.Reform.ListRegion>
+  <RimWorldAccess.Archonexus.Reform.DetailsRegion>详情</RimWorldAccess.Archonexus.Reform.DetailsRegion>
   <!-- PressTabToEdit: appended to an item announcement when the focused ideoligion
        is the editable custom one and the player just returned from a sub-screen. -->
-  <RimWorldAccess.Archonexus.Reform.PressTabToEdit>按 Tab 编辑此文化形态。</RimWorldAccess.Archonexus.Reform.PressTabToEdit>
 
   <!-- Screen 4 sub-dialog — assign colonists (ArchonexusConvertColonistsState).
        OpenInstructions: appended after the vanilla dialog title, description,
@@ -58,8 +58,15 @@
        SpaceOrEnterToConvert: the keyboard hint in the opening announcement. -->
   <RimWorldAccess.Archonexus.Convert.OpenInstructions>空格或回车键教化，完成后按 Escape。</RimWorldAccess.Archonexus.Convert.OpenInstructions>
 
-  <!-- Convert-colonists checkbox toggle announcements. {0} = ideoligion name. -->
-  <RimWorldAccess.Archonexus.Convert.Selected>已选择</RimWorldAccess.Archonexus.Convert.Selected>
-  <RimWorldAccess.Archonexus.Convert.NotSelected>未选择</RimWorldAccess.Archonexus.Convert.NotSelected>
-  <RimWorldAccess.Archonexus.Convert.NotSelectedCurrently>未选择。当前为 {0}</RimWorldAccess.Archonexus.Convert.NotSelectedCurrently>
+  <!-- Convert-colonists checkbox: Selected/NotSelected retired (Task 8 packet F) — the
+       checked/unchecked state now rides the composer's own Checkbox state word.
+       CurrentlyFollowing is the one piece NotSelectedCurrently carried that the state
+       word alone cannot: which ideoligion an unconverted colonist keeps. {0} = ideoligion name. -->
+  <RimWorldAccess.Archonexus.Convert.CurrentlyFollowing>当前为 {0}</RimWorldAccess.Archonexus.Convert.CurrentlyFollowing>
+
+  <!-- Colony-selection section header: how many things are selected out of the
+       section's maximum ({0} = selected count, {1} = maximum). Not a cursor
+       position, so it does not reuse Menu.Position. -->
+  <RimWorldAccess.Archonexus.Colony.CountOfMax>{0}/{1}</RimWorldAccess.Archonexus.Colony.CountOfMax>
+
 </LanguageData>

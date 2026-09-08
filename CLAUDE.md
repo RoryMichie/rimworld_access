@@ -1,372 +1,158 @@
-# CLAUDE.md
+# RimWorld Access: project doctrine
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+The rules this codebase is held to, and the traps that have already cost someone a day.
+Comments and ratchet scripts throughout the repo cite this file by name, so treat it as
+the reference those citations point at.
 
-## Overview
+If you are here to add support for a third-party mod, read `src/Compat/README.md` too.
+It is more specific and it is the more detailed document.
 
-RimWorld Access is a C# mod for RimWorld that provides screen reader accessibility. It uses Harmony patches to inject keyboard navigation into RimWorld's UI and the Prism library for cross-platform screen reader integration (NVDA, JAWS, VoiceOver, Orca, SAPI, and more).
+## Verify, never assume
 
-**Technology Stack:**
-- .NET Framework 4.7.2
-- HarmonyLib 2.3.3 (runtime patching)
-- Prism (screen reader integration via P/Invoke — supports Windows, macOS, Linux)
-- RimWorld 1.6 assemblies
+Three sources answer questions about how the game behaves, in this order:
 
-## Building and Testing
-### Build Commands
+1. **Decompiled game code.** How RimWorld actually works. The mod is built against a
+   local decompile of the game assemblies; nothing in this repo is a substitute for
+   reading them.
+2. **Game XML defs**, under the game's `data` directory. Labels, descriptions, and
+   translation strings.
+3. **The live game**, through the DEBUG-only dev bridge: `curl -s --data '<C# expr>'
+   http://127.0.0.1:8787/eval`. Resolved labels, open windows, real values.
+   `ShellDev.InjectAndCapture("F2, DownArrow")` drives keyboard smoke tests. The class
+   header on `ShellDev` lists what the harness cannot see.
+
+RimWorld lazy-populates a lot of UI state during render and hover, so a property read
+cold is often empty: `Command_Ability.Desc` is blank without a hover, and the right
+answer is `ability.def.description`. Translation keys do not always resolve to short
+labels, and def labels are sometimes empty. Check resolved values live rather than
+reasoning about what they ought to be.
+
+**The QA flight recorder** is the first place to look when diagnosing a report. It is
+compiled into every build and toggled manually in game (Alt or Option plus the vanilla
+screenshot key), writing one log per recording under
+`<SaveDataFolder>/RimWorldAccess/FlightRecorder/`. It records every key resolution
+(`[key] ... top=<scope> -> <action>`), every utterance (`[speech]`), every scope
+push, pop and attach, every window add and remove with the caller chain that opened or
+closed it, and `[mark]` section breaks. Read it before touching code.
+
+Two signatures worth knowing. `attach generic-window for <Type>` at a dialog open means
+that window has no bespoke scope and is being read generically. A consequence spoken
+with no `[key]` line before it means something outside the dispatcher consumed the key,
+usually a vanilla window's own GUI pass; Return arrives as two Unity events, so its
+eaten KeyDown leaves an orphan `key=None ch=10 -> modal-swallow` twin. The trace sees
+only the dispatcher chain, so vanilla-pass key handling shows up as these absences
+rather than as lines of its own.
+
+## Doctrine
+
+**Mutations ride a vanilla vehicle.** Four categories, in order of preference:
+
+- **A**: invoke the vanilla widget or delegate itself. A gizmo's `ProcessInput`, a
+  `FloatMenuOption.action`, a dialog's own `CanAccept` plus `Accept`.
+- **B**: call a gated vanilla method (`Try*`, or one returning an `AcceptanceReport`)
+  and honor its answer. A mutator called without its `Can*` twin is a violation.
+- **C**: a hand-copied gate, only where no A or B vehicle exists, marked
+  `// MUTATION-C: mirrors <vanilla path>; <why A/B is impossible>`. The mutation ratchet
+  parses those markers, so never delete or reword one.
+- **D**: a raw ungated mutation. Forbidden.
+
+If the action opens a vanilla flow, a ritual or a confirmation, open that flow. Never
+skip to the result. Text-field limits are validation too: harvest them from the game's
+own call sites, its dialogs, and its constants rather than picking a number.
+`scripts/check_mutation_doctrine.py` enforces this, and `ActionParityOracle` checks it
+at runtime in DEBUG builds.
+
+**Read the game's live decision objects.** Derive structure, labels, columns and sorting
+from vanilla's own defs, comparers and widget state, including private IMGUI flags where
+that is what holds the answer. Never string-match a translated label, hand-transcribe a
+UI, or hardcode a value the game already exposes. Prefer interfaces over concrete
+classes, and verify every type hierarchy in the decompiled code rather than assuming it.
+
+**Present everything; editorialize nothing.** If a sighted player can see it, tooltips
+included, a screen reader user hears it. Read-only rows stay navigable and say that they
+are read-only. Announcements run label, then hotkey, then stats, then description.
+Supplementary information is re-announced only when its context changes. One
+announcement per action. Separate parts with periods, never with newlines. Every
+player-facing string is localized with a whole-phrase key, never assembled by
+concatenating translated fragments.
+
+**Deviate from vanilla only where vanilla is keyboard-hostile.** Keeping a targeting
+session open after a range failure is the shape of a justified deviation.
+
+## The keyboard shell
+
+All input routes through `ShellDispatcherPatch`, in
+`src/Shell/Focus/ShellDispatcher.Game.cs`. Per pass it reconciles the scope mirrors, lets
+the IME funnel and any active text session consume first, then dispatches chord claims
+top-down through the focus stack. A live MODAL scope masks everything beneath it.
+Unclaimed keys are swallowed while `ShellGuards.MenuOwnsInput()` holds, and
+under-claiming scopes depend on that swallow, so never weaken the predicate.
+
+A new screen subclasses `ScreenScope`, whose header is the content, table and Buttons
+region contract. Pick a push and pop shape from `FocusScope`'s header. Register action
+ids in `ShellActionInventory` first.
+
+Escape and Enter on real windows go through the shared router pair in
+`src/Shell/Focus/WindowKeyRouter.Game.cs` and `PageKeyRouter.Game.cs`
+(`WindowCancelKeyRouterPatch`, `WindowAcceptKeyRouterPatch`, and the `Page` equivalents),
+which consult each scope's `OwnsCancel` and `OwnsAccept`. Never add a new Harmony blocker
+on `OnCancelKeyPressed` or `OnAcceptKeyPressed`; route through the pair instead.
+`Event.current.Use()` does **not** stop `Window.OnCancelKeyPressed`, which is how one
+Escape ends up closing two dialogs.
+
+**The window-pass ordering trap**, referred to in comments as QA R6: the focused window's
+GUI pass can run BEFORE the dispatcher and shares Event state with it. A guard in a
+window pass must therefore be state-based, or mask `keyCode` and restore it around the
+vanilla body. It must never depend on a same-frame frame stamp, and it must never call
+`Use()` on a key that a scope claims.
+
+`scripts/check_shell_demolition.py` locks the outcome of the input-plumbing rebuild in
+place.
+
+## Gotchas that bite
+
+- Harmony misses inherited and overridden methods. Patch the DECLARING type and guard
+  with `__instance is`. An override that skips `base` escapes a base-type patch entirely.
+- IMGUI focus dies for windowless hosts after a child window closes. Call
+  `Notify_ManuallySetFocus` in `PostOpen`, and reclaim focus only inside the host's own
+  GUI pass, never every frame under a modal.
+- `DialogInterceptionPatch` swallows game-spawned `FloatMenu`s before they reach the
+  WindowStack, reopening their options as a windowless menu. A `FloatMenu` may therefore
+  be live while absent from the stack, so ask `WindowlessFloatMenuState`, not the stack.
+- Inspect-tab visibility reads `Find.Selector.SingleSelectedThing`, so select the thing
+  (with `playSound: false`) before reading its tabs.
+- Never gate text input on a `KeyCode.A..Z` range; that breaks every non-US layout. Use
+  the layout-aware `Event.character` through the shell's char funnel or
+  `TextInputManager`.
+- On map sweeps, pair cell lists with HashSets, and never call a hover or per-cell cache
+  API in a loop. Each such query caches permanently.
+- A state reached mid-flow may still be `IsActive` later. Close it explicitly. Loading a
+  save fires no reset of its own: `GameStartPatch` (at FinalizeInit) is the reset point,
+  so register with `StateResetRegistry`.
+- Structurally identical dialogs share one State behind an adapter interface, the way
+  `ITransferLoadDialog` and `ILordJobDialogAdapter` do.
+- A source file that touches game types needs the `.Game.cs` suffix, or the test project
+  will not build.
+- Never hard-typeref a lazily loaded assembly, and never run a type sweep over one.
+  Reflection only; a direct reference throws `TypeLoadException` at load.
+- Launch the game only through `steam://rungameid/294100`. Launching the app directly
+  corrupts `ModsConfig.xml`.
+
+## Verifying a change
+
+From the repository root:
 
 ```bash
-# Build and auto-deploy to RimWorld/Mods/RimWorldAccess/
-dotnet build
-
-# Build release package to release/RimWorldAccess/
-dotnet build -c Release
-
-# Update Prism native libraries to latest release
-dotnet msbuild -t:UpdatePrism
+dotnet build                                                                    # 0 warnings, 0 errors
+dotnet test tests/RimWorldAccess.Tests/RimWorldAccess.Tests.csproj
+dotnet test analyzers/RimWorldAccess.Analyzers.Tests/RimWorldAccess.Analyzers.Tests.csproj
+for s in scripts/check_*.py; do python3 "$s" || break; done
 ```
 
-**Build Output:**
-- DLL: `bin/Debug/net472/rimworld_access.dll`
-- Auto-deploys to: `$(RimWorldDir)\Mods\RimWorldAccess\Assemblies\`
-- Native Prism libraries (prism.dll / libprism.dylib / libprism.so) copied to mod root
-
-## Code Architecture
-
-### Core Pattern: State + Patch
-
-Every feature follows this architecture:
-
-1. **State class** (`*State.cs`)
-   - Maintains navigation state (selected index, list of items, etc.)
-   - `IsActive` flag checked by UnifiedKeyboardPatch
-   - Methods: `Open()`, `Close()`, `SelectNext()`, `SelectPrevious()`
-   - Calls `TolkHelper.Speak()` to announce selections
-
-2. **Patch class** (`*Patch.cs`)
-   - Harmony patches that intercept RimWorld methods
-   - Initializes State when UI opens (PostOpen/Postfix)
-   - Resets State when UI closes
-   - May inject accessibility into rendering code
-
-3. **Helper class** (`*Helper.cs`)
-   - Data extraction utilities
-   - Reusable functions for formatting announcements
-   - No state management
-
-### Module Organization
-
-The codebase is organized into 18 modules by game feature:
-
-| Module | Files | Purpose |
-|--------|-------|---------|
-| **Core/** | 2 | Mod entry point, Harmony initialization |
-| **ScreenReader/** | 5 | Prism screen reader integration and audio |
-| **Input/** | 1 | UnifiedKeyboardPatch - central input router |
-| **MainMenu/** | 19 | Main menu and game setup flow |
-| **Map/** | 9 | Map navigation, cursor, scanner |
-| **World/** | 8 | World map, settlements, caravans |
-| **Building/** | 23 | Construction, zones, areas |
-| **Inspection/** | 24 | Building/object inspection UI, Info Card |
-| **Pawns/** | 25 | Pawn info and character tabs |
-| **Work/** | 2 | Work priorities and schedules |
-| **Animals/** | 6 | Animal and wildlife management |
-| **Prisoner/** | 3 | Prisoner management |
-| **Quests/** | 3 | Quests and notifications |
-| **Combat/** | 2 | Combat and targeting |
-| **Trade/** | 3 | Trading system |
-| **Research/** | 2 | Research system |
-| **UI/** | 13 | Generic dialogs and windowless menus |
-
-Each module has its own `CLAUDE.md` with detailed documentation.
-
-### Central Systems
-
-**UnifiedKeyboardPatch** (`Input/UnifiedKeyboardPatch.cs`)
-- Central keyboard input router for ALL accessibility features
-- Patches `UIRoot.UIRootOnGUI` at Prefix level
-- Priority system (lower number = higher priority, range -1 to 10)
-- Checks `IsActive` flags before routing to State classes
-- Calls `Event.current.Use()` to consume events and prevent default game behavior
-
-**TolkHelper** (`ScreenReader/TolkHelper.cs`)
-- Cross-platform screen reader integration via Prism library
-- `TolkHelper.Speak(text, priority)` used by all modules
-- Three priorities: Low (don't interrupt), Normal, High (interrupt)
-- Backed by: `NativeLibraryLoader.cs` (cross-platform DLL loading) and `PrismNative.cs` (Prism C API bindings)
-- Initialized in `Core/rimworld_access.cs`
-
-**MapNavigationState** (`Map/MapNavigationState.cs`)
-- Provides `CurrentCursorPosition` (IntVec3) used by 10+ modules
-- Arrow key navigation with camera follow
-- Jump modes for terrain features
-
-### Dependency Graph
-
-```
-Core/rimworld_access.cs (entry point)
-  └── ScreenReader/TolkHelper (initialize)
-        └── Input/UnifiedKeyboardPatch (routes to all modules)
-              ├── MainMenu/
-              ├── Map/ → [Building, Inspection, Quests, Combat]
-              ├── Pawns/ → [Work, Prisoner]
-              ├── World/ → [Quests]
-              ├── Animals/
-              ├── Trade/
-              ├── Research/
-              └── UI/ → [All modules]
-```
-
-## Common Development Tasks
-
-### Adding a New Feature
-
-1. **Choose module directory** (or create new one under `src/`)
-2. **Create State class:**
-   ```csharp
-   public static class MyFeatureState
-   {
-       public static bool IsActive { get; set; }
-       private static int selectedIndex = 0;
-
-       public static void Open()
-       {
-           IsActive = true;
-           TolkHelper.Speak("Feature opened", SpeechPriority.Normal);
-       }
-
-       public static void Close()
-       {
-           IsActive = false;
-       }
-   }
-   ```
-
-3. **Create Patch class:**
-   ```csharp
-   [HarmonyPatch(typeof(RimWorldClass))]
-   [HarmonyPatch("MethodName")]
-   public static class MyFeaturePatch
-   {
-       [HarmonyPostfix]
-       public static void Postfix()
-       {
-           MyFeatureState.Open();
-       }
-   }
-   ```
-
-4. **Add input routing to UnifiedKeyboardPatch.cs:**
-   ```csharp
-   // Priority 5: My Feature (K key)
-   if (MyFeatureState.IsActive && key == KeyCode.K)
-   {
-       MyFeatureState.ExecuteAction();
-       Event.current.Use();
-       return;
-   }
-   ```
-
-5. **Update module's CLAUDE.md**
-
-### Modifying Existing Features
-
-1. **Find the module** - Use module table above or search by feature name
-2. **Read module's CLAUDE.md** - Understand dependencies and patterns
-3. **Identify files:**
-   - State class for navigation logic
-   - Patch class for Harmony integration
-   - Helper class for utilities
-4. **Test thoroughly** - Verify screen reader announcements and keyboard navigation
-
-### Finding Code
-
-**By game feature:** Navigate to corresponding module directory (e.g., trading → `Trade/`)
-
-**By keyboard shortcut:** Check `Input/UnifiedKeyboardPatch.cs` for complete routing
-
-**By screen reader announcement:** Search for `TolkHelper.Speak()` calls
-**RimWorld's decompiled code**: A decompiled copy of RimWorld is located at `./decompiled`. Search this code before making changes that require integration with the game's methods.  
-
-## Building Menus and TreeViews
-
-**See [`src/docs/menu-treeview.md`](src/docs/menu-treeview.md) for complete templates and reference.**
-
-All menus and treeviews must use:
-- `MenuHelper` for navigation (respects WrapNavigation, AnnouncePosition settings)
-- `TypeaheadSearchHelper` for search functionality
-- Standard keyboard patterns (Up/Down/Home/End, Escape to clear search, etc.)
-
-**Quick Reference:**
-- **Flat Menu:** Up/Down, Home/End, typeahead search, position announcements
-- **TreeView:** Above + Left/Right for collapse/expand, Ctrl+Home/End for absolute navigation, level announcements
-
-**Examples:** `ScenarioNavigationState.cs`, `ArchitectTreeState.cs`
-
-## Harmony Patching Notes
-
-- All patches auto-apply via `harmony.PatchAll()` in `Core/rimworld_access.cs`
-- Use `[HarmonyPriority]` to control patch execution order (only needed for conflicts)
-- **Prefix patches:** Run before original method, can block execution with `return false`
-- **Postfix patches:** Run after original method completes
-- Use `AccessTools` for reflection (accessing private methods/fields)
-
-## Screen Reader Integration
-
-- TolkHelper uses Prism for cross-platform screen reader access
-- Prism auto-selects the best available backend (screen readers prioritized over TTS)
-- Supported backends: NVDA, JAWS, SAPI, OneCore (Windows), VoiceOver (macOS), Orca, Speech Dispatcher (Linux)
-- All navigation actions should announce via `TolkHelper.Speak()`
-- Use `SpeechPriority.Low` for rapid navigation (don't interrupt)
-- Use `SpeechPriority.High` for critical alerts
-
-## State Lifecycle
-
-1. Patch's PostOpen/Postfix initializes state: `MyState.Open()`, `IsActive = true`
-2. UnifiedKeyboardPatch routes input to state while `IsActive == true`
-3. State handles navigation, announces via TolkHelper
-4. State closes: `MyState.Close()`, `IsActive = false`
-
-## Important Conventions
-
-- **IsActive flags:** All State classes must have this to prevent input conflicts
-- **Event consumption:** Always call `Event.current.Use()` after handling input
-- **Priority order:** Lower numbers = higher priority in UnifiedKeyboardPatch
-- **Module CLAUDE.md:** Keep up to date with architectural changes
-- **Conventional commits:** Use `feat:`, `fix:`, `refactor:`, `docs:`, etc.
-
-## Keyboard Input Isolation (CRITICAL)
-
-### The Problem
-
-When multiple UI states are stacked (e.g., CaravanFormation → QuantityMenu → Inspection), pressing Escape should only close the topmost state. RimWorld's Window system has its own Cancel key handling via `Window.OnCancelKeyPressed()` that runs independently of our keyboard handler.
-
-**Common symptoms of this bug:**
-- Pressing Escape closes TWO dialogs instead of one
-- Camera pan sound plays unexpectedly (RimWorld's default close sound)
-- User returns to an unexpected screen after pressing Escape
-
-### What Doesn't Work
-
-These approaches do NOT reliably block RimWorld's Escape handling:
-- `Event.current.Use()` - RimWorld's KeyBindingDef doesn't check if event was "used"
-- `Event.current.keyCode = KeyCode.None` - Window system may check before we can clear it
-- Frame tracking with `ClosedOnFrame` - Same timing issues
-
-### The Solution: Harmony Patch on Window.OnCancelKeyPressed
-
-**IMPORTANT:** `Event.current.Use()` and even `Event.current.keyCode = KeyCode.None` are NOT sufficient to block RimWorld's Escape handling!
-
-RimWorld's `Window.OnCancelKeyPressed` is called by the WindowStack independently of our keyboard handler. The only reliable way to block it is to patch the method directly:
-
-```csharp
-// In CaravanFormationPatch.cs
-[HarmonyPatch(typeof(Window), "OnCancelKeyPressed")]
-[HarmonyPrefix]
-public static bool Window_OnCancelKeyPressed_Prefix(Window __instance)
-{
-    // Only intercept for specific dialogs
-    if (__instance is Dialog_FormCaravan || __instance is Dialog_SplitCaravan)
-    {
-        // Block the game's Cancel handling when our overlay menus are active
-        if (QuantityMenuState.IsActive || WindowlessInspectionState.IsActive)
-        {
-            return false; // Skip original method - let our overlay handle the Escape
-        }
-    }
-    return true; // Let original method run
-}
-```
-
-### Current Implementation
-
-The `Window.OnCancelKeyPressed` patch is in `CaravanFormationPatch.cs` and handles both:
-- `Dialog_FormCaravan` - Caravan formation from colony
-- `Dialog_SplitCaravan` - Splitting an existing caravan
-
-When `QuantityMenuState.IsActive` or `WindowlessInspectionState.IsActive`, the patch returns `false` to prevent RimWorld from closing the underlying dialog.
-
-### When to Extend This Pattern
-
-If you add a new overlay menu that can appear over RimWorld dialogs with `closeOnCancel = true`:
-1. Add your state's `IsActive` check to the existing `Window_OnCancelKeyPressed_Prefix`
-2. Or create a similar patch for the specific dialog class if it overrides `OnCancelKeyPressed`
-
-### Priority System Review
-
-UnifiedKeyboardPatch processes input by priority (lower = higher priority):
-
-| Priority | State | Escape Behavior |
-|----------|-------|-----------------|
-| 0.22 | WindowlessInspectionState (from caravan) | Close inspection only |
-| 0.25 | QuantityMenuState | Close quantity menu only |
-| 0.3 | CaravanFormationState | Close caravan dialog |
-| 0.35 | SplitCaravanState | Close split dialog |
-| ... | ... | ... |
-| 8 | Global Escape | Open pause menu |
-
-The frame checks are placed BEFORE priority 0.3 to catch Escape events that already closed higher-priority states.
-
-### Debugging Checklist
-
-If Escape closes the wrong dialog:
-1. Check if the closing state has `ClosedOnFrame` implemented
-2. Check if UnifiedKeyboardPatch has the frame check before the affected handler
-3. Verify the priority order - higher priority states should be checked first
-4. Check for `doCloseSound: true` in `WindowStack.TryRemove()` calls (should usually be `false` to let our TolkHelper announce instead)
-
-### Additional Patterns
-
-**Blocking game's default Escape handling:**
-Some RimWorld dialogs have their own Escape handling (e.g., `OnAcceptKeyPressed`). Use Harmony Prefix patches to block:
-
-```csharp
-[HarmonyPatch("OnAcceptKeyPressed")]
-[HarmonyPrefix]
-public static bool OnAcceptKeyPressed_Prefix()
-{
-    if (MyState.IsActive)
-        return false;  // Block game's handling
-    return true;
-}
-```
-
-**Silent dialog closing:**
-Always use `doCloseSound: false` when closing dialogs programmatically:
-
-```csharp
-Find.WindowStack.TryRemove(dialog, doCloseSound: false);
-TolkHelper.Speak("Dialog closed");  // Our announcement instead
-```
-
-## Workflow Notes
-
-- **Main branch:** `master`
-- **Bug reports:** Only test with Harmony + RimWorld Access enabled (no other mods)
-- **Pull requests:** Link to issue using `Closes #123` or `Fixes #123`
-- **Before opening PRs:** Open issue first for new features, wait for feedback
-
-## Project Structure
-
-```
-mod/
-├── src/                    # All C# source code (18 modules)
-│   ├── Core/              # Entry point, initialization
-│   ├── Input/             # UnifiedKeyboardPatch
-│   ├── ScreenReader/      # TolkHelper, audio
-│   ├── Map/               # Map navigation, scanner
-│   └── [15 other modules]
-├── About/                 # About.xml (mod metadata)
-├── Sounds/                # Embedded audio resources
-├── native/                # Prism native libraries (downloaded, gitignored)
-│   ├── prism.dll          # Windows x64
-│   ├── libprism.dylib     # macOS universal (Intel + Apple Silicon)
-│   └── libprism.so        # Linux x64
-├── rimworld_access.csproj # MSBuild project file
-└── GamePaths.props.template
-
-Build output:
-├── bin/Debug/net472/      # Compiled DLL
-└── release/RimWorldAccess/ # Release package
-```
-
+The `check_*.py` scripts are static ratchets. Each locks in one doctrine decision and
+prints what it wants when it fails. Most are shrink-only: they let you reduce a count and
+refuse to let you grow it. Read a failing script's docstring before going near its
+baseline.
+
+Every player-facing change also gets a `changelog.d/` entry, one file per change.
+`changelog.d/README.md` explains the format.

@@ -36,16 +36,17 @@
        mostly defensive for null-check paths. -->
   <RimWorldAccess.Work.UnknownPawn>Unknown</RimWorldAccess.Work.UnknownPawn>
 
+  <!-- Work-priority copy/paste (Ctrl+C / Ctrl+V), sharing vanilla's own
+       clipboard. CopyPasteAnnouncement: {0} = the game's own Copy/Paste word,
+       {1} = pawn name. NoPrioritiesCopied is the refusal when nothing has been
+       copied yet. -->
+  <RimWorldAccess.Work.CopyPasteAnnouncement>{0}: {1}</RimWorldAccess.Work.CopyPasteAnnouncement>
+  <RimWorldAccess.Work.NoPrioritiesCopied>No work priorities copied</RimWorldAccess.Work.NoPrioritiesCopied>
+
   <!-- Mode names. Toggle (Alt+M) announces just the new mode; the overlay
        shows the same strings in the header row. -->
   <RimWorldAccess.Work.Mode.Manual>Manual priority mode</RimWorldAccess.Work.Mode.Manual>
   <RimWorldAccess.Work.Mode.Basic>Basic mode</RimWorldAccess.Work.Mode.Basic>
-  <RimWorldAccess.Work.Mode.ManualOverlay>Manual Priority Mode</RimWorldAccess.Work.Mode.ManualOverlay>
-  <RimWorldAccess.Work.Mode.BasicOverlay>Basic Mode</RimWorldAccess.Work.Mode.BasicOverlay>
-
-  <!-- Spoken when Up/Down is pressed in Basic Mode (navigation is
-       Left/Right only there). -->
-  <RimWorldAccess.Work.UpDownOnlyManual>Up/Down navigation only in manual mode. Press Alt+M to switch.</RimWorldAccess.Work.UpDownOnlyManual>
 
   <!-- Column names for the 5-column priority grid. Used in the spoken
        announcements, the overlay's position readout, and composed into
@@ -67,19 +68,8 @@
   <RimWorldAccess.Work.PriorityWord.4>4</RimWorldAccess.Work.PriorityWord.4>
   <RimWorldAccess.Work.PriorityWord.Disabled>disabled</RimWorldAccess.Work.PriorityWord.Disabled>
 
-  <!-- Empty-column / empty-list announcements.
-       ColumnEmpty: {0} = column name. Spoken when the current column has
-       no items (e.g. "Priority 3: empty").
-       NoWorkTypesAvailable: Basic Mode, no entries at all.
-       NoWorkTypeSelected: Shift+0-4 bulk set with no entry under cursor.
-       NoTaskSelected: BuildTaskAnnouncement fallback.
-       CursorNowEmpty: {0} = column name. Spoken after SetPriority moved
-       the only item out of the current column. -->
-  <RimWorldAccess.Work.ColumnEmpty>{0}: empty</RimWorldAccess.Work.ColumnEmpty>
-  <RimWorldAccess.Work.NoWorkTypesAvailable>No work types available</RimWorldAccess.Work.NoWorkTypesAvailable>
+  <!-- NoWorkTypeSelected: Shift+0-4 bulk set with no entry under cursor. -->
   <RimWorldAccess.Work.NoWorkTypeSelected>No work type selected</RimWorldAccess.Work.NoWorkTypeSelected>
-  <RimWorldAccess.Work.NoTaskSelected>No task selected</RimWorldAccess.Work.NoTaskSelected>
-  <RimWorldAccess.Work.CursorNowEmpty>Your cursor is now at {0}, which is empty</RimWorldAccess.Work.CursorNowEmpty>
 
   <!-- Single-pawn SetPriority feedback.
        AlreadyAtPriority: {0} = work labelShort, {1} = priority word
@@ -89,7 +79,7 @@
        MovedToPriority: {0} = labelShort, {1} = priority word. Used when
          the new column has only one movable item, so no neighbour context.
        MovedToPriorityWithContext: {0} = labelShort, {1} = priority word,
-         {2} = placement-context clause (trimmed, without "placed " prefix). -->
+         {2} = placement-context clause (see PlacementContext.* below). -->
   <RimWorldAccess.Work.SetPriority.AlreadyAtPriority>{0} already at {1}</RimWorldAccess.Work.SetPriority.AlreadyAtPriority>
   <RimWorldAccess.Work.SetPriority.MovedToDisabled>{0}, disabled</RimWorldAccess.Work.SetPriority.MovedToDisabled>
   <RimWorldAccess.Work.SetPriority.MovedToPriority>{0}, {1}</RimWorldAccess.Work.SetPriority.MovedToPriority>
@@ -129,17 +119,14 @@
   <!-- Passion suffixes appended at the end of the task announcement. -->
 
   <!-- Placement context announced after a SetPriority move, describing
-       where the item landed inside the destination column. C# strips the
-       "placed " prefix (StripPlacedPrefix) when composing the final
-       announcement with MovedToPriorityWithContext; that prefix is kept
-       as a key so languages that don't use it can leave it empty.
+       where the item landed inside the destination column. Consumed bare
+       by MovedToPriorityWithContext.
        {0} = neighbour (or left neighbour), {1} = right neighbour. -->
-  <RimWorldAccess.Work.Placement.PlacedPrefix>placed </RimWorldAccess.Work.Placement.PlacedPrefix>
-  <RimWorldAccess.Work.Placement.LeftOf>placed left of {0}</RimWorldAccess.Work.Placement.LeftOf>
-  <RimWorldAccess.Work.Placement.RightOf>placed right of {0}</RimWorldAccess.Work.Placement.RightOf>
-  <RimWorldAccess.Work.Placement.FirstLeftOf>placed first, left of {0}</RimWorldAccess.Work.Placement.FirstLeftOf>
-  <RimWorldAccess.Work.Placement.LastRightOf>placed last, right of {0}</RimWorldAccess.Work.Placement.LastRightOf>
-  <RimWorldAccess.Work.Placement.Between>placed between {0} and {1}</RimWorldAccess.Work.Placement.Between>
+  <RimWorldAccess.Work.PlacementContext.LeftOf>left of {0}</RimWorldAccess.Work.PlacementContext.LeftOf>
+  <RimWorldAccess.Work.PlacementContext.RightOf>right of {0}</RimWorldAccess.Work.PlacementContext.RightOf>
+  <RimWorldAccess.Work.PlacementContext.FirstLeftOf>first, left of {0}</RimWorldAccess.Work.PlacementContext.FirstLeftOf>
+  <RimWorldAccess.Work.PlacementContext.LastRightOf>last, right of {0}</RimWorldAccess.Work.PlacementContext.LastRightOf>
+  <RimWorldAccess.Work.PlacementContext.Between>between {0} and {1}</RimWorldAccess.Work.PlacementContext.Between>
 
   <!-- Bulk-set announcement (Shift+0-4: apply priority to all pawns).
        {0} = work type labelShort, {1} = priority label (e.g. "Priority 2"
@@ -164,12 +151,6 @@
   <RimWorldAccess.Work.NameList.ThreePlusLastJoiner>, and </RimWorldAccess.Work.NameList.ThreePlusLastJoiner>
   <RimWorldAccess.Work.NameList.Separator>, </RimWorldAccess.Work.NameList.Separator>
 
-  <!-- Typeahead search jump prompt.
-       {0} = task announcement, {1} = column name, {2} = current match 1-
-       based, {3} = total matches. Pattern mirrors the feature's other
-       position announcements. -->
-  <RimWorldAccess.Work.Search.JumpPrompt>{0}, {1}, {2} of {3} matches, press Enter to jump to this task</RimWorldAccess.Work.Search.JumpPrompt>
-
   <!-- Pawn-switch brief announcement composition (no entry case).
        {0} = pawn name, {1} = position suffix "{i} of {n}". -->
   <RimWorldAccess.Work.PawnSwitch.NoEntry>{0}. {1}</RimWorldAccess.Work.PawnSwitch.NoEntry>
@@ -185,13 +166,6 @@
        {4} = position suffix. -->
   <RimWorldAccess.Work.PawnSwitch.WithPriority>{0}. {1}, {2}{3}. {4}</RimWorldAccess.Work.PawnSwitch.WithPriority>
 
-  <!-- Announcement composition for AnnounceCurrentPosition.
-       WithColumn: {0} = column name, {1} = task announcement, {2} = pos.
-       WithoutColumn: {0} = task announcement, {1} = pos.
-       BasicModeItem: {0} = task announcement, {1} = status, {2} = pos. -->
-  <RimWorldAccess.Work.Position.WithColumn>{0}, {1} {2}</RimWorldAccess.Work.Position.WithColumn>
-  <RimWorldAccess.Work.Position.WithoutColumn>{0} {1}</RimWorldAccess.Work.Position.WithoutColumn>
-
   <!-- WorkTableState lifecycle and mode announcements.
        OpeningAnnouncement: {0} = colonist count, {1} = work type count, {2} = mode string.
        FocusedViewOpening: {0} = pawn LabelShort. Spoken when focused view opens. -->
@@ -201,8 +175,6 @@
   <!-- Table view: sort announcements.
        CannotSort: {0} = column name.
        SortedBy: {0} = column name, {1} = direction word. -->
-  <RimWorldAccess.Work.Table.CannotSort>{0} cannot be sorted</RimWorldAccess.Work.Table.CannotSort>
-  <RimWorldAccess.Work.Table.SortedBy>Sorted by {0} ({1})</RimWorldAccess.Work.Table.SortedBy>
 
   <!-- Table view: priority-change feedback.
        AlreadyState: {0} = pawn LabelShort, {1} = work labelShort, {2} = state label.
@@ -244,41 +216,6 @@
        NoChangeFor: {0} = work labelShort. Used when no pawn changed.
        RaisedForList / LoweredForList reused from Work.Table above. -->
   <RimWorldAccess.Work.Menu.NoChangeFor>No change for {0}</RimWorldAccess.Work.Menu.NoChangeFor>
-
-  <!-- Visual overlay (WorkMenuPatch.DrawMenuOverlay). Screen-reader users
-       navigate by spoken announcements; these keys are the on-screen
-       labels for sighted users and mod testers.
-       Title: {0} = pawn name, {1} = 1-based pawn index, {2} = total,
-         {3} = mode-overlay label.
-       PositionInfoManual: {0} = column name, {1} = row 1-based,
-         {2} = column count, {3} = labelShort.
-       PositionInfoBasic: {0} = status word ("Enabled"/"Disabled"),
-         {1} = labelShort.
-       SearchInfo: {0} = search buffer, {1} = current match 1-based,
-         {2} = total matches. -->
-  <RimWorldAccess.Work.Overlay.Title>Work Menu - {0} ({1}/{2}) - {3}</RimWorldAccess.Work.Overlay.Title>
-  <RimWorldAccess.Work.Overlay.PositionInfoManual>[{0}: {1}/{2}] {3}</RimWorldAccess.Work.Overlay.PositionInfoManual>
-  <RimWorldAccess.Work.Overlay.PositionInfoBasic>[{0}] {1}</RimWorldAccess.Work.Overlay.PositionInfoBasic>
-  <RimWorldAccess.Work.Overlay.SearchInfo>Search: '{0}' - {1}/{2} matches</RimWorldAccess.Work.Overlay.SearchInfo>
-  <RimWorldAccess.Work.Overlay.StatusEnabled>Enabled</RimWorldAccess.Work.Overlay.StatusEnabled>
-  <RimWorldAccess.Work.Overlay.StatusDisabled>Disabled</RimWorldAccess.Work.Overlay.StatusDisabled>
-
-  <!-- Overlay instruction lines (three rows of help text below the title). -->
-  <RimWorldAccess.Work.Overlay.ManualInstructions1>Up/Down: Switch priorities | Left/Right: Navigate tasks</RimWorldAccess.Work.Overlay.ManualInstructions1>
-  <RimWorldAccess.Work.Overlay.ManualInstructions2>0-4: Set priority | Shift+0-4: Set for all | Tab/Shift+Tab: Switch pawn</RimWorldAccess.Work.Overlay.ManualInstructions2>
-  <RimWorldAccess.Work.Overlay.ManualInstructions3>Enter/Escape: Save &amp; close | Alt+M: Switch to basic mode</RimWorldAccess.Work.Overlay.ManualInstructions3>
-  <RimWorldAccess.Work.Overlay.BasicInstructions1>Left/Right: Navigate tasks | Space: Toggle</RimWorldAccess.Work.Overlay.BasicInstructions1>
-  <RimWorldAccess.Work.Overlay.BasicInstructions2>Tab/Shift+Tab: Switch pawn</RimWorldAccess.Work.Overlay.BasicInstructions2>
-  <RimWorldAccess.Work.Overlay.BasicInstructions3>Enter/Escape: Save &amp; close | Alt+M: Switch to manual mode</RimWorldAccess.Work.Overlay.BasicInstructions3>
-
-  <!-- Table-view visual overlay (WorkMenuPatch table overlay).
-       TableTitle: {0} = mode-overlay label, {1} = row 1-based,
-       {2} = pawn count, {3} = column name.
-       TableInstructions3: {0} = platform Ctrl label. -->
-  <RimWorldAccess.Work.Overlay.TableTitle>Work (Table View) - {0} ({1}/{2}) - Column: {3}</RimWorldAccess.Work.Overlay.TableTitle>
-  <RimWorldAccess.Work.Overlay.TableInstructions1>Up/Down: pawn | Left/Right: work type | 0-4: priority | [ ]: cycle priority</RimWorldAccess.Work.Overlay.TableInstructions1>
-  <RimWorldAccess.Work.Overlay.TableInstructions2>Shift+[ ]: cycle for all colonists | Shift+Arrows: paint | Alt+S: sort | Alt+M: mode</RimWorldAccess.Work.Overlay.TableInstructions2>
-  <RimWorldAccess.Work.Overlay.TableInstructions3>{0}+Tab: switch to focused view | Enter/Escape: save &amp; close</RimWorldAccess.Work.Overlay.TableInstructions3>
 
   <!-- Task detail composition pieces restored/added after the merge.
        IncludesPrefix leads the comma-joined work-giver list; leading

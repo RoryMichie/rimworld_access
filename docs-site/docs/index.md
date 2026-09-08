@@ -26,6 +26,10 @@ For context, the closest prior reference in blind gaming for this kind of depth 
 
 The easiest way to install is through the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3750094441), which keeps the mod updated automatically. You can also [download the latest release](https://github.com/aaronr7734/rimworld_access/releases/download/dev/RimWorldAccess-dev.zip) and set it up by hand. Either way, follow [Installation](getting-started/installation.md). The one setup step you should not skip is turning off the Steam in-game overlay, so keys like **Shift+Tab** actually reach the game.
 
+## Join the community
+
+There is an official [RimWorld Access Discord server](https://discord.rimworldaccess.com). It is the best place to get help, ask questions, report bugs, and trade strategies with other players. If you run into trouble installing the mod or get stuck anywhere in the game, come say hello and we will be glad to help.
+
 ## Where to go next
 
 You do not have to read these docs cover to cover. Here is where most people should start.

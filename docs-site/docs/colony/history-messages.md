@@ -20,8 +20,6 @@ The L key collects all current messages, letters, and alerts and presents them a
 - **Escape** goes back from detail view to the list, or closes the notification menu from the list.
 - **`]`** (right bracket) deletes the currently selected item. Only letters can be deleted; alerts cannot be removed this way.
 
-<!-- TODO(Aaron): you mentioned wiring Delete; update if done -->
-
 Deleted letters still live in the F9 History archive, so deleting one here only clears it from the current notification list.
 
 ## The Messages archive: F9 then Tab

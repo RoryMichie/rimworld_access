@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using RimWorld;
-using UnityEngine;
+using RimWorldAccess.Shell;
 using Verse;
-using Verse.Sound;
 
 namespace RimWorldAccess
 {
@@ -10,13 +9,30 @@ namespace RimWorldAccess
     /// Tree navigation logic for the ideology details panel.
     /// Wraps TreeNavigationHelper with ideology-specific behavior:
     /// smart label truncation, "Inspectable." suffix, ritual sound preview.
+    ///
+    /// <b>One consumer left: <c>IdeosDuringLandingScope</c>.</b> The tree migration
+    /// moved the in-game viewer and the Archonexus dialog onto
+    /// <see cref="IdeoDetailsTreeRegion"/>, which drives the shared <c>TreeModel</c> from a
+    /// conforming <c>ScreenScope</c> content region. That landing dialog is still a plain
+    /// <c>FocusScope</c> with a hand-rolled two-panel state machine and no content regions at
+    /// all, so it has nothing to hang the shared contract on; converting it is a separate job.
+    /// Until then this class stays, unchanged in behaviour, driving that one screen.
+    ///
+    /// The ritual-sound preview itself has already moved: the <c>Sustainer</c> is a single
+    /// static on <see cref="IdeoDetailsTreeRegion"/> shared by every host, so a preview started
+    /// here is stopped by whichever host closes first, exactly as before.
     /// </summary>
     internal class IdeologyTreeNavigation
     {
         private readonly TreeNavigationHelper treeNav = new TreeNavigationHelper("IdeologyTree");
-        private static Sustainer ritualSoundPreview;
 
         public bool HasActiveSearch => treeNav.HasActiveSearch;
+
+        /// <summary>
+        /// The wrapped tree, exposed for shell-scope routers — mirrors
+        /// <see cref="FactionTreeNavigation.Tree"/> verbatim.
+        /// </summary>
+        internal TreeNavigationHelper Tree => treeNav;
 
         public IdeologyTreeNavigation()
         {
@@ -25,6 +41,12 @@ namespace RimWorldAccess
             treeNav.FormatSearchAnnouncement = FormatSearchAnnouncement;
             treeNav.OnActivate = HandleActivate;
             treeNav.OnInfo = HandleInfoCard;
+            // Page Up/Down (ideologyTab.jumpToPreviousSection/jumpToNextSection, already claimed by
+            // IdeologyTabScope) jump between this tree's level-0 section headers (Overview, Style
+            // Categories, Factions, Memes, each precept category, etc. — see
+            // IdeologyHelper.BuildIdeologyTree's own "Level 0 nodes are section headers" doc comment).
+            // Without this the claim above is a dead reject-sound no-op.
+            treeNav.IsSectionBoundary = item => item.IndentLevel == 0;
         }
 
         /// <summary>
@@ -43,18 +65,8 @@ namespace RimWorldAccess
         /// </summary>
         public void Reset()
         {
-            StopRitualSound();
+            IdeoDetailsTreeRegion.StopRitualSound();
             treeNav.Reset();
-        }
-
-        /// <summary>
-        /// Handles keyboard input for tree navigation.
-        /// Returns true if input was handled.
-        /// Returns false for Escape-close (no active search), letting the caller handle it.
-        /// </summary>
-        public bool HandleInput(Event ev)
-        {
-            return treeNav.HandleInput(ev);
         }
 
         // Expose for callers that need it
@@ -62,7 +74,7 @@ namespace RimWorldAccess
 
         /// <summary>
         /// Feeds a typeahead character to the tree directly. Needed by directly-patched hosts (e.g.
-        /// the builder's read-only ideo browser) where UnifiedKeyboardPatch's character dispatcher
+        /// the builder's read-only ideo browser) where the shell's character dispatch
         /// never runs, so the tree would otherwise be deaf to typeahead.
         /// </summary>
         public void HandleTypeaheadCharacter(char c) => treeNav.HandleTypeaheadCharacter(c);
@@ -91,7 +103,7 @@ namespace RimWorldAccess
                 ? "" : $". {positionPart}";
 
             string levelSuffix = MenuHelper.GetLevelSuffix("IdeologyTree", item.IndentLevel);
-            string inspectable = GetInspectableDefs().Count > 0 ? "RimWorldAccess.InfoCard.Inspectable".Translate().ToString() : "";
+            string inspectable = GetInspectableDefs(item).Count > 0 ? "RimWorldAccess.InfoCard.Inspectable".Translate().ToString() : "";
 
             return $"{label}{stateIndicator}{positionSection}{levelSuffix}{inspectable}";
         }
@@ -130,7 +142,7 @@ namespace RimWorldAccess
                 var (pos, total) = treeNav.GetSiblingPosition(firstItem);
                 string position = MenuHelper.FormatPosition(pos - 1, total);
 
-                string inspectable = GetInspectableDefs().Count > 0 ? "RimWorldAccess.InfoCard.Inspectable".Translate().ToString() : "";
+                string inspectable = GetInspectableDefs(firstItem).Count > 0 ? "RimWorldAccess.InfoCard.Inspectable".Translate().ToString() : "";
                 TolkHelper.SpeakData($"{firstItem.Label}{stateIndicator}. {position}{inspectable}");
             }
             else
@@ -148,13 +160,19 @@ namespace RimWorldAccess
             // Ritual sound toggle
             if (item.Data is SoundDef soundDef)
             {
-                ToggleRitualSound(soundDef);
+                IdeoDetailsTreeRegion.ToggleRitualSound(soundDef);
                 return true;
             }
-            // Reform action — close the viewer and open the accessible reform dialog.
+            // Reform action — open the accessible reform dialog on top of whichever host is
+            // currently showing this tree (vehicle A). Host-agnostic: this tree is shared by the
+            // in-game viewer (a real window now — IdeologyViewerScreenScope),
+            // IdeosDuringLandingScope, and the Archonexus read-only
+            // viewer, so nothing here may assume or close any one host's own window/state; stopping
+            // any live ritual-sound preview before the new dialog opens is the one universally
+            // correct side effect (previously piggybacked on the now-deleted IdeologyTabState.Close).
             if (item.Data is IdeoReformState.ReformActionMarker reformMarker)
             {
-                IdeologyTabState.Close();
+                IdeoDetailsTreeRegion.StopRitualSound();
                 Find.WindowStack.Add(new RimWorld.Dialog_ReformIdeo(reformMarker.Ideo));
                 return true;
             }
@@ -167,7 +185,7 @@ namespace RimWorldAccess
 
         private bool HandleInfoCard(InspectionTreeItem item)
         {
-            var defs = GetInspectableDefs();
+            var defs = GetInspectableDefs(item);
             if (defs.Count == 0)
             {
                 InfoCardState.SpeakNoInfoCardAvailable();
@@ -194,67 +212,27 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Walks up the tree from the current item to find inspectable Defs.
-        /// Supports both single Def and List&lt;Def&gt; stored in Data.
+        /// Walks up the tree from <paramref name="item"/> to find inspectable Defs.
+        /// Supports both single Def and List&lt;Def&gt; stored in Data. MemeDef is excluded like
+        /// SoundDef -- vanilla never opens Dialog_InfoCard for a MemeDef (no SpecialDisplayStats
+        /// override, and Dialog_ChooseMemes has zero Dialog_InfoCard references), so a meme node
+        /// yields no target here and Alt+I speaks the standard refusal instead of opening or
+        /// speaking a fabricated card; the meme's full detail content is already on its own row
+        /// (IdeologyHelper.BuildMemeDetailLines).
         /// </summary>
-        private List<Def> GetInspectableDefs()
+        private List<Def> GetInspectableDefs(InspectionTreeItem item)
         {
-            var item = treeNav.SelectedItem;
+            var node = item;
             var rootItem = treeNav.RootItem;
-            while (item != null && item != rootItem)
+            while (node != null && node != rootItem)
             {
-                if (item.Data is Def def && !(def is SoundDef))
+                if (node.Data is Def def && !(def is SoundDef) && !(def is MemeDef))
                     return new List<Def> { def };
-                if (item.Data is List<Def> defs && defs.Count > 0)
+                if (node.Data is List<Def> defs && defs.Count > 0)
                     return defs;
-                item = item.Parent;
+                node = node.Parent;
             }
             return new List<Def>();
-        }
-
-        #endregion
-
-        #region Ritual Sound
-
-        private void ToggleRitualSound(SoundDef soundDef)
-        {
-            if (ritualSoundPreview != null)
-            {
-                ritualSoundPreview.End();
-                ritualSoundPreview = null;
-                TolkHelper.Speak("RimWorldAccess.Ideology.RitualSound.Stopped".Loc("RitualAmbienceSound".Translate().Resolve()));
-            }
-            else
-            {
-                SoundInfo info = SoundInfo.OnCamera(MaintenanceType.PerFrame);
-                info.forcedPlayOnCamera = true;
-                info.testPlay = true;
-                ritualSoundPreview = soundDef.TrySpawnSustainer(info);
-                TolkHelper.Speak("RimWorldAccess.Ideology.RitualSound.Playing".Loc("RitualAmbienceSound".Translate().Resolve()));
-            }
-        }
-
-        public static void MaintainRitualSound()
-        {
-            if (ritualSoundPreview != null)
-            {
-                if (ritualSoundPreview.Ended)
-                {
-                    ritualSoundPreview = null;
-                    return;
-                }
-                ritualSoundPreview.Maintain();
-                Find.MusicManagerPlay?.ForceSilenceFor(0.1f);
-            }
-        }
-
-        public static void StopRitualSound()
-        {
-            if (ritualSoundPreview != null)
-            {
-                ritualSoundPreview.End();
-                ritualSoundPreview = null;
-            }
         }
 
         #endregion

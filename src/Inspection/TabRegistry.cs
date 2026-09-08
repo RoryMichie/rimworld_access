@@ -40,156 +40,24 @@ namespace RimWorldAccess
     }
 
     /// <summary>
-    /// Central registry for mapping RimWorld inspect tabs to accessibility handlers.
-    /// Provides dynamic tab discovery with graceful fallback for unknown tabs.
+    /// Enumerates an inspected object's visible tabs as TabCategoryInfo rows,
+    /// resolving each tab through <see cref="InspectNodeRegistry"/> (rework
+    /// §B.3 item 2 — the type-name string dictionaries and their BaseType.Name
+    /// walks are gone). Unknown tabs — typically from mods — fall back to a
+    /// GetInspectString presentation so they stay navigable.
     /// </summary>
     public static class TabRegistry
     {
-        // Maps tab type names to friendly category names
-        private static readonly Dictionary<string, string> tabTypeToCategory = new Dictionary<string, string>
-        {
-            // Pawn tabs
-            { "ITab_Pawn_Health", "Health" },
-            { "ITab_Pawn_Needs", "Needs" },
-            { "ITab_Pawn_Character", "Character" },
-            { "ITab_Pawn_Gear", "Gear" },
-            { "ITab_Pawn_Social", "Social" },
-            { "ITab_Pawn_Training", "Training" },
-            { "ITab_Pawn_Log", "Log" },
-            { "ITab_Pawn_Prisoner", "Prisoner" },
-            { "ITab_Pawn_Slave", "Slave" },
-            { "ITab_Pawn_Guest", "Guest" },
-            { "ITab_Pawn_Visitor", "Guest" },
-            { "ITab_Pawn_Feeding", "Feeding" },
-            { "ITab_Pawn_FormingCaravan", "Forming Caravan" },
-
-            // Building tabs
-            { "ITab_Bills", "Bills" },
-            { "ITab_Storage", "Storage" },
-            { "ITab_BiosculpterNutritionStorage", "Nutrition Storage" },
-            { "ITab_WindTurbineAutoCut", "Auto-Cut Plants" },
-            { "ITab_Art", "Art" },
-
-            // Content tabs
-            { "ITab_ContentsBase", "Contents" },
-            { "ITab_ContentsCasket", "Contents" },
-            { "ITab_ContentsTransporter", "Contents" },
-            { "ITab_ContentsBooks", "Books" },
-            { "ITab_ContentsGenepackHolder", "Genepacks" },
-            { "ITab_ContentsOutfitStand", "Contents" },
-            { "ITab_ContentsMapPortal", "Contents" },
-
-            // DLC tabs - Biotech
-            { "ITab_Genes", "Genes" },
-            { "ITab_GenesPregnancy", "Pregnancy Genes" },
-
-            // DLC tabs - Ideology/Anomaly
-            { "ITab_Entity", "Entity" },
-            { "ITab_StudyNotes", "Study Notes" },
-            { "ITab_StudyNotesUnnaturalCorpse", "Study Notes" },
-            { "ITab_StudyNotesVoidMonolith", "Study Notes" },
-
-            // DLC tabs - Odyssey
-            { "ITab_Fishing", "Fishing" },
-            { "ITab_Book", "Book" },
-
-            // Pen tabs
-            { "ITab_PenBase", "Pen" },
-            { "ITab_PenAnimals", "Pen Animals" },
-            { "ITab_PenFood", "Pen Food" },
-            { "ITab_PenAutoCut", "Pen Auto-Cut" },
-        };
-
-        // Maps tab type names to handler types
-        private static readonly Dictionary<string, TabHandlerType> tabTypeToHandler = new Dictionary<string, TabHandlerType>
-        {
-            // Pawn tabs with rich navigation
-            { "ITab_Pawn_Health", TabHandlerType.RichNavigation },
-            { "ITab_Pawn_Needs", TabHandlerType.RichNavigation },
-            { "ITab_Pawn_Character", TabHandlerType.RichNavigation },
-            { "ITab_Pawn_Gear", TabHandlerType.RichNavigation },
-            { "ITab_Pawn_Social", TabHandlerType.RichNavigation },
-            { "ITab_Pawn_Training", TabHandlerType.RichNavigation },
-            { "ITab_Pawn_Log", TabHandlerType.RichNavigation },
-
-            // Action tabs (open separate menus)
-            { "ITab_Bills", TabHandlerType.Action },
-            { "ITab_Storage", TabHandlerType.Action },
-            { "ITab_BiosculpterNutritionStorage", TabHandlerType.Action },
-            { "ITab_Shells", TabHandlerType.Action },
-            { "ITab_Pawn_Prisoner", TabHandlerType.Action },
-            { "ITab_Pawn_Slave", TabHandlerType.Action },
-
-            // Basic info tabs (use GetInspectString)
-            { "ITab_Pawn_Guest", TabHandlerType.RichNavigation },
-            { "ITab_Pawn_Visitor", TabHandlerType.RichNavigation },
-            { "ITab_Pawn_Feeding", TabHandlerType.RichNavigation },
-            { "ITab_Pawn_FormingCaravan", TabHandlerType.BasicInspectString },
-            { "ITab_WindTurbineAutoCut", TabHandlerType.RichNavigation },
-            { "ITab_Art", TabHandlerType.RichNavigation },
-            { "ITab_ContentsBase", TabHandlerType.BasicInspectString },
-            { "ITab_ContentsCasket", TabHandlerType.BasicInspectString },
-            { "ITab_ContentsTransporter", TabHandlerType.RichNavigation },
-            { "ITab_ContentsBooks", TabHandlerType.RichNavigation },
-            { "ITab_ContentsGenepackHolder", TabHandlerType.BasicInspectString },
-            { "ITab_ContentsOutfitStand", TabHandlerType.BasicInspectString },
-            { "ITab_ContentsMapPortal", TabHandlerType.BasicInspectString },
-            { "ITab_Genes", TabHandlerType.RichNavigation },
-            { "ITab_GenesPregnancy", TabHandlerType.BasicInspectString },
-            { "ITab_Entity", TabHandlerType.Action },
-            { "ITab_StudyNotes", TabHandlerType.BasicInspectString },
-            { "ITab_StudyNotesUnnaturalCorpse", TabHandlerType.BasicInspectString },
-            { "ITab_StudyNotesVoidMonolith", TabHandlerType.BasicInspectString },
-            { "ITab_Fishing", TabHandlerType.Action },
-            { "ITab_Book", TabHandlerType.RichNavigation },
-            { "ITab_PenBase", TabHandlerType.BasicInspectString },
-            { "ITab_PenAnimals", TabHandlerType.Action },
-            { "ITab_PenFood", TabHandlerType.RichNavigation },
-            { "ITab_PenAutoCut", TabHandlerType.RichNavigation },
-        };
-
-        // Maps original category names used in InspectionInfoHelper to handler types
-        // This allows BuildCategoryItem to know how to handle existing categories
-        private static readonly Dictionary<string, TabHandlerType> categoryNameToHandler = new Dictionary<string, TabHandlerType>
-        {
-            // Rich navigation categories
-            { "Health", TabHandlerType.RichNavigation },
-            { "Needs", TabHandlerType.RichNavigation },
-            { "Mood", TabHandlerType.RichNavigation },
-            { "Character", TabHandlerType.RichNavigation },
-            { "Gear", TabHandlerType.RichNavigation },
-            { "Skills", TabHandlerType.RichNavigation },
-            { "Appearance", TabHandlerType.RichNavigation },
-            { "Social", TabHandlerType.RichNavigation },
-            { "Training", TabHandlerType.RichNavigation },
-            { "Log", TabHandlerType.RichNavigation },
-            { "Job Queue", TabHandlerType.RichNavigation },
-            { "Genes", TabHandlerType.RichNavigation },
-
-            // Action categories
-            { "Bills", TabHandlerType.Action },
-            { "Storage", TabHandlerType.Action },
-            { "Bed Assignment", TabHandlerType.Action },
-            { "Temperature", TabHandlerType.Action },
-            { "Plant Selection", TabHandlerType.Action },
-            { "Prisoner", TabHandlerType.Action },
-            { "Fishing", TabHandlerType.Action },
-
-            // Synthetic categories (not real tabs)
-            { "Overview", TabHandlerType.RichNavigation },
-            { "Work Priorities", TabHandlerType.RichNavigation },
-            { "Plant Info", TabHandlerType.RichNavigation },
-        };
-
         /// <summary>
         /// Gets the user-friendly (translated) display name for a tab.
-        /// Prefers the game's own labelKey so the user sees the label in their game language.
-        /// The stable English identifier used for dispatch lives in <see cref="GetOriginalCategoryName"/>.
+        /// Prefers the game's own labelKey so the user sees the label in their
+        /// game language; registered tabs then render their category key via
+        /// InspectionCategoryLocalizer; the last resort is the cleaned type name.
         /// </summary>
         public static string GetCategoryNameForTab(InspectTabBase tab)
         {
             if (tab == null)
-                return "Unknown";
+                return "Unknown"; // l10n-exempt: dispatch token, localized for display via InspectionCategoryLocalizer
 
             // First priority: translate the tab's own labelKey (so Chinese users see Chinese, etc.)
             if (!string.IsNullOrEmpty(tab.labelKey))
@@ -202,135 +70,15 @@ namespace RimWorldAccess
                 }
                 catch
                 {
-                    // Translation failed, fall through to dictionary fallback
+                    // Translation failed, fall through to the registry/type-name fallback
                 }
             }
 
-            // Fallback: explicit English mapping for tabs without a translatable labelKey
-            string tabTypeName = tab.GetType().Name;
-            if (tabTypeToCategory.TryGetValue(tabTypeName, out string category))
-                return category;
-
-            // Try base type match (for subclasses), stopping at InspectTabBase
-            Type baseType = tab.GetType().BaseType;
-            while (baseType != null && baseType != typeof(object) && baseType != typeof(InspectTabBase))
-            {
-                if (tabTypeToCategory.TryGetValue(baseType.Name, out category))
-                    return category;
-                baseType = baseType.BaseType;
-            }
+            if (InspectNodeRegistry.TryResolve(tab.GetType(), out InspectNodeAdapter adapter))
+                return adapter.DisplayName(tab);
 
             // Last resort: use type name cleaned up
-            return tabTypeName.Replace("ITab_", "").Replace("_", " ");
-        }
-
-        /// <summary>
-        /// Checks if a tab type is known (has explicit mapping).
-        /// </summary>
-        public static bool IsKnownTab(Type tabType)
-        {
-            if (tabType == null)
-                return false;
-
-            // Check exact type
-            if (tabTypeToHandler.ContainsKey(tabType.Name))
-                return true;
-
-            // Check base types, stopping at InspectTabBase
-            Type baseType = tabType.BaseType;
-            while (baseType != null && baseType != typeof(object) && baseType != typeof(InspectTabBase))
-            {
-                if (tabTypeToHandler.ContainsKey(baseType.Name))
-                    return true;
-                baseType = baseType.BaseType;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Gets the handler type for a tab.
-        /// </summary>
-        public static TabHandlerType GetHandlerForTab(InspectTabBase tab)
-        {
-            if (tab == null)
-                return TabHandlerType.BasicInspectString;
-
-            string tabTypeName = tab.GetType().Name;
-
-            // Try exact match
-            if (tabTypeToHandler.TryGetValue(tabTypeName, out TabHandlerType handler))
-                return handler;
-
-            // Try base type match, stopping at InspectTabBase
-            Type baseType = tab.GetType().BaseType;
-            while (baseType != null && baseType != typeof(object) && baseType != typeof(InspectTabBase))
-            {
-                if (tabTypeToHandler.TryGetValue(baseType.Name, out handler))
-                    return handler;
-                baseType = baseType.BaseType;
-            }
-
-            // Default to basic inspect string for unknown tabs
-            return TabHandlerType.BasicInspectString;
-        }
-
-        /// <summary>
-        /// Gets the handler type for a category name (used for synthetic categories).
-        /// </summary>
-        public static TabHandlerType GetHandlerForCategory(string categoryName)
-        {
-            if (string.IsNullOrEmpty(categoryName))
-                return TabHandlerType.BasicInspectString;
-
-            if (categoryNameToHandler.TryGetValue(categoryName, out TabHandlerType handler))
-                return handler;
-
-            return TabHandlerType.BasicInspectString;
-        }
-
-        /// <summary>
-        /// Gets the original category name for a tab (used to map to existing helpers).
-        /// </summary>
-        public static string GetOriginalCategoryName(InspectTabBase tab)
-        {
-            if (tab == null)
-                return null;
-
-            string tabTypeName = tab.GetType().Name;
-
-            // Map tab types to original category names used in InspectionInfoHelper
-            switch (tabTypeName)
-            {
-                case "ITab_Pawn_Health": return "Health";
-                case "ITab_Pawn_Needs": return "Needs";
-                case "ITab_Pawn_Character": return "Character";
-                case "ITab_Pawn_Gear": return "Gear";
-                case "ITab_Pawn_Social": return "Social";
-                case "ITab_Pawn_Training": return "Training";
-                case "ITab_Pawn_Log": return "Log";
-                case "ITab_Pawn_Prisoner": return "Prisoner";
-                case "ITab_Pawn_Slave": return "Slave";
-                case "ITab_Bills": return "Bills";
-                case "ITab_Storage": return "Storage";
-                case "ITab_BiosculpterNutritionStorage": return "Nutrition Storage"; // l10n-exempt: dispatch token, localized for display via InspectionCategoryLocalizer
-                case "ITab_Shells": return "Shells";
-                case "ITab_PenAnimals": return "Pen Animals"; // l10n-exempt: dispatch token, localized for display via InspectionCategoryLocalizer
-                case "ITab_PenAutoCut": return "Pen Auto-Cut"; // l10n-exempt: dispatch token, localized for display via InspectionCategoryLocalizer
-                case "ITab_PenFood": return "Pen Food"; // l10n-exempt: dispatch token, localized for display via InspectionCategoryLocalizer
-                case "ITab_Fishing": return "Fishing";
-                case "ITab_Genes": return "Genes";
-                case "ITab_Pawn_Feeding": return "Feeding";
-                case "ITab_Art": return "Art";
-                case "ITab_Book": return "Book";
-                case "ITab_ContentsBooks": return "Books";
-                case "ITab_WindTurbineAutoCut": return "Auto-Cut Plants"; // l10n-exempt: dispatch token, localized for display via InspectionCategoryLocalizer
-                case "ITab_Pawn_Guest": return "Guest";
-                case "ITab_Pawn_Visitor": return "Guest";
-                case "ITab_ContentsTransporter": return "Contents";
-                case "ITab_Entity": return "Entity";
-                default: return GetCategoryNameForTab(tab);
-            }
+            return tab.GetType().Name.Replace("ITab_", "").Replace("_", " ");
         }
 
         /// <summary>
@@ -365,66 +113,9 @@ namespace RimWorldAccess
         /// </summary>
         public static List<TabCategoryInfo> GetTabCategories(Thing thing)
         {
-            var categories = new List<TabCategoryInfo>();
-
             if (thing == null)
-                return categories;
-
-            try
-            {
-                var tabs = thing.GetInspectTabs();
-                if (tabs == null)
-                {
-                    return categories;
-                }
-
-                int totalTabs = 0;
-                int visibleTabs = 0;
-                foreach (var tab in tabs)
-                {
-                    totalTabs++;
-                    if (tab == null)
-                    {
-                        continue;
-                    }
-
-                    try
-                    {
-                        // Skip hidden or invisible tabs (but allow ITab_Genes which is hidden in vanilla UI)
-                        bool isGeneTab = tab.GetType().Name == "ITab_Genes";
-                        if (!tab.IsVisible || (tab.Hidden && !isGeneTab))
-                        {
-                            continue;
-                        }
-                        visibleTabs++;
-
-                        string categoryName = GetCategoryNameForTab(tab);
-                        TabHandlerType handler = GetHandlerForTab(tab);
-                        bool isKnown = IsKnownTab(tab.GetType());
-                        string originalName = GetOriginalCategoryName(tab);
-
-                        categories.Add(new TabCategoryInfo
-                        {
-                            Name = categoryName,
-                            Tab = tab,
-                            Handler = handler,
-                            IsKnown = isKnown,
-                            OriginalCategoryName = originalName
-                        });
-                    }
-                    catch (Exception tabEx)
-                    {
-                        // Log per-tab error but continue processing other tabs
-                        Log.Warning($"[RimWorld Access] Error processing tab {tab.GetType().Name}: {tabEx.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"[RimWorld Access] Error getting tab categories for {thing.LabelCap}: {ex.Message}");
-            }
-
-            return categories;
+                return new List<TabCategoryInfo>();
+            return BuildCategories(GetTabsSafe(thing), thing.LabelCap);
         }
 
         /// <summary>
@@ -433,77 +124,109 @@ namespace RimWorldAccess
         /// </summary>
         public static List<TabCategoryInfo> GetZoneTabCategories(Zone zone)
         {
-            var categories = new List<TabCategoryInfo>();
-
             if (zone == null)
-                return categories;
+                return new List<TabCategoryInfo>();
+            return BuildCategories(GetTabsSafe(zone), zone.label);
+        }
 
+        private static IEnumerable<InspectTabBase> GetTabsSafe(Thing thing)
+        {
             try
             {
-                var tabs = zone.GetInspectTabs();
-                if (tabs == null)
-                {
-                    return categories;
-                }
-
-                foreach (var tab in tabs)
-                {
-                    if (tab == null)
-                    {
-                        continue;
-                    }
-
-                    try
-                    {
-                        // Skip hidden or invisible tabs (but allow ITab_Genes which is hidden in vanilla UI)
-                        bool isGeneTab = tab.GetType().Name == "ITab_Genes";
-                        if (!tab.IsVisible || (tab.Hidden && !isGeneTab))
-                        {
-                            continue;
-                        }
-
-                        string categoryName = GetCategoryNameForTab(tab);
-                        TabHandlerType handler = GetHandlerForTab(tab);
-                        bool isKnown = IsKnownTab(tab.GetType());
-                        string originalName = GetOriginalCategoryName(tab);
-
-                        categories.Add(new TabCategoryInfo
-                        {
-                            Name = categoryName,
-                            Tab = tab,
-                            Handler = handler,
-                            IsKnown = isKnown,
-                            OriginalCategoryName = originalName
-                        });
-                    }
-                    catch (Exception tabEx)
-                    {
-                        Log.Warning($"[RimWorld Access] Error processing zone tab {tab.GetType().Name}: {tabEx.Message}");
-                    }
-                }
+                return thing.GetInspectTabs();
             }
             catch (Exception ex)
             {
-                Log.Warning($"[RimWorld Access] Error getting tab categories for zone {zone.label}: {ex.Message}");
+                Log.Warning($"[RimWorld Access] Error getting inspect tabs for {thing.LabelCap}: {ex.Message}");
+                return null;
+            }
+        }
+
+        private static IEnumerable<InspectTabBase> GetTabsSafe(Zone zone)
+        {
+            try
+            {
+                return zone.GetInspectTabs();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"[RimWorld Access] Error getting inspect tabs for zone {zone.label}: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Shared Thing/Zone enumeration: filters to visible tabs and resolves
+        /// each through the adapter registry, falling back to a basic
+        /// GetInspectString presentation for unregistered (mod) tabs.
+        /// </summary>
+        private static List<TabCategoryInfo> BuildCategories(IEnumerable<InspectTabBase> tabs, string ownerLabel)
+        {
+            var categories = new List<TabCategoryInfo>();
+            if (tabs == null)
+                return categories;
+
+            // GetInspectTabs enumerates lazily, so a throw can surface
+            // mid-iteration; keep whatever was gathered before it.
+            var tabList = new List<InspectTabBase>();
+            try
+            {
+                foreach (var tab in tabs)
+                    tabList.Add(tab);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"[RimWorld Access] Error getting tab categories for {ownerLabel}: {ex.Message}");
+            }
+
+            foreach (var tab in tabList)
+            {
+                if (tab == null)
+                    continue;
+
+                try
+                {
+                    // Skip hidden or invisible tabs (but allow ITab_Genes which is hidden in vanilla UI).
+                    // Exact type match preserves the historical behavior: ITab_GenesPregnancy
+                    // subclasses ITab_Genes but is not exempted from the Hidden check here.
+                    bool isGeneTab = tab.GetType() == typeof(ITab_Genes);
+                    if (!tab.IsVisible || (tab.Hidden && !isGeneTab))
+                        continue;
+
+                    if (InspectNodeRegistry.TryResolve(tab.GetType(), out InspectNodeAdapter adapter))
+                    {
+                        categories.Add(new TabCategoryInfo
+                        {
+                            Name = adapter.DisplayName(tab),
+                            Tab = tab,
+                            Handler = adapter.Handler,
+                            IsKnown = true,
+                            OriginalCategoryName = adapter.CategoryKey
+                        });
+                    }
+                    else
+                    {
+                        // Unknown (typically modded) tab: show its translated label
+                        // and read its owner's inspect string.
+                        string displayName = GetCategoryNameForTab(tab);
+                        categories.Add(new TabCategoryInfo
+                        {
+                            Name = displayName,
+                            Tab = tab,
+                            Handler = TabHandlerType.BasicInspectString,
+                            IsKnown = false,
+                            OriginalCategoryName = displayName
+                        });
+                    }
+                }
+                catch (Exception tabEx)
+                {
+                    // Log per-tab error but continue processing other tabs
+                    Log.Warning($"[RimWorld Access] Error processing tab {tab.GetType().Name} on {ownerLabel}: {tabEx.Message}");
+                }
             }
 
             return categories;
-        }
-
-        /// <summary>
-        /// Checks if a tab type is one that should open an action menu.
-        /// </summary>
-        public static bool IsActionTab(InspectTabBase tab)
-        {
-            return GetHandlerForTab(tab) == TabHandlerType.Action;
-        }
-
-        /// <summary>
-        /// Checks if a tab type has rich navigation support.
-        /// </summary>
-        public static bool IsRichNavigationTab(InspectTabBase tab)
-        {
-            return GetHandlerForTab(tab) == TabHandlerType.RichNavigation;
         }
     }
 }

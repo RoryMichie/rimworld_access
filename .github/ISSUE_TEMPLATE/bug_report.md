@@ -1,32 +1,39 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Report something broken in RimWorld Access
 title: ''
 labels: bug
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**Before you file:** test with only **Harmony** and **RimWorld Access** enabled, and no other mods. Other mods can cause problems that look like RimWorld Access bugs but are not, and RimWorld Access officially supports only Harmony plus itself. If you can still reproduce it in a clean setup, it is a real report.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+**What happened**
+A clear description of the bug.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**Steps to reproduce**
+1. The screen you were on
+2. The keys you pressed, in order
+3. What broke
 
-**Environment details**
- - Other installed mods:
- - Screen reader: [E.G NVDA, jaws]
- - Please confirm you are using the latest version of the mod, if not, please update, and ensure you can reproduce the bug on the latest version:
+**What your screen reader announced**
+What you actually heard.
 
-**Relavent logs**
-Please upload your mellonloader log.  It can be found at rimworld/mellonloader/latest.log.
+**What you expected instead**
+What you thought would happen.
 
-**Additional context**
-Add any other context about the problem here.
+**Environment**
+- Screen reader (e.g. NVDA, JAWS, VoiceOver):
+- Operating system:
+- Active DLC:
+- Other installed mods (ideally none beyond Harmony and RimWorld Access):
+- Confirm you reproduced this on the latest version of the mod:
+
+**Log file**
+Attach your `Player.log`. RimWorld replaces it on every launch, so grab it right after the bug happens and before you start the game again.
+- **Windows:** `%localappdata%low\Ludeon Studios\RimWorld by Ludeon Studios\Player.log`
+- **macOS:** `~/Library/Logs/Ludeon Studios/RimWorld by Ludeon Studios/Player.log`
+
+**Anything else**
+Other context that might help.

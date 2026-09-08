@@ -1,6 +1,5 @@
 using HarmonyLib;
 using RimWorld;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
@@ -46,27 +45,26 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Block the game's Escape handling on Page_SelectStartingSite in the same frame
-        /// we closed the faction dialog. Our prefix on UIRootOnGUI handles Escape and removes
-        /// the dialog, but the original UIRootOnGUI still runs (void prefix), so
-        /// HandleEventsHighPriority fires Notify_PressedCancel which would call DoBack()
-        /// on the now-exposed Page_SelectStartingSite. Uses frame counter because IsActive
-        /// is already false by the time this fires. See CLAUDE.md "Keyboard Input Isolation".
-        /// </summary>
-        [HarmonyPatch(typeof(Page), "OnCancelKeyPressed")]
-        public static class Page_OnCancelKeyPressed_Patch
-        {
-            [HarmonyPrefix]
-            public static bool Prefix(Page __instance)
-            {
-                if (__instance is Page_SelectStartingSite &&
-                    (FactionLandingState.IsActive || FactionLandingState.escapeHandledOnFrame == Time.frameCount))
-                {
-                    return false;
-                }
-                return true;
-            }
-        }
+        // RETIRED: Page_OnCancelKeyPressed_Patch,
+        // the Page.OnCancelKeyPressed blocker. Gate verbatim:
+        //   if (__instance is Page_SelectStartingSite &&
+        //       (FactionLandingState.IsActive || FactionLandingState.escapeHandledOnFrame == Time.frameCount))
+        //   {
+        //       return false;
+        //   }
+        //   return true;
+        // Per-term audit: the blocked body is Page's own OnCancelKeyPressed,
+        // whose entire content is gated on closeOnCancel — false for every
+        // Page (the ctor sets it; Page_SelectStartingSite has no
+        // OnCancelKeyPressed override, decompiled-verified) — so BOTH
+        // terms guarded a no-op; the blocker's own comment ("Notify_PressedCancel
+        // ... would call DoBack()") described a path that never ran. The
+        // page's REAL Escape=Back is the MAIN-pass raw Cancel poll in
+        // DoCustomBottomButtons (ExtraOnGUI), and the real protection was
+        // always the -0.22 rung's same-pass Event.current.Use() — now the
+        // dispatcher's Use() when FactionLandingScope's Cancel claim
+        // consumes (KeyBindingDef.KeyDownEvent returns false for a Use()d
+        // event within the same pass), plus the claim's CancelConsumed stamp
+        // as belt. escapeHandledOnFrame died with this, its only consumer.
     }
 }

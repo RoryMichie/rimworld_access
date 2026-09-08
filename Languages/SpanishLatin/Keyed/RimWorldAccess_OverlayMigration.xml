@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    New keys added by the migration of the What's New reader
+    (WhatsNewState/WhatsNewScope) and the Learning Helper (LearningHelperState/
+    LearningHelperScope) onto ScreenScope. Every other player-facing string
+    these two screens use is unchanged and still lives in
+    RimWorldAccess_WhatsNew.xml / RimWorldAccess_Learning.xml.
+  -->
+
+  <!-- What's New: the migrated content region's name. -->
+  <RimWorldAccess.OverlayMigration.WhatsNew.RegionName>Anuncio</RimWorldAccess.OverlayMigration.WhatsNew.RegionName>
+
+  <!-- Learning Helper: the two migrated content regions' names. -->
+  <RimWorldAccess.OverlayMigration.Learning.LessonsRegionName>Lecciones</RimWorldAccess.OverlayMigration.Learning.LessonsRegionName>
+  <RimWorldAccess.OverlayMigration.Learning.ContentRegionName>Contenido de la lección</RimWorldAccess.OverlayMigration.Learning.ContentRegionName>
+
+  <!-- The Lessons region's mode row (a ComboBox; Left/Right cycles it) — replaces the retired
+       Tab toggle. ModeActive/ModeAll are also spoken as the mode-change announcement when lessons
+       remain in the new mode; ModeAllCount is the count-aware variant for All lessons ({0} = total). -->
+  <RimWorldAccess.OverlayMigration.Learning.ModeLabel>Modo de lista de lecciones</RimWorldAccess.OverlayMigration.Learning.ModeLabel>
+  <RimWorldAccess.OverlayMigration.Learning.ModeActive>Lecciones activas</RimWorldAccess.OverlayMigration.Learning.ModeActive>
+  <RimWorldAccess.OverlayMigration.Learning.ModeAll>Todas las lecciones</RimWorldAccess.OverlayMigration.Learning.ModeAll>
+  <RimWorldAccess.OverlayMigration.Learning.ModeAllCount>Todas las lecciones, {0} en total</RimWorldAccess.OverlayMigration.Learning.ModeAllCount>
+
+  <!-- Replace RimWorldAccess.Learning.NoActive / .NoActiveRemaining / .OpeningNoActive (ORPHANED
+       by this migration): those said "Press Tab to browse all lessons", which is no longer true
+       now that Tab cycles regions and the mode row (Left/Right) switches modes instead. -->
+  <RimWorldAccess.OverlayMigration.Learning.NoActiveShort>No hay lecciones activas disponibles.</RimWorldAccess.OverlayMigration.Learning.NoActiveShort>
+  <RimWorldAccess.OverlayMigration.Learning.NoActiveRemainingShort>No quedan lecciones activas.</RimWorldAccess.OverlayMigration.Learning.NoActiveRemainingShort>
+  <RimWorldAccess.OverlayMigration.Learning.OpeningNoActive>No hay lecciones activas. Cambia la fila de modo a Todas las lecciones para explorar todo.</RimWorldAccess.OverlayMigration.Learning.OpeningNoActive>
+</LanguageData>

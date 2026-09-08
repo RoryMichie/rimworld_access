@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RWA_GotoCover.reportString>正前往掩体。</RWA_GotoCover.reportString>
+  <RWA_GotoEngage.reportString>正前往迎敌。</RWA_GotoEngage.reportString>
+  <RWA_Retreat.reportString>正在后撤。</RWA_Retreat.reportString>
+  <RWA_ReturnToPost.reportString>正在返回岗位。</RWA_ReturnToPost.reportString>
+  <RWA_Patrol.reportString>正在巡逻。</RWA_Patrol.reportString>
+</LanguageData>

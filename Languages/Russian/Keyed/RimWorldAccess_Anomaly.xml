@@ -2,5 +2,5 @@
 <LanguageData>
   <!-- Entity Codex (Dialog_EntityCodex).
        Opened: {0} = dialog title (EntityCodex translated), {1} = total entry count. -->
-  <RimWorldAccess.Anomaly.Codex.Opened>{0}. {1} {1_numCase ? запись : записи : записей}.</RimWorldAccess.Anomaly.Codex.Opened>
+  <RimWorldAccess.Anomaly.Codex.Opened>{0}. {1_numCase ? запись : записи : записей}.</RimWorldAccess.Anomaly.Codex.Opened>
 </LanguageData>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <!-- Noms de couleurs descriptifs. Les couleurs sont des noms masculins ; adjectifs
+       postposés selon l'usage français. -->
+
+  <RimWorldAccess.Color.Hue.Red>rouge</RimWorldAccess.Color.Hue.Red>
+  <RimWorldAccess.Color.Hue.Orange>orange</RimWorldAccess.Color.Hue.Orange>
+  <RimWorldAccess.Color.Hue.Amber>ambre</RimWorldAccess.Color.Hue.Amber>
+  <RimWorldAccess.Color.Hue.Yellow>jaune</RimWorldAccess.Color.Hue.Yellow>
+  <RimWorldAccess.Color.Hue.Lime>vert citron</RimWorldAccess.Color.Hue.Lime>
+  <RimWorldAccess.Color.Hue.Green>vert</RimWorldAccess.Color.Hue.Green>
+  <RimWorldAccess.Color.Hue.Teal>bleu sarcelle</RimWorldAccess.Color.Hue.Teal>
+  <RimWorldAccess.Color.Hue.Cyan>cyan</RimWorldAccess.Color.Hue.Cyan>
+  <RimWorldAccess.Color.Hue.Azure>azur</RimWorldAccess.Color.Hue.Azure>
+  <RimWorldAccess.Color.Hue.Blue>bleu</RimWorldAccess.Color.Hue.Blue>
+  <RimWorldAccess.Color.Hue.Indigo>indigo</RimWorldAccess.Color.Hue.Indigo>
+  <RimWorldAccess.Color.Hue.Violet>violet</RimWorldAccess.Color.Hue.Violet>
+  <RimWorldAccess.Color.Hue.Purple>pourpre</RimWorldAccess.Color.Hue.Purple>
+  <RimWorldAccess.Color.Hue.Magenta>magenta</RimWorldAccess.Color.Hue.Magenta>
+  <RimWorldAccess.Color.Hue.Pink>rose</RimWorldAccess.Color.Hue.Pink>
+  <RimWorldAccess.Color.Hue.Rose>vieux rose</RimWorldAccess.Color.Hue.Rose>
+
+  <RimWorldAccess.Color.MidVivid>{0}</RimWorldAccess.Color.MidVivid>
+  <RimWorldAccess.Color.MidMuted>{0} terne</RimWorldAccess.Color.MidMuted>
+  <RimWorldAccess.Color.MidPale>{0} pâle</RimWorldAccess.Color.MidPale>
+  <RimWorldAccess.Color.DarkVivid>{0} foncé</RimWorldAccess.Color.DarkVivid>
+  <RimWorldAccess.Color.DarkMuted>{0} terne foncé</RimWorldAccess.Color.DarkMuted>
+  <RimWorldAccess.Color.DarkPale>{0} pâle foncé</RimWorldAccess.Color.DarkPale>
+  <RimWorldAccess.Color.LightVivid>{0} clair</RimWorldAccess.Color.LightVivid>
+  <RimWorldAccess.Color.LightMuted>{0} terne clair</RimWorldAccess.Color.LightMuted>
+  <RimWorldAccess.Color.LightPale>{0} pâle</RimWorldAccess.Color.LightPale>
+
+  <RimWorldAccess.Color.Black>noir</RimWorldAccess.Color.Black>
+  <RimWorldAccess.Color.White>blanc</RimWorldAccess.Color.White>
+  <RimWorldAccess.Color.Gray>gris</RimWorldAccess.Color.Gray>
+  <RimWorldAccess.Color.GrayDark>gris foncé</RimWorldAccess.Color.GrayDark>
+  <RimWorldAccess.Color.GrayLight>gris clair</RimWorldAccess.Color.GrayLight>
+
+</LanguageData>

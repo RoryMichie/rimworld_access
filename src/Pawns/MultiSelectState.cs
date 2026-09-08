@@ -6,65 +6,41 @@ using RimWorld;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages multi-selection of map pawns for accessibility.
-    ///
-    /// Find.Selector is the source of truth for the selected pawn set.
-    /// This class only owns:
-    ///   - focusedPawn: our navigation cursor, which in multi-select mode can
-    ///     move independently of the selection.
-    ///   - The mode semantics around toggling, group recall, contiguous selection,
-    ///     and announcements.
-    ///
-    /// Because the selection is read live from Find.Selector, stale state cannot
-    /// survive a save/load: a freshly loaded game starts with an empty Selector.
-    /// focusedPawn is still static, so it is validated on access and cleared on
-    /// <see cref="Reset"/> (called from GameStartPatch on FinalizeInit).
+    /// Multi-selection of map pawns. Find.Selector is the source of truth for the selected set;
+    /// this class owns only the navigation cursor (which in multi-select mode moves independently
+    /// of the selection) and the mode semantics around toggling, group recall, contiguous selection
+    /// and announcements. Reading the selection live means stale state cannot survive a save load,
+    /// but focusedPawn is static, so it is validated on access and cleared in <see cref="Reset"/>.
     /// </summary>
     public static class MultiSelectState
     {
         private static Pawn focusedPawn = null;
 
         /// <summary>
-        /// The anchor pawn for contiguous (Shift+Alt+Arrow) range selection.
-        /// The selected range is conceptually [min(anchor, focus), max(anchor, focus)].
-        /// Moving focus AWAY from the anchor extends the range; moving TOWARD
-        /// the anchor shrinks it (deselects the pawn being left behind).
-        /// Cleared whenever the selection context changes (single-select,
-        /// clear-multi, group recall, select-all, load).
+        /// The anchor for contiguous range selection; the range is
+        /// [min(anchor, focus), max(anchor, focus)]. Moving focus away from the anchor extends the
+        /// range, moving toward it deselects the pawn being left behind. Cleared whenever the
+        /// selection context changes.
         /// </summary>
         private static Pawn rangeAnchorPawn = null;
 
         /// <summary>
-        /// User-intent flag: true once the user has explicitly entered multi-select
-        /// (via Alt+Space, contiguous range, select-all, or group recall) and not
-        /// yet exited it (single-select, clear, or removing the last pawn).
-        ///
-        /// This is distinct from <see cref="IsMultiSelectActive"/>, which is derived
-        /// purely from how many pawns are selected. A user can be in multi-select
-        /// mode with only a single pawn — that's the "I just started multi-selecting,
-        /// here's my first pawn" state — and Alt+Space on that lone pawn should
-        /// remove it and exit the mode rather than just deselecting.
+        /// True once the user has explicitly entered multi-select and not yet left it. Distinct from
+        /// <see cref="IsMultiSelectActive"/>, which counts selected pawns: a user can be in
+        /// multi-select mode with one pawn, and Alt+Space on that lone pawn removes it and exits
+        /// rather than merely deselecting.
         /// </summary>
         private static bool inMultiSelectMode = false;
 
-        /// <summary>
-        /// Whether multi-select mode is active (more than one pawn selected in
-        /// Find.Selector). Derived from the game's own selection state.
-        /// </summary>
+        /// <summary>Whether more than one pawn is selected in Find.Selector.</summary>
         public static bool IsMultiSelectActive
             => (Find.Selector?.SelectedPawns?.Count ?? 0) > 1;
 
         /// <summary>
-        /// Whether the user is in multi-select MODE — a stickier state than
-        /// <see cref="IsMultiSelectActive"/>. True when:
-        ///   - More than one pawn is selected (always implies multi-select), OR
-        ///   - The user explicitly entered multi-select via Alt+Space / contiguous
-        ///     range / select-all / group recall and the selection is non-empty.
-        ///
-        /// Use this when deciding whether Alt+Space should ADD/REMOVE from the
-        /// multi-select list (mode active) or START multi-select (mode inactive).
-        /// Use <see cref="IsMultiSelectActive"/> when deciding whether to apply
-        /// an action to multiple pawns at once (drafting, gizmo broadcast, etc.).
+        /// Whether the user is in multi-select MODE: more than one pawn selected, or an explicit
+        /// entry with a non-empty selection. Decides whether Alt+Space toggles membership or starts
+        /// multi-select; use <see cref="IsMultiSelectActive"/> to decide whether an action applies
+        /// to several pawns at once.
         /// </summary>
         public static bool IsMultiSelectMode
         {
@@ -80,10 +56,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// The currently focused pawn (bar cursor position).
-        /// In multi-select mode, focus can move without changing the selection set.
-        /// Returns null if the stored focus is no longer valid (destroyed, dead,
-        /// despawned, or on a different map).
+        /// The focused pawn, which in multi-select mode moves without changing the selection. Null
+        /// once the stored focus is destroyed, dead, despawned, or on another map.
         /// </summary>
         public static Pawn FocusedPawn
         {
@@ -100,16 +74,11 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Number of currently selected pawns.
-        /// </summary>
+        /// <summary>How many pawns are selected.</summary>
         public static int SelectedCount
             => Find.Selector?.SelectedPawns?.Count ?? 0;
 
-        /// <summary>
-        /// Gets a snapshot of the selected pawns. Returns a fresh list because
-        /// Find.Selector.SelectedPawns reuses a shared static buffer.
-        /// </summary>
+        /// <summary>A fresh list of the selected pawns; Find.Selector.SelectedPawns reuses a shared static buffer.</summary>
         public static IReadOnlyCollection<Pawn> SelectedPawns
         {
             get
@@ -121,9 +90,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Checks whether a specific pawn is in the game's current selection.
-        /// </summary>
+        /// <summary>Whether a pawn is in the game's current selection.</summary>
         public static bool IsPawnSelected(Pawn pawn)
         {
             return pawn != null && Find.Selector != null && Find.Selector.IsSelected(pawn);
@@ -138,32 +105,20 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Toggles a pawn in/out of the multi-selection (Alt+Space).
-        ///
-        /// When multi-select mode is NOT active, Alt+Space ENTERS the mode with
-        /// the focused pawn as the first item — the pawn stays selected (or is
-        /// added to the selection if not already), and the mode flag is set so
-        /// subsequent Alt+Space presses toggle membership.
-        ///
-        /// When multi-select mode IS active, Alt+Space toggles the pawn in/out
-        /// of the multi-select list. Removing the last pawn exits the mode.
+        /// Toggles a pawn in or out of the multi-selection. Outside multi-select mode this ENTERS
+        /// the mode with the focused pawn as its first item, adding it if it was not selected;
+        /// inside the mode it toggles membership, and removing the last pawn exits.
         /// </summary>
         /// <summary>
-        /// Returns true (and announces a polite refusal) if the game's Targeter is
-        /// currently active and the caller should bail out of a Selector-modifying
-        /// multi-select operation. Reads Find.Targeter.IsTargeting directly so a
-        /// stale "we think it's targeting" state cannot strand the user.
-        ///
-        /// Adding/removing pawns to the Selector during active targeting is at best
-        /// confusing (it triggers vanilla Targeter.ConfirmStillValid logic, the second
-        /// caster's gizmo broadcast emits stray "nothing to attack at this location"
-        /// messages, etc.) and at worst kills the cast outright. Better to refuse
-        /// the action with a clear message and let the user finish or cancel first.
+        /// Whether a map targeting session is active, in which case this announces a polite refusal
+        /// and the caller must abandon a Selector-modifying operation. Reads
+        /// ExternalMapTargeting.MapTargetingActive directly so a stale belief cannot strand the
+        /// user. Changing the Selector mid-cast triggers vanilla's ConfirmStillValid logic, emits
+        /// stray gizmo-broadcast messages, and can kill the cast outright.
         /// </summary>
         private static bool BlockedByActiveTargeting(string actionVerbKey)
         {
-            var targeter = Find.Targeter;
-            if (targeter == null || !targeter.IsTargeting)
+            if (!ExternalMapTargeting.MapTargetingActive)
                 return false;
             TolkHelper.Speak(
                 "RimWorldAccess.Pawns.MultiSelect.BlockedByTargeting".Loc((string)actionVerbKey.Translate()),
@@ -188,13 +143,12 @@ namespace RimWorldAccess
             if (selector == null)
                 return;
 
-            // Not in multi-select mode → ENTER mode with this pawn as the first item.
-            // Don't deselect anything; if the pawn isn't already selected, add it.
+            // Outside the mode: enter it with this pawn, deselecting nothing.
             if (!IsMultiSelectMode)
             {
                 bool alreadySelected = selector.IsSelected(pawn);
                 if (!alreadySelected)
-                    selector.Select(pawn, playSound: false, forceDesignatorDeselect: false);
+                    selector.Select(pawn, forceDesignatorDeselect: false);
 
                 focusedPawn = pawn;
                 inMultiSelectMode = true;
@@ -207,7 +161,6 @@ namespace RimWorldAccess
                 return;
             }
 
-            // In multi-select mode → toggle membership.
             if (selector.IsSelected(pawn))
             {
                 selector.Deselect(pawn);
@@ -222,11 +175,9 @@ namespace RimWorldAccess
                 }
                 else if (remaining == 1)
                 {
-                    // Shrunk back to a single pawn — the multi-select session is over.
-                    // Without this, inMultiSelectMode stays true, IsMultiSelectMode keeps
-                    // returning true (count==1 + flag), and pawn-cycling hotkeys (Alt+1..n,
-                    // comma/period) fall into the "navigate focus only" multi-select branch
-                    // instead of the normal jump-to-pawn behavior.
+                    // Back to one pawn, so the session is over. Without this the mode flag keeps
+                    // IsMultiSelectMode true and the pawn-cycling hotkeys take the focus-only
+                    // branch instead of jumping to the pawn.
                     Pawn lone = selector.SelectedPawns.First();
                     inMultiSelectMode = false;
                     focusedPawn = lone;
@@ -236,15 +187,15 @@ namespace RimWorldAccess
                 }
                 else
                 {
-                    if (focusedPawn == pawn)
-                        focusedPawn = selector.SelectedPawns.First();
+                    // Focus stays on the toggled pawn: warping it to the first-selected
+                    // would make every following press eat the selection from the front.
                     GizmoNavigationState.PawnJustSelected = true;
                     TolkHelper.SpeakData("RimWorldAccess.Pawns.MultiSelect.Removed".Translate(pawn.LabelShort, remaining.ToString()).ToString());
                 }
             }
             else
             {
-                selector.Select(pawn, playSound: false, forceDesignatorDeselect: false);
+                selector.Select(pawn, forceDesignatorDeselect: false);
                 focusedPawn = pawn;
                 GizmoNavigationState.PawnJustSelected = true;
                 int count = selector.SelectedPawns.Count;
@@ -252,9 +203,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Adds a pawn to the selection without toggle behavior (used by contiguous selection).
-        /// </summary>
+        /// <summary>Adds a pawn to the selection without toggling; used by contiguous selection.</summary>
         public static void AddPawn(Pawn pawn)
         {
             if (pawn == null)
@@ -263,15 +212,14 @@ namespace RimWorldAccess
             if (selector == null || selector.IsSelected(pawn))
                 return;
 
-            selector.Select(pawn, playSound: false, forceDesignatorDeselect: false);
+            selector.Select(pawn, forceDesignatorDeselect: false);
             GizmoNavigationState.PawnJustSelected = true;
         }
 
         /// <summary>
-        /// Extends or shrinks the contiguous range rightward (Alt+Shift+Right).
-        /// Explorer/Finder semantics: the range is anchored at the pawn where
-        /// the Shift selection began; moving right extends when on the right
-        /// side of the anchor and shrinks when on the left side.
+        /// Extends or shrinks the contiguous range rightward, Explorer-style: the range is anchored
+        /// where the Shift selection began, so moving right extends on the anchor's right side and
+        /// shrinks on its left.
         /// </summary>
         public static void SelectContiguousNext()
         {
@@ -293,10 +241,7 @@ namespace RimWorldAccess
             ExtendRange(selector, moveRight: true);
         }
 
-        /// <summary>
-        /// Extends or shrinks the contiguous range leftward (Alt+Shift+Left).
-        /// See <see cref="SelectContiguousNext"/> for the anchor semantics.
-        /// </summary>
+        /// <summary>Extends or shrinks the contiguous range leftward; see <see cref="SelectContiguousNext"/> for the anchor semantics.</summary>
         public static void SelectContiguousPrevious()
         {
             if (Find.CurrentMap == null)
@@ -318,12 +263,10 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Establishes or validates the range anchor for Shift+Alt+Arrow selection.
-        /// If the anchor is missing or no longer part of the selection (e.g. it
-        /// was removed by another action), re-anchors to the current single-
-        /// selected pawn or, failing that, the focused pawn.
+        /// Establishes or validates the range anchor, re-anchoring to the single-selected pawn or
+        /// the focused pawn when the stored anchor has left the selection. Returns whether an
+        /// anchor is in place and the caller may proceed.
         /// </summary>
-        /// <returns>True if an anchor is now in place and the caller may proceed.</returns>
         private static bool EnsureRangeAnchor(Selector selector)
         {
             if (rangeAnchorPawn != null &&
@@ -345,7 +288,7 @@ namespace RimWorldAccess
             }
 
             if (!selector.IsSelected(anchor))
-                selector.Select(anchor, playSound: false, forceDesignatorDeselect: false);
+                selector.Select(anchor, forceDesignatorDeselect: false);
 
             focusedPawn = anchor;
             rangeAnchorPawn = anchor;
@@ -355,9 +298,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Moves focus one step in the requested direction and adjusts the
-        /// selection: extends if moving away from the anchor, shrinks (deselects
-        /// the pawn being left behind) if moving toward the anchor.
+        /// Moves focus one step and adjusts the selection: extending away from the anchor, and
+        /// deselecting the pawn left behind when moving toward it.
         /// </summary>
         private static void ExtendRange(Selector selector, bool moveRight)
         {
@@ -385,8 +327,7 @@ namespace RimWorldAccess
                 GizmoNavigationState.PawnJustSelected = true;
                 int count = selector.SelectedPawns.Count;
 
-                // Shrunk back to a single pawn — the multi-select session is over.
-                // See TogglePawn's remaining==1 branch for the rationale.
+                // Back to one pawn, so the session is over; see TogglePawn's remaining==1 branch.
                 if (count == 1)
                 {
                     inMultiSelectMode = false;
@@ -411,9 +352,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Navigates focus to the next pawn without changing the selection.
-        /// </summary>
+        /// <summary>Moves focus to the next pawn without changing the selection.</summary>
         public static void NavigateFocusNext()
         {
             Pawn pawn = ColonistBarState.NavigateFocusRight();
@@ -424,9 +363,7 @@ namespace RimWorldAccess
             AnnounceFocusedPawn(pawn);
         }
 
-        /// <summary>
-        /// Navigates focus to the previous pawn without changing the selection.
-        /// </summary>
+        /// <summary>Moves focus to the previous pawn without changing the selection.</summary>
         public static void NavigateFocusPrevious()
         {
             Pawn pawn = ColonistBarState.NavigateFocusLeft();
@@ -437,9 +374,7 @@ namespace RimWorldAccess
             AnnounceFocusedPawn(pawn);
         }
 
-        /// <summary>
-        /// Clears multi-select and returns to single-select of the focused pawn (Alt+Escape).
-        /// </summary>
+        /// <summary>Clears multi-select and single-selects the focused pawn.</summary>
         public static void ClearMultiSelect()
         {
             if (BlockedByActiveTargeting("RimWorldAccess.Pawns.MultiSelect.ActionClearSelection"))
@@ -468,9 +403,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Selects all colonists on the current map (Alt+Ctrl+Space when majority unselected).
-        /// </summary>
+        /// <summary>Selects every colonist on the current map.</summary>
         public static void SelectAllColonists(List<Pawn> allColonists)
         {
             if (BlockedByActiveTargeting("RimWorldAccess.Pawns.MultiSelect.ActionSelectAll"))
@@ -492,7 +425,7 @@ namespace RimWorldAccess
             foreach (var pawn in allColonists)
             {
                 if (IsPawnValid(pawn))
-                    selector.Select(pawn, playSound: false, forceDesignatorDeselect: false);
+                    selector.Select(pawn, forceDesignatorDeselect: false);
             }
 
             var selected = selector.SelectedPawns.ToList();
@@ -517,10 +450,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Activates multi-select with the given set of pawns.
-        /// Used by group recall (Ctrl+F1-F5).
-        /// </summary>
+        /// <summary>Activates multi-select with a given set of pawns; used by group recall.</summary>
         public static void SetSelection(IEnumerable<Pawn> pawns)
         {
             var selector = Find.Selector;
@@ -533,7 +463,7 @@ namespace RimWorldAccess
             foreach (var pawn in pawns)
             {
                 if (IsPawnValid(pawn))
-                    selector.Select(pawn, playSound: false, forceDesignatorDeselect: false);
+                    selector.Select(pawn, forceDesignatorDeselect: false);
             }
 
             var selected = selector.SelectedPawns.ToList();
@@ -551,9 +481,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Validates the current selection and deselects any dead, destroyed,
-        /// despawned, or off-map pawns from Find.Selector. Also invalidates
-        /// focusedPawn if it no longer refers to a valid pawn.
+        /// Deselects any dead, destroyed, despawned or off-map pawn from Find.Selector, and
+        /// invalidates focusedPawn if it no longer refers to a valid pawn.
         /// </summary>
         public static void ValidateAndCleanupSelection()
         {
@@ -590,9 +519,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Called when a pawn is selected via normal single-select (comma/period).
-        /// Updates the focus cursor to track the newly selected pawn and exits
-        /// multi-select mode (single-selecting is the canonical way out).
+        /// Tracks a normal single-select: moves the focus cursor to the pawn and exits multi-select
+        /// mode, single-selecting being the canonical way out.
         /// </summary>
         public static void NotifySingleSelect(Pawn pawn)
         {
@@ -602,10 +530,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Resets transient state (the focus cursor). Called on game load from
-        /// GameStartPatch so a stale Pawn reference from a previous session
-        /// cannot leak into the new game. Find.Selector is already fresh on load,
-        /// so no selection clearing is needed.
+        /// Clears the focus cursor at a session boundary so a stale Pawn reference cannot leak into
+        /// the new game. Find.Selector is already fresh on load, so no selection clearing is needed.
         /// </summary>
         public static void Reset()
         {
@@ -614,10 +540,7 @@ namespace RimWorldAccess
             inMultiSelectMode = false;
         }
 
-        /// <summary>
-        /// Single-selects the focused pawn in RimWorld's Selector.
-        /// Used when exiting multi-select mode.
-        /// </summary>
+        /// <summary>Single-selects the focused pawn in RimWorld's Selector, for the exit from multi-select.</summary>
         private static void SingleSelectFocusedPawn()
         {
             var selector = Find.Selector;
@@ -627,24 +550,18 @@ namespace RimWorldAccess
             if (!focusedPawn.Destroyed && focusedPawn.Spawned)
             {
                 selector.ClearSelection();
-                selector.Select(focusedPawn, playSound: false, forceDesignatorDeselect: false);
+                selector.Select(focusedPawn, forceDesignatorDeselect: false);
                 GizmoNavigationState.PawnJustSelected = true;
             }
         }
 
-        /// <summary>
-        /// Sets the focused pawn without changing selection.
-        /// Used by navigation methods that need to update focus externally.
-        /// </summary>
+        /// <summary>Sets the focused pawn without changing the selection.</summary>
         public static void SetFocusedPawn(Pawn pawn)
         {
             focusedPawn = pawn;
         }
 
-        /// <summary>
-        /// Announces the focused pawn with selected status, job, and position.
-        /// Format: "{name}, selected/not selected, {job}, X of Y"
-        /// </summary>
+        /// <summary>Announces the focused pawn as "{name}, selected/not selected, {job}, X of Y".</summary>
         public static void AnnounceFocusedPawn(Pawn pawn)
         {
             string selectedStatus = (IsPawnSelected(pawn)
@@ -655,9 +572,7 @@ namespace RimWorldAccess
             if (string.IsNullOrEmpty(task))
                 task = "RimWorldAccess.Pawns.MultiSelect.Idle".Translate();
 
-            var list = ColonistBarState.IsOnMechSection
-                ? Find.CurrentMap?.mapPawns?.SpawnedColonyMechs?.OrderBy(p => p.LabelShort).ToList()
-                : ColonistBarState.GetColonistsPublic();
+            var list = ColonistBarState.GetCurrentSectionPawns();
 
             int total = list?.Count ?? 0;
             string positionPart = MenuHelper.FormatPosition(ColonistBarState.BarPosition, total);

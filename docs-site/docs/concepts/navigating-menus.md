@@ -71,7 +71,7 @@ To copy one cell's value down (or up) an entire column without setting each cell
 
 ## Type-ahead: start typing
 
-In any menu or list, start typing and the mod jumps to the first matching entry. This is one of the fastest ways to navigate. In a long Architect menu, type "wall" or "stock" to land directly on what you want instead of arrowing through dozens of entries. Type-ahead also works inside filter screens and search boxes when adding items by name.
+In any menu or list, start typing and the mod jumps to the first matching entry. This is one of the fastest ways to navigate. In a long Architect menu, type "wall" or "stock" to land directly on what you want instead of arrowing through dozens of entries. Type-ahead also works inside filter screens and search boxes when adding items by name. Press Enter to run whatever the search landed on. If you would rather arrive there and look around first, press Shift+Enter: the search ends and the item is read back without being activated.
 
 ## The Enter-vs-Alt+S rule
 

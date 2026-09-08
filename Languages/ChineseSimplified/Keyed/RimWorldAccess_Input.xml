@@ -57,13 +57,22 @@
   <RimWorldAccess.Input.Cursor.NothingToInspect>此处没有可查看的内容</RimWorldAccess.Input.Cursor.NothingToInspect>
   <RimWorldAccess.Input.Cursor.InvalidPosition>无效位置</RimWorldAccess.Input.Cursor.InvalidPosition>
   <RimWorldAccess.Input.Cursor.NoAvailableActions>没有可用操作</RimWorldAccess.Input.Cursor.NoAvailableActions>
+  <RimWorldAccess.Input.Cursor.Coordinates>{0}, {1}</RimWorldAccess.Input.Cursor.Coordinates>
+
+  <RimWorldAccess.Input.Cursor.PointerMoved>指针位于 {0}, {1}</RimWorldAccess.Input.Cursor.PointerMoved>
+  <RimWorldAccess.Input.Cursor.PointerOffset>光标位于指针{1}方 {0} 格处</RimWorldAccess.Input.Cursor.PointerOffset>
+  <RimWorldAccess.Input.Cursor.PointerAtCursor>指针位于光标处</RimWorldAccess.Input.Cursor.PointerAtCursor>
+  <RimWorldAccess.Input.Cursor.PointerOffWindow>指针在游戏窗口之外</RimWorldAccess.Input.Cursor.PointerOffWindow>
+  <RimWorldAccess.Input.Cursor.MouseTrackingOn>鼠标跟踪已开启</RimWorldAccess.Input.Cursor.MouseTrackingOn>
+  <RimWorldAccess.Input.Cursor.MouseTrackingOff>鼠标跟踪已关闭</RimWorldAccess.Input.Cursor.MouseTrackingOff>
+  <RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOn>指针跟随键盘已开启</RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOn>
+  <RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOff>指针跟随键盘已关闭</RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOff>
 
   <!-- F1 work menu, F4 animals/mechs menu. -->
   <RimWorldAccess.Input.WorkMenu.NoColonistsAvailable>没有可用的殖民者</RimWorldAccess.Input.WorkMenu.NoColonistsAvailable>
   <RimWorldAccess.Input.AnimalsMenu.NoAnimalsOrMechs>没有动物或机械族</RimWorldAccess.Input.AnimalsMenu.NoAnimalsOrMechs>
 
   <!-- Gizmo availability guard (G key). -->
-  <RimWorldAccess.Input.Gizmo.UnavailableDuringPlacement>放置或预览期间命令不可用</RimWorldAccess.Input.Gizmo.UnavailableDuringPlacement>
 
   <!-- Right/left bracket order execution feedback. -->
   <!-- {0} = single-pawn prefix ("Bob: " or ""), {1} = action label. -->
@@ -95,15 +104,10 @@
        {0} = tile info. -->
   <RimWorldAccess.Input.Map.Boundary>地图边缘</RimWorldAccess.Input.Map.Boundary>
   <RimWorldAccess.Input.Map.PrefixSelected>已选择, {0}</RimWorldAccess.Input.Map.PrefixSelected>
-  <RimWorldAccess.Input.Map.PrefixPreview>预览, {0}</RimWorldAccess.Input.Map.PrefixPreview>
   <RimWorldAccess.Input.Map.PrefixFirstPoint>第一个点, {0}</RimWorldAccess.Input.Map.PrefixFirstPoint>
   <RimWorldAccess.Input.Map.PrefixSecondPoint>第二个点, {0}</RimWorldAccess.Input.Map.PrefixSecondPoint>
   <RimWorldAccess.Input.Map.PrefixInArea>区域内, {0}</RimWorldAccess.Input.Map.PrefixInArea>
   <RimWorldAccess.Input.Map.PrefixDisconnected>未连接, {0}</RimWorldAccess.Input.Map.PrefixDisconnected>
 
   <!-- Schedule editor visual overlay (src/Input/UnifiedKeyboardPatch.cs). -->
-  <RimWorldAccess.Input.Schedule.OverlayTitle>作息菜单 - {0} ({1}/{2}) - 第 {3} 小时</RimWorldAccess.Input.Schedule.OverlayTitle>
-  <RimWorldAccess.Input.Schedule.OverlayCurrent>当前: {0}</RimWorldAccess.Input.Schedule.OverlayCurrent>
-  <RimWorldAccess.Input.Schedule.OverlayInstructions1>方向键: 导航 | 1-5: 选择笔刷 | 空格/回车: 应用笔刷</RimWorldAccess.Input.Schedule.OverlayInstructions1>
-  <RimWorldAccess.Input.Schedule.OverlayInstructions2>Shift+方向键: 绘制 | Ctrl+C/V: 复制/粘贴 | Tab: 区域 | Esc: 关闭</RimWorldAccess.Input.Schedule.OverlayInstructions2>
 </LanguageData>

@@ -309,3 +309,23 @@ Useful sub-paths: `Keyed/Designators.xml` (order verbs), `Keyed/GameplayCommands
 `Keyed/Time.xml` + `Keyed/Dates.xml` (calendar), `DefInjected/SkillDef`, `DefInjected/WorkTypeDef`,
 `DefInjected/NeedDef`, `DefInjected/BiomeDef`, `DefInjected/WeatherDef`, `DefInjected/FactionDef`.
 Always cite the file you took a term from when you add a row.
+
+## Mod-coined terms — watermill placement + read-only browsing (2026-08-13)
+
+Thirteen new keys (`RimWorldAccess.Building.Place.Spot*`, `.Watermill*`, `RimWorldAccess.TextInput.BrowsingField/ReadOnlyField`)
+had no reference translation to check: this local install only carries the English Core language pack,
+so RimWorld's own zh-Hans wording for the `WatermillGenerator` ThingDef could not be verified against
+the game's corpus. Decided from context per house rule (no native-review parking); record here so
+later waves stay consistent instead of re-deriving these. The Watermill keys keep the
+direction-before-distance word order already established by `OutlineOkAt`/`HighlightedAt` ("{3} {2} 格").
+
+| English | 简体中文 | Basis |
+|---|---|---|
+| watermill (whole building) | 水车 | Standard Chinese term for a water mill/wheel building |
+| waterwheel (the wheel part) | 水车 | Same noun as the whole building; English source distinguishes wheel vs. building, Chinese does not need to |
+| moving/running water | 流水 | Standard idiom for flowing water |
+| water flow area | 水流区域 | Coined; parallels `所需区域` (`OutlineOkAt`) |
+| unshared / shared with another watermill | 未共用 / 与另一台水车共用 | Coined |
+| placement spot (scanner category/item) | {0}放置点 / 位置 | Mirrors `Abilities.Plant.ScannerCategory`/`ScannerItemLabel` ("{0}种植点" / "可种植位置") |
+| facing {0} (trailing fragment) | 朝向 {0} | Reuses `Building.Architect.Facing`'s established term verbatim |
+| read only (BrowsingField) | 只读 | Reuses `Shell.State.ReadOnly`'s established term |

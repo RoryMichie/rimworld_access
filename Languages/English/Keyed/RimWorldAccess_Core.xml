@@ -36,16 +36,21 @@
   <RimWorldAccess.Core.Settings.Category>RimWorld Access</RimWorldAccess.Core.Settings.Category>
 
   <!-- Checkbox labels in DoSettingsWindowContents, top-to-bottom order.
-       Each one toggles a single RimWorldAccessSettings bool. The parenthetical
-       examples are part of the label — translators should adapt the example
-       text (e.g. "3 of 7", "level 2") so it matches how the corresponding
-       announcement is phrased in their language. -->
-  <RimWorldAccess.Core.Settings.WrapNavigation.Label>Wrap navigation (loop from end to beginning)</RimWorldAccess.Core.Settings.WrapNavigation.Label>
-  <RimWorldAccess.Core.Settings.AnnouncePosition.Label>Announce position (e.g., '3 of 7')</RimWorldAccess.Core.Settings.AnnouncePosition.Label>
+       Each one toggles a single RimWorldAccessSettings bool. -->
+  <RimWorldAccess.Core.Settings.WrapNavigation.Label>Wrap navigation</RimWorldAccess.Core.Settings.WrapNavigation.Label>
   <RimWorldAccess.Core.Settings.ShowPawnActivityOnMap.Label>Show pawn activity on map cursor movement</RimWorldAccess.Core.Settings.ShowPawnActivityOnMap.Label>
   <RimWorldAccess.Core.Settings.ShowCoverInfo.Label>Show cover info for drafted and hostile pawns</RimWorldAccess.Core.Settings.ShowCoverInfo.Label>
   <RimWorldAccess.Core.Settings.AnnounceTerrain.Label>Announce terrain on cursor movement</RimWorldAccess.Core.Settings.AnnounceTerrain.Label>
-  <RimWorldAccess.Core.Settings.AnnounceLevels.Label>Announce depth levels in treeviews (e.g., 'level 2')</RimWorldAccess.Core.Settings.AnnounceLevels.Label>
+  <RimWorldAccess.Core.Settings.HoverSpeech.Label>Mouse tracking</RimWorldAccess.Core.Settings.HoverSpeech.Label>
+  <RimWorldAccess.Core.Settings.HoverSpeech.Desc>Announces what the mouse is over as you move it.</RimWorldAccess.Core.Settings.HoverSpeech.Desc>
+  <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Label>Mouse pointer follows the keyboard cursor</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Label>
+  <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>Places the mouse pointer on the keyboard cursor's tile after every move. {0} to adjust in game.</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>
+  <RimWorldAccess.Core.Settings.ScannerAutoJump.Label>Scanner auto-jump</RimWorldAccess.Core.Settings.ScannerAutoJump.Label>
+  <RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>Moves the cursor to each scanner item as you navigate. {0} to adjust in game.</RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>
+
+  <!-- Opens the Configure Spoken Announcements screen (a real window, not this panel);
+       see RimWorldAccess_AnnounceConfig.xml for that screen's own strings. -->
+  <RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button>Configure spoken announcements...</RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button>
 
   <!-- SubmenuTreeNavigation is the only checkbox with a tooltip. The label is
        deliberately whimsical ("Rashad Hates Treeviews") — translators can
@@ -54,4 +59,12 @@
        tooltip is the canonical explanation. -->
   <RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Label>Rashad Hates Treeviews (submenu-style navigation)</RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Label>
   <RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Tooltip>Changes how treeviews work. When you expand a category, it disappears and you navigate only its items. Press Left Arrow to go back. Your position is remembered when you return.</RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Tooltip>
+
+  <!-- Selected-pawn activity. The cursor-move clause in the Desc is the escape
+       hatch, so keep it if this is ever shortened. -->
+  <RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Label>Announce selected pawn activity</RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Label>
+  <RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Desc>Announces what the selected pawn is doing in real time. Moving the map cursor stops the announcements.</RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Desc>
+
+  <RimWorldAccess.Core.Settings.ShowWhatsNew.Label>Show What's New message after an update</RimWorldAccess.Core.Settings.ShowWhatsNew.Label>
+  <RimWorldAccess.Core.Settings.ShowWhatsNew.Desc>When on, the What's New message opens on the main menu after RimWorld Access updates. When off, you hear only a brief notice that the mod updated, and can open What's New from the menu whenever you like.</RimWorldAccess.Core.Settings.ShowWhatsNew.Desc>
 </LanguageData>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+  <!-- Combat autopilot: consulted just before the vanilla drafted wait. The xpath
+       matches every tree that drafts through JobGiver_Orders (Humanlike, Mechanoid,
+       Ghoul, and any modded tree built the same way); PatchOperationInsert's default
+       Prepend order places our conditional ahead of the unconditional wait. -->
+  <Operation Class="PatchOperationInsert">
+    <xpath>Defs/ThinkTreeDef//li[@Class="JobGiver_Orders"]</xpath>
+    <value>
+      <li Class="RimWorldAccess.ThinkNode_ConditionalCombatAutopilot">
+        <subNodes>
+          <li Class="RimWorldAccess.JobGiver_CombatAutopilot">
+            <targetAcquireRadius>200</targetAcquireRadius>
+            <targetKeepRadius>72</targetKeepRadius>
+          </li>
+        </subNodes>
+      </li>
+    </value>
+  </Operation>
+
+  <!-- Combat-policy and hunting-policy columns join the Assign tab ahead of the Carry column. -->
+  <Operation Class="PatchOperationInsert">
+    <xpath>Defs/PawnTableDef[defName="Assign"]/columns/li[.="Carry"]</xpath>
+    <value>
+      <li>RWA_CombatPolicy</li>
+      <li>GapTiny</li>
+      <li>RWA_HuntPolicy</li>
+      <li>GapTiny</li>
+    </value>
+  </Operation>
+
+  <!-- Doctrine lives in tables: draftable animals get the column on the Animals tab
+       (the draft-gated worker hides it until any listed animal can be drafted). -->
+  <Operation Class="PatchOperationInsert">
+    <xpath>Defs/PawnTableDef[defName="Animals"]/columns/li[.="AllowedAreaWide"]</xpath>
+    <value>
+      <li>RWA_CombatPolicyAnimals</li>
+      <li>GapTiny</li>
+    </value>
+  </Operation>
+
+  <!-- And mechs on the Biotech Mechs tab, gated the same way. -->
+  <Operation Class="PatchOperationFindMod">
+    <mods>
+      <li>Biotech</li>
+    </mods>
+    <match Class="PatchOperationInsert">
+      <xpath>Defs/PawnTableDef[defName="Mechs"]/columns/li[.="AllowedAreaMech"]</xpath>
+      <value>
+        <li>RWA_CombatPolicyMechs</li>
+        <li>GapTiny</li>
+      </value>
+    </match>
+  </Operation>
+
+  <!-- The attack-mark designator joins the Orders category. -->
+  <Operation Class="PatchOperationAdd">
+    <xpath>Defs/DesignationCategoryDef[defName="Orders"]/specialDesignatorClasses</xpath>
+    <value>
+      <li>RimWorldAccess.Designator_EngageTarget</li>
+    </value>
+  </Operation>
+
+  <!-- Draftable animals (modded races inheriting the Animal tree) draft without
+       JobGiver_Orders; hook their forced-goto slot instead, as Search and Destroy did. -->
+  <Operation Class="PatchOperationInsert">
+    <xpath>Defs/ThinkTreeDef[defName="Animal"]/thinkRoot[@Class="ThinkNode_Priority"]/subNodes/li[@Class="ThinkNode_ConditionalForcedGoto"]</xpath>
+    <order>Append</order>
+    <value>
+      <li Class="RimWorldAccess.ThinkNode_ConditionalCombatAutopilot">
+        <subNodes>
+          <li Class="RimWorldAccess.JobGiver_CombatAutopilot">
+            <targetAcquireRadius>200</targetAcquireRadius>
+            <targetKeepRadius>72</targetKeepRadius>
+            <needLOSToAcquireNonPawnTargets>true</needLOSToAcquireNonPawnTargets>
+          </li>
+        </subNodes>
+      </li>
+    </value>
+  </Operation>
+</Patch>

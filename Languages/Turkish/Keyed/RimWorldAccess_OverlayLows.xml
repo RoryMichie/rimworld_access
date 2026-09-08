@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Low-severity localization fixes from the pawns/bio + world/misc audit
+    passes: sighted-companion keyboard-mode overlays and a few small
+    read-side strings that were previously raw English literals.
+
+    Files contributing strings:
+      - SplitCaravanPatch.cs      (Dialog_SplitCaravan visual overlay)
+      - WorldNavigationPatch.cs   (world map tile-info visual overlay)
+      - PawnSkillsTableHelper.cs  (skills table "incapable" cell)
+      - PawnSelectionState.cs     (map-switch presence description)
+  -->
+
+  <RimWorldAccess.Caravan.Split.KeyboardModeActive>Klavye Modu Etkin</RimWorldAccess.Caravan.Split.KeyboardModeActive>
+  <RimWorldAccess.Caravan.Split.KeyboardInstructions>Sekmeler: Kişiler, Eşyalar, Yiyecek ve İlaç | Sol/Sağ: Sekmeleri/kervanları değiştir\nYukarı/Aşağı: Gezin/İstatistikler | Boşluk/Enter: Aç/kapat/Miktar | Shift+Enter: Maksimum | Del: Kaldır\nTab: Özet (Yukarı/Aşağı: istatistikler, Sol/Sağ: kervanlar) | Alt+I: İncele | Alt+S: Ayır</RimWorldAccess.Caravan.Split.KeyboardInstructions>
+
+
+  <RimWorldAccess.Pawns.SkillsTable.Incapable>mahir değil</RimWorldAccess.Pawns.SkillsTable.Incapable>
+
+  <RimWorldAccess.Pawns.Presence.Colonist>{0} kolonici</RimWorldAccess.Pawns.Presence.Colonist>
+  <RimWorldAccess.Pawns.Presence.Colonists>{0} kolonici</RimWorldAccess.Pawns.Presence.Colonists>
+  <RimWorldAccess.Pawns.Presence.Mech>{0} mekanoit</RimWorldAccess.Pawns.Presence.Mech>
+  <RimWorldAccess.Pawns.Presence.Mechs>{0} mekanoit</RimWorldAccess.Pawns.Presence.Mechs>
+  <RimWorldAccess.Pawns.Presence.Animal>{0} hayvan</RimWorldAccess.Pawns.Presence.Animal>
+  <RimWorldAccess.Pawns.Presence.Animals>{0} hayvan</RimWorldAccess.Pawns.Presence.Animals>
+
+
+</LanguageData>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <!-- Nomes descritivos de cores. As cores como substantivos são masculinas em português,
+       por isso os adjetivos concordam no masculino. -->
+
+  <RimWorldAccess.Color.Hue.Red>vermelho</RimWorldAccess.Color.Hue.Red>
+  <RimWorldAccess.Color.Hue.Orange>laranja</RimWorldAccess.Color.Hue.Orange>
+  <RimWorldAccess.Color.Hue.Amber>âmbar</RimWorldAccess.Color.Hue.Amber>
+  <RimWorldAccess.Color.Hue.Yellow>amarelo</RimWorldAccess.Color.Hue.Yellow>
+  <RimWorldAccess.Color.Hue.Lime>lima</RimWorldAccess.Color.Hue.Lime>
+  <RimWorldAccess.Color.Hue.Green>verde</RimWorldAccess.Color.Hue.Green>
+  <RimWorldAccess.Color.Hue.Teal>verde-azulado</RimWorldAccess.Color.Hue.Teal>
+  <RimWorldAccess.Color.Hue.Cyan>ciano</RimWorldAccess.Color.Hue.Cyan>
+  <RimWorldAccess.Color.Hue.Azure>azul-celeste</RimWorldAccess.Color.Hue.Azure>
+  <RimWorldAccess.Color.Hue.Blue>azul</RimWorldAccess.Color.Hue.Blue>
+  <RimWorldAccess.Color.Hue.Indigo>índigo</RimWorldAccess.Color.Hue.Indigo>
+  <RimWorldAccess.Color.Hue.Violet>violeta</RimWorldAccess.Color.Hue.Violet>
+  <RimWorldAccess.Color.Hue.Purple>roxo</RimWorldAccess.Color.Hue.Purple>
+  <RimWorldAccess.Color.Hue.Magenta>magenta</RimWorldAccess.Color.Hue.Magenta>
+  <RimWorldAccess.Color.Hue.Pink>rosa</RimWorldAccess.Color.Hue.Pink>
+  <RimWorldAccess.Color.Hue.Rose>rosa-velho</RimWorldAccess.Color.Hue.Rose>
+
+  <RimWorldAccess.Color.MidVivid>{0}</RimWorldAccess.Color.MidVivid>
+  <RimWorldAccess.Color.MidMuted>{0} apagado</RimWorldAccess.Color.MidMuted>
+  <RimWorldAccess.Color.MidPale>{0} pálido</RimWorldAccess.Color.MidPale>
+  <RimWorldAccess.Color.DarkVivid>{0} escuro</RimWorldAccess.Color.DarkVivid>
+  <RimWorldAccess.Color.DarkMuted>{0} apagado escuro</RimWorldAccess.Color.DarkMuted>
+  <RimWorldAccess.Color.DarkPale>{0} pálido escuro</RimWorldAccess.Color.DarkPale>
+  <RimWorldAccess.Color.LightVivid>{0} claro</RimWorldAccess.Color.LightVivid>
+  <RimWorldAccess.Color.LightMuted>{0} apagado claro</RimWorldAccess.Color.LightMuted>
+  <RimWorldAccess.Color.LightPale>{0} pálido</RimWorldAccess.Color.LightPale>
+
+  <RimWorldAccess.Color.Black>preto</RimWorldAccess.Color.Black>
+  <RimWorldAccess.Color.White>branco</RimWorldAccess.Color.White>
+  <RimWorldAccess.Color.Gray>cinza</RimWorldAccess.Color.Gray>
+  <RimWorldAccess.Color.GrayDark>cinza-escuro</RimWorldAccess.Color.GrayDark>
+  <RimWorldAccess.Color.GrayLight>cinza-claro</RimWorldAccess.Color.GrayLight>
+
+</LanguageData>

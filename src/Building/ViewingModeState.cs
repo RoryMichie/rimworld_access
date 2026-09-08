@@ -1,119 +1,82 @@
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
-using UnityEngine;
 using Verse;
 using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// State for viewing mode after shape-based placement.
-    /// Works for all designator types: Buildings (blueprints), Orders (Hunt, Haul), Zones, and Cells (Mine).
-    /// Allows reviewing obstacles and making adjustments.
-    /// Supports multi-segment placement with = (add more) and - (remove last).
-    ///
-    /// Obstacle navigation is delegated to ScannerState via a temporary "Obstacles" category.
-    /// This category is a proper scanner category that:
-    /// - Can be cycled to using Ctrl+PageUp/Down like other categories
-    /// - Supports Page Up/Down to navigate between obstacles
-    /// - Uses Home to jump to the current obstacle
-    /// - Is automatically removed when exiting viewing mode
+    /// Review state entered after shape-based placement, for every designator kind: Build
+    /// (blueprints), Orders, Zones, Areas and Cells. Placement accumulates as segments so the last
+    /// one can be undone on its own.
+    /// Obstacle navigation rides a temporary ScannerState category, removed on exit.
     /// </summary>
     public static class ViewingModeState
     {
         private static bool isActive = false;
 
-        // Track segments separately so we can remove just the last one
-        // For Build designators: List of Things (blueprints)
-        // For Orders/Zones/Cells: List is empty, we use cellSegments instead
+        // Build designators fill segments; every other kind fills cellSegments, which undo through
+        // DesignationManager rather than Thing.Destroy().
         private static List<List<Thing>> segments = new List<List<Thing>>();
 
-        // Track cells per segment for non-Build designators (Orders, Zones, Cells)
-        // These use DesignationManager to undo, not Thing.Destroy()
         private static List<List<IntVec3>> cellSegments = new List<List<IntVec3>>();
 
-        // Track shape type per segment (for shape-aware announcements)
         private static List<ShapeType> segmentShapeTypes = new List<ShapeType>();
 
-        // Track obstacle cells for segment logic (knowing which cells failed)
-        // Navigation is handled by ScannerState's temporary category.
-        // Paired HashSet provides O(1) membership checks during the accumulation loop;
-        // without it, dedup is O(n^2) and chokes on full-map shape placements.
+        // Paired HashSet keeps accumulation dedup O(1); a list-only scan is O(n^2) and chokes on
+        // full-map shape placements.
         private static List<IntVec3> obstacleCells = new List<IntVec3>();
         private static HashSet<IntVec3> obstacleCellsSet = new HashSet<IntVec3>();
 
-        // Track meditation focus / tree protection across segments
+        // Meditation focus / tree protection, accumulated across segments.
         private static int protectedCount = 0;
         private static HashSet<string> protectedByLabels = new HashSet<string>();
 
-        // Track detected enclosures formed by wall blueprints
         private static List<Enclosure> detectedEnclosures = new List<Enclosure>();
 
-        // Track the number of disconnected regions for zone placements
         private static int detectedRegionCount = 0;
 
-        // Track zones created by zone placement (for accurate confirmation message)
         private static HashSet<Zone> createdZones = new HashSet<Zone>();
 
-        // The specific zone being edited in viewing mode - prevents creating new zones
+        // The zone being edited; pins editing to it so no new zone is created.
         private static Zone targetZone = null;
 
-        // Cells that were part of targetZone when entering viewing mode (for re-adding in shrink mode)
+        // targetZone's cells on entry, so shrink mode can re-add them.
         private static HashSet<IntVec3> originalZoneCells = new HashSet<IntVec3>();
 
-        // Track order targets (things that were designated) - for Hunt, Haul, Tame, etc.
-        // These are Things (animals, items) that the order designator targeted
+        // Things an order designator targeted (Hunt, Haul, Tame).
         private static List<Thing> orderTargets = new List<Thing>();
 
-        // Track order target cells (cells that were designated) - for Mine, Cancel, etc.
-        // These are cells where cell-based orders were placed
+        // Cells a cell-based order designated (Mine, Cancel).
         private static List<IntVec3> orderTargetCells = new List<IntVec3>();
 
-        // Store the designator used for placement (for adding new blueprints)
         private static Designator activeDesignator = null;
 
-        // Store the shape type used for placement (for restoring after undo)
+        // Kept so undo can re-enter placement with the same shape.
         private static ShapeType usedShapeType = ShapeType.Manual;
 
-        // Track if we're temporarily out adding more shapes (don't clear segments on re-entry)
+        // Set while stepping out to place another shape, so re-entry keeps the segments.
         private static bool isAddingMore = false;
 
-        // Track whether this is a Build designator (for undo behavior)
-        private static bool isBuildDesignator = false;
+        // Computed once in Enter(); the isXDesignator properties below all read from it.
+        private static DesignatorClassification designatorClassification = default;
 
-        // Track whether this is an Order designator (Hunt, Mine, Cancel, etc.)
-        private static bool isOrderDesignator = false;
+        private static bool isBuildDesignator => designatorClassification.IsBuild;
+        private static bool isOrderDesignator => designatorClassification.IsOrder;
+        private static bool isZoneDesignator => designatorClassification.IsZone;
+        private static bool isDeleteDesignator => designatorClassification.IsDelete;
+        private static bool isAreaDesignator => designatorClassification.IsArea;
+        private static bool isBuiltInAreaDesignator => designatorClassification.IsBuiltInArea;
 
-        // Track whether this is a Zone designator (Stockpile, Growing, etc.)
-        private static bool isZoneDesignator = false;
-
-        // Track whether this is a delete/shrink designator (removes cells, no obstacles possible)
-        private static bool isDeleteDesignator = false;
-
-        // Track whether this is an Area designator (Allowed Area expand/shrink)
-        private static bool isAreaDesignator = false;
-
-        // Track whether this is a built-in area designator (Snow/Sand, Roof, Home)
-        private static bool isBuiltInAreaDesignator = false;
-
-        // Store the target area for area designators
         private static Area targetArea = null;
-
-        // Frame-based timing guard for confirmation - prevents G key from being blocked
-        // when it's pressed in the same frame as Enter key completes Confirm()
-        private static int confirmationFrame = -1;
 
         #region Properties
 
-        /// <summary>
-        /// Whether viewing mode is currently active.
-        /// </summary>
         public static bool IsActive => isActive;
 
         /// <summary>
-        /// List of all blueprints placed across all segments.
-        /// Only populated for Build designators.
+        /// Blueprints placed across all segments. Empty unless the designator is a Build one.
         /// </summary>
         public static List<Thing> PlacedBlueprints
         {
@@ -124,8 +87,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// List of all cells designated across all segments.
-        /// For non-Build designators (Orders, Zones, Cells).
+        /// Cells designated across all segments, for non-Build designators.
         /// </summary>
         public static List<IntVec3> PlacedCells
         {
@@ -136,7 +98,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Total count of placed items (blueprints for Build, cells for others).
+        /// Blueprints for Build designators, cells for everything else.
         /// </summary>
         public static int PlacedCount
         {
@@ -146,69 +108,46 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Number of segments placed.
-        /// </summary>
         public static int SegmentCount => ViewingModeSegmentManager.GetSegmentCount(segments, cellSegments, isBuildDesignator);
 
         /// <summary>
-        /// List of cells where placement failed due to obstacles.
+        /// Cells where placement failed due to obstacles.
         /// </summary>
         public static List<IntVec3> ObstacleCells => obstacleCells;
 
         /// <summary>
-        /// List of Things that were designated by order operations (Hunt, Haul, etc.).
+        /// Things designated by order operations (Hunt, Haul).
         /// </summary>
         public static List<Thing> OrderTargets => orderTargets;
 
         /// <summary>
-        /// List of cells that were designated by cell-based order operations (Mine, Cancel, etc.).
+        /// Cells designated by cell-based order operations (Mine, Cancel).
         /// </summary>
         public static List<IntVec3> OrderTargetCells => orderTargetCells;
 
-        /// <summary>
-        /// Whether the current designator is an Order type (Hunt, Mine, Cancel, etc.).
-        /// </summary>
         public static bool IsOrderDesignator => isOrderDesignator;
 
-        /// <summary>
-        /// Whether the current designator is a Zone type (Stockpile, Growing, etc.).
-        /// </summary>
         public static bool IsZoneDesignator => isZoneDesignator;
 
         /// <summary>
-        /// Whether the current designator is an Area type (Allowed Area expand/shrink).
+        /// Whether the designator is an Allowed Area expand/shrink.
         /// </summary>
         public static bool IsAreaDesignator => isAreaDesignator;
 
         /// <summary>
-        /// Whether the current designator is a built-in area type (Snow/Sand, Roof, Home).
+        /// Whether the designator targets a built-in area (Snow/Sand, Roof, Home).
         /// </summary>
         public static bool IsBuiltInAreaDesignator => isBuiltInAreaDesignator;
 
-        /// <summary>
-        /// The target area for area designators.
-        /// </summary>
         public static Area TargetArea => targetArea;
-
-        /// <summary>
-        /// Returns true if Confirm() was just called within the last frame.
-        /// Used to prevent G key from being blocked when pressed immediately after Enter.
-        /// </summary>
-        public static bool JustConfirmed => Time.frameCount <= confirmationFrame + 1;
 
         #endregion
 
         #region State Management
 
         /// <summary>
-        /// Enters viewing mode with the results from shape placement.
-        /// Can be called multiple times to add more segments.
-        /// Works for all designator types: Build (blueprints), Orders, Zones, and Cells.
+        /// Enters viewing mode with a shape-placement result. Called again per extra segment.
         /// </summary>
-        /// <param name="result">The placement result from ShapePlacementState</param>
-        /// <param name="designator">The designator used for placement (for adding new items)</param>
-        /// <param name="shapeType">The shape type used for placement (for restoring after undo)</param>
         public static void Enter(PlacementResult result, Designator designator = null, ShapeType shapeType = ShapeType.Manual)
         {
             if (result == null)
@@ -217,26 +156,17 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Always update designator type flags from the current designator
-            // This ensures correct announcements even when adding more shapes
-            isBuildDesignator = ShapeHelper.IsBuildDesignator(designator);
-            isOrderDesignator = ShapeHelper.IsOrderDesignator(designator);
-            isZoneDesignator = ShapeHelper.IsZoneDesignator(designator);
-            isDeleteDesignator = ShapeHelper.IsDeleteDesignator(designator);
-            isAreaDesignator = ShapeHelper.IsAreaDesignator(designator);
-            isBuiltInAreaDesignator = ShapeHelper.IsBuiltInAreaDesignator(designator);
+            // Reclassify on every entry so announcements stay correct while adding more shapes.
+            designatorClassification = ShapeHelper.ClassifyDesignator(designator);
             if (isAreaDesignator)
             {
                 targetArea = Designator_AreaAllowed.selectedArea;
             }
             else if (isBuiltInAreaDesignator)
             {
-                // Built-in areas (Snow/Sand, Roof, Home) have fixed Area objects on the map
                 targetArea = ShapeHelper.GetBuiltInAreaForDesignator(designator, Find.CurrentMap);
             }
 
-            // First time entering - save cursor and initialize
-            // But if we're adding more shapes, keep existing segments
             if (!isActive && !isAddingMore)
             {
                 ScannerState.SaveFocus();
@@ -252,21 +182,16 @@ namespace RimWorldAccess
                 orderTargetCells.Clear();
             }
 
-            // For zone designators, reset zone-specific state when adding more segments
-            // Clear targetZone so CollectCreatedZones can set it to the new segment's zone
-            // Keep createdZones intact - it accumulates zones across all segments (HashSet handles duplicates)
-            // At confirm time, CleanupStaleZoneReferences removes any zones that were undone
+            // Clearing targetZone lets CollectCreatedZones point it at the new segment's zone;
+            // createdZones deliberately keeps accumulating, and stale entries are pruned at confirm.
             if (isAddingMore && isZoneDesignator)
             {
                 targetZone = null;
                 originalZoneCells.Clear();
             }
 
-            isAddingMore = false; // Reset the flag
+            isAddingMore = false;
 
-            // Add this placement as a new segment
-            // For Build designators, track Things (blueprints)
-            // For others, track cells
             if (isBuildDesignator)
             {
                 var newSegment = new List<Thing>(result.PlacedBlueprints ?? new List<Thing>());
@@ -277,23 +202,20 @@ namespace RimWorldAccess
                 var newCellSegment = new List<IntVec3>(result.PlacedCells ?? new List<IntVec3>());
                 cellSegments.Add(newCellSegment);
 
-                // For order designators, collect the targets (things/cells that were designated)
                 if (isOrderDesignator && result.PlacedCells != null)
                 {
                     CollectOrderTargets(result.PlacedCells, designator);
                 }
 
-                // Store order undo segment for undo support
                 if (isOrderDesignator && OrderUndoTracker.HasPendingRecord)
                 {
                     OrderUndoTracker.AddSegment();
                 }
             }
 
-            // Track shape type for this segment
             segmentShapeTypes.Add(shapeType);
 
-            // Add any new obstacles (skip for delete designators since removing cells can't have obstacles)
+            // Removing cells can't hit an obstacle, so delete designators skip this.
             if (!isDeleteDesignator && result.ObstacleCells != null)
             {
                 foreach (var cell in result.ObstacleCells)
@@ -303,7 +225,7 @@ namespace RimWorldAccess
                 }
             }
 
-            // Add protected cells (meditation focus / tree protection) to obstacle list for scanner navigation
+            // Protected cells join the obstacle list so the scanner can navigate to them.
             if (!isDeleteDesignator && result.ProtectedCells != null)
             {
                 foreach (var cell in result.ProtectedCells)
@@ -325,31 +247,25 @@ namespace RimWorldAccess
             usedShapeType = shapeType;
             isActive = true;
 
-            // Detect wall enclosures for build designators (do this before UpdateObstacleCategory
-            // so interior obstacles can be added to the scanner)
-            // Pass obstacleCells so we can detect corner gaps in the perimeter
+            // Must run before UpdateObstacleCategory so interior obstacles reach the scanner;
+            // obstacleCells goes in so corner gaps in the perimeter are detected.
             detectedEnclosures.Clear();
             if (isBuildDesignator)
             {
                 detectedEnclosures = EnclosureDetector.DetectEnclosures(PlacedBlueprints, Find.CurrentMap, obstacleCells);
             }
 
-            // For zone designators, count disconnected regions and collect created zones
             detectedRegionCount = 0;
             if (isZoneDesignator && result.PlacedCells != null && result.PlacedCells.Count > 0)
             {
-                // Count how many separate regions the valid cells form
                 detectedRegionCount = CountDisconnectedRegions(result.PlacedCells);
 
-                // Collect the actual zones created (for confirm message)
                 CollectCreatedZones(result.PlacedCells);
 
-                // Store the zone undo record as a segment (for undo support)
                 ZoneUndoTracker.AddSegment();
 
-                // For shrink operations, get targetZone and original cells from ZoneUndoTracker
-                // CollectCreatedZones can't find the zone for shrink (cells were removed)
-                // Use PreShrinkOriginalCells which persists independently of segments
+                // CollectCreatedZones can't find the zone for a shrink (its cells are gone), so the
+                // tracker's segment-independent PreShrinkOriginalCells supplies it.
                 if (isDeleteDesignator)
                 {
                     targetZone = ZoneUndoTracker.LastSegmentTargetZone;
@@ -361,8 +277,8 @@ namespace RimWorldAccess
                 }
                 else
                 {
-                    // For expand operations, get original cells from ZoneUndoTracker
-                    // This prevents removing cells that existed before expansion (only newly added cells can be removed)
+                    // Only cells this expansion added may be removed again; the pre-expand set marks
+                    // the rest off limits.
                     var origCells = ZoneUndoTracker.PreExpandOriginalCells;
                     if (origCells != null)
                     {
@@ -371,35 +287,28 @@ namespace RimWorldAccess
                 }
             }
 
-            // Create temporary scanner category for obstacles or targets
-            // Skip for delete designators since they can't have obstacles
             if (isOrderDesignator)
             {
-                // For orders, create targets category instead of obstacles
                 ViewingModeScannerHelper.UpdateTargetsCategory(orderTargets, orderTargetCells, activeDesignator);
             }
             else if (!isDeleteDesignator)
             {
-                // For builds and zone-add, create obstacles category (includes interior obstacles from enclosures)
                 ViewingModeScannerHelper.UpdateObstacleCategory(obstacleCells, detectedEnclosures, isZoneDesignator);
             }
 
-            // Clean up any stale zone references before building announcement
-            // This removes zones that were deleted via undo
+            // Drops zones that undo already deleted, so the announcement counts only live ones.
             if (isZoneDesignator)
             {
                 CleanupStaleZoneReferences();
             }
 
-            // Get the last segment's cells for expansion announcements
-            // For zone expansion, we want to announce only the newly added shape's dimensions
+            // Zone expansion announces only the newly added shape's dimensions.
             List<IntVec3> lastSegmentCells = null;
             if (!isBuildDesignator && cellSegments.Count > 0)
             {
                 lastSegmentCells = cellSegments[cellSegments.Count - 1];
             }
 
-            // Build the announcement using the announcer
             string announcement = ViewingModeAnnouncer.BuildEntryAnnouncement(
                 designator,
                 PlacedCount,
@@ -429,12 +338,12 @@ namespace RimWorldAccess
             int totalPlaced = PlacedCount;
             int segCount = SegmentCount;
             string itemType = isBuildDesignator ? "blueprints" : "designations";
-            Log.Message($"[ViewingModeState] Entered with {result.PlacedCount} new {itemType} (total: {totalPlaced}), {obstacleCells.Count} obstacles, {orderTargets.Count} order targets");
+            ModLogger.Dev($"[ViewingModeState] Entered with {result.PlacedCount} new {itemType} (total: {totalPlaced}), {obstacleCells.Count} obstacles, {orderTargets.Count} order targets");
         }
 
         /// <summary>
-        /// Collects the things/cells that were designated by an order designator.
-        /// This queries the map to find what was actually designated at each cell.
+        /// Queries the map at each placed cell for what the order designator actually designated,
+        /// appending to <see cref="orderTargets"/> and <see cref="orderTargetCells"/>.
         /// </summary>
         private static void CollectOrderTargets(List<IntVec3> placedCells, Designator designator)
         {
@@ -444,13 +353,11 @@ namespace RimWorldAccess
 
             foreach (IntVec3 cell in placedCells)
             {
-                // Check for thing-based designations (Hunt, Haul, Tame, etc.)
                 List<Thing> things = cell.GetThingList(map);
                 bool foundThingTarget = false;
 
                 foreach (Thing thing in things)
                 {
-                    // Check if this thing has any designation on it
                     if (map.designationManager.DesignationOn(thing) != null)
                     {
                         if (!orderTargets.Contains(thing))
@@ -461,10 +368,9 @@ namespace RimWorldAccess
                     }
                 }
 
-                // If no thing target was found, this might be a cell-based designation (Mine, Cancel, etc.)
+                // Nothing thing-based here means a cell-based designation (Mine, Cancel).
                 if (!foundThingTarget)
                 {
-                    // Check if there's any designation at this cell
                     if (map.designationManager.AllDesignationsAt(cell).Any())
                     {
                         if (!orderTargetCells.Contains(cell))
@@ -479,11 +385,8 @@ namespace RimWorldAccess
         #region Zone Helper Methods
 
         /// <summary>
-        /// Gets the cells belonging to a zone.
-        /// Delegates to ZoneEditingHelper.
+        /// The cells belonging to a zone.
         /// </summary>
-        /// <param name="zone">The zone to get cells from</param>
-        /// <returns>A list of cells in the zone</returns>
         private static List<IntVec3> GetZoneCells(Zone zone)
         {
             return ZoneEditingHelper.GetZoneCells(zone);
@@ -492,26 +395,19 @@ namespace RimWorldAccess
         #endregion
 
         /// <summary>
-        /// Exits viewing mode and confirms all placements.
-        /// Also exits architect/placement mode entirely.
-        /// Note: The cursor stays where the user left it - we never move it against
-        /// their will when exiting viewing mode.
+        /// Confirms all placements, then exits viewing mode and architect/placement mode.
+        /// The cursor stays where the player left it.
         /// </summary>
         public static void Confirm()
         {
             if (!isActive)
                 return;
 
-            // Set confirmation frame BEFORE Reset() clears isActive
-            // This allows JustConfirmed to return true even after IsActive becomes false
-            confirmationFrame = Time.frameCount;
-
             int totalPlaced = PlacedCount;
             string announcement;
 
             if (isZoneDesignator)
             {
-                // Handle delete/shrink designators differently
                 if (isDeleteDesignator)
                 {
                     announcement = (totalPlaced == 1
@@ -520,36 +416,30 @@ namespace RimWorldAccess
                 }
                 else
                 {
-                    // For zone creation/expansion, report with dimensions or cell count
-                    // Clean up any stale zone references before counting
                     CleanupStaleZoneReferences();
                     int zoneCount = createdZones.Count;
                     string zoneName = ViewingModeAnnouncer.GetZoneTypeName(activeDesignator, targetZone, createdZones);
 
-                    // Determine if this was an expansion of existing zone
                     bool wasExpansion = ZoneUndoTracker.WasZoneExpansion;
 
                     if (zoneCount == 1)
                     {
-                        // Single zone - check if cells were manually modified
                         Zone theZone = createdZones.First();
                         int actualCellCount = theZone.Cells.Count();
 
-                        // Get original cell count (0 for new zones, >0 for expansions)
+                        // Zero for a new zone, positive for an expansion.
                         int originalCellCount = ZoneUndoTracker.LastSegmentOriginalCells?.Count ?? 0;
 
-                        // Cells that were added by this operation
                         int cellsAdded = actualCellCount - originalCellCount;
 
-                        // Expected cells from shape placement
                         int expectedCellCount = PlacedCells.Count;
 
-                        // Check if cells were manually modified (added/removed via Space key)
+                        // A mismatch means cells were toggled by hand with Space.
                         bool wasModified = cellsAdded != expectedCellCount;
 
                         if (wasModified)
                         {
-                            // Use cell count instead of dimensions since shape was modified
+                            // The shape no longer holds, so report a count rather than dimensions.
                             if (wasExpansion)
                             {
                                 announcement = (cellsAdded == 1
@@ -565,7 +455,6 @@ namespace RimWorldAccess
                         }
                         else
                         {
-                            // Use shape-aware size (dimensions for regular, cell count for irregular)
                             string sizeString = ShapeHelper.FormatShapeSize(PlacedCells);
                             announcement = (wasExpansion
                                 ? "RimWorldAccess.Building.View.ConfirmZoneExpanded"
@@ -574,9 +463,7 @@ namespace RimWorldAccess
                     }
                     else
                     {
-                        // Multiple zones - list sizes for each, sorted by size
-                        // Multiple zones are created by splits, so always "created"
-                        // Truncate smaller zones (under 1% of total cells)
+                        // Several zones only arise from a split, so the wording is always "created".
                         var zoneSizes = new List<(Zone zone, int cellCount, string sizeStr)>();
                         int totalCells = 0;
 
@@ -589,10 +476,9 @@ namespace RimWorldAccess
                             zoneSizes.Add((zone, cellCount, sizeStr));
                         }
 
-                        // Sort by cell count descending (largest first)
                         zoneSizes.Sort((a, b) => b.cellCount.CompareTo(a.cellCount));
 
-                        // 1% threshold for truncation
+                        // Zones under 1% of the total are summarised rather than listed.
                         int threshold = totalCells / 100;
                         if (threshold < 1)
                             threshold = 1;
@@ -645,17 +531,20 @@ namespace RimWorldAccess
 
             Reset();
 
-            // Check if we need to return to a parent menu (Schedule/Animals)
-            if (WindowlessAreaState.HasPendingReturn)
+            // Also exit architect/placement mode entirely. ArchitectState.Reset() returns early
+            // outside architect mode, so the gizmo/dialog flow needs the explicit Deselect —
+            // without it the designator stays armed and placement silently re-enters.
+            ShapePlacementState.Reset();
+            if (ArchitectState.CurrentMode == ArchitectMode.Inactive)
             {
-                WindowlessAreaState.CompletePendingReturn();
+                Find.DesignatorManager?.Deselect();
+            }
+            else
+            {
+                ArchitectState.Reset();
             }
 
-            // Also exit architect/placement mode entirely
-            ShapePlacementState.Reset();
-            ArchitectState.Reset();
-
-            Log.Message("[ViewingModeState] Confirmed and exited placement mode");
+            ModLogger.Dev("[ViewingModeState] Confirmed and exited placement mode");
         }
 
         /// <summary>
@@ -703,17 +592,7 @@ namespace RimWorldAccess
             string sizeString;
             if (isZoneDesignator && removedCells != null && removedCells.Count > 0)
             {
-                string shapeSize = ShapeHelper.FormatShapeSize(removedCells);
-                // Add "zone" suffix for clarity (e.g., "3 by 3 zone" or "9 cells zone")
-                // But if FormatShapeSize already includes "cells", don't add redundant suffix
-                if (shapeSize.Contains("cell"))
-                {
-                    sizeString = shapeSize.Replace("cells", "zone cells").Replace("cell", "zone cell");
-                }
-                else
-                {
-                    sizeString = $"{shapeSize} zone";
-                }
+                sizeString = ViewingModeAnnouncer.FormatZoneCellsSize(removedCells);
             }
             else
             {
@@ -761,7 +640,7 @@ namespace RimWorldAccess
                 TolkHelper.Speak("RimWorldAccess.Building.View.SegmentRemovedNoneRemain".Loc(action, sizeString, removedShapeName), SpeechPriority.Normal);
             }
 
-            Log.Message($"[ViewingModeState] Removed last segment ({removedCount} items), {remainingSegments} segments remaining");
+            ModLogger.Dev($"[ViewingModeState] Removed last segment ({removedCount} items), {remainingSegments} segments remaining");
         }
 
         /// <summary>
@@ -784,7 +663,7 @@ namespace RimWorldAccess
 
             TolkHelper.Speak("RimWorldAccess.Building.View.ReturnedToPreview".Loc(), SpeechPriority.Normal);
 
-            Log.Message($"[ViewingModeState] Reactivated with {segCount} segments");
+            ModLogger.Dev($"[ViewingModeState] Reactivated with {segCount} segments");
         }
 
         /// <summary>
@@ -813,7 +692,7 @@ namespace RimWorldAccess
                 ShapePlacementState.Enter(savedDesignator, savedShape, fromViewingMode: true);
             }
 
-            Log.Message("[ViewingModeState] Exited to add another shape");
+            ModLogger.Dev("[ViewingModeState] Exited to add another shape");
         }
 
         /// <summary>
@@ -877,7 +756,7 @@ namespace RimWorldAccess
                 ShapePlacementState.Enter(savedDesignator, savedShape, fromViewingMode: hasRemainingSegments);
             }
 
-            Log.Message($"[ViewingModeState] Undid last segment and returned to placement, {SegmentCount} segments remaining");
+            ModLogger.Dev($"[ViewingModeState] Undid last segment and returned to placement, {SegmentCount} segments remaining");
         }
 
         /// <summary>
@@ -913,7 +792,7 @@ namespace RimWorldAccess
                 ShapePlacementState.Enter(savedDesignator, savedShape);
             }
 
-            Log.Message($"[ViewingModeState] Undid all {removedCount} items and returned to {savedShape} placement");
+            ModLogger.Dev($"[ViewingModeState] Undid all {removedCount} items and returned to {savedShape} placement");
         }
 
         /// <summary>
@@ -921,33 +800,28 @@ namespace RimWorldAccess
         /// "Leave" removes all blueprints/designations/zone changes and exits to game map.
         /// "Stay" closes the dialog and stays in preview mode.
         /// </summary>
-        private static void ShowExitConfirmation()
+        public static void ShowExitConfirmation()
         {
             if (!isActive)
                 return;
 
-            // If no segments remain, just exit immediately without showing dialog
+            // If no segments remain, just exit immediately without showing dialog. Nothing
+            // pending is discarded here, so the wording is "exited", never "cancelled" —
+            // already-confirmed work stays.
             if (SegmentCount == 0)
             {
-                // Use appropriate message based on designator type
                 if (isZoneDesignator)
                 {
-                    TolkHelper.Speak("RimWorldAccess.Building.View.ZoneEditingCancelled".Loc(), SpeechPriority.Normal);
+                    TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.ExitedZoneEditing".Loc(), SpeechPriority.Normal);
                 }
                 else
                 {
-                    TolkHelper.Speak("RimWorldAccess.Building.View.PlacementCancelled".Loc(), SpeechPriority.Normal);
+                    TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.ExitedPlacement".Loc(), SpeechPriority.Normal);
                 }
 
                 Reset();
                 ShapePlacementState.Reset();
                 GizmoZoneEditState.Reset();
-
-                // Check if we need to return to a parent menu (Schedule/Animals)
-                if (WindowlessAreaState.HasPendingReturn)
-                {
-                    WindowlessAreaState.CompletePendingReturn();
-                }
 
                 // ArchitectState.Reset() returns early if not in architect mode,
                 // so explicitly deselect the designator for gizmo mode
@@ -960,7 +834,7 @@ namespace RimWorldAccess
                     ArchitectState.Reset();
                 }
 
-                Log.Message("[ViewingModeState] Exited via Escape with no segments remaining");
+                ModLogger.Dev("[ViewingModeState] Exited via Escape with no segments remaining");
                 return;
             }
 
@@ -1006,12 +880,6 @@ namespace RimWorldAccess
                     // Exit completely (don't restore cursor - keep it where user left it)
                     Reset();
 
-                    // Check if we need to return to a parent menu (Schedule/Animals)
-                    if (WindowlessAreaState.HasPendingReturn)
-                    {
-                        WindowlessAreaState.CompletePendingReturn();
-                    }
-
                     // Also exit architect/placement mode entirely
                     ShapePlacementState.Reset();
                     GizmoZoneEditState.Reset();
@@ -1027,7 +895,7 @@ namespace RimWorldAccess
                         ArchitectState.Reset();
                     }
 
-                    Log.Message($"[ViewingModeState] Exited via confirmation, removed {removedCount} items");
+                    ModLogger.Dev($"[ViewingModeState] Exited via confirmation, removed {removedCount} items");
                 },
                 "RimWorldAccess.Building.View.DialogStay".Translate(),
                 null,
@@ -1049,12 +917,7 @@ namespace RimWorldAccess
 
             isActive = false;
             isAddingMore = false;
-            isBuildDesignator = false;
-            isOrderDesignator = false;
-            isZoneDesignator = false;
-            isDeleteDesignator = false;
-            isAreaDesignator = false;
-            isBuiltInAreaDesignator = false;
+            designatorClassification = default;
             targetArea = null;
             segments.Clear();
             cellSegments.Clear();
@@ -1102,12 +965,12 @@ namespace RimWorldAccess
             AcceptanceReport report = activeDesignator.CanDesignateCell(cursorPos);
             if (!report.Accepted)
             {
-                string reason = !string.IsNullOrEmpty(report.Reason)
-                    ? report.Reason
-                    : (string)"RimWorldAccess.Building.View.CannotPlaceHere".Translate();
-                TolkHelper.SpeakData(reason, SpeechPriority.Normal);
+                TolkHelper.SpeakData(PlacementDescriber.ReasonOrFallback(report), SpeechPriority.Normal);
                 return;
             }
+
+            if (!GodModeWipeWarning.WarnBeforeInstantPlace(activeDesignator, cursorPos, map))
+                return;
 
             try
             {
@@ -1120,12 +983,14 @@ namespace RimWorldAccess
                 // Call Finalize to play the placement sound (like manual placement does)
                 activeDesignator.Finalize(true);
 
-                // Find the newly placed blueprint
+                // Find the newly placed blueprint (or the finished thing in god mode)
+                ThingDef placingDef = MeditationProtectionHelper.GetPlacementInfo(activeDesignator).def;
                 List<Thing> thingsAfter = cursorPos.GetThingList(map);
                 foreach (Thing thing in thingsAfter)
                 {
                     if (!thingsBefore.Contains(thing) &&
-                        (thing.def.IsBlueprint || thing.def.IsFrame))
+                        (thing.def.IsBlueprint || thing.def.IsFrame ||
+                            (placingDef != null && thing.def == placingDef)))
                     {
                         // Add to the last segment (or create one if needed)
                         if (segments.Count == 0)
@@ -1147,7 +1012,7 @@ namespace RimWorldAccess
                 // Announce like manual placement: "{label} placed at x, z"
                 string label = activeDesignator.Label ?? (string)"RimWorldAccess.Building.View.BlueprintFallback".Translate();
                 TolkHelper.Speak("RimWorldAccess.Building.View.PlacedAt".Loc(label, cursorPos.x, cursorPos.z), SpeechPriority.Normal);
-                Log.Message($"[ViewingModeState] Added blueprint at {cursorPos}");
+                ModLogger.Dev($"[ViewingModeState] Added blueprint at {cursorPos}");
             }
             catch (System.Exception ex)
             {
@@ -1175,7 +1040,7 @@ namespace RimWorldAccess
 
             foreach (Thing thing in things)
             {
-                if ((thing.def.IsBlueprint || thing.def.IsFrame) && allPlaced.Contains(thing))
+                if (allPlaced.Contains(thing))
                 {
                     blueprintToRemove = thing;
                     break;
@@ -1197,12 +1062,14 @@ namespace RimWorldAccess
                 if (segment.Remove(blueprintToRemove))
                     break;
             }
-            blueprintToRemove.Destroy(DestroyMode.Cancel);
+            // Cancel is only valid for blueprints/frames; god-mode placements are finished things.
+            bool isBlueprintLike = blueprintToRemove.def.IsBlueprint || blueprintToRemove.def.IsFrame;
+            blueprintToRemove.Destroy(isBlueprintLike ? DestroyMode.Cancel : DestroyMode.Vanish);
 
             // Play cancel sound and announce like manual placement
             SoundDefOf.Designate_Cancel.PlayOneShotOnCamera();
             TolkHelper.Speak("RimWorldAccess.Building.View.CancelledBlueprint".Loc(thingLabel), SpeechPriority.Normal);
-            Log.Message($"[ViewingModeState] Removed blueprint at {cursorPos}");
+            ModLogger.Dev($"[ViewingModeState] Removed blueprint at {cursorPos}");
         }
 
         /// <summary>
@@ -1228,11 +1095,11 @@ namespace RimWorldAccess
                 IntVec3 cursorPos = MapNavigationState.CurrentCursorPosition;
                 if (result.ZoneDeleted)
                 {
-                    Log.Message($"[ViewingModeState] Zone cell operation at {cursorPos}: zone was deleted");
+                    ModLogger.Dev($"[ViewingModeState] Zone cell operation at {cursorPos}: zone was deleted");
                 }
                 else
                 {
-                    Log.Message($"[ViewingModeState] Zone cell operation at {cursorPos}: {result.Message}");
+                    ModLogger.Dev($"[ViewingModeState] Zone cell operation at {cursorPos}: {result.Message}");
                 }
             }
         }
@@ -1276,85 +1143,32 @@ namespace RimWorldAccess
         #region Input Handling
 
         /// <summary>
-        /// Processes keyboard input for viewing mode.
+        /// Space handler: folded in verbatim from the
+        /// legacy handler's Space case. Zone designators use a true toggle based
+        /// on actual zone membership regardless of shift; other designator
+        /// types use the standard blueprint add/remove methods, chosen by
+        /// <paramref name="shift"/> — the shell registers this as two separate
+        /// chord claims (bare Space and Shift+Space), each passing its own
+        /// literal shift value, since <c>ToggleZoneCellAtCursor</c> must run
+        /// identically for both chords when a zone designator is active.
         /// </summary>
-        /// <param name="key">The key code pressed</param>
-        /// <param name="shift">Whether shift is held</param>
-        /// <returns>True if the input was handled</returns>
-        public static bool HandleInput(KeyCode key, bool shift)
+        public static void HandleSpaceAtCursor(bool shift)
         {
             if (!isActive)
-                return false;
+                return;
 
-            // Note: PageUp/PageDown/Home for obstacle navigation are handled by ScannerState
-            // via the temporary "Obstacles" category
-
-            switch (key)
+            if (isZoneDesignator)
             {
-                case KeyCode.Space:
-                    // Zone designators use true toggle based on actual zone membership
-                    // Space toggles: if cell is in zone, remove it; if not, add it
-                    if (isZoneDesignator)
-                    {
-                        ToggleZoneCellAtCursor();
-                    }
-                    else
-                    {
-                        // Build designators and other types use the standard blueprint methods
-                        if (shift)
-                        {
-                            RemoveBlueprintAtCursor();
-                        }
-                        else
-                        {
-                            AddBlueprintAtCursor();
-                        }
-                    }
-                    return true;
-
-                case KeyCode.Equals:
-                case KeyCode.Plus:
-                case KeyCode.KeypadPlus:
-                    // Don't handle if Go To is active - let Go To process + for coordinates
-                    if (GoToState.IsActive)
-                        return false;
-                    // = key - add another shape, keep existing blueprints
-                    AddAnotherShape();
-                    return true;
-
-                case KeyCode.Minus:
-                case KeyCode.KeypadMinus:
-                    // Don't handle if Go To is active - let Go To process - for coordinates
-                    if (GoToState.IsActive)
-                        return false;
-                    // - key - remove last segment only, stay in viewing mode
-                    RemoveLastSegment();
-                    return true;
-
-                case KeyCode.Return:
-                case KeyCode.KeypadEnter:
-                    // Don't intercept Enter if gizmo navigation or windowless float menu is active
-                    // They need Enter to execute the selected gizmo or menu option
-                    if (GizmoNavigationState.IsActive || WindowlessFloatMenuState.IsActive)
-                    {
-                        return false;  // Let the active menu handle it
-                    }
-                    // Enter - finalize all placements
-                    Confirm();
-                    return true;
-
-                case KeyCode.Escape:
-                    // Escape - show confirmation dialog before leaving preview
-                    ShowExitConfirmation();
-                    return true;
-
-                case KeyCode.Tab:
-                    // Block Tab in viewing mode - do nothing, just consume the event
-                    // This prevents Tab from opening the architect menu
-                    return true;
+                ToggleZoneCellAtCursor();
             }
-
-            return false;
+            else if (shift)
+            {
+                RemoveBlueprintAtCursor();
+            }
+            else
+            {
+                AddBlueprintAtCursor();
+            }
         }
 
         #endregion

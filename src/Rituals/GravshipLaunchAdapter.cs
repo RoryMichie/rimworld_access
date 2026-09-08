@@ -32,6 +32,12 @@ namespace RimWorldAccess
             return toggles;
         }
 
+        // MUTATION-C: mirrors Dialog_BeginGravshipLaunch.DoRightColumn's three
+        // Widgets.CheckboxLabeled(rect, label, ref field) calls (decompiled
+        // Dialog_BeginGravshipLaunch.cs:35-53 -- forceVisitorsToLeave, boardColonyAnimals,
+        // boardColonyMechs, the third gated on the same ModsConfig.BiotechActive check
+        // BuildExtraToggles above already applies); no vehicle A/B exists because vanilla writes
+        // these private fields directly with no gated setter or extractable delegate.
         public override bool ApplyExtraToggle(LordJobExtraToggle toggle)
         {
             if (toggle == null || !(toggle.AdapterTag is FieldInfo field)) return false;

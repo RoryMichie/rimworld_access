@@ -65,22 +65,20 @@
   <RimWorldAccess.Tree.AllAlreadyExpanded>All items already expanded</RimWorldAccess.Tree.AllAlreadyExpanded>
   <RimWorldAccess.Tree.NoneToExpand>No expandable items</RimWorldAccess.Tree.NoneToExpand>
 
-  <!-- Two-level menu (src/UI/TwoLevelMenuHelper.cs).
-       Used by quest, history, notification, and mod-list menus.
-       ButtonAnnouncement/Disabled: {0} = button label, {1} = position suffix.
-       ButtonDisabled/Reason: {0} = button label, {1} = reason. -->
+  <!-- Two-level menu (src/UI/TwoLevelMenuHelper.cs). Used by the mod-list detail view,
+       notifications, and the History Graph sub-tab. ButtonAnnouncement/Disabled and
+       ButtonDisabled/Reason retired (Task 8 packet H): button focus now speaks through
+       the composer's own Button role + Disabled state, and the disabled-activation
+       refusal reuses the shared RimWorldAccess.Shell.GenericWindow.Disabled key. -->
   <RimWorldAccess.TwoLevel.BackToList>Back to list</RimWorldAccess.TwoLevel.BackToList>
   <RimWorldAccess.TwoLevel.BackToListWithSuffix>Back to list. {0}</RimWorldAccess.TwoLevel.BackToListWithSuffix>
-  <RimWorldAccess.TwoLevel.ButtonAnnouncement>{0}. Button. {1}</RimWorldAccess.TwoLevel.ButtonAnnouncement>
-  <RimWorldAccess.TwoLevel.ButtonAnnouncementDisabled>{0} (disabled). Button. {1}</RimWorldAccess.TwoLevel.ButtonAnnouncementDisabled>
-  <RimWorldAccess.TwoLevel.ButtonDisabled>{0} is disabled</RimWorldAccess.TwoLevel.ButtonDisabled>
-  <RimWorldAccess.TwoLevel.ButtonDisabledReason>{0} is disabled: {1}</RimWorldAccess.TwoLevel.ButtonDisabledReason>
 
   <!-- Menu formatting (src/UI/MenuHelper.cs).
        Position: {0} = 1-based index, {1} = total.
        LevelSuffix: {0} = indent level (1-based), appended to item announcements.
        CannotPaintColumn: tabular menus when a column cannot be paint-copied. -->
   <RimWorldAccess.Menu.Position>{0} of {1}</RimWorldAccess.Menu.Position>
+  <RimWorldAccess.Menu.TabPosition>tab {0} of {1}</RimWorldAccess.Menu.TabPosition>
   <RimWorldAccess.Menu.LevelSuffix> level {0}</RimWorldAccess.Menu.LevelSuffix>
   <RimWorldAccess.Menu.CannotPaintColumn>Cannot paint this column</RimWorldAccess.Menu.CannotPaintColumn>
 
@@ -125,4 +123,8 @@
   <RimWorldAccess.Common.SortAscending>ascending</RimWorldAccess.Common.SortAscending>
   <RimWorldAccess.Common.SortDescending>descending</RimWorldAccess.Common.SortDescending>
   <RimWorldAccess.Common.RenameLabeled>Rename {0}</RimWorldAccess.Common.RenameLabeled>
+
+  <!-- Where a row dragged with the mouse would land. {0} = 1-based position,
+       {1} = number of rows in the list being reordered. -->
+  <RimWorldAccess.Common.Drag.ReorderPosition>Position {0} of {1}</RimWorldAccess.Common.Drag.ReorderPosition>
 </LanguageData>

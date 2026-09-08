@@ -48,14 +48,8 @@
        matching vanilla translation keys; Gender/LifeStage/Pregnant etc.
        DO have vanilla keys and are resolved via .Translate() in C#.
        ================================================================= -->
-  <RimWorldAccess.Animals.Column.Name>Nombre</RimWorldAccess.Animals.Column.Name>
-  <RimWorldAccess.Animals.Column.Age>Edad</RimWorldAccess.Animals.Column.Age>
-  <RimWorldAccess.Animals.Column.LifeStage>Etapa de vida</RimWorldAccess.Animals.Column.LifeStage>
   <RimWorldAccess.Animals.Column.SpecialTraining>Entrenamiento especial</RimWorldAccess.Animals.Column.SpecialTraining>
   <RimWorldAccess.Animals.Column.MentalState>Estado mental</RimWorldAccess.Animals.Column.MentalState>
-  <RimWorldAccess.Animals.Column.BondInfo>Vínculo</RimWorldAccess.Animals.Column.BondInfo>
-  <RimWorldAccess.Animals.Column.Sterile>Estéril</RimWorldAccess.Animals.Column.Sterile>
-  <RimWorldAccess.Animals.Column.MedicalCare>Atención médica</RimWorldAccess.Animals.Column.MedicalCare>
 
   <!-- =================================================================
        Training status (AnimalsMenuHelper.GetTrainingStatus and
@@ -78,7 +72,6 @@
   <RimWorldAccess.Animals.Menu.Closed>Menú de animales cerrado</RimWorldAccess.Animals.Menu.Closed>
   <RimWorldAccess.Animals.Menu.ClosedWithSummary>Menú de animales cerrado. {0}</RimWorldAccess.Animals.Menu.ClosedWithSummary>
   <RimWorldAccess.Animals.Menu.ReturnTitle>Menú de animales</RimWorldAccess.Animals.Menu.ReturnTitle>
-  <RimWorldAccess.Animals.Menu.NoAnimals>Sin animales</RimWorldAccess.Animals.Menu.NoAnimals>
   <RimWorldAccess.Animals.Menu.NotOnMap>El animal no está en el mapa</RimWorldAccess.Animals.Menu.NotOnMap>
 
   <!-- Cell-interaction feedback for training, follow, dig/forage, etc.
@@ -89,8 +82,6 @@
   <RimWorldAccess.Animals.Cell.HasNotLearned>{0} no ha aprendido {1}</RimWorldAccess.Animals.Cell.HasNotLearned>
   <RimWorldAccess.Animals.Cell.NoSpecialAbilities>{0} no tiene habilidades especiales</RimWorldAccess.Animals.Cell.NoSpecialAbilities>
   <RimWorldAccess.Animals.Cell.AlreadySterilized>{0} ya está esterilizado</RimWorldAccess.Animals.Cell.AlreadySterilized>
-  <RimWorldAccess.Animals.Cell.BondedSlaughterWarning>{0} tiene un vínculo. Se marca para sacrificio de todos modos.</RimWorldAccess.Animals.Cell.BondedSlaughterWarning>
-  <RimWorldAccess.Animals.Cell.FactionSterilizeWarning>Advertencia: {0} pertenece a {1}. Se programa la esterilización de todos modos.</RimWorldAccess.Animals.Cell.FactionSterilizeWarning>
   <RimWorldAccess.Animals.Cell.RequiresTrainingForMaster>{0} requiere entrenamiento de {1} para tener un amo</RimWorldAccess.Animals.Cell.RequiresTrainingForMaster>
 
   <!-- =================================================================
@@ -100,14 +91,13 @@
   <RimWorldAccess.Animals.Submenu.ManageAreas>Administrar áreas</RimWorldAccess.Animals.Submenu.ManageAreas>
   <RimWorldAccess.Animals.Submenu.Option>{0}. {1}</RimWorldAccess.Animals.Submenu.Option>
   <RimWorldAccess.Animals.Submenu.OptionAnnounce>{0} ({1})</RimWorldAccess.Animals.Submenu.OptionAnnounce>
+  <RimWorldAccess.Animals.Submenu.MasterOptionDisabled>No se puede asignar: {0}</RimWorldAccess.Animals.Submenu.MasterOptionDisabled>
+  <RimWorldAccess.Animals.Submenu.AreaNotAllowed>{0} no puede tener un área asignable</RimWorldAccess.Animals.Submenu.AreaNotAllowed>
 
   <!-- =================================================================
        Sort feedback (shared vocabulary used by Animals and Wildlife).
        {0} = column name, {1} = "ascending"/"descending" from the
        TabularMenuHelper result. -->
-  <RimWorldAccess.Animals.Sort.CannotSort>{0} no se puede ordenar</RimWorldAccess.Animals.Sort.CannotSort>
-  <RimWorldAccess.Animals.Sort.Cleared>Orden restablecido, orden predeterminado</RimWorldAccess.Animals.Sort.Cleared>
-  <RimWorldAccess.Animals.Sort.SortedBy>Ordenado por {0} ({1})</RimWorldAccess.Animals.Sort.SortedBy>
   <RimWorldAccess.Animals.Sort.NowAt>Ahora en {0}</RimWorldAccess.Animals.Sort.NowAt>
 
   <!-- =================================================================
@@ -119,9 +109,11 @@
        generic "{col} {value}" phrasing. -->
   <RimWorldAccess.Animals.Paint.Single.AreaAlreadySet>{0}: ya establecido en {1}. {2}</RimWorldAccess.Animals.Paint.Single.AreaAlreadySet>
   <RimWorldAccess.Animals.Paint.Single.AreaApplied>{0}: {1} aplicado. {2}</RimWorldAccess.Animals.Paint.Single.AreaApplied>
+  <RimWorldAccess.Animals.Paint.Single.AreaNotAllowed>{0}: no puede tener un área asignable. {1}</RimWorldAccess.Animals.Paint.Single.AreaNotAllowed>
   <RimWorldAccess.Animals.Paint.Single.RequiresObedience>{0}: requiere {1}. {2}</RimWorldAccess.Animals.Paint.Single.RequiresObedience>
   <RimWorldAccess.Animals.Paint.Single.MasterAlready>{0}: amo ya establecido en {1}. {2}</RimWorldAccess.Animals.Paint.Single.MasterAlready>
   <RimWorldAccess.Animals.Paint.Single.MasterApplied>{0}: amo {1} aplicado. {2}</RimWorldAccess.Animals.Paint.Single.MasterApplied>
+  <RimWorldAccess.Animals.Paint.Single.MasterNotAllowed>{0}: no se puede establecer el amo en {1}. {2}</RimWorldAccess.Animals.Paint.Single.MasterNotAllowed>
   <RimWorldAccess.Animals.Paint.Single.CannotSetMedicalCare>{0}: no se puede establecer la atención médica. {1}</RimWorldAccess.Animals.Paint.Single.CannotSetMedicalCare>
   <RimWorldAccess.Animals.Paint.Single.MedicalCareAlready>{0}: atención médica ya establecida en {1}. {2}</RimWorldAccess.Animals.Paint.Single.MedicalCareAlready>
   <RimWorldAccess.Animals.Paint.Single.MedicalCareApplied>{0}: atención médica {1} aplicada. {2}</RimWorldAccess.Animals.Paint.Single.MedicalCareApplied>
@@ -129,6 +121,7 @@
        {2} = value label (checked/unchecked), {3} = position. -->
   <RimWorldAccess.Animals.Paint.Single.CellAlready>{0}: {1} ya {2}. {3}</RimWorldAccess.Animals.Paint.Single.CellAlready>
   <RimWorldAccess.Animals.Paint.Single.CellApplied>{0}: {1} {2}. {3}</RimWorldAccess.Animals.Paint.Single.CellApplied>
+  <RimWorldAccess.Animals.Paint.Single.CellSkipped>{0}: {1} {2} omitido, no aplicado. {3}</RimWorldAccess.Animals.Paint.Single.CellSkipped>
 
   <!-- Bulk paint summaries (Shift+Home / Shift+End / Ctrl+Shift+...).
        {0} = value/label, {1} = FormatNameList of changed animals.
@@ -142,13 +135,14 @@
   <!-- Generic checkbox/training bulk: {0} = column name, {1} = value,
        {2} = name list. AlreadyAll: {0} = column name, {1} = value. -->
   <RimWorldAccess.Animals.Paint.Bulk.CellApplied>{0} establecido en {1} para {2}</RimWorldAccess.Animals.Paint.Bulk.CellApplied>
+  <RimWorldAccess.Animals.Paint.Bulk.CellAppliedWithSkips>{0} establecido en {1} para {2}. {3} omitidos, no aplicados</RimWorldAccess.Animals.Paint.Bulk.CellAppliedWithSkips>
   <RimWorldAccess.Animals.Paint.Bulk.CellAlreadyAll>{0} ya está en {1} para todos los animales</RimWorldAccess.Animals.Paint.Bulk.CellAlreadyAll>
+  <RimWorldAccess.Animals.Paint.Bulk.CellSkippedAll>{0} {1} omitido para {2} animales, no aplicado</RimWorldAccess.Animals.Paint.Bulk.CellSkippedAll>
 
   <!-- =================================================================
        WildlifeMenuHelper column headers. Only "Name" and "Predator"
        are hard-coded here; the rest come from vanilla translation keys
        resolved in C# (DesignatorHunt, IsPredator, etc.). -->
-  <RimWorldAccess.Animals.Wildlife.Column.Name>Nombre</RimWorldAccess.Animals.Wildlife.Column.Name>
   <RimWorldAccess.Animals.Wildlife.Column.Predator>Depredador</RimWorldAccess.Animals.Wildlife.Column.Predator>
 
   <!-- =================================================================
@@ -156,7 +150,6 @@
   <RimWorldAccess.Animals.Wildlife.Menu.NoWildlife>No se encontró fauna salvaje en el mapa</RimWorldAccess.Animals.Wildlife.Menu.NoWildlife>
   <RimWorldAccess.Animals.Wildlife.Menu.OpeningTitle>Menú de fauna salvaje, {0} animales</RimWorldAccess.Animals.Wildlife.Menu.OpeningTitle>
   <RimWorldAccess.Animals.Wildlife.Menu.Closed>Menú de fauna salvaje cerrado</RimWorldAccess.Animals.Wildlife.Menu.Closed>
-  <RimWorldAccess.Animals.Wildlife.Menu.None>Sin fauna salvaje</RimWorldAccess.Animals.Wildlife.Menu.None>
   <RimWorldAccess.Animals.Wildlife.Menu.NotOnMap>El animal no está en el mapa</RimWorldAccess.Animals.Wildlife.Menu.NotOnMap>
   <RimWorldAccess.Animals.Wildlife.Menu.CannotTame>No se puede domesticar este animal</RimWorldAccess.Animals.Wildlife.Menu.CannotTame>
 
@@ -183,7 +176,6 @@
   <RimWorldAccess.Animals.AutoSlaughter.Menu.OpeningTitle>Configuración de sacrificio automático, {0} tipos de animales</RimWorldAccess.Animals.AutoSlaughter.Menu.OpeningTitle>
   <RimWorldAccess.Animals.AutoSlaughter.Menu.Closed>Sacrificio automático cerrado</RimWorldAccess.Animals.AutoSlaughter.Menu.Closed>
   <RimWorldAccess.Animals.AutoSlaughter.Menu.ClosedWithSummary>Sacrificio automático cerrado. {0}</RimWorldAccess.Animals.AutoSlaughter.Menu.ClosedWithSummary>
-  <RimWorldAccess.Animals.AutoSlaughter.Menu.NoAnimalsShort>Sin animales</RimWorldAccess.Animals.AutoSlaughter.Menu.NoAnimalsShort>
 
   <!-- Slaughter summary: {0} = comma-joined "{count} {species}" entries.
        The entry format itself is a key so non-English languages can
@@ -210,8 +202,6 @@
        WithName: {0} = animal LabelCap, {1} = column name, {2} = value,
          {3} = position suffix.
        WithoutName: {0} = column name, {1} = value. -->
-  <RimWorldAccess.Animals.AutoSlaughter.Cell.WithName>{0}, {1}: {2}. {3}</RimWorldAccess.Animals.AutoSlaughter.Cell.WithName>
-  <RimWorldAccess.Animals.AutoSlaughter.Cell.WithoutName>{0}: {1}</RimWorldAccess.Animals.AutoSlaughter.Cell.WithoutName>
 
   <!-- Numeric input mode. "minus" is spoken after the user presses the
        minus key so they hear confirmation of what's in the buffer;
@@ -225,6 +215,4 @@
   <!-- Auto-slaughter partial cell shapes (single-axis announcements).
        NameWithoutColumn: {0} = animal, {1} = value, {2} = position.
        ValueOnly: {0} = value, {1} = position. -->
-  <RimWorldAccess.Animals.AutoSlaughter.Cell.NameWithoutColumn>{0}: {1}. {2}</RimWorldAccess.Animals.AutoSlaughter.Cell.NameWithoutColumn>
-  <RimWorldAccess.Animals.AutoSlaughter.Cell.ValueOnly>{0}. {1}</RimWorldAccess.Animals.AutoSlaughter.Cell.ValueOnly>
 </LanguageData>

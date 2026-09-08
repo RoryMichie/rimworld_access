@@ -61,23 +61,6 @@
        Toggles CompFlickable. Power consumption suffixes use {0} = wattage.
        LabelPowerSwitch: {0} = building label, {1} = vanilla "On"/"Off". -->
 
-  <!-- Uninstall designation (src/Building/UninstallControlState.cs).
-       Toggles DesignationDefOf.Uninstall on minifiable buildings. Vanilla
-       "DesignatorUninstall" / "DesignatorUninstallDesc" supply the verb;
-       these keys are the announcement-shaped wrappers. -->
-  <RimWorldAccess.Building.Uninstall.NotMinifiable>Это сооружение нельзя убрать</RimWorldAccess.Building.Uninstall.NotMinifiable>
-  <RimWorldAccess.Building.Uninstall.DesignationRemoved>{0} - указание убрать отменено</RimWorldAccess.Building.Uninstall.DesignationRemoved>
-  <RimWorldAccess.Building.Uninstall.InstantlyUninstalled>{0} - мгновенно убрано</RimWorldAccess.Building.Uninstall.InstantlyUninstalled>
-  <RimWorldAccess.Building.Uninstall.DesignatedForUninstall>{0} - назначено к уборке</RimWorldAccess.Building.Uninstall.DesignatedForUninstall>
-  <RimWorldAccess.Building.Uninstall.LabelStatusDesignated>{0} - Состояние: назначено к уборке</RimWorldAccess.Building.Uninstall.LabelStatusDesignated>
-  <RimWorldAccess.Building.Uninstall.LabelStatusNotDesignated>{0} - Состояние: не назначено</RimWorldAccess.Building.Uninstall.LabelStatusNotDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailDesignated>Состояние: назначено к уборке</RimWorldAccess.Building.Uninstall.DetailDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailDisassemblerTip>Поселенец с навыком строительства разберёт это</RimWorldAccess.Building.Uninstall.DetailDisassemblerTip>
-  <RimWorldAccess.Building.Uninstall.DetailMinifiedTip>Сооружение будет превращено в переносимый предмет, который можно перемещать</RimWorldAccess.Building.Uninstall.DetailMinifiedTip>
-  <RimWorldAccess.Building.Uninstall.DetailNotDesignated>Состояние: не назначено к уборке</RimWorldAccess.Building.Uninstall.DetailNotDesignated>
-  <RimWorldAccess.Building.Uninstall.DetailCanUninstallTip>Это сооружение можно убрать, чтобы получить переносимый предмет</RimWorldAccess.Building.Uninstall.DetailCanUninstallTip>
-  <RimWorldAccess.Building.Uninstall.DetailHotkeyTip>Нажмите Пробел или Ввод, чтобы назначить к уборке</RimWorldAccess.Building.Uninstall.DetailHotkeyTip>
-
   <!-- Temperature control (src/Building/TempControlMenuState.cs).
        Adjusts CompTempControl.TargetTemperature. Vanilla "PowerConsumptionOff",
        "PowerConsumptionHigh", "PowerConsumptionLow" supply the power-mode
@@ -106,10 +89,7 @@
   <RimWorldAccess.Building.Refuel.OptionViewStatus>Подробное состояние топлива</RimWorldAccess.Building.Refuel.OptionViewStatus>
   <RimWorldAccess.Building.Refuel.AutoRefuelOn>Автозаправка: включено</RimWorldAccess.Building.Refuel.AutoRefuelOn>
   <RimWorldAccess.Building.Refuel.AutoRefuelOff>Автозаправка: выключено</RimWorldAccess.Building.Refuel.AutoRefuelOff>
-  <RimWorldAccess.Building.Refuel.ToggleValueOn>включено</RimWorldAccess.Building.Refuel.ToggleValueOn>
-  <RimWorldAccess.Building.Refuel.ToggleValueOff>выключено</RimWorldAccess.Building.Refuel.ToggleValueOff>
   <RimWorldAccess.Building.Refuel.TargetFuelLevelLabel>Целевой уровень топлива: {0} / {1}</RimWorldAccess.Building.Refuel.TargetFuelLevelLabel>
-  <RimWorldAccess.Building.Refuel.AdjustHint>Используйте стрелки влево и вправо для настройки. Сейчас: {0} из {1}</RimWorldAccess.Building.Refuel.AdjustHint>
   <RimWorldAccess.Building.Refuel.ClassicMortarStatus>Режим классических мортир, ствол не изнашивается</RimWorldAccess.Building.Refuel.ClassicMortarStatus>
   <RimWorldAccess.Building.Refuel.FuelStatusLine>{0}: {1} / {2}</RimWorldAccess.Building.Refuel.FuelStatusLine>
   <RimWorldAccess.Building.Refuel.RemainingTimeSuffix> ({0})</RimWorldAccess.Building.Refuel.RemainingTimeSuffix>
@@ -138,16 +118,15 @@
        Replaces the vanilla FloatMenu shown when an area designator is
        chosen from the architect tree. Delegates "No map" to Common.
        Open: {0} = the designator's own label (e.g. "Allowed area").
-       AreaWithCells: {0} = area label, {1} = cell count.
-       Position keys come from RimWorldAccess.Menu.Position. -->
+       CellCount: {0} = cell count, spoken as the composer's Extras fragment.
+       Position is now composed from ElementDescription.PositionIndex/Count. -->
   <RimWorldAccess.Building.AreaSelect.NoAreasAvailable>Нет доступных областей. Сначала создайте область с помощью пункта «Управление областями».</RimWorldAccess.Building.AreaSelect.NoAreasAvailable>
   <RimWorldAccess.Building.AreaSelect.OpenPrompt>{0}. Выберите область.</RimWorldAccess.Building.AreaSelect.OpenPrompt>
   <RimWorldAccess.Building.AreaSelect.Selected>Выбрано: {0}</RimWorldAccess.Building.AreaSelect.Selected>
   <RimWorldAccess.Building.AreaSelect.Cancelled>Выбор области отменён</RimWorldAccess.Building.AreaSelect.Cancelled>
   <RimWorldAccess.Building.AreaSelect.ManageAreas>Управление областями</RimWorldAccess.Building.AreaSelect.ManageAreas>
-  <RimWorldAccess.Building.AreaSelect.AreaWithCells>{0}, {1_numCase ? клетка : клетки : клеток}</RimWorldAccess.Building.AreaSelect.AreaWithCells>
+  <RimWorldAccess.Building.AreaSelect.CellCount>{0_numCase ? клетка : клетки : клеток}</RimWorldAccess.Building.AreaSelect.CellCount>
   <RimWorldAccess.Building.AreaSelect.OpenFallbackName>Область</RimWorldAccess.Building.AreaSelect.OpenFallbackName>
-  <RimWorldAccess.Building.AreaSelect.ItemWithPosition>{0}, {1}</RimWorldAccess.Building.AreaSelect.ItemWithPosition>
 
   <!-- Shape selection menu (src/Building/ShapeSelectionMenuState.cs).
        Picks a placement shape (Line / Rectangle / Oval) from the architect
@@ -156,8 +135,6 @@
        ShapeWithPosition: {0} = shape name, {1} = position, {2} = description.
        ShapeNoPosition: {0} = shape name, {1} = description. -->
   <RimWorldAccess.Building.ShapeSelect.MenuOpened>Меню форм</RimWorldAccess.Building.ShapeSelect.MenuOpened>
-  <RimWorldAccess.Building.ShapeSelect.ShapeWithPosition>{0}, {1}. {2}</RimWorldAccess.Building.ShapeSelect.ShapeWithPosition>
-  <RimWorldAccess.Building.ShapeSelect.ShapeNoPosition>{0}. {1}</RimWorldAccess.Building.ShapeSelect.ShapeNoPosition>
   <RimWorldAccess.Building.ShapeSelect.ShapeSelected>{0} выбрано</RimWorldAccess.Building.ShapeSelect.ShapeSelected>
   <RimWorldAccess.Building.ShapeSelect.Cancelled>Выбор формы отменён</RimWorldAccess.Building.ShapeSelect.Cancelled>
 
@@ -178,20 +155,8 @@
        count, {2} = staged total (Regular only adds the dimension info). -->
   <RimWorldAccess.Building.Paint.ModeBox>Режим прямоугольного выделения</RimWorldAccess.Building.Paint.ModeBox>
   <RimWorldAccess.Building.Paint.ModeSingle>Режим выделения по одной клетке</RimWorldAccess.Building.Paint.ModeSingle>
-  <RimWorldAccess.Building.Paint.ShapeChanged>Форма: {0}</RimWorldAccess.Building.Paint.ShapeChanged>
-  <RimWorldAccess.Building.Paint.ShapeUnavailable>Форма недоступна для этого типа области</RimWorldAccess.Building.Paint.ShapeUnavailable>
-  <RimWorldAccess.Building.Paint.PromptHint>Tab для смены режима. Ввод для подтверждения, Escape для отмены</RimWorldAccess.Building.Paint.PromptHint>
-  <RimWorldAccess.Building.Paint.EnterExpand>Расширение области: {0}. Режим: {1}. {2}</RimWorldAccess.Building.Paint.EnterExpand>
-  <RimWorldAccess.Building.Paint.EnterShrink>Уменьшение области: {0}. Режим: {1}. {2}</RimWorldAccess.Building.Paint.EnterShrink>
   <RimWorldAccess.Building.Paint.NoShapeToConfirm>Нет формы для подтверждения</RimWorldAccess.Building.Paint.NoShapeToConfirm>
-  <RimWorldAccess.Building.Paint.PositionOutOfBounds>Позиция за границами</RimWorldAccess.Building.Paint.PositionOutOfBounds>
   <RimWorldAccess.Building.Paint.Deselected>Снято выделение, {0}, {1}</RimWorldAccess.Building.Paint.Deselected>
-  <RimWorldAccess.Building.Paint.NoCellsSelected>Клетки не выбраны. Область без изменений.</RimWorldAccess.Building.Paint.NoCellsSelected>
-  <RimWorldAccess.Building.Paint.AddedTo>{0_numCase ? клетка добавлена : клетки добавлены : клеток добавлено} в {1}. Всего клеток: {2}</RimWorldAccess.Building.Paint.AddedTo>
-  <RimWorldAccess.Building.Paint.RemovedFrom>{0_numCase ? клетка удалена : клетки удалены : клеток удалено} из {1}. Всего клеток: {2}</RimWorldAccess.Building.Paint.RemovedFrom>
-  <RimWorldAccess.Building.Paint.Cancelled>Редактирование области отменено</RimWorldAccess.Building.Paint.Cancelled>
-  <RimWorldAccess.Building.Paint.ConfirmShapeRegular>{0}, {1_numCase ? клетка добавлена : клетки добавлены : клеток добавлено}. Всего: {2}</RimWorldAccess.Building.Paint.ConfirmShapeRegular>
-  <RimWorldAccess.Building.Paint.ConfirmShapeIrregular>{0_numCase ? клетка добавлена : клетки добавлены : клеток добавлено}. Всего: {1}</RimWorldAccess.Building.Paint.ConfirmShapeIrregular>
 
   <!-- Zone editing (src/Building/ZoneEditingHelper.cs + GizmoZoneEditState.cs).
        Returned in ZoneEditResult.Message and announced when a cell is
@@ -203,6 +168,8 @@
   <RimWorldAccess.Building.Zone.NoZoneSelectedForEditing>Не выбрана область для редактирования</RimWorldAccess.Building.Zone.NoZoneSelectedForEditing>
   <RimWorldAccess.Building.Zone.NoZoneAtLocation>В этом месте нет области для редактирования</RimWorldAccess.Building.Zone.NoZoneAtLocation>
   <RimWorldAccess.Building.Zone.CannotRemoveOriginalCell>Нельзя удалить исходную клетку области при расширении</RimWorldAccess.Building.Zone.CannotRemoveOriginalCell>
+  <RimWorldAccess.Building.Zone.NowExpanding>Расширяется {0}</RimWorldAccess.Building.Zone.NowExpanding>
+  <RimWorldAccess.Building.Zone.AdjacentZonesAmbiguous>Рядом несколько областей. Нажмите Пробел на клетке нужной области</RimWorldAccess.Building.Zone.AdjacentZonesAmbiguous>
   <RimWorldAccess.Building.Zone.WouldDisconnect>Нельзя удалить клетку, это разорвёт область</RimWorldAccess.Building.Zone.WouldDisconnect>
   <RimWorldAccess.Building.Zone.CellAlreadyInThisZone>Клетка уже в этой области</RimWorldAccess.Building.Zone.CellAlreadyInThisZone>
   <RimWorldAccess.Building.Zone.CellInOtherZone>Клетка в {0}</RimWorldAccess.Building.Zone.CellInOtherZone>
@@ -226,7 +193,6 @@
        CavePlantExposed: {0} = plant LabelCap. -->
   <RimWorldAccess.Building.PlantSelect.OpenPrompt>Выбор растения. Текущая культура: {0}</RimWorldAccess.Building.PlantSelect.OpenPrompt>
   <RimWorldAccess.Building.PlantSelect.Selected>Выбрано: {0}</RimWorldAccess.Building.PlantSelect.Selected>
-  <RimWorldAccess.Building.PlantSelect.SelectionWithDetail>{0}. {1}</RimWorldAccess.Building.PlantSelect.SelectionWithDetail>
   <RimWorldAccess.Building.PlantSelect.NoColonistCanPlant>ВНИМАНИЕ: ни один поселенец не может посадить {0} (требуется навык растениеводства {1})</RimWorldAccess.Building.PlantSelect.NoColonistCanPlant>
   <RimWorldAccess.Building.PlantSelect.CavePlantExposed>ВНИМАНИЕ: {0} - пещерное растение, но в области есть клетки, открытые свету</RimWorldAccess.Building.PlantSelect.CavePlantExposed>
 
@@ -238,26 +204,13 @@
        AreaWithCellsAndPosition: {0} = label, {1} = cell count, {2} = position.
        AreaWithCellsNoPosition: {0} = label, {1} = cell count.
        Action.* keys are the per-action menu rows. -->
-  <RimWorldAccess.Building.AreaMgr.Closed>Управление областями закрыто</RimWorldAccess.Building.AreaMgr.Closed>
   <RimWorldAccess.Building.AreaMgr.MaxAreasReached>Нельзя создать область. Достигнут максимум в 10 областей.</RimWorldAccess.Building.AreaMgr.MaxAreasReached>
-  <RimWorldAccess.Building.AreaMgr.MaxAreasReachedCopy>Нельзя скопировать область. Достигнут максимум в 10 областей.</RimWorldAccess.Building.AreaMgr.MaxAreasReachedCopy>
   <RimWorldAccess.Building.AreaMgr.CreatedNewArea>Создана новая область: {0}</RimWorldAccess.Building.AreaMgr.CreatedNewArea>
   <RimWorldAccess.Building.AreaMgr.RenamePrompt>Переименование области: {0}. Введите новое имя и нажмите Ввод.</RimWorldAccess.Building.AreaMgr.RenamePrompt>
-  <RimWorldAccess.Building.AreaMgr.Inverted>Область инвертирована: {0}. Все клетки переключены.</RimWorldAccess.Building.AreaMgr.Inverted>
+  <RimWorldAccess.Building.AreaMgr.Inverted>Область инвертирована: {0}. Теперь {1} из {2} клеток.</RimWorldAccess.Building.AreaMgr.Inverted>
   <RimWorldAccess.Building.AreaMgr.CopiedTo>Область скопирована в: {0}</RimWorldAccess.Building.AreaMgr.CopiedTo>
   <RimWorldAccess.Building.AreaMgr.Deleted>Область удалена: {0}</RimWorldAccess.Building.AreaMgr.Deleted>
-  <RimWorldAccess.Building.AreaMgr.AreaWithCellsAndPosition>{0} ({1_numCase ? клетка : клетки : клеток}), {2}. Нажмите правую квадратную скобку для действий.</RimWorldAccess.Building.AreaMgr.AreaWithCellsAndPosition>
-  <RimWorldAccess.Building.AreaMgr.AreaWithCellsNoPosition>{0} ({1_numCase ? клетка : клетки : клеток}). Нажмите правую квадратную скобку для действий.</RimWorldAccess.Building.AreaMgr.AreaWithCellsNoPosition>
-  <RimWorldAccess.Building.AreaMgr.NoAreasAvailable>Нет доступных областей. Нажмите правую квадратную скобку, чтобы создать одну.</RimWorldAccess.Building.AreaMgr.NoAreasAvailable>
-  <RimWorldAccess.Building.AreaMgr.ActionWithPosition>{0}, {1}</RimWorldAccess.Building.AreaMgr.ActionWithPosition>
-  <RimWorldAccess.Building.AreaMgr.Action.NewArea>Новая область</RimWorldAccess.Building.AreaMgr.Action.NewArea>
-  <RimWorldAccess.Building.AreaMgr.Action.RenameArea>Переименовать область</RimWorldAccess.Building.AreaMgr.Action.RenameArea>
-  <RimWorldAccess.Building.AreaMgr.Action.ExpandArea>Расширить область</RimWorldAccess.Building.AreaMgr.Action.ExpandArea>
-  <RimWorldAccess.Building.AreaMgr.Action.ShrinkArea>Уменьшить область</RimWorldAccess.Building.AreaMgr.Action.ShrinkArea>
-  <RimWorldAccess.Building.AreaMgr.Action.InvertArea>Инвертировать область</RimWorldAccess.Building.AreaMgr.Action.InvertArea>
-  <RimWorldAccess.Building.AreaMgr.Action.CopyArea>Копировать область</RimWorldAccess.Building.AreaMgr.Action.CopyArea>
-  <RimWorldAccess.Building.AreaMgr.Action.DeleteArea>Удалить область</RimWorldAccess.Building.AreaMgr.Action.DeleteArea>
-  <RimWorldAccess.Building.AreaMgr.Action.Close>Закрыть</RimWorldAccess.Building.AreaMgr.Action.Close>
+  <RimWorldAccess.Building.AreaMgr.ColorFixed>Цвет этой области нельзя изменить.</RimWorldAccess.Building.AreaMgr.ColorFixed>
 
   <!-- Shape names + descriptions (src/Building/ShapeHelper.cs).
        Spoken by every menu that lets the user pick a placement shape
@@ -337,12 +290,31 @@
   <RimWorldAccess.Building.Place.PlacingDesignator>Размещение: {0}</RimWorldAccess.Building.Place.PlacingDesignator>
   <RimWorldAccess.Building.Place.SizeOneTile>Размер: 1 клетка</RimWorldAccess.Building.Place.SizeOneTile>
   <RimWorldAccess.Building.Place.SizeWxH>Размер: {0}x{1}</RimWorldAccess.Building.Place.SizeWxH>
+  <RimWorldAccess.Building.Place.SpotScannerCategory>Места для размещения: {0}</RimWorldAccess.Building.Place.SpotScannerCategory>
+  <RimWorldAccess.Building.Place.SpotScannerItemLabel>Место</RimWorldAccess.Building.Place.SpotScannerItemLabel>
+  <RimWorldAccess.Building.Place.SpotFacing>лицом к {0}</RimWorldAccess.Building.Place.SpotFacing>
+  <RimWorldAccess.Building.Place.SpacingInRange>{0_numCase ? клетка : клетки : клеток} друг от друга, интервал правильный</RimWorldAccess.Building.Place.SpacingInRange>
+  <RimWorldAccess.Building.Place.SpacingOutOfRange>{0_numCase ? клетка : клетки : клеток} друг от друга, интервал неправильный</RimWorldAccess.Building.Place.SpacingOutOfRange>
+  <RimWorldAccess.Building.Place.OutlineOkAt>Требуемая область, {0} на {1}, {2_numCase ? клетка : клетки : клеток} {3}, подходит</RimWorldAccess.Building.Place.OutlineOkAt>
+  <RimWorldAccess.Building.Place.OutlineOkHere>Требуемая область, {0} на {1}, под курсором, подходит</RimWorldAccess.Building.Place.OutlineOkHere>
+  <RimWorldAccess.Building.Place.OutlineBadAt>Требуемая область, {0} на {1}, {2_numCase ? клетка : клетки : клеток} {3}, не подходит</RimWorldAccess.Building.Place.OutlineBadAt>
+  <RimWorldAccess.Building.Place.OutlineBadHere>Требуемая область, {0} на {1}, под курсором, не подходит</RimWorldAccess.Building.Place.OutlineBadHere>
+  <RimWorldAccess.Building.Place.WatermillWheelOkAt>Водяное колесо, {0} на {1}, {2_numCase ? клетка : клетки : клеток} {3}, на проточной воде</RimWorldAccess.Building.Place.WatermillWheelOkAt>
+  <RimWorldAccess.Building.Place.WatermillWheelOkHere>Водяное колесо, {0} на {1}, под курсором, на проточной воде</RimWorldAccess.Building.Place.WatermillWheelOkHere>
+  <RimWorldAccess.Building.Place.WatermillWheelBadAt>Водяное колесо, {0} на {1}, {2_numCase ? клетка : клетки : клеток} {3}, не на проточной воде</RimWorldAccess.Building.Place.WatermillWheelBadAt>
+  <RimWorldAccess.Building.Place.WatermillWheelBadHere>Водяное колесо, {0} на {1}, под курсором, не на проточной воде</RimWorldAccess.Building.Place.WatermillWheelBadHere>
+  <RimWorldAccess.Building.Place.WatermillFlowOkAt>Зона водного потока, {0} на {1}, {2_numCase ? клетка : клетки : клеток} {3}, не используется совместно</RimWorldAccess.Building.Place.WatermillFlowOkAt>
+  <RimWorldAccess.Building.Place.WatermillFlowOkHere>Зона водного потока, {0} на {1}, под курсором, не используется совместно</RimWorldAccess.Building.Place.WatermillFlowOkHere>
+  <RimWorldAccess.Building.Place.WatermillFlowSharedAt>Зона водного потока, {0} на {1}, {2_numCase ? клетка : клетки : клеток} {3}, используется совместно с другой водяной мельницей</RimWorldAccess.Building.Place.WatermillFlowSharedAt>
+  <RimWorldAccess.Building.Place.WatermillFlowSharedHere>Зона водного потока, {0} на {1}, под курсором, используется совместно с другой водяной мельницей</RimWorldAccess.Building.Place.WatermillFlowSharedHere>
   <RimWorldAccess.Building.Place.HintManualOrder>Перейдите к целям, Пробел для выбора, Ввод для подтверждения, Tab для форм, Escape для отмены</RimWorldAccess.Building.Place.HintManualOrder>
   <RimWorldAccess.Building.Place.HintManualBuildRotatable>Перейдите на позицию и нажмите Пробел для размещения, R для поворота, Escape для отмены</RimWorldAccess.Building.Place.HintManualBuildRotatable>
   <RimWorldAccess.Building.Place.HintManualBuildFixed>Перейдите на позицию и нажмите Пробел для размещения, Escape для отмены</RimWorldAccess.Building.Place.HintManualBuildFixed>
   <RimWorldAccess.Building.Place.HintShape>Перейдите к первой точке и нажмите Пробел</RimWorldAccess.Building.Place.HintShape>
   <RimWorldAccess.Building.Place.PlacedBuild>Размещено {0} {1}{2}</RimWorldAccess.Building.Place.PlacedBuild>
   <RimWorldAccess.Building.Place.PlacedCostSuffix> ({0} {1})</RimWorldAccess.Building.Place.PlacedCostSuffix>
+  <RimWorldAccess.Building.Place.PlacedCostItem>{0} {1}</RimWorldAccess.Building.Place.PlacedCostItem>
+  <RimWorldAccess.Building.Place.PlacedCostSuffixMulti> ({0})</RimWorldAccess.Building.Place.PlacedCostSuffixMulti>
   <RimWorldAccess.Building.Place.DesignatedFor>Назначено {0} для {1}</RimWorldAccess.Building.Place.DesignatedFor>
   <RimWorldAccess.Building.Place.NoBlueprintsPlaced>Проекты не размещены</RimWorldAccess.Building.Place.NoBlueprintsPlaced>
   <RimWorldAccess.Building.Place.NoDesignationsPlaced>Указания не размещены</RimWorldAccess.Building.Place.NoDesignationsPlaced>
@@ -350,6 +322,9 @@
   <RimWorldAccess.Building.Place.MeditationDisableHint>Отключите переключатель предупреждений на дереве, чтобы строить здесь</RimWorldAccess.Building.Place.MeditationDisableHint>
   <!-- {0} = comma-joined protecting thing labels, {1} = MeditationDisableHint. -->
   <RimWorldAccess.Building.Place.MeditationProtectedBy>Защищено: {0}. {1}.</RimWorldAccess.Building.Place.MeditationProtectedBy>
+  <RimWorldAccess.Building.Place.WillReplaceSuffix>Будет заменено: {0}</RimWorldAccess.Building.Place.WillReplaceSuffix>
+  <RimWorldAccess.Building.Place.WillReplaceItem>{0} x{1}</RimWorldAccess.Building.Place.WillReplaceItem>
+  <RimWorldAccess.Building.Place.WillReplaceConfirm>Будет заменено: {0}. Нажмите Пробел ещё раз для размещения</RimWorldAccess.Building.Place.WillReplaceConfirm>
   <RimWorldAccess.Building.Place.Action.haul>перенос</RimWorldAccess.Building.Place.Action.haul>
   <RimWorldAccess.Building.Place.Action.hunt>охота</RimWorldAccess.Building.Place.Action.hunt>
   <RimWorldAccess.Building.Place.Action.mine>добыча</RimWorldAccess.Building.Place.Action.mine>
@@ -381,51 +356,9 @@
        "zone" fallback (this is a different fallback than
        Building.Zone.FallbackName, which is for zone.label being null). -->
   <RimWorldAccess.Building.Create.CannotRemoveDisconnect>Нельзя удалить, это разорвёт выделение</RimWorldAccess.Building.Create.CannotRemoveDisconnect>
-  <RimWorldAccess.Building.Create.Deselected>Снято выделение, {0}, {1}. Всего: {2}</RimWorldAccess.Building.Create.Deselected>
-  <RimWorldAccess.Building.Create.SelectedWithTotal>{0}. Всего: {1}</RimWorldAccess.Building.Create.SelectedWithTotal>
-  <RimWorldAccess.Building.Create.CellOutOfBounds>Клетка за границами</RimWorldAccess.Building.Create.CellOutOfBounds>
   <RimWorldAccess.Building.Create.CellAlreadyInZone>Клетка уже в {0}</RimWorldAccess.Building.Create.CellAlreadyInZone>
-  <RimWorldAccess.Building.Create.CannotPlaceZoneHere>Нельзя разместить область здесь</RimWorldAccess.Building.Create.CannotPlaceZoneHere>
   <RimWorldAccess.Building.Create.MustBeAdjacentToSelection>Клетка должна примыкать к выделению</RimWorldAccess.Building.Create.MustBeAdjacentToSelection>
-  <RimWorldAccess.Building.Create.ShapeUnavailable>Форма недоступна для этого типа области</RimWorldAccess.Building.Create.ShapeUnavailable>
-  <RimWorldAccess.Building.Create.ShapeInstructions>Режим: {0}. Пробел для установки углов. Tab для смены режимов. Ввод для создания, Escape для отмены.</RimWorldAccess.Building.Create.ShapeInstructions>
-  <RimWorldAccess.Building.Create.ExpandShrinkInstructions>Режим: {0}. Нажмите Пробел для установки углов, Ввод для подтверждения, Escape для отмены.</RimWorldAccess.Building.Create.ExpandShrinkInstructions>
-  <RimWorldAccess.Building.Create.OpenCreating>Создание: {0}. {1}</RimWorldAccess.Building.Create.OpenCreating>
-  <RimWorldAccess.Building.Create.OpenExpanding>Расширение: {0}. Сейчас выбрано {1_numCase ? клетка : клетки : клеток}. {2}</RimWorldAccess.Building.Create.OpenExpanding>
-  <RimWorldAccess.Building.Create.OpenShrinking>Уменьшение: {0}. Выберите клетки для удаления. {1}</RimWorldAccess.Building.Create.OpenShrinking>
-  <RimWorldAccess.Building.Create.NoZoneProvidedExpand>Нельзя расширить: область не указана</RimWorldAccess.Building.Create.NoZoneProvidedExpand>
-  <RimWorldAccess.Building.Create.NoZoneProvidedShrink>Нельзя уменьшить: область не указана</RimWorldAccess.Building.Create.NoZoneProvidedShrink>
-  <RimWorldAccess.Building.Create.NoCellsZoneNotCreated>Клетки не выбраны. Область не создана.</RimWorldAccess.Building.Create.NoCellsZoneNotCreated>
-  <RimWorldAccess.Building.Create.NoCellsZoneUnchanged>Клетки не выбраны. Область без изменений.</RimWorldAccess.Building.Create.NoCellsZoneUnchanged>
-  <RimWorldAccess.Building.Create.MaxAllowedAreasReached>Нельзя создать больше доступных областей. Достигнут максимум в 10.</RimWorldAccess.Building.Create.MaxAllowedAreasReached>
-  <RimWorldAccess.Building.Create.HomeAreaNotFound>Ошибка: домашняя область не найдена</RimWorldAccess.Building.Create.HomeAreaNotFound>
-  <RimWorldAccess.Building.Create.NoZoneToModify>Ошибка: нет области для изменения</RimWorldAccess.Building.Create.NoZoneToModify>
-  <RimWorldAccess.Building.Create.AllCellsRemovedZoneDeleted>Все клетки удалены. Область удалена.</RimWorldAccess.Building.Create.AllCellsRemovedZoneDeleted>
-  <RimWorldAccess.Building.Create.AllCellsRemovedNamedDeleted>Все клетки удалены. {0}: удалено.</RimWorldAccess.Building.Create.AllCellsRemovedNamedDeleted>
-  <RimWorldAccess.Building.Create.ZoneCreated>{0}: создано, {1_numCase ? клетка : клетки : клеток}.{2}</RimWorldAccess.Building.Create.ZoneCreated>
-  <RimWorldAccess.Building.Create.ObstaclesFoundSuffix> Найдено {0_numCase ? препятствие : препятствия : препятствий}.</RimWorldAccess.Building.Create.ObstaclesFoundSuffix>
-  <RimWorldAccess.Building.Create.ObstaclesInNewAreaSuffix>. {0_numCase ? препятствие : препятствия : препятствий} в новой области.</RimWorldAccess.Building.Create.ObstaclesInNewAreaSuffix>
-  <RimWorldAccess.Building.Create.RemovedCellsFromZone>Удалено {0_numCase ? клетка : клетки : клеток} из {1}. Осталось {2_numCase ? клетка : клетки : клеток}.</RimWorldAccess.Building.Create.RemovedCellsFromZone>
-  <RimWorldAccess.Building.Create.UpdatePrefix>{0} обновлено: </RimWorldAccess.Building.Create.UpdatePrefix>
-  <RimWorldAccess.Building.Create.UpdateAddedAndRemoved>добавлено {0}, удалено {1_numCase ? клетка : клетки : клеток}</RimWorldAccess.Building.Create.UpdateAddedAndRemoved>
-  <RimWorldAccess.Building.Create.UpdateAddedOnly>добавлено {0_numCase ? клетка : клетки : клеток}</RimWorldAccess.Building.Create.UpdateAddedOnly>
-  <RimWorldAccess.Building.Create.UpdateRemovedOnly>удалено {0_numCase ? клетка : клетки : клеток}</RimWorldAccess.Building.Create.UpdateRemovedOnly>
-  <RimWorldAccess.Building.Create.UpdateNoChanges>без изменений</RimWorldAccess.Building.Create.UpdateNoChanges>
-  <RimWorldAccess.Building.Create.AllowedAreaName>Доступная область «{0}»</RimWorldAccess.Building.Create.AllowedAreaName>
   <RimWorldAccess.Building.Create.ErrorCreatingZone>Ошибка создания области: {0}</RimWorldAccess.Building.Create.ErrorCreatingZone>
-  <RimWorldAccess.Building.Create.ErrorExpandingZone>Ошибка расширения области: {0}</RimWorldAccess.Building.Create.ErrorExpandingZone>
-  <RimWorldAccess.Building.Create.ErrorShrinkingZone>Ошибка уменьшения области: {0}</RimWorldAccess.Building.Create.ErrorShrinkingZone>
-  <RimWorldAccess.Building.Create.Cancelled>Создание области отменено</RimWorldAccess.Building.Create.Cancelled>
-  <RimWorldAccess.Building.Create.ZoneTypeName.Stockpile>складская область</RimWorldAccess.Building.Create.ZoneTypeName.Stockpile>
-  <RimWorldAccess.Building.Create.ZoneTypeName.DumpingStockpile>область свалки</RimWorldAccess.Building.Create.ZoneTypeName.DumpingStockpile>
-  <RimWorldAccess.Building.Create.ZoneTypeName.GrowingZone>область посадок</RimWorldAccess.Building.Create.ZoneTypeName.GrowingZone>
-  <RimWorldAccess.Building.Create.ZoneTypeName.AllowedArea>доступная область</RimWorldAccess.Building.Create.ZoneTypeName.AllowedArea>
-  <RimWorldAccess.Building.Create.ZoneTypeName.HomeZone>домашняя область</RimWorldAccess.Building.Create.ZoneTypeName.HomeZone>
-  <RimWorldAccess.Building.Create.ZoneTypeName.Default>область</RimWorldAccess.Building.Create.ZoneTypeName.Default>
-  <RimWorldAccess.Building.Create.ZoneCapped.Stockpile>Складская область</RimWorldAccess.Building.Create.ZoneCapped.Stockpile>
-  <RimWorldAccess.Building.Create.ZoneCapped.DumpingStockpile>Область свалки</RimWorldAccess.Building.Create.ZoneCapped.DumpingStockpile>
-  <RimWorldAccess.Building.Create.ZoneCapped.GrowingZone>Область посадок</RimWorldAccess.Building.Create.ZoneCapped.GrowingZone>
-  <RimWorldAccess.Building.Create.ZoneCapped.HomeZone>Домашняя область</RimWorldAccess.Building.Create.ZoneCapped.HomeZone>
 
   <!-- Viewing mode (src/Building/ViewingModeState.cs).
        Post-placement preview. Shape-name-and-description data still flows
@@ -454,6 +387,10 @@
   <RimWorldAccess.Building.View.CancelledBlueprint>Отменено: {0}</RimWorldAccess.Building.View.CancelledBlueprint>
   <RimWorldAccess.Building.View.ActionRestored>Восстановлено</RimWorldAccess.Building.View.ActionRestored>
   <RimWorldAccess.Building.View.ActionRemoved>Удалено</RimWorldAccess.Building.View.ActionRemoved>
+  <RimWorldAccess.Building.View.RemovedZoneSizeZero>0 клеток области</RimWorldAccess.Building.View.RemovedZoneSizeZero>
+  <RimWorldAccess.Building.View.RemovedZoneSizeOne>1 клетка области</RimWorldAccess.Building.View.RemovedZoneSizeOne>
+  <RimWorldAccess.Building.View.RemovedZoneSizeMany>{0_numCase ? клетка области : клетки области : клеток области}</RimWorldAccess.Building.View.RemovedZoneSizeMany>
+  <RimWorldAccess.Building.View.RemovedZoneSizeWxH>{0} на {1} области</RimWorldAccess.Building.View.RemovedZoneSizeWxH>
   <RimWorldAccess.Building.View.SegmentRemovedSomeRemain>{0} {1} ({2}). Осталось {3}{4}.</RimWorldAccess.Building.View.SegmentRemovedSomeRemain>
   <RimWorldAccess.Building.View.SegmentRemovedNoneRemain>{0} {1} ({2}). Сегментов не осталось.</RimWorldAccess.Building.View.SegmentRemovedNoneRemain>
   <RimWorldAccess.Building.View.RemainingInShapeSuffix> в {0}</RimWorldAccess.Building.View.RemainingInShapeSuffix>
@@ -745,6 +682,7 @@
   <RimWorldAccess.Building.Architect.CategorySelected>Выбрана категория: {0}. Выберите инструмент</RimWorldAccess.Building.Architect.CategorySelected>
   <RimWorldAccess.Building.Architect.SelectMaterialFor>Выберите материал для {0}</RimWorldAccess.Building.Architect.SelectMaterialFor>
   <RimWorldAccess.Building.Architect.Facing>Лицом к: {0}</RimWorldAccess.Building.Architect.Facing>
+  <RimWorldAccess.Building.Architect.NowFacing>Теперь лицом к: {0}</RimWorldAccess.Building.Architect.NowFacing>
   <RimWorldAccess.Building.Architect.SizeWxH>Размер: {0} на {1}</RimWorldAccess.Building.Architect.SizeWxH>
   <RimWorldAccess.Building.Architect.ExtendDirection>{0} {1}</RimWorldAccess.Building.Architect.ExtendDirection>
   <RimWorldAccess.Building.Architect.Extends>Простирается {0}</RimWorldAccess.Building.Architect.Extends>
@@ -826,18 +764,19 @@
   <RimWorldAccess.Building.ArchitectPlace.GravshipFacing>Гравикорабль лицом к {0}.</RimWorldAccess.Building.ArchitectPlace.GravshipFacing>
   <RimWorldAccess.Building.ArchitectPlace.ErrorPlacing>Ошибка размещения: {0}</RimWorldAccess.Building.ArchitectPlace.ErrorPlacing>
   <RimWorldAccess.Building.ArchitectPlace.InvalidReason>Недопустимо: {0}</RimWorldAccess.Building.ArchitectPlace.InvalidReason>
+  <RimWorldAccess.Building.ArchitectPlace.CanPlaceHere>Можно разместить</RimWorldAccess.Building.ArchitectPlace.CanPlaceHere>
   <RimWorldAccess.Building.ArchitectPlace.GravshipPositioned>Гравикорабль расположен в {0}, {1}. Выберите маркер посадки и используйте гизмо для подтверждения посадки.</RimWorldAccess.Building.ArchitectPlace.GravshipPositioned>
   <!-- {0} = footprint width, {1} = footprint height (cells). -->
   <RimWorldAccess.Building.ArchitectPlace.GravshipLandingPrompt>Разместите зону посадки гравикорабля. Площадь: {0} на {1} клеток. Стрелки для перемещения, R для поворота, Пробел для размещения.</RimWorldAccess.Building.ArchitectPlace.GravshipLandingPrompt>
   <RimWorldAccess.Building.ArchitectPlace.NoZoneCellsTryAgain>В выделении нет клеток области. Попробуйте снова.</RimWorldAccess.Building.ArchitectPlace.NoZoneCellsTryAgain>
   <RimWorldAccess.Building.ArchitectPlace.NoValidCellsTryAgain>В выделении нет допустимых клеток. Попробуйте снова.</RimWorldAccess.Building.ArchitectPlace.NoValidCellsTryAgain>
   <RimWorldAccess.Building.ArchitectPlace.PlacementFailedClearing>Размещение не удалось. Очистка выделения.</RimWorldAccess.Building.ArchitectPlace.PlacementFailedClearing>
-  <RimWorldAccess.Building.ArchitectPlace.PlaceFirstPoint>Поставьте первую точку Пробелом</RimWorldAccess.Building.ArchitectPlace.PlaceFirstPoint>
   <RimWorldAccess.Building.ArchitectPlace.PlaceSecondPoint>Поставьте вторую точку Пробелом</RimWorldAccess.Building.ArchitectPlace.PlaceSecondPoint>
   <RimWorldAccess.Building.ArchitectPlace.PlacementCompleted>Размещение завершено</RimWorldAccess.Building.ArchitectPlace.PlacementCompleted>
   <RimWorldAccess.Building.ArchitectPlace.ZoneEditingCompleted>Редактирование области завершено</RimWorldAccess.Building.ArchitectPlace.ZoneEditingCompleted>
   <RimWorldAccess.Building.ArchitectPlace.SelectionCleared>Выделение очищено</RimWorldAccess.Building.ArchitectPlace.SelectionCleared>
-  <RimWorldAccess.Building.ArchitectPlace.PlacementCancelled>Размещение отменено</RimWorldAccess.Building.ArchitectPlace.PlacementCancelled>
+  <RimWorldAccess.Building.ArchitectPlace.ExitedPlacement>Режим размещения закрыт.</RimWorldAccess.Building.ArchitectPlace.ExitedPlacement>
+  <RimWorldAccess.Building.ArchitectPlace.ExitedZoneEditing>Редактирование зоны закрыто.</RimWorldAccess.Building.ArchitectPlace.ExitedZoneEditing>
   <RimWorldAccess.Building.ArchitectPlace.InvalidTargetPosition>Недопустимая позиция цели</RimWorldAccess.Building.ArchitectPlace.InvalidTargetPosition>
   <RimWorldAccess.Building.ArchitectPlace.CannotLandHere>Нельзя приземлиться здесь: {0}</RimWorldAccess.Building.ArchitectPlace.CannotLandHere>
   <RimWorldAccess.Building.ArchitectPlace.LandingConfirmed>Посадка подтверждена в {0}, {1}</RimWorldAccess.Building.ArchitectPlace.LandingConfirmed>
@@ -877,6 +816,7 @@
   -->
   <RimWorldAccess.Building.ArchitectTree.MenuOpened>Меню строительства</RimWorldAccess.Building.ArchitectTree.MenuOpened>
   <RimWorldAccess.Building.ArchitectTree.NoCategories>Нет доступных категорий строительства</RimWorldAccess.Building.ArchitectTree.NoCategories>
+  <RimWorldAccess.Building.ArchitectTree.RegionName>Строительство</RimWorldAccess.Building.ArchitectTree.RegionName>
 
   <!-- =================================================================
        Facility link info (FacilityLinkHelper). Spoken on placement of
@@ -943,6 +883,11 @@
   <RimWorldAccess.Building.View.ItemTypeZoneCellMany>клеток области</RimWorldAccess.Building.View.ItemTypeZoneCellMany>
   <RimWorldAccess.Building.View.ItemTypeDesignationOne>указание</RimWorldAccess.Building.View.ItemTypeDesignationOne>
   <RimWorldAccess.Building.View.ItemTypeDesignationMany>указаний</RimWorldAccess.Building.View.ItemTypeDesignationMany>
+
+  <!-- Area undo description (src/Building/AreaUndoTracker.cs). A single area reports its own
+       game label; an ignore-roof stroke touches the build-roof and no-roof areas together, so
+       MultipleAreas wraps the joined labels. {0} = area labels joined by vanilla ToCommaList. -->
+  <RimWorldAccess.Building.AreaUndo.MultipleAreas>Области: {0}</RimWorldAccess.Building.AreaUndo.MultipleAreas>
 
   <!-- Ctrl+A / Ctrl+Shift+A select-all and undo-scope announcements
        (src/Building/ArchitectPlacementPatch.cs).

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <!-- Описательные названия цветов. Все слова согласованы в мужском роде (подразумевается
+       «цвет»); «индиго» и «маджента» несклоняемы. -->
+
+  <RimWorldAccess.Color.Hue.Red>красный</RimWorldAccess.Color.Hue.Red>
+  <RimWorldAccess.Color.Hue.Orange>оранжевый</RimWorldAccess.Color.Hue.Orange>
+  <RimWorldAccess.Color.Hue.Amber>янтарный</RimWorldAccess.Color.Hue.Amber>
+  <RimWorldAccess.Color.Hue.Yellow>жёлтый</RimWorldAccess.Color.Hue.Yellow>
+  <RimWorldAccess.Color.Hue.Lime>лаймовый</RimWorldAccess.Color.Hue.Lime>
+  <RimWorldAccess.Color.Hue.Green>зелёный</RimWorldAccess.Color.Hue.Green>
+  <RimWorldAccess.Color.Hue.Teal>бирюзовый</RimWorldAccess.Color.Hue.Teal>
+  <RimWorldAccess.Color.Hue.Cyan>голубой</RimWorldAccess.Color.Hue.Cyan>
+  <RimWorldAccess.Color.Hue.Azure>лазурный</RimWorldAccess.Color.Hue.Azure>
+  <RimWorldAccess.Color.Hue.Blue>синий</RimWorldAccess.Color.Hue.Blue>
+  <RimWorldAccess.Color.Hue.Indigo>индиго</RimWorldAccess.Color.Hue.Indigo>
+  <RimWorldAccess.Color.Hue.Violet>фиолетовый</RimWorldAccess.Color.Hue.Violet>
+  <RimWorldAccess.Color.Hue.Purple>пурпурный</RimWorldAccess.Color.Hue.Purple>
+  <RimWorldAccess.Color.Hue.Magenta>маджента</RimWorldAccess.Color.Hue.Magenta>
+  <RimWorldAccess.Color.Hue.Pink>розовый</RimWorldAccess.Color.Hue.Pink>
+  <RimWorldAccess.Color.Hue.Rose>розово-красный</RimWorldAccess.Color.Hue.Rose>
+
+  <RimWorldAccess.Color.MidVivid>{0}</RimWorldAccess.Color.MidVivid>
+  <RimWorldAccess.Color.MidMuted>приглушённый {0}</RimWorldAccess.Color.MidMuted>
+  <RimWorldAccess.Color.MidPale>бледный {0}</RimWorldAccess.Color.MidPale>
+  <RimWorldAccess.Color.DarkVivid>тёмный {0}</RimWorldAccess.Color.DarkVivid>
+  <RimWorldAccess.Color.DarkMuted>тёмный приглушённый {0}</RimWorldAccess.Color.DarkMuted>
+  <RimWorldAccess.Color.DarkPale>тёмный бледный {0}</RimWorldAccess.Color.DarkPale>
+  <RimWorldAccess.Color.LightVivid>светлый {0}</RimWorldAccess.Color.LightVivid>
+  <RimWorldAccess.Color.LightMuted>светлый приглушённый {0}</RimWorldAccess.Color.LightMuted>
+  <RimWorldAccess.Color.LightPale>бледный {0}</RimWorldAccess.Color.LightPale>
+
+  <RimWorldAccess.Color.Black>чёрный</RimWorldAccess.Color.Black>
+  <RimWorldAccess.Color.White>белый</RimWorldAccess.Color.White>
+  <RimWorldAccess.Color.Gray>серый</RimWorldAccess.Color.Gray>
+  <RimWorldAccess.Color.GrayDark>тёмно-серый</RimWorldAccess.Color.GrayDark>
+  <RimWorldAccess.Color.GrayLight>светло-серый</RimWorldAccess.Color.GrayLight>
+
+</LanguageData>

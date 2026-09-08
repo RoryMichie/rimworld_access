@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using RimWorld;
+using RimWorldAccess.Shell;
 using UnityEngine;
 using Verse;
 
@@ -35,7 +36,7 @@ namespace RimWorldAccess
         {
             // Visual gizmo badge: keep vanilla label for the draft key since it doesn't require Shift.
             var draft = KeyBindingDefOf.Command_ColonistDraft;
-            if (draft != null && k == draft.MainKey)
+            if (VanillaBindings.IsBoundTo(draft, k))
                 return k.ToStringReadable();
             return ShiftPrefix + k.ToStringReadable();
         }

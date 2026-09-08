@@ -61,6 +61,14 @@
   <RimWorldAccess.Inspection.Category.Error>获取{0}信息时出错: {1}</RimWorldAccess.Inspection.Category.Error>
   <RimWorldAccess.Inspection.Category.NoFallback>“{0}”无可用信息。</RimWorldAccess.Inspection.Category.NoFallback>
   <RimWorldAccess.Inspection.Category.NotFound>未找到该类别。</RimWorldAccess.Inspection.Category.NotFound>
+  <RimWorldAccess.Inspection.Category.WorkPriorities>工作优先级</RimWorldAccess.Inspection.Category.WorkPriorities>
+  <RimWorldAccess.Inspection.Category.JobQueue>任务队列</RimWorldAccess.Inspection.Category.JobQueue>
+  <RimWorldAccess.Inspection.Category.BedAssignment>床铺分配</RimWorldAccess.Inspection.Category.BedAssignment>
+  <RimWorldAccess.Inspection.Category.OwnerAssignment>所有者分配</RimWorldAccess.Inspection.Category.OwnerAssignment>
+  <RimWorldAccess.Inspection.Category.MeditationFocus>冥想灵媒</RimWorldAccess.Inspection.Category.MeditationFocus>
+  <RimWorldAccess.Inspection.Category.PlantSelection>植物选择</RimWorldAccess.Inspection.Category.PlantSelection>
+  <RimWorldAccess.Inspection.Category.LinkedFacilities>关联设施</RimWorldAccess.Inspection.Category.LinkedFacilities>
+  <RimWorldAccess.Inspection.Category.PlantInfo>植物信息</RimWorldAccess.Inspection.Category.PlantInfo>
 
   <!-- =================================================================
        Pawn overview / mood / character / gene-holder readouts.
@@ -169,12 +177,6 @@
        handles categories whose summary cannot be computed; {0} = label,
        {1} = expand state. ItemAllowState applies to ThingDef and
        SpecialFilter rows; {0} = label, {1} = the lowercase state. -->
-  <RimWorldAccess.Inspection.Storage.ToggleResultAllowed>{0}: 允许</RimWorldAccess.Inspection.Storage.ToggleResultAllowed>
-  <RimWorldAccess.Inspection.Storage.ToggleResultDisallowed>{0}: 禁止</RimWorldAccess.Inspection.Storage.ToggleResultDisallowed>
-  <RimWorldAccess.Inspection.Storage.CategoryWithSummary>{0}. {1}, {2}</RimWorldAccess.Inspection.Storage.CategoryWithSummary>
-  <RimWorldAccess.Inspection.Storage.LabelWithExpandState>{0} {1}</RimWorldAccess.Inspection.Storage.LabelWithExpandState>
-  <RimWorldAccess.Inspection.Storage.ItemAllowed>{0}. 允许</RimWorldAccess.Inspection.Storage.ItemAllowed>
-  <RimWorldAccess.Inspection.Storage.ItemDisallowed>{0}. 禁止</RimWorldAccess.Inspection.Storage.ItemDisallowed>
 
   <!-- Category summary phrases (ThingFilterHelper.FormatCategorySummary).
        Spoken as the {1} placeholder of CategoryWithSummary above and
@@ -190,29 +192,17 @@
        so the comma + "except: " glue can vary per language and the
        except-list / except-count distinction does not have to share
        wording. -->
-  <RimWorldAccess.Inspection.Storage.Summary.AllAllowed>允许</RimWorldAccess.Inspection.Storage.Summary.AllAllowed>
-  <RimWorldAccess.Inspection.Storage.Summary.AllDisallowed>禁止</RimWorldAccess.Inspection.Storage.Summary.AllDisallowed>
   <RimWorldAccess.Inspection.Storage.Summary.AllowedExceptList>允许，但以下除外: {0}</RimWorldAccess.Inspection.Storage.Summary.AllowedExceptList>
   <RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptList>禁止，但以下除外: {0}</RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptList>
   <RimWorldAccess.Inspection.Storage.Summary.AllowedExceptCount>允许，但 {0} 项除外</RimWorldAccess.Inspection.Storage.Summary.AllowedExceptCount>
   <RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptCount>禁止，但 {0} 项除外</RimWorldAccess.Inspection.Storage.Summary.DisallowedExceptCount>
 
   <!-- No info card available for the selected item. -->
-  <RimWorldAccess.Inspection.Storage.NoInfoCard>无可用信息卡</RimWorldAccess.Inspection.Storage.NoInfoCard>
 
   <!-- Bulk action results. -->
 
   <!-- Expand-all-siblings results when * is pressed. AllAlreadyExpanded /
        NoneToExpand cover the edge cases where the action is a no-op. -->
-
-  <!-- Range editing announcements (StorageSettingsMenuPatch). Spoken
-       after Enter applies the new range or Escape discards it.
-       PressEnterEditRange is spoken by ThingFilterMenuState when the
-       user presses Right/Left on a range row (instead of expanding
-       since ranges have no children). -->
-  <RimWorldAccess.Inspection.Storage.RangeApplied>已应用范围更改</RimWorldAccess.Inspection.Storage.RangeApplied>
-  <RimWorldAccess.Inspection.Storage.RangeCancelled>已取消范围编辑</RimWorldAccess.Inspection.Storage.RangeCancelled>
-  <RimWorldAccess.Inspection.Storage.PressEnterEditRange>按回车键编辑范围</RimWorldAccess.Inspection.Storage.PressEnterEditRange>
 
   <!-- Submenu close fallbacks (used by InspectionReturnHelper when no
        parent inspection menu is active). -->
@@ -238,12 +228,7 @@
        when switching parts via Up/Down.
        ================================================================= -->
   <!-- Cannot-expand rejection (ThingFilterNavigationState). -->
-  <RimWorldAccess.Inspection.ThingFilter.CannotExpand>无法展开该项。</RimWorldAccess.Inspection.ThingFilter.CannotExpand>
 
-  <RimWorldAccess.Inspection.ThingFilter.SliderPart.Min>最小值</RimWorldAccess.Inspection.ThingFilter.SliderPart.Min>
-  <RimWorldAccess.Inspection.ThingFilter.SliderPart.Max>最大值</RimWorldAccess.Inspection.ThingFilter.SliderPart.Max>
-  <RimWorldAccess.Inspection.ThingFilter.SliderEdit.Announcement>{0} - {1}: {2}。用左右键调整，上下键切换最小/最大值，回车键确认。</RimWorldAccess.Inspection.ThingFilter.SliderEdit.Announcement>
-  <RimWorldAccess.Inspection.ThingFilter.SliderEdit.PartWithValue>{0}: {1}</RimWorldAccess.Inspection.ThingFilter.SliderEdit.PartWithValue>
 
   <!-- =================================================================
        Colony inventory menu (WindowlessInventoryState). Triggered with
@@ -289,6 +274,10 @@
   <RimWorldAccess.Inspection.Inventory.OpenedSummaryOne>已打开定居点物品清单。{0} 种物品。{1} 个类别。</RimWorldAccess.Inspection.Inventory.OpenedSummaryOne>
   <RimWorldAccess.Inspection.Inventory.OpenedSummaryMany>已打开定居点物品清单。{0} 种物品。{1} 个类别。</RimWorldAccess.Inspection.Inventory.OpenedSummaryMany>
   <RimWorldAccess.Inspection.Inventory.Closed>已关闭物品清单菜单。</RimWorldAccess.Inspection.Inventory.Closed>
+
+  <!-- RegionName is the inventory menu's one navigable area, spoken by Tab and
+       by the empty announcement when the colony holds nothing. -->
+  <RimWorldAccess.Inspection.Inventory.RegionName>物品清单</RimWorldAccess.Inspection.Inventory.RegionName>
 
   <RimWorldAccess.Inspection.Inventory.Expand.NoneToExpand>没有可展开的类别。</RimWorldAccess.Inspection.Inventory.Expand.NoneToExpand>
   <RimWorldAccess.Inspection.Inventory.Expand.AllAlreadyExpanded>所有类别均已展开。</RimWorldAccess.Inspection.Inventory.Expand.AllAlreadyExpanded>
@@ -362,13 +351,28 @@
 
        SearchLabel.* are stable typeahead lookup keys (separate from
        the spoken row label so translators can localize each
-       independently). Status.Detail: {0} = fish-type label, {1} =
-       current population, {2} = max population, {3} = status word.
-       Label.MinimumPopulation: {0} = pct, {1} = fish-at-threshold.
-       Label.FishSpecies: {0} = count, {1} = expanded/collapsed word.
-       Action.ExpandedFishSpecies*: {0} = species count (One/Many
-       split for subject-verb agreement). Action.OpeningInfoCard: {0}
-       = fish label. Numeric.* govern the numeric-input overlay.
+       independently) AND, since the campaign 8 packet C2 announcement
+       retrofit, the bare row Label the composer speaks (Value/Check/
+       Expanded now carry what used to be baked into Label.*). Status.Detail:
+       {0} = fish-type label, {1} = current population, {2} = max
+       population, {3} = status word. Label.MinimumPopulation: {0} = pct,
+       {1} = fish-at-threshold (still used to keep the tree's own cached
+       item label in sync; the composer gets its Value from
+       Label.MinimumPopulationValue directly). Label.FishSpecies: {0} =
+       count, {1} = expanded/collapsed word (same "still used for the cached
+       item label" note; the composer speaks the count via the new
+       Label.FishSpeciesCount and the expanded state via Role.TreeItem's own
+       Expanded field instead). Action.OpeningInfoCard: {0} = fish label.
+       Numeric.* govern the numeric-input overlay.
+
+       Orphaned by the same retrofit (removed): Action.FishingAllowed,
+       Action.FishingForbidden, Action.PauseEnabled, Action.PauseDisabled,
+       Action.ExpandedFishSpeciesOne, Action.ExpandedFishSpeciesMany,
+       Action.Collapsed — each was a distinct post-toggle/expand/collapse
+       phrase spoken AS WELL AS a full row re-announcement; the row
+       re-announcement now carries the same state (checked/unchecked,
+       expanded/collapsed) through the shared composer vocabulary, so the
+       separate phrase would only double-speak it.
        ================================================================= -->
   <RimWorldAccess.Inspection.Fishing.NotAvailable>钓鱼区设置不可用 - 可能未安装 Odyssey DLC</RimWorldAccess.Inspection.Fishing.NotAvailable>
 
@@ -386,52 +390,23 @@
   <RimWorldAccess.Inspection.Fishing.Status.NoWaterBody>区域信息: 未找到水域</RimWorldAccess.Inspection.Fishing.Status.NoWaterBody>
   <RimWorldAccess.Inspection.Fishing.Status.UnableToRead>区域信息: 无法读取</RimWorldAccess.Inspection.Fishing.Status.UnableToRead>
   <RimWorldAccess.Inspection.Fishing.Status.Detail>区域信息: {0}, {1}/{2} 条鱼（{3}）</RimWorldAccess.Inspection.Fishing.Status.Detail>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationVeryLow>极低</RimWorldAccess.Inspection.Fishing.Status.PopulationVeryLow>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationLow>偏低</RimWorldAccess.Inspection.Fishing.Status.PopulationLow>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationModerate>中等</RimWorldAccess.Inspection.Fishing.Status.PopulationModerate>
-  <RimWorldAccess.Inspection.Fishing.Status.PopulationHealthy>充足</RimWorldAccess.Inspection.Fishing.Status.PopulationHealthy>
   <RimWorldAccess.Inspection.Fishing.Status.UnknownFishType>未知</RimWorldAccess.Inspection.Fishing.Status.UnknownFishType>
 
-  <RimWorldAccess.Inspection.Fishing.Label.AllowFishing>允许钓鱼: {0}</RimWorldAccess.Inspection.Fishing.Label.AllowFishing>
-  <RimWorldAccess.Inspection.Fishing.Label.RepeatMode>重复模式: {0}</RimWorldAccess.Inspection.Fishing.Label.RepeatMode>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeDoForever>永久重复</RimWorldAccess.Inspection.Fishing.Label.RepeatModeDoForever>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeRepeatCount>重复次数</RimWorldAccess.Inspection.Fishing.Label.RepeatModeRepeatCount>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeTargetCount>目标数量</RimWorldAccess.Inspection.Fishing.Label.RepeatModeTargetCount>
   <RimWorldAccess.Inspection.Fishing.Label.RepeatModeUnknown>未知</RimWorldAccess.Inspection.Fishing.Label.RepeatModeUnknown>
-  <RimWorldAccess.Inspection.Fishing.Label.RepeatCount>重复次数: {0}</RimWorldAccess.Inspection.Fishing.Label.RepeatCount>
-  <RimWorldAccess.Inspection.Fishing.Label.TargetCount>目标数量: {0}</RimWorldAccess.Inspection.Fishing.Label.TargetCount>
-  <RimWorldAccess.Inspection.Fishing.Label.CurrentlyHave>当前拥有: {0}</RimWorldAccess.Inspection.Fishing.Label.CurrentlyHave>
-  <RimWorldAccess.Inspection.Fishing.Label.PauseWhenSatisfied>满足时暂停: {0}</RimWorldAccess.Inspection.Fishing.Label.PauseWhenSatisfied>
-  <RimWorldAccess.Inspection.Fishing.Label.UnpauseAt>恢复阈值: {0}</RimWorldAccess.Inspection.Fishing.Label.UnpauseAt>
-  <RimWorldAccess.Inspection.Fishing.Label.MinimumPopulation>最低种群数量: {0}%（{1} 条鱼）</RimWorldAccess.Inspection.Fishing.Label.MinimumPopulation>
   <RimWorldAccess.Inspection.Fishing.Label.MinimumPopulationValue>{0}%（{1} 条鱼）</RimWorldAccess.Inspection.Fishing.Label.MinimumPopulationValue>
-  <RimWorldAccess.Inspection.Fishing.Label.FishSpecies>鱼类物种（{0}），{1}</RimWorldAccess.Inspection.Fishing.Label.FishSpecies>
+  <RimWorldAccess.Inspection.Fishing.Label.FishSpeciesCount>{0} 种可用</RimWorldAccess.Inspection.Fishing.Label.FishSpeciesCount>
   <RimWorldAccess.Inspection.Fishing.Label.UncommonSuffix>（不常见）</RimWorldAccess.Inspection.Fishing.Label.UncommonSuffix>
 
-  <RimWorldAccess.Inspection.Fishing.Action.AlreadyExpanded>已展开</RimWorldAccess.Inspection.Fishing.Action.AlreadyExpanded>
-  <RimWorldAccess.Inspection.Fishing.Action.AlreadyCollapsed>已折叠</RimWorldAccess.Inspection.Fishing.Action.AlreadyCollapsed>
-  <RimWorldAccess.Inspection.Fishing.Action.PressAltIToViewFishInfo>按 Alt+I 查看鱼类信息</RimWorldAccess.Inspection.Fishing.Action.PressAltIToViewFishInfo>
-  <RimWorldAccess.Inspection.Fishing.Action.UseEnterToActivate>按回车键激活</RimWorldAccess.Inspection.Fishing.Action.UseEnterToActivate>
-  <RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesOne>已展开，{0} 种鱼类</RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesOne>
-  <RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesMany>已展开，{0} 种鱼类</RimWorldAccess.Inspection.Fishing.Action.ExpandedFishSpeciesMany>
-  <RimWorldAccess.Inspection.Fishing.Action.Collapsed>已折叠</RimWorldAccess.Inspection.Fishing.Action.Collapsed>
-  <RimWorldAccess.Inspection.Fishing.Action.UseRightLeftToExpand>用右方向键展开，左方向键折叠</RimWorldAccess.Inspection.Fishing.Action.UseRightLeftToExpand>
   <RimWorldAccess.Inspection.Fishing.Action.UseLeftRightToAdjust>用左右方向键调整</RimWorldAccess.Inspection.Fishing.Action.UseLeftRightToAdjust>
   <RimWorldAccess.Inspection.Fishing.Action.NotAdjustable>该项无法调整</RimWorldAccess.Inspection.Fishing.Action.NotAdjustable>
   <RimWorldAccess.Inspection.Fishing.Action.FieldNotAdjustable>该字段无法调整</RimWorldAccess.Inspection.Fishing.Action.FieldNotAdjustable>
   <RimWorldAccess.Inspection.Fishing.Action.NoMaximumLimit>无最大限制。请使用数字输入设置较大数值。</RimWorldAccess.Inspection.Fishing.Action.NoMaximumLimit>
-  <RimWorldAccess.Inspection.Fishing.Action.FishingAllowed>已允许钓鱼</RimWorldAccess.Inspection.Fishing.Action.FishingAllowed>
-  <RimWorldAccess.Inspection.Fishing.Action.FishingForbidden>已禁止钓鱼</RimWorldAccess.Inspection.Fishing.Action.FishingForbidden>
-  <RimWorldAccess.Inspection.Fishing.Action.PauseEnabled>已启用满足时暂停</RimWorldAccess.Inspection.Fishing.Action.PauseEnabled>
-  <RimWorldAccess.Inspection.Fishing.Action.PauseDisabled>已禁用满足时暂停</RimWorldAccess.Inspection.Fishing.Action.PauseDisabled>
   <RimWorldAccess.Inspection.Fishing.Action.SelectFishSpeciesFirst>请先选择一种鱼类物种</RimWorldAccess.Inspection.Fishing.Action.SelectFishSpeciesFirst>
   <RimWorldAccess.Inspection.Fishing.Action.OpeningInfoCard>正在打开 {0} 的信息卡</RimWorldAccess.Inspection.Fishing.Action.OpeningInfoCard>
 
-  <RimWorldAccess.Inspection.Fishing.Numeric.Prompt>输入一个数字，然后按回车键确认或按 Escape 取消</RimWorldAccess.Inspection.Fishing.Numeric.Prompt>
-  <RimWorldAccess.Inspection.Fishing.Numeric.Empty>空</RimWorldAccess.Inspection.Fishing.Numeric.Empty>
-  <RimWorldAccess.Inspection.Fishing.Numeric.InvalidNumber>无效数字</RimWorldAccess.Inspection.Fishing.Numeric.InvalidNumber>
-  <RimWorldAccess.Inspection.Fishing.Numeric.Cancelled>已取消</RimWorldAccess.Inspection.Fishing.Numeric.Cancelled>
-  <RimWorldAccess.Inspection.Fishing.Numeric.NotApplicable>无法对该字段应用数字值</RimWorldAccess.Inspection.Fishing.Numeric.NotApplicable>
 
   <!-- =================================================================
        Bill configuration menu (BillConfigState). Opened from
@@ -510,12 +485,11 @@
   <RimWorldAccess.Inspection.BillConfig.Label.LabelWithRangeQuality>{0}: {1} - {2}</RimWorldAccess.Inspection.BillConfig.Label.LabelWithRangeQuality>
   <RimWorldAccess.Inspection.BillConfig.Label.IncompatibleSuffix>（{0}）</RimWorldAccess.Inspection.BillConfig.Label.IncompatibleSuffix>
   <RimWorldAccess.Inspection.BillConfig.Label.WorkerWithLabel>工作者: {0}</RimWorldAccess.Inspection.BillConfig.Label.WorkerWithLabel>
+  <RimWorldAccess.Inspection.BillConfig.Label.StoreModeWithLabel>成品存放: {0}</RimWorldAccess.Inspection.BillConfig.Label.StoreModeWithLabel>
   <RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMin>{0}: {1} {2}</RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMin>
   <RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMax>{0}: {1} {2}</RimWorldAccess.Inspection.BillConfig.Label.SkillRangeMax>
   <RimWorldAccess.Inspection.BillConfig.Label.RenameWithCustom>{0}: {1}（原名: {2}）</RimWorldAccess.Inspection.BillConfig.Label.RenameWithCustom>
-  <RimWorldAccess.Inspection.BillConfig.Label.PawnWithSkillSuffix>{0}（技能: {1}）</RimWorldAccess.Inspection.BillConfig.Label.PawnWithSkillSuffix>
 
-  <RimWorldAccess.Inspection.BillConfig.Action.FinishEditingFirst>请先完成编辑（按回车键或 Escape）</RimWorldAccess.Inspection.BillConfig.Action.FinishEditingFirst>
   <RimWorldAccess.Inspection.BillConfig.Action.NotAdjustable>该项无法调整</RimWorldAccess.Inspection.BillConfig.Action.NotAdjustable>
   <RimWorldAccess.Inspection.BillConfig.Action.UseEnterToOpenSubmenu>按回车键打开子菜单</RimWorldAccess.Inspection.BillConfig.Action.UseEnterToOpenSubmenu>
   <RimWorldAccess.Inspection.BillConfig.Action.UseLeftRightToAdjust>用左右方向键调整</RimWorldAccess.Inspection.BillConfig.Action.UseLeftRightToAdjust>
@@ -523,15 +497,8 @@
   <RimWorldAccess.Inspection.BillConfig.Action.FieldNotAdjustable>该字段无法调整</RimWorldAccess.Inspection.BillConfig.Action.FieldNotAdjustable>
   <RimWorldAccess.Inspection.BillConfig.Action.RenamedTo>订单已重命名为 {0}</RimWorldAccess.Inspection.BillConfig.Action.RenamedTo>
   <RimWorldAccess.Inspection.BillConfig.Action.RenameCancelled>已取消重命名</RimWorldAccess.Inspection.BillConfig.Action.RenameCancelled>
-  <RimWorldAccess.Inspection.BillConfig.Action.HitPointsApplied>耐久度: {0} 至 {1}</RimWorldAccess.Inspection.BillConfig.Action.HitPointsApplied>
-  <RimWorldAccess.Inspection.BillConfig.Action.QualityApplied>品质: {0} 至 {1}</RimWorldAccess.Inspection.BillConfig.Action.QualityApplied>
   <RimWorldAccess.Inspection.BillConfig.Action.DeletedBill>已删除订单: {0}</RimWorldAccess.Inspection.BillConfig.Action.DeletedBill>
 
-  <RimWorldAccess.Inspection.BillConfig.Numeric.Prompt>输入一个数字，然后按回车键确认或按 Escape 取消</RimWorldAccess.Inspection.BillConfig.Numeric.Prompt>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.Empty>空</RimWorldAccess.Inspection.BillConfig.Numeric.Empty>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.InvalidNumber>无效数字</RimWorldAccess.Inspection.BillConfig.Numeric.InvalidNumber>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.Cancelled>已取消</RimWorldAccess.Inspection.BillConfig.Numeric.Cancelled>
-  <RimWorldAccess.Inspection.BillConfig.Numeric.NotApplicable>无法对该字段应用数字值</RimWorldAccess.Inspection.BillConfig.Numeric.NotApplicable>
 
   <!-- IngredientFilter window title (passed to ThingFilterMenuState.Open). -->
   <RimWorldAccess.Inspection.BillConfig.IngredientFilterTitle>原料筛选器</RimWorldAccess.Inspection.BillConfig.IngredientFilterTitle>
@@ -576,10 +543,9 @@
 
   <!-- Command_Toggle / state-bearing gizmos. ON/OFF suffix: {0} should be
        picked from StateOn/StateOff (separate keys so word order can vary
-       per language). LabelWithState: {0} = label, {1} = state phrase. -->
+       per language). -->
   <RimWorldAccess.Inspection.Gizmo.StateOn>: 开</RimWorldAccess.Inspection.Gizmo.StateOn>
   <RimWorldAccess.Inspection.Gizmo.StateOff>: 关</RimWorldAccess.Inspection.Gizmo.StateOff>
-  <RimWorldAccess.Inspection.Gizmo.LabelWithState>{0}: {1}</RimWorldAccess.Inspection.Gizmo.LabelWithState>
   <RimWorldAccess.Inspection.Gizmo.NeuralHeatLimiter>神经热量限制器: {0}</RimWorldAccess.Inspection.Gizmo.NeuralHeatLimiter>
   <RimWorldAccess.Inspection.Gizmo.LimiterStateOn>开</RimWorldAccess.Inspection.Gizmo.LimiterStateOn>
   <RimWorldAccess.Inspection.Gizmo.LimiterStateOff>关</RimWorldAccess.Inspection.Gizmo.LimiterStateOff>
@@ -608,12 +574,7 @@
        current value (already formatted as percent). Read* and
        CouldNotAdjust are the rare fallbacks fired when reflection
        can't reach the underlying field. -->
-  <RimWorldAccess.Inspection.Gizmo.SliderEnterPrompt>正在调整 {0}。当前目标: {1}。用左右键调整，Shift 大幅调整，Escape 完成。</RimWorldAccess.Inspection.Gizmo.SliderEnterPrompt>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadSliderValue>无法读取滑块数值</RimWorldAccess.Inspection.Gizmo.CouldNotReadSliderValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadPsyfocusValue>无法读取精神力数值</RimWorldAccess.Inspection.Gizmo.CouldNotReadPsyfocusValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadPruningValue>无法读取修剪数值</RimWorldAccess.Inspection.Gizmo.CouldNotReadPruningValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotReadCarrierValue>无法读取运载器数值</RimWorldAccess.Inspection.Gizmo.CouldNotReadCarrierValue>
-  <RimWorldAccess.Inspection.Gizmo.CouldNotAdjustControl>无法调整该控件</RimWorldAccess.Inspection.Gizmo.CouldNotAdjustControl>
+  <RimWorldAccess.Inspection.Gizmo.SliderUseArrows>用左右方向键调整。</RimWorldAccess.Inspection.Gizmo.SliderUseArrows>
   <!-- Hemogen toggle failure (GeneGizmo_ResourceHemogen). -->
   <RimWorldAccess.Inspection.Gizmo.CouldNotToggleHemogen>无法切换血红素包设置</RimWorldAccess.Inspection.Gizmo.CouldNotToggleHemogen>
   <!-- Activity suppression toggle failure (ActivityGizmo). -->
@@ -621,16 +582,40 @@
   <!-- Shift+key with no matching command. {0} = key name. -->
   <RimWorldAccess.Inspection.Gizmo.NoCommandForShiftPlus>没有对应 Shift 加 {0} 的命令</RimWorldAccess.Inspection.Gizmo.NoCommandForShiftPlus>
 
+  <!-- G menu: the owning object's name, spoken only when it changes from one
+       command to the next. {0} = owner name, {1} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.OwnerPrefix>{0}: {1}</RimWorldAccess.Inspection.Gizmo.OwnerPrefix>
+
+  <!-- Reverse-designation gizmo activation report. {0} = count, {1} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.DesignatedCount>已为 {1} 标记 {0} 项。</RimWorldAccess.Inspection.Gizmo.DesignatedCount>
+  <!-- {0} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.DesignatedNone>未为 {0} 标记任何内容。</RimWorldAccess.Inspection.Gizmo.DesignatedNone>
+  <!-- Reverse designator with no designation def of its own (e.g. Select Similar). {0} = command name. -->
+  <RimWorldAccess.Inspection.Gizmo.CommandApplied>{0} 已应用。</RimWorldAccess.Inspection.Gizmo.CommandApplied>
+
+  <!-- Row wrappers for the Shift+hotkey disambiguation float menu. Those rows
+       are single strings rather than navigable elements, so each piece is
+       appended to the row text: the owner and the hotkey in brackets, then the
+       command's status readout, its on/off state, and its description. Keep any
+       leading space or colon that a language needs; RimWorld preserves them. -->
+  <RimWorldAccess.Inspection.Gizmo.MenuOwnerSuffix>（{0}）</RimWorldAccess.Inspection.Gizmo.MenuOwnerSuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuHotkeySuffix>（{0}）</RimWorldAccess.Inspection.Gizmo.MenuHotkeySuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuStatusSuffix>: {0}</RimWorldAccess.Inspection.Gizmo.MenuStatusSuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuStateSuffix>: {0}</RimWorldAccess.Inspection.Gizmo.MenuStateSuffix>
+  <RimWorldAccess.Inspection.Gizmo.MenuDescriptionSuffix>: {0}</RimWorldAccess.Inspection.Gizmo.MenuDescriptionSuffix>
+
   <!-- Hint suffixes appended to AnnounceCurrentGizmo for interactive
        gizmos. RightClickHint and EnterAdjustHint are the standard
        cases; PsychicEntropyHints describes both actions for that
        specific gizmo (Enter toggles limiter, ] adjusts psyfocus). -->
   <RimWorldAccess.Inspection.Gizmo.HintRightClickOptions>。按右方括号键查看更多选项</RimWorldAccess.Inspection.Gizmo.HintRightClickOptions>
-  <RimWorldAccess.Inspection.Gizmo.HintEnterToAdjust>。按回车键调整</RimWorldAccess.Inspection.Gizmo.HintEnterToAdjust>
-  <RimWorldAccess.Inspection.Gizmo.HintPsychicEntropy>。按回车键切换限制器，右方括号键设置精神力目标</RimWorldAccess.Inspection.Gizmo.HintPsychicEntropy>
-  <RimWorldAccess.Inspection.Gizmo.HintHemogen>。按回车键切换是否允许血红素包，右方括号键设置目标</RimWorldAccess.Inspection.Gizmo.HintHemogen>
-  <!-- ActivityGizmo (Anomaly) mirrors PsychicEntropy: Enter toggles auto-suppression, ] sets the suppression threshold. -->
-  <RimWorldAccess.Inspection.Gizmo.HintActivitySuppression>。按回车键切换自动抑制，右方括号键设置抑制阈值</RimWorldAccess.Inspection.Gizmo.HintActivitySuppression>
+  <RimWorldAccess.Inspection.Gizmo.HintArrowsToAdjust>。用左右方向键调整，Shift 大幅调整</RimWorldAccess.Inspection.Gizmo.HintArrowsToAdjust>
+  <RimWorldAccess.Inspection.Gizmo.HintPsychicEntropyArrows>。按回车键切换限制器，用左右方向键调整精神力目标</RimWorldAccess.Inspection.Gizmo.HintPsychicEntropyArrows>
+  <RimWorldAccess.Inspection.Gizmo.HintHemogenArrows>。按回车键切换是否允许血红素包，用左右方向键调整目标</RimWorldAccess.Inspection.Gizmo.HintHemogenArrows>
+  <RimWorldAccess.Inspection.Gizmo.HintFuelAutoRefuelArrows>。按回车键切换自动加注燃料，用左右方向键调整目标燃料量</RimWorldAccess.Inspection.Gizmo.HintFuelAutoRefuelArrows>
+  <RimWorldAccess.Inspection.Gizmo.AutoRefuelToggle>自动加注燃料{0}</RimWorldAccess.Inspection.Gizmo.AutoRefuelToggle>
+  <!-- ActivityGizmo (Anomaly) mirrors PsychicEntropy: Enter toggles auto-suppression, arrows adjust the suppression threshold. -->
+  <RimWorldAccess.Inspection.Gizmo.HintActivitySuppressionArrows>。按回车键切换自动抑制，用左右方向键调整抑制阈值</RimWorldAccess.Inspection.Gizmo.HintActivitySuppressionArrows>
 
   <!-- =================================================================
        Gizmo type labels (GetNonCommandGizmoLabel and helpers). These
@@ -655,13 +640,15 @@
   <RimWorldAccess.Inspection.Gizmo.Type.PsychicEntropy>神经热量与精神力</RimWorldAccess.Inspection.Gizmo.Type.PsychicEntropy>
   <RimWorldAccess.Inspection.Gizmo.Type.MechanitorBandwidth>机械师带宽</RimWorldAccess.Inspection.Gizmo.Type.MechanitorBandwidth>
   <RimWorldAccess.Inspection.Gizmo.Type.MechPowerCell>机械体电池</RimWorldAccess.Inspection.Gizmo.Type.MechPowerCell>
+  <RimWorldAccess.Inspection.Gizmo.Status.PowerCellPercentHours>{0}%，剩余{1}{2}</RimWorldAccess.Inspection.Gizmo.Status.PowerCellPercentHours>
+  <RimWorldAccess.Inspection.Gizmo.Status.GuardianShipPayment>距付款还有{0}</RimWorldAccess.Inspection.Gizmo.Status.GuardianShipPayment>
   <RimWorldAccess.Inspection.Gizmo.Type.ResurrectionCharges>复活充能次数</RimWorldAccess.Inspection.Gizmo.Type.ResurrectionCharges>
   <RimWorldAccess.Inspection.Gizmo.Type.ShieldHitPoints>护盾耐久度</RimWorldAccess.Inspection.Gizmo.Type.ShieldHitPoints>
   <RimWorldAccess.Inspection.Gizmo.Type.PruningConfig>修剪配置</RimWorldAccess.Inspection.Gizmo.Type.PruningConfig>
   <RimWorldAccess.Inspection.Gizmo.Type.GuardianShip>守护飞船</RimWorldAccess.Inspection.Gizmo.Type.GuardianShip>
   <RimWorldAccess.Inspection.Gizmo.Type.CaravanInfo>远行队信息</RimWorldAccess.Inspection.Gizmo.Type.CaravanInfo>
   <RimWorldAccess.Inspection.Gizmo.Type.DeathrestCapacity>死寂容量</RimWorldAccess.Inspection.Gizmo.Type.DeathrestCapacity>
-  <RimWorldAccess.Inspection.Gizmo.Type.Activity>活跃度</RimWorldAccess.Inspection.Gizmo.Type.Activity>
+  <RimWorldAccess.Inspection.Gizmo.DeathrestBoundBuildings>绑定建筑：{0}</RimWorldAccess.Inspection.Gizmo.DeathrestBoundBuildings>
   <RimWorldAccess.Inspection.Gizmo.Type.RoomStatsFallback>房间数据</RimWorldAccess.Inspection.Gizmo.Type.RoomStatsFallback>
   <RimWorldAccess.Inspection.Gizmo.Type.StatusDisplayFallback>状态显示</RimWorldAccess.Inspection.Gizmo.Type.StatusDisplayFallback>
 
@@ -706,7 +693,6 @@
   <RimWorldAccess.Inspection.Gizmo.Status.UsedTotal>{0} / {1}</RimWorldAccess.Inspection.Gizmo.Status.UsedTotal>
   <RimWorldAccess.Inspection.Gizmo.Status.PercentEnergy>{0}%（{1} / {2}）</RimWorldAccess.Inspection.Gizmo.Status.PercentEnergy>
   <RimWorldAccess.Inspection.Gizmo.Status.HitPoints>{0} / {1} 耐久</RimWorldAccess.Inspection.Gizmo.Status.HitPoints>
-  <RimWorldAccess.Inspection.Gizmo.Status.Charges>{0} / {1} 次充能</RimWorldAccess.Inspection.Gizmo.Status.Charges>
   <RimWorldAccess.Inspection.Gizmo.Status.Percent>{0}%</RimWorldAccess.Inspection.Gizmo.Status.Percent>
 
   <RimWorldAccess.Inspection.Gizmo.Status.SliderTargetWithLabel>目标: {0}%, {1}</RimWorldAccess.Inspection.Gizmo.Status.SliderTargetWithLabel>
@@ -750,8 +736,6 @@
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsCurrentOfNext>{0} / {1} 点</RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsCurrentOfNext>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsPerDaySuffix>（+{0}）</RimWorldAccess.Inspection.Gizmo.Status.GrowthPointsPerDaySuffix>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthLearningProgress>学习中 {0}</RimWorldAccess.Inspection.Gizmo.Status.GrowthLearningProgress>
-  <RimWorldAccess.Inspection.Gizmo.Status.GrowthNextMomentLine>{0}: {1}</RimWorldAccess.Inspection.Gizmo.Status.GrowthNextMomentLine>
-  <RimWorldAccess.Inspection.Gizmo.Status.GrowthNextTierHeader>若达到成长阶段 {0}</RimWorldAccess.Inspection.Gizmo.Status.GrowthNextTierHeader>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthTierRewardsLine>{0}: {1}</RimWorldAccess.Inspection.Gizmo.Status.GrowthTierRewardsLine>
   <RimWorldAccess.Inspection.Gizmo.Status.GrowthRewardsAnd> 和 </RimWorldAccess.Inspection.Gizmo.Status.GrowthRewardsAnd>
 
@@ -837,51 +821,24 @@
        Failure forms cover the cases where TryAssignPawn /
        TryUnassignPawn does not actually move the pawn into / out of the
        owner list. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.MainMenu.AssignOwner>分配所有者</RimWorldAccess.Inspection.OwnerAssignment.MainMenu.AssignOwner>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainMenu.UnassignOwner>取消分配所有者</RimWorldAccess.Inspection.OwnerAssignment.MainMenu.UnassignOwner>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainMenu.CloseMenu>关闭菜单</RimWorldAccess.Inspection.OwnerAssignment.MainMenu.CloseMenu>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Assigned>{0}. 已分配给: {1}. {2}</RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Assigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Unassigned>{0}. 未分配. {1}</RimWorldAccess.Inspection.OwnerAssignment.MainAnnouncement.Unassigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.MenuClosed>已关闭分配菜单</RimWorldAccess.Inspection.OwnerAssignment.MenuClosed>
 
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignBuilding>无法为该建筑分配所有者</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignBuilding>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignBuilding>无法取消该建筑的所有者分配</RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignBuilding>
-  <RimWorldAccess.Inspection.OwnerAssignment.NoCandidates>没有可分配的角色</RimWorldAccess.Inspection.OwnerAssignment.NoCandidates>
-  <RimWorldAccess.Inspection.OwnerAssignment.NoneAssigned>没有角色分配到该建筑</RimWorldAccess.Inspection.OwnerAssignment.NoneAssigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignOwner>无法分配所有者</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignOwner>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignOwner>无法取消分配所有者</RimWorldAccess.Inspection.OwnerAssignment.CannotUnassignOwner>
 
   <!-- AssignReason suffixes are appended to the candidate row label.
        The leading space is part of the value. CannotAssignWithReason:
        {0} = StripTags(report.Reason). -->
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssign>（无法分配）</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssign>
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssignWithReason>（{0}）</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.CannotAssignWithReason>
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.IdeologyForbids>（信仰禁止）</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.IdeologyForbids>
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignReason.HasOtherAssignment>（已有其他分配）</RimWorldAccess.Inspection.OwnerAssignment.AssignReason.HasOtherAssignment>
 
   <!-- Submenu announcements ("Assign owner - first option"). The first
        form lists the picker's first option immediately so screen reader
        users know the submenu opened. {0} = first candidate / first
        assigned pawn label. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Announce>分配所有者 - {0}</RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Announce>
-  <RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Announce>取消分配所有者 - {0}</RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Announce>
   <!-- Item announcements while inside the submenus. {0} = pawn label. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Item>分配: {0}</RimWorldAccess.Inspection.OwnerAssignment.AssignSubmenu.Item>
-  <RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Item>取消分配: {0}</RimWorldAccess.Inspection.OwnerAssignment.UnassignSubmenu.Item>
 
   <!-- Cannot-assign rejection messages (when the user actually tries to
        assign a flagged candidate). {0} = pawn label, {1} = stripped
        reason. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawn>无法将 {0} 分配到该建筑</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawn>
-  <RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawnWithReason>无法分配 {0}: {1}</RimWorldAccess.Inspection.OwnerAssignment.CannotAssignPawnWithReason>
-  <RimWorldAccess.Inspection.OwnerAssignment.IdeologyForbidsPawn>信仰禁止 {0} 使用该建筑</RimWorldAccess.Inspection.OwnerAssignment.IdeologyForbidsPawn>
 
   <!-- Result announcements after the assignment actually changed (or
        failed to change). {0} = pawn label, {1} = building label. -->
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultAssigned>{0} 已分配到 {1}</RimWorldAccess.Inspection.OwnerAssignment.ResultAssigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultUnassigned>{0} 已从 {1} 取消分配</RimWorldAccess.Inspection.OwnerAssignment.ResultUnassigned>
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultAssignFailed>分配 {0} 失败</RimWorldAccess.Inspection.OwnerAssignment.ResultAssignFailed>
-  <RimWorldAccess.Inspection.OwnerAssignment.ResultUnassignFailed>取消分配 {0} 失败</RimWorldAccess.Inspection.OwnerAssignment.ResultUnassignFailed>
 
   <!-- Meditation focus. NoMeditationFocus: {0} = search-radius cells. -->
   <RimWorldAccess.Inspection.Building.NoMeditationInfo>无可用冥想焦点信息。</RimWorldAccess.Inspection.Building.NoMeditationInfo>
@@ -942,7 +899,6 @@
   <!-- Suffix appended to a row's label when the entry is disabled.
        Includes the leading space so it joins onto whatever label
        precedes it. -->
-  <RimWorldAccess.Inspection.Bills.UnavailableSuffix>（不可用）</RimWorldAccess.Inspection.Bills.UnavailableSuffix>
 
   <!-- Action result announcements. {0} = bill or recipe label, {1} =
        new position (MovedUp / MovedDown only). Each verb gets its own
@@ -961,8 +917,6 @@
   <RimWorldAccess.Inspection.Bills.CopiedToClipboard>已复制到剪贴板: {0}</RimWorldAccess.Inspection.Bills.CopiedToClipboard>
   <RimWorldAccess.Inspection.Bills.AddedBill>已添加订单: {0}</RimWorldAccess.Inspection.Bills.AddedBill>
   <RimWorldAccess.Inspection.Bills.PastedBill>已粘贴订单: {0}</RimWorldAccess.Inspection.Bills.PastedBill>
-  <RimWorldAccess.Inspection.Bills.RecipeRequiresMechanitor>配方需要机械师: {0}</RimWorldAccess.Inspection.Bills.RecipeRequiresMechanitor>
-  <RimWorldAccess.Inspection.Bills.RecipeRequiresSkills>没有角色具备所需技能: {0}</RimWorldAccess.Inspection.Bills.RecipeRequiresSkills>
   <!-- {0} = full type name of the unsupported Bill subclass. -->
   <RimWorldAccess.Inspection.Bills.UnsupportedType>尚不支持订单类型 {0}</RimWorldAccess.Inspection.Bills.UnsupportedType>
 
@@ -985,6 +939,7 @@
        StateCollapsed; the leading period+space is composed in C# since
        it is typographic punctuation, not a translatable particle.
        ================================================================= -->
+  <RimWorldAccess.Inspection.Panel.RegionName>查看面板</RimWorldAccess.Inspection.Panel.RegionName>
   <RimWorldAccess.Inspection.Panel.NoItems>此处没有可查看的物品。</RimWorldAccess.Inspection.Panel.NoItems>
   <RimWorldAccess.Inspection.Panel.NoObject>没有可查看的对象。</RimWorldAccess.Inspection.Panel.NoObject>
   <RimWorldAccess.Inspection.Panel.PanelClosed>已关闭查看面板。</RimWorldAccess.Inspection.Panel.PanelClosed>
@@ -1015,6 +970,7 @@
   <RimWorldAccess.Inspection.InfoCard.CannotExpand>无法展开该项。</RimWorldAccess.Inspection.InfoCard.CannotExpand>
   <RimWorldAccess.Inspection.InfoCard.MenuClosed>已关闭菜单</RimWorldAccess.Inspection.InfoCard.MenuClosed>
   <RimWorldAccess.Inspection.InfoCard.InfoCardClosed>已关闭信息卡。</RimWorldAccess.Inspection.InfoCard.InfoCardClosed>
+  <RimWorldAccess.Inspection.InfoCard.RegionName>信息卡</RimWorldAccess.Inspection.InfoCard.RegionName>
 
   <!-- =================================================================
        Info Card tree builder (InfoCardTreeBuilder). Section names
@@ -1091,6 +1047,7 @@
   <RimWorldAccess.Inspection.InfoCardTree.PermitNoLongerAvailable>该特权已不再可用。</RimWorldAccess.Inspection.InfoCardTree.PermitNoLongerAvailable>
   <RimWorldAccess.Inspection.InfoCardTree.PermitReturnAllResult>{0}. {1}: {2}</RimWorldAccess.Inspection.InfoCardTree.PermitReturnAllResult>
   <RimWorldAccess.Inspection.InfoCardTree.PermitGranted>已授予 {0}。{1}: {2}</RimWorldAccess.Inspection.InfoCardTree.PermitGranted>
+  <RimWorldAccess.Inspection.InfoCardTree.TitleRenounced>{0}: {1}。</RimWorldAccess.Inspection.InfoCardTree.TitleRenounced>
 
   <!-- =================================================================
        BuildingInspectPatch fallback announcements. Each phrase is the
@@ -1100,17 +1057,11 @@
        the inspection flow, e.g. from the scanner). One whole-phrase
        key per submenu so the verb (Closed / Cancelled) and the menu
        noun can vary per language without sentence-templating.
-       AppliedRangeChanges is announced after the user confirms the
-       hit-points / quality range editor; it is a TolkHelper.Speak
-       (not a fallback) since the user always lands back in the thing
-       filter menu after applying.
        ================================================================= -->
   <RimWorldAccess.Inspection.Patch.ClosedTemperatureControl>已关闭温度控制菜单</RimWorldAccess.Inspection.Patch.ClosedTemperatureControl>
   <RimWorldAccess.Inspection.Patch.ClosedBillsMenu>已关闭订单菜单</RimWorldAccess.Inspection.Patch.ClosedBillsMenu>
   <RimWorldAccess.Inspection.Patch.ClosedBillConfiguration>已关闭订单配置</RimWorldAccess.Inspection.Patch.ClosedBillConfiguration>
   <RimWorldAccess.Inspection.Patch.ClosedThingFilterMenu>已关闭物品筛选菜单</RimWorldAccess.Inspection.Patch.ClosedThingFilterMenu>
-  <RimWorldAccess.Inspection.Patch.CancelledRangeEditing>已取消范围编辑</RimWorldAccess.Inspection.Patch.CancelledRangeEditing>
-  <RimWorldAccess.Inspection.Patch.AppliedRangeChanges>已应用范围更改</RimWorldAccess.Inspection.Patch.AppliedRangeChanges>
   <RimWorldAccess.Inspection.Patch.ClosedFuelSettings>已关闭燃料设置菜单</RimWorldAccess.Inspection.Patch.ClosedFuelSettings>
   <RimWorldAccess.Inspection.Patch.ClosedDoorControls>已关闭门控制</RimWorldAccess.Inspection.Patch.ClosedDoorControls>
   <RimWorldAccess.Inspection.Patch.ClosedForbidControls>已关闭禁用控制</RimWorldAccess.Inspection.Patch.ClosedForbidControls>
@@ -1145,6 +1096,7 @@
   <RimWorldAccess.Inspection.Tree.PenAutoCutToggleAnnouncement>自动割除 {0}</RimWorldAccess.Inspection.Tree.PenAutoCutToggleAnnouncement>
   <RimWorldAccess.Inspection.Tree.PenDesignatedPlantsForCutting>已指定植物以供割除</RimWorldAccess.Inspection.Tree.PenDesignatedPlantsForCutting>
   <RimWorldAccess.Inspection.Tree.BookEjected>{0}. {1}</RimWorldAccess.Inspection.Tree.BookEjected>
+  <RimWorldAccess.Inspection.Tree.ApparelEjected>{0}. {1}</RimWorldAccess.Inspection.Tree.ApparelEjected>
 
   <!-- =================================================================
        InspectionTreeBuilder tree-item labels paired with the actions
@@ -1258,11 +1210,35 @@
          translated by the game), {1} = entry text.
        ================================================================= -->
   <RimWorldAccess.Inspection.Tree.Root>查看</RimWorldAccess.Inspection.Tree.Root>
+  <RimWorldAccess.Inspection.Tree.AlsoShown>此选项卡还显示</RimWorldAccess.Inspection.Tree.AlsoShown>
+  <!-- Hotel/restaurant wave: a captured row standing in for a mod's own
+       ThingFilterUI panel (e.g. Gastronomy's Menu, Storefront's stock
+       filter) — activating it opens our full filter screen instead of the
+       mod's own scroll-culled tree. FilterPanelTitle is the generic
+       fallback title when the owning tab's own display name is
+       unavailable. -->
+  <RimWorldAccess.Inspection.Tree.EditFilterList>编辑筛选列表</RimWorldAccess.Inspection.Tree.EditFilterList>
+  <RimWorldAccess.Inspection.Tree.FilterPanelTitle>筛选</RimWorldAccess.Inspection.Tree.FilterPanelTitle>
+  <!-- Hotel/restaurant wave: qualifies a captured button whose only name is
+       punctuation (a mod's "×"/"+" icon button) with the text of the row it
+       belongs to, so it reads as "No one: ×" rather than a bare glyph.
+       {0} = the row's own text, {1} = the glyph name. -->
+  <RimWorldAccess.Inspection.Tree.GlyphButtonQualifiedName>{0}: {1}</RimWorldAccess.Inspection.Tree.GlyphButtonQualifiedName>
+  <RimWorldAccess.Inspection.Parity.NoLongerShown>{0} 不再显示在此选项卡上。</RimWorldAccess.Inspection.Parity.NoLongerShown>
+  <RimWorldAccess.Inspection.Parity.ActivateFailed>{0} 无法激活。</RimWorldAccess.Inspection.Parity.ActivateFailed>
+  <RimWorldAccess.Inspection.Parity.Disabled>{0} 已禁用。</RimWorldAccess.Inspection.Parity.Disabled>
+  <RimWorldAccess.Inspection.Parity.Increase>增加</RimWorldAccess.Inspection.Parity.Increase>
+  <RimWorldAccess.Inspection.Parity.Decrease>减少</RimWorldAccess.Inspection.Parity.Decrease>
+  <RimWorldAccess.Inspection.Parity.SetValue>设置数值</RimWorldAccess.Inspection.Parity.SetValue>
+  <RimWorldAccess.Inspection.Parity.NotANumber>{0} 不是数字。</RimWorldAccess.Inspection.Parity.NotANumber>
   <RimWorldAccess.Inspection.Tree.MeditationFocusNoFocus>冥想焦点 - 范围内没有焦点物</RimWorldAccess.Inspection.Tree.MeditationFocusNoFocus>
   <RimWorldAccess.Inspection.Tree.NoTabInfo>该选项卡无可用信息。</RimWorldAccess.Inspection.Tree.NoTabInfo>
   <RimWorldAccess.Inspection.Tree.TabNoKeyboardContent>选项卡“{0}”没有键盘可访问的内容。</RimWorldAccess.Inspection.Tree.TabNoKeyboardContent>
   <RimWorldAccess.Inspection.Tree.UnrecognizedTab>这是来自某个模组或 DLC 的无法识别的选项卡。</RimWorldAccess.Inspection.Tree.UnrecognizedTab>
   <RimWorldAccess.Inspection.Tree.NoFacilityInfo>无设施连接信息。</RimWorldAccess.Inspection.Tree.NoFacilityInfo>
+  <!-- Shown when the inspect tree's Gizmos category expands on an object the game
+       currently offers no commands for. -->
+  <RimWorldAccess.Inspection.Tree.NoCommands>无可用命令。</RimWorldAccess.Inspection.Tree.NoCommands>
 
   <RimWorldAccess.Inspection.Tree.NoNeedsToDisplay>没有可显示的需求。</RimWorldAccess.Inspection.Tree.NoNeedsToDisplay>
   <RimWorldAccess.Inspection.Tree.NoTrainableSkills>无可训练技能</RimWorldAccess.Inspection.Tree.NoTrainableSkills>
@@ -1276,6 +1252,8 @@
   <RimWorldAccess.Inspection.Tree.HealthSettings>健康设置</RimWorldAccess.Inspection.Tree.HealthSettings>
   <RimWorldAccess.Inspection.Tree.Capacities>能力</RimWorldAccess.Inspection.Tree.Capacities>
   <RimWorldAccess.Inspection.Tree.BreakThresholds>崩溃阈值</RimWorldAccess.Inspection.Tree.BreakThresholds>
+  <RimWorldAccess.Inspection.Tree.JoyKindsOnMap>地图上的娱乐来源</RimWorldAccess.Inspection.Tree.JoyKindsOnMap>
+  <RimWorldAccess.Inspection.Tree.ActiveLearningDesires>当前的学习意愿</RimWorldAccess.Inspection.Tree.ActiveLearningDesires>
   <RimWorldAccess.Inspection.Tree.CombatLog>战斗记录</RimWorldAccess.Inspection.Tree.CombatLog>
   <RimWorldAccess.Inspection.Tree.SocialLog>社交记录</RimWorldAccess.Inspection.Tree.SocialLog>
 
@@ -1406,16 +1384,6 @@
   <RimWorldAccess.Inspection.Gizmo.WeaponVerbLabel>{0} - {1}</RimWorldAccess.Inspection.Gizmo.WeaponVerbLabel>
   <RimWorldAccess.Inspection.Gizmo.UnknownCommand>未知命令</RimWorldAccess.Inspection.Gizmo.UnknownCommand>
 
-  <!-- Info Card skin-color shade descriptors (src/Inspection/InfoCardDataExtractor.cs), keyed off luminance. -->
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.VeryLight>极浅</RimWorldAccess.Inspection.InfoCard.SkinShade.VeryLight>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Light>浅</RimWorldAccess.Inspection.InfoCard.SkinShade.Light>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Fair>白皙</RimWorldAccess.Inspection.InfoCard.SkinShade.Fair>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Medium>中等</RimWorldAccess.Inspection.InfoCard.SkinShade.Medium>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Tan>古铜</RimWorldAccess.Inspection.InfoCard.SkinShade.Tan>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.Brown>棕</RimWorldAccess.Inspection.InfoCard.SkinShade.Brown>
-  <RimWorldAccess.Inspection.InfoCard.SkinShade.DarkBrown>深棕</RimWorldAccess.Inspection.InfoCard.SkinShade.DarkBrown>
-  <RimWorldAccess.Inspection.InfoCard.SkinColorShade>肤色（{0}）</RimWorldAccess.Inspection.InfoCard.SkinColorShade>
-
   <!-- Training tab status words for tree labels (src/Inspection/InspectionTreeBuilder.cs). -->
   <RimWorldAccess.Inspection.Training.CannotTrain>无法训练</RimWorldAccess.Inspection.Training.CannotTrain>
   <RimWorldAccess.Inspection.Training.StatusLearned>已学会</RimWorldAccess.Inspection.Training.StatusLearned>
@@ -1429,6 +1397,8 @@
   <!-- Inspection category display names (src/Inspection/InspectionCategoryLocalizer.cs).
        English identifiers stay as internal dispatch keys; these are display only. -->
   <RimWorldAccess.Inspection.CategoryName.Overview>概览</RimWorldAccess.Inspection.CategoryName.Overview>
+  <!-- The object's commands: the same list the G key opens, as tree rows. -->
+  <RimWorldAccess.Inspection.CategoryName.Gizmos>命令</RimWorldAccess.Inspection.CategoryName.Gizmos>
   <RimWorldAccess.Inspection.CategoryName.Health>健康</RimWorldAccess.Inspection.CategoryName.Health>
   <RimWorldAccess.Inspection.CategoryName.Needs>需求</RimWorldAccess.Inspection.CategoryName.Needs>
   <RimWorldAccess.Inspection.CategoryName.Mood>心情</RimWorldAccess.Inspection.CategoryName.Mood>

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using RimWorld;
 using RimWorld.Planet;
+using RimWorldAccess.Shell;
 using UnityEngine;
 using Verse;
 using Verse.Sound;
@@ -11,51 +12,32 @@ using Verse.Sound;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// State management for caravan inspection screen (I key or Enter on world map).
-    /// Provides tree view interface for caravan information.
-    /// Uses TreeNavigationHelper for all standard navigation logic.
+    /// The DATA facade behind the windowless caravan inspection screen (I, or Enter on a selected
+    /// caravan on the world map): which caravan is inspected, the category tree built for it, the
+    /// abandon/inspect/gear actions its rows carry, and the per-pawn readouts Alt+M/N/H/G/K speak.
+    /// It owns the tree's CONTENT and lifecycle and none of its keyboard behaviour — cursor,
+    /// typeahead, expansion state and every announcement live in <see cref="CaravanInspectScope"/>.
     /// </summary>
     public static class CaravanInspectState
     {
-        private static TreeNavigationHelper treeNav = new TreeNavigationHelper("CaravanInspect");
         private static bool isActive = false;
         private static Caravan currentCaravan = null;
+
+        /// <summary>A built tree waiting for a scope to receive it (see <see cref="TakePendingRoot"/>).</summary>
+        private static InspectionTreeItem pendingRoot;
 
         // Track caravan contents to detect changes (for auto-refresh after abandon)
         private static int lastKnownPawnCount = 0;
         private static int lastKnownItemCount = 0;
 
-        /// <summary>
-        /// Gets whether the caravan inspect screen is currently active.
-        /// </summary>
         public static bool IsActive => isActive;
 
-        /// <summary>
-        /// Gets the current caravan being inspected.
-        /// </summary>
         public static Caravan CurrentCaravan => currentCaravan;
 
         /// <summary>
-        /// Gets whether typeahead search is currently active.
+        /// Builds caravan category nodes (Caravan Status, Pawns, Gear, Items) under a parent, so
+        /// <see cref="WorldObjectSelectionState"/> can embed the tree without opening this screen.
         /// </summary>
-        public static bool HasActiveTypeahead => treeNav.HasActiveSearch;
-
-        static CaravanInspectState()
-        {
-            treeNav.FormatItemAnnouncement = FormatItemAnnouncement;
-            treeNav.FormatSearchAnnouncement = FormatSearchAnnouncement;
-            treeNav.OnActivate = HandleActivate;
-            treeNav.OnDelete = HandleDelete;
-            treeNav.OnInfo = HandleInfo;
-            treeNav.TrackLastChild = true;
-        }
-
-        /// <summary>
-        /// Builds caravan category nodes (Caravan Status, Pawns, Gear, Items) for a given parent.
-        /// Used by WorldObjectSelectionState to embed caravan inspection tree without opening CaravanInspectState.
-        /// </summary>
-        /// <param name="parent">The parent node to attach categories to</param>
-        /// <param name="caravan">The caravan to build categories for</param>
         public static void BuildCaravanCategoriesFor(InspectionTreeItem parent, Caravan caravan)
         {
             if (parent == null || caravan == null)
@@ -79,9 +61,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Opens the caravan inspect screen for the specified caravan.
-        /// </summary>
+        /// <summary>Opens the caravan inspect screen for the specified caravan.</summary>
         public static void Open(Caravan caravan)
         {
             if (caravan == null)
@@ -93,23 +73,31 @@ namespace RimWorldAccess
             isActive = true;
             currentCaravan = caravan;
 
-            // Build the tree and record counts for change detection
-            var root = BuildTree();
-            treeNav.Initialize(root);
+            var root = BuildTreeRoot();
             UpdateTrackedCounts();
 
-            // Simple announcement - just the caravan name
             TolkHelper.SpeakData(caravan.Name);
 
-            if (treeNav.Count > 0)
+            // The mirror does not push the scope until the reconcile pass after this returns, so the
+            // tree is handed over directly here; the scope exists from the first OnGUI pass.
+            CaravanInspectScope live = CaravanInspectScope.Live;
+            if (live != null)
             {
-                treeNav.ReannounceCurrentItem();
+                pendingRoot = null;
+                live.OpenTree(root);
+                return;
             }
+            pendingRoot = root;
         }
 
-        /// <summary>
-        /// Updates the tracked counts for change detection.
-        /// </summary>
+        /// <summary>Drains a tree built before any scope existed to receive it; null otherwise.</summary>
+        internal static InspectionTreeItem TakePendingRoot()
+        {
+            InspectionTreeItem root = pendingRoot;
+            pendingRoot = null;
+            return root;
+        }
+
         private static void UpdateTrackedCounts()
         {
             if (currentCaravan == null)
@@ -125,10 +113,11 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Checks if caravan contents have changed and refreshes if needed.
-        /// Called at the start of HandleInput to detect changes after abandon dialogs close.
+        /// Rebuilds the tree when the caravan's contents changed, so an abandon that happened inside a
+        /// confirmation dialog is picked up before the next key is processed. Called from
+        /// <see cref="CaravanInspectScope.RefreshContent"/>, which runs before every describe cycle.
         /// </summary>
-        private static void CheckForChangesAndRefresh()
+        internal static void CheckForChangesAndRefresh()
         {
             if (currentCaravan == null)
                 return;
@@ -144,141 +133,39 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Closes the caravan inspect screen.
-        /// </summary>
+        /// <summary>Closes the caravan inspect screen.</summary>
         public static void Close()
         {
             isActive = false;
             currentCaravan = null;
-            treeNav.Reset();
+            pendingRoot = null;
+            CaravanInspectScope live = CaravanInspectScope.Live;
+            if (live != null)
+            {
+                live.ClearTree();
+            }
             TolkHelper.Speak("RimWorldAccess.Caravan.Inspect.Closed".Loc());
         }
 
         /// <summary>
-        /// Refreshes the tree structure (called after gear changes or item abandonment).
-        /// Maintains cursor position by finding the same item or falling back to position.
+        /// Refreshes the tree structure (after gear changes or item abandonment). The rebuild itself —
+        /// expansion carried over by node path, cursor restored by data object then label then
+        /// position — lives in <see cref="CaravanInspectScope.RebuildTree"/>.
         /// </summary>
         public static void RefreshTree()
         {
             if (!IsActive || currentCaravan == null)
                 return;
 
-            // Remember current selection details for restoration
-            var oldItem = treeNav.SelectedItem;
-            object oldData = oldItem?.Data;
-            string oldLabel = oldItem?.Label;
-            int oldIndex = treeNav.SelectedIndex;
-            var oldParent = oldItem?.Parent;
-            string oldParentLabel = oldParent?.Label;
-
-            // Remember expansion states for all nodes by their labels (to restore after rebuild)
-            var expansionStates = new Dictionary<string, bool>();
-            foreach (var item in treeNav.VisibleItems)
+            CaravanInspectScope live = CaravanInspectScope.Live;
+            if (live != null)
             {
-                if (item.IsExpandable)
-                {
-                    string key = GetNodePath(item);
-                    expansionStates[key] = item.IsExpanded;
-                }
-            }
-
-            // Rebuild tree
-            var root = BuildTree();
-            treeNav.Initialize(root);
-
-            // Restore expansion states
-            foreach (var item in GetAllNodes(treeNav.RootItem))
-            {
-                if (item.IsExpandable)
-                {
-                    string key = GetNodePath(item);
-                    if (expansionStates.TryGetValue(key, out bool wasExpanded))
-                    {
-                        item.IsExpanded = wasExpanded;
-                    }
-                }
-            }
-
-            // Rebuild visible list with restored expansion
-            treeNav.RebuildVisibleList();
-
-            // Try to find the same item by Data reference first
-            if (oldData != null)
-            {
-                int foundIndex = -1;
-                for (int i = 0; i < treeNav.VisibleItems.Count; i++)
-                {
-                    if (treeNav.VisibleItems[i].Data == oldData)
-                    {
-                        foundIndex = i;
-                        break;
-                    }
-                }
-                if (foundIndex >= 0)
-                {
-                    treeNav.SetSelectedIndex(foundIndex);
-                    return;
-                }
-            }
-
-            // Try to find by label within the same parent
-            if (!string.IsNullOrEmpty(oldLabel) && !string.IsNullOrEmpty(oldParentLabel))
-            {
-                for (int i = 0; i < treeNav.VisibleItems.Count; i++)
-                {
-                    var item = treeNav.VisibleItems[i];
-                    if (item.Label == oldLabel && item.Parent?.Label == oldParentLabel)
-                    {
-                        treeNav.SetSelectedIndex(i);
-                        return;
-                    }
-                }
-            }
-
-            // If item was deleted, stay at the same index position (or move up if at end)
-            int newIndex = Math.Min(oldIndex, treeNav.Count - 1);
-            if (newIndex < 0) newIndex = 0;
-            treeNav.SetSelectedIndex(newIndex);
-        }
-
-        /// <summary>
-        /// Gets all nodes in the tree (for iteration).
-        /// </summary>
-        private static IEnumerable<InspectionTreeItem> GetAllNodes(InspectionTreeItem node)
-        {
-            if (node == null) yield break;
-
-            yield return node;
-
-            foreach (var child in node.Children)
-            {
-                foreach (var descendant in GetAllNodes(child))
-                {
-                    yield return descendant;
-                }
+                live.RebuildTree();
             }
         }
 
-        /// <summary>
-        /// Gets a unique path string for a node (for restoration after rebuild).
-        /// </summary>
-        private static string GetNodePath(InspectionTreeItem node)
-        {
-            var parts = new List<string>();
-            var current = node;
-            while (current != null && current.IndentLevel >= 0)
-            {
-                parts.Insert(0, current.Label ?? "?");
-                current = current.Parent;
-            }
-            return string.Join("/", parts);
-        }
-
-        /// <summary>
-        /// Builds the tree structure for the caravan.
-        /// </summary>
-        private static InspectionTreeItem BuildTree()
+        /// <summary>Builds the tree structure for the caravan; internal so the scope can rebuild it after the contents change.</summary>
+        internal static InspectionTreeItem BuildTreeRoot()
         {
             var root = new InspectionTreeItem
             {
@@ -288,7 +175,6 @@ namespace RimWorldAccess
                 IsExpandable = false
             };
 
-            // Add main categories
             AddCaravanStatusNode(root);
             AddPawnsNode(root);
             AddGearNode(root);
@@ -297,9 +183,7 @@ namespace RimWorldAccess
             return root;
         }
 
-        /// <summary>
-        /// Adds the Caravan Status node with stats.
-        /// </summary>
+        /// <summary>Adds the Caravan Status node with stats.</summary>
         private static void AddCaravanStatusNode(InspectionTreeItem parent)
         {
             var statusNode = new InspectionTreeItem
@@ -312,20 +196,15 @@ namespace RimWorldAccess
                 Parent = parent
             };
 
-            // Add stats as children with tooltips from the game's built-in explanation properties
             AddStatNode(statusNode, (string)"RimWorldAccess.Caravan.Inspect.StatLocation".Translate(), GetLocationString());
 
-            // Mass with game's tooltip explanation
             string massTooltip = GetMassTooltip();
             AddStatNode(statusNode, (string)"RimWorldAccess.Caravan.Inspect.StatMass".Translate(), GetMassString(), massTooltip);
 
-            // Status with detailed explanation
             string statusTooltip = GetStatusTooltip();
             AddStatNode(statusNode, (string)"RimWorldAccess.Caravan.Inspect.StatStatus".Translate(), GetMovementStatus(), statusTooltip);
 
-            // Speed with game's tooltip (uses same method as Gizmo_CaravanInfo)
-            // Game shows "Immobile" when overloaded, otherwise shows tiles/day
-            // Game's description: "CaravanMovementSpeedTip".Translate()
+            // Immobile when overloaded, else tiles/day, as Gizmo_CaravanInfo shows it.
             string speedDescription = "CaravanMovementSpeedTip".Translate();
             string speedLabel = "RimWorldAccess.Caravan.Inspect.StatSpeed".Translate();
             if (currentCaravan.MassUsage > currentCaravan.MassCapacity)
@@ -343,8 +222,7 @@ namespace RimWorldAccess
                 AddStatNode(statusNode, speedLabel, $"{tilesPerDay:0.#} {tilesPerDayUnit}. {speedDescription}", speedExplanation.ToString());
             }
 
-            // Food with tooltip - matches game's CaravanUIUtility.GetDaysWorthOfFoodLabel behavior
-            // Game's description: "DaysWorthOfFoodTooltip".Translate()
+            // Matches CaravanUIUtility.GetDaysWorthOfFoodLabel.
             string foodDescription = "DaysWorthOfFoodTooltip".Translate();
             string foodStatLabel = "RimWorldAccess.Caravan.Inspect.StatFood".Translate();
             try
@@ -352,7 +230,7 @@ namespace RimWorldAccess
                 var foodInfo = currentCaravan.DaysWorthOfFood;
                 string foodValue;
 
-                if (foodInfo.days >= 600f)
+                if (foodInfo.days >= DaysWorthOfFoodCalculator.InfiniteDaysWorthOfFood)
                 {
                     foodValue = "Infinite".Translate();
                 }
@@ -361,15 +239,14 @@ namespace RimWorldAccess
                     // Game format: {days:0.#} (shows "3" not "3.0"); vanilla "PeriodDays" unit
                     foodValue = "PeriodDays".Translate(foodInfo.days.ToString("0.#"));
 
-                    // Show rot only if food is perishable AND will rot before running out
-                    // This matches the game's exact logic in CaravanUIUtility.GetDaysWorthOfFoodLabel
-                    if (foodInfo.tillRot < 600f && foodInfo.tillRot < foodInfo.days)
+                    // Rot only when the food is perishable AND will rot before running out, as
+                    // CaravanUIUtility.GetDaysWorthOfFoodLabel does.
+                    if (foodInfo.tillRot < DaysWorthOfFoodCalculator.InfiniteDaysWorthOfFood && foodInfo.tillRot < foodInfo.days)
                     {
                         foodValue += " " + (string)"RimWorldAccess.Caravan.Inspect.DaysUntilRot".Translate(foodInfo.tillRot.ToString("0.#"));
                     }
                 }
 
-                // Check for food warnings
                 if (currentCaravan.needs.AnyPawnOutOfFood(out string malnutritionInfo))
                 {
                     foodValue += " - " + (string)"RimWorldAccess.Caravan.Inspect.OutOfFood".Translate();
@@ -379,7 +256,6 @@ namespace RimWorldAccess
                     }
                 }
 
-                // Add description after value
                 foodValue += ". " + foodDescription;
                 AddStatNode(statusNode, foodStatLabel, foodValue);
             }
@@ -388,9 +264,7 @@ namespace RimWorldAccess
                 AddStatNode(statusNode, foodStatLabel, (string)"RimWorldAccess.Caravan.Inspect.Unknown".Translate());
             }
 
-            // Foraging info if applicable
-            // Game format: {perDay:0.#} ({food.label})
-            // Game's description: "ForagedFoodPerDayTip".Translate()
+            // Foraging, in the game's own "{perDay:0.#} ({food.label})" format.
             try
             {
                 var forageInfo = currentCaravan.forage.ForagedFoodPerDay;
@@ -405,20 +279,17 @@ namespace RimWorldAccess
             }
             catch { }
 
-            // Destination and ETA
             if (currentCaravan.pather?.Moving == true && currentCaravan.pather.Destination.Valid)
             {
                 AddStatNode(statusNode, (string)"RimWorldAccess.Caravan.Inspect.StatDestination".Translate(), GetDestinationString());
                 AddStatNode(statusNode, (string)"RimWorldAccess.Caravan.Inspect.StatETA".Translate(), GetETAString());
             }
 
-            // Visibility with game's tooltip
-            // Game's description: "CaravanVisibilityTip".Translate()
+            // Visibility, with the game's own tip.
             string visDescription = "CaravanVisibilityTip".Translate();
             string visTooltip = currentCaravan.VisibilityExplanation;
             AddStatNode(statusNode, (string)"RimWorldAccess.Caravan.Inspect.StatVisibility".Translate(), $"{currentCaravan.Visibility:P0}. {visDescription}", visTooltip);
 
-            // Beds info when resting
             if (!currentCaravan.pather?.MovingNow == true && currentCaravan.beds != null)
             {
                 int bedCount = currentCaravan.beds.GetUsedBedCount();
@@ -431,12 +302,9 @@ namespace RimWorldAccess
             parent.Children.Add(statusNode);
         }
 
-        /// <summary>
-        /// Gets tooltip explanation for mass using game's built-in explanation.
-        /// </summary>
+        /// <summary>The mass tooltip, built around the game's own MassCapacityExplanation.</summary>
         private static string GetMassTooltip()
         {
-            // Use the game's built-in mass capacity explanation
             string gameExplanation = currentCaravan.MassCapacityExplanation;
 
             var sb = new StringBuilder();
@@ -453,7 +321,6 @@ namespace RimWorldAccess
                 sb.AppendLine("RimWorldAccess.Caravan.Inspect.TooltipRemainingCapacity".Translate(remaining.ToString("F1")));
             }
 
-            // Append the game's detailed breakdown
             if (!string.IsNullOrEmpty(gameExplanation))
             {
                 sb.AppendLine();
@@ -464,9 +331,7 @@ namespace RimWorldAccess
             return sb.ToString();
         }
 
-        /// <summary>
-        /// Gets tooltip explanation for status.
-        /// </summary>
+        /// <summary>The status tooltip.</summary>
         private static string GetStatusTooltip()
         {
             var sb = new StringBuilder();
@@ -522,9 +387,7 @@ namespace RimWorldAccess
             parent.Children.Add(node);
         }
 
-        /// <summary>
-        /// Data class to store stat-specific info for Alt+I inspection.
-        /// </summary>
+        /// <summary>Stat-specific info for the Alt+I breakdown.</summary>
         internal class StatNodeData
         {
             public string StatLabel { get; set; }
@@ -555,7 +418,6 @@ namespace RimWorldAccess
         {
             // Use WorldInfoHelper for consistent status display with comma/period cycling
             string status = WorldInfoHelper.GetCaravanStatus(currentCaravan);
-            // Capitalize first letter for display
             if (!string.IsNullOrEmpty(status))
             {
                 return char.ToUpper(status[0]) + status.Substring(1);
@@ -593,136 +455,98 @@ namespace RimWorldAccess
             return (string)"RimWorldAccess.Caravan.Inspect.Unknown".Translate();
         }
 
-        /// <summary>
-        /// Adds the Pawns node with Colonists and Animals sub-categories.
-        /// </summary>
+        /// <summary>Adds the Pawns node with one sub-category per vanilla pawn section.</summary>
         private static void AddPawnsNode(InspectionTreeItem parent)
         {
             var pawns = currentCaravan.PawnsListForReading;
-            var colonists = pawns.Where(p => p.IsColonist && !p.IsPrisoner).OrderBy(p => p.LabelShortCap).ToList();
-            var prisoners = pawns.Where(p => p.IsPrisoner).OrderBy(p => p.LabelShortCap).ToList();
-            var animals = pawns.Where(p => p.RaceProps.Animal).OrderBy(p => p.LabelShortCap).ToList();
-
-            int totalPawns = colonists.Count + prisoners.Count + animals.Count;
 
             var pawnsNode = new InspectionTreeItem
             {
                 Type = InspectionTreeItem.ItemType.Category,
-                Label = (string)"RimWorldAccess.Caravan.Inspect.CategoryPawns".Translate(totalPawns),
+                Label = (string)"RimWorldAccess.Caravan.Inspect.CategoryPawns".Translate(pawns.Count),
                 IndentLevel = parent.IndentLevel + 1,
                 IsExpandable = true,
                 IsExpanded = false,
                 Parent = parent
             };
 
-            // Find negotiator
             Pawn negotiator = BestCaravanPawnUtility.FindBestNegotiator(currentCaravan);
 
-            // Add Colonists sub-category
-            if (colonists.Count > 0)
+            // MUTATION-C: mirrors RimWorld.Planet.CaravanUIUtility.AddPawnsSections;
+            // vanilla only feeds these predicates into a TransferableOneWayWidget we
+            // do not host, so the section list, order, predicates and labels below
+            // are hand-copied from the decompiled method rather than called directly.
+            // A pawn matching multiple predicates (e.g. a downed slave who is also
+            // capturable) appears in each matching section, same as vanilla's widget.
+            AddPawnsSection(pawnsNode, "ColonistsSection".Translate(), pawns.Where(p => p.IsFreeNonSlaveColonist), negotiator, showTitleAndNegotiator: true);
+            if (ModsConfig.IdeologyActive)
             {
-                var colonistsNode = new InspectionTreeItem
-                {
-                    Type = InspectionTreeItem.ItemType.SubCategory,
-                    Label = (string)"RimWorldAccess.Caravan.Inspect.CategoryColonists".Translate(colonists.Count),
-                    IndentLevel = pawnsNode.IndentLevel + 1,
-                    IsExpandable = true,
-                    IsExpanded = false,
-                    Parent = pawnsNode
-                };
-
-                foreach (var pawn in colonists)
-                {
-                    string label = pawn.LabelShortCap;
-                    if (pawn.story?.TitleCap != null && !pawn.story.TitleCap.NullOrEmpty())
-                        label += $", {pawn.story.TitleCap}";
-                    if (pawn == negotiator)
-                        label += ", " + (string)"RimWorldAccess.Caravan.Inspect.Negotiator".Translate();
-
-                    var pawnNode = new InspectionTreeItem
-                    {
-                        Type = InspectionTreeItem.ItemType.Item,
-                        Label = label,
-                        IndentLevel = colonistsNode.IndentLevel + 1,
-                        Parent = colonistsNode,
-                        Data = pawn,
-                        OnDelete = () => AbandonItem(pawn),
-                        OnActivate = () => InspectPawn(pawn)
-                    };
-                    colonistsNode.Children.Add(pawnNode);
-                }
-
-                pawnsNode.Children.Add(colonistsNode);
+                AddPawnsSection(pawnsNode, "SlavesSection".Translate(), pawns.Where(p => p.IsSlave), negotiator, showTitleAndNegotiator: true);
             }
-
-            // Add Prisoners sub-category
-            if (prisoners.Count > 0)
+            AddPawnsSection(pawnsNode, "PrisonersSection".Translate(), pawns.Where(p => p.IsPrisoner), negotiator, showTitleAndNegotiator: false);
+            AddPawnsSection(pawnsNode, "CaptureSection".Translate(), pawns.Where(p => p.Downed && CaravanUtility.ShouldAutoCapture(p, Faction.OfPlayer)), negotiator, showTitleAndNegotiator: false);
+            AddPawnsSection(pawnsNode, "AnimalsSection".Translate(), pawns.Where(p => p.IsAnimal), negotiator, showTitleAndNegotiator: false);
+            if (ModsConfig.BiotechActive)
             {
-                var prisonersNode = new InspectionTreeItem
-                {
-                    Type = InspectionTreeItem.ItemType.SubCategory,
-                    Label = (string)"RimWorldAccess.Caravan.Inspect.CategoryPrisoners".Translate(prisoners.Count),
-                    IndentLevel = pawnsNode.IndentLevel + 1,
-                    IsExpandable = true,
-                    IsExpanded = false,
-                    Parent = pawnsNode
-                };
-
-                foreach (var pawn in prisoners)
-                {
-                    var pawnNode = new InspectionTreeItem
-                    {
-                        Type = InspectionTreeItem.ItemType.Item,
-                        Label = pawn.LabelShortCap,
-                        IndentLevel = prisonersNode.IndentLevel + 1,
-                        Parent = prisonersNode,
-                        Data = pawn,
-                        OnDelete = () => AbandonItem(pawn),
-                        OnActivate = () => InspectPawn(pawn)
-                    };
-                    prisonersNode.Children.Add(pawnNode);
-                }
-
-                pawnsNode.Children.Add(prisonersNode);
+                AddPawnsSection(pawnsNode, "MechsSection".Translate(), pawns.Where(p => p.IsColonyMech && p.OverseerSubject != null && p.OverseerSubject.State == OverseerSubjectState.Overseen), negotiator, showTitleAndNegotiator: false);
             }
-
-            // Add Animals sub-category
-            if (animals.Count > 0)
+            if (ModsConfig.AnomalyActive)
             {
-                var animalsNode = new InspectionTreeItem
-                {
-                    Type = InspectionTreeItem.ItemType.SubCategory,
-                    Label = (string)"RimWorldAccess.Caravan.Inspect.CategoryAnimals".Translate(animals.Count),
-                    IndentLevel = pawnsNode.IndentLevel + 1,
-                    IsExpandable = true,
-                    IsExpanded = false,
-                    Parent = pawnsNode
-                };
-
-                foreach (var animal in animals)
-                {
-                    var animalNode = new InspectionTreeItem
-                    {
-                        Type = InspectionTreeItem.ItemType.Item,
-                        Label = animal.LabelShortCap,
-                        IndentLevel = animalsNode.IndentLevel + 1,
-                        Parent = animalsNode,
-                        Data = animal,
-                        OnDelete = () => AbandonItem(animal),
-                        OnActivate = () => InspectPawn(animal)
-                    };
-                    animalsNode.Children.Add(animalNode);
-                }
-
-                pawnsNode.Children.Add(animalsNode);
+                AddPawnsSection(pawnsNode, "EntitiesSection".Translate(), pawns.Where(p => p.IsColonySubhuman && p.mutant.Def.canTravelInCaravan), negotiator, showTitleAndNegotiator: false);
             }
 
             parent.Children.Add(pawnsNode);
         }
 
         /// <summary>
-        /// Adds the Gear node with per-pawn gear.
+        /// Builds one pawn sub-category (Colonists, Slaves, Prisoners, ...) under the Pawns node,
+        /// skipping an empty section. LabelShortCap ordering within a section is a mod-side choice for
+        /// readable navigation; vanilla's own widget does not sort by it.
         /// </summary>
+        private static void AddPawnsSection(InspectionTreeItem pawnsNode, string sectionLabel, IEnumerable<Pawn> sectionPawns, Pawn negotiator, bool showTitleAndNegotiator)
+        {
+            var pawnList = sectionPawns.OrderBy(p => p.LabelShortCap).ToList();
+            if (pawnList.Count == 0)
+                return;
+
+            var sectionNode = new InspectionTreeItem
+            {
+                Type = InspectionTreeItem.ItemType.SubCategory,
+                Label = (string)"RimWorldAccess.Caravan.Inspect.SectionWithCount".Translate(sectionLabel, pawnList.Count),
+                IndentLevel = pawnsNode.IndentLevel + 1,
+                IsExpandable = true,
+                IsExpanded = false,
+                Parent = pawnsNode
+            };
+
+            foreach (var pawn in pawnList)
+            {
+                string label = pawn.LabelShortCap;
+                if (showTitleAndNegotiator)
+                {
+                    if (pawn.story?.TitleCap != null && !pawn.story.TitleCap.NullOrEmpty())
+                        label += $", {pawn.story.TitleCap}";
+                    if (pawn == negotiator)
+                        label += ", " + (string)"RimWorldAccess.Caravan.Inspect.Negotiator".Translate();
+                }
+
+                var pawnNode = new InspectionTreeItem
+                {
+                    Type = InspectionTreeItem.ItemType.Item,
+                    Label = label,
+                    IndentLevel = sectionNode.IndentLevel + 1,
+                    Parent = sectionNode,
+                    Data = pawn,
+                    OnDelete = () => AbandonItem(pawn),
+                    OnActivate = () => InspectPawn(pawn)
+                };
+                sectionNode.Children.Add(pawnNode);
+            }
+
+            pawnsNode.Children.Add(sectionNode);
+        }
+
+        /// <summary>Adds the Gear node with per-pawn gear.</summary>
         private static void AddGearNode(InspectionTreeItem parent)
         {
             var humanlikePawns = currentCaravan.PawnsListForReading
@@ -755,7 +579,7 @@ namespace RimWorldAccess
                 var pawnGearNode = new InspectionTreeItem
                 {
                     Type = InspectionTreeItem.ItemType.SubCategory,
-                    Label = $"{pawn.LabelShortCap} ({pawnGearCount})",
+                    Label = (string)"RimWorldAccess.Caravan.Inspect.SectionWithCount".Translate((string)pawn.LabelShortCap, pawnGearCount),
                     IndentLevel = gearNode.IndentLevel + 1,
                     IsExpandable = true,
                     IsExpanded = false,
@@ -763,7 +587,6 @@ namespace RimWorldAccess
                     Data = pawn
                 };
 
-                // Add weapon
                 if (pawn.equipment?.Primary != null)
                 {
                     var weapon = pawn.equipment.Primary;
@@ -779,10 +602,16 @@ namespace RimWorldAccess
                     });
                 }
 
-                // Add apparel
                 if (pawn.apparel?.WornApparel != null)
                 {
-                    foreach (var apparel in pawn.apparel.WornApparel.OrderByDescending(a => a.def.apparel.bodyPartGroups.Count))
+                    // MUTATION-C: mirrors RimWorld.ITab_Pawn_Gear.FillTab (decompiled
+                    // ITab_Pawn_Gear.cs ~150-161): vanilla draws belts in its Equipment
+                    // list ahead of the Apparel list, then orders the Apparel list by
+                    // each item's primary body part group's list order, descending.
+                    var orderedApparel = pawn.apparel.WornApparel
+                        .OrderByDescending(a => a.def.apparel.layers.Contains(ApparelLayerDefOf.Belt))
+                        .ThenByDescending(a => a.def.apparel.bodyPartGroups[0].listOrder);
+                    foreach (var apparel in orderedApparel)
                     {
                         pawnGearNode.Children.Add(new InspectionTreeItem
                         {
@@ -803,9 +632,7 @@ namespace RimWorldAccess
             parent.Children.Add(gearNode);
         }
 
-        /// <summary>
-        /// Adds the Items node using InventoryHelper for consistent category tree (same as colony inventory).
-        /// </summary>
+        /// <summary>Adds the Items node through InventoryHelper, so the category tree matches the colony inventory's.</summary>
         private static void AddItemsNode(InspectionTreeItem parent)
         {
             var inventoryItems = CaravanInventoryUtility.AllInventoryItems(currentCaravan)?.ToList();
@@ -826,7 +653,6 @@ namespace RimWorldAccess
 
             int totalCount = inventoryItems.Sum(t => t.stackCount);
 
-            // Use InventoryHelper for consistent categorization (same tree as colony inventory)
             var aggregatedItems = InventoryHelper.AggregateStacks(inventoryItems);
             var categoryTree = InventoryHelper.BuildCategoryTree(aggregatedItems);
 
@@ -840,15 +666,12 @@ namespace RimWorldAccess
                 Parent = parent
             };
 
-            // Convert InventoryHelper.CategoryNode tree to InspectionTreeItem tree
             AddInventoryCategoryNodes(itemsNode, categoryTree, inventoryItems);
 
             parent.Children.Add(itemsNode);
         }
 
-        /// <summary>
-        /// Recursively adds inventory category nodes from InventoryHelper tree.
-        /// </summary>
+        /// <summary>Recursively adds inventory category nodes from an InventoryHelper tree.</summary>
         private static void AddInventoryCategoryNodes(InspectionTreeItem parent, List<InventoryHelper.CategoryNode> categoryNodes, List<Thing> allItems)
         {
             foreach (var categoryNode in categoryNodes)
@@ -863,7 +686,6 @@ namespace RimWorldAccess
                     Parent = parent
                 };
 
-                // Recursively add subcategories
                 if (categoryNode.SubCategories.Count > 0)
                 {
                     AddInventoryCategoryNodes(catNode, categoryNode.SubCategories, allItems);
@@ -926,9 +748,7 @@ namespace RimWorldAccess
             GearEquipMenuState.Open(currentCaravan, item, owner);
         }
 
-        /// <summary>
-        /// Abandons an item (pawn or thing) from the caravan.
-        /// </summary>
+        /// <summary>Abandons an item (pawn or thing) from the caravan.</summary>
         private static void AbandonItem(object itemData)
         {
             if (itemData is Pawn pawn)
@@ -946,12 +766,9 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Shows mood info for the selected pawn (Alt+M).
-        /// </summary>
-        private static void ShowPawnMood()
+        /// <summary>The Alt+M readout for the focused row's pawn; says none is available for any other row.</summary>
+        internal static void ShowPawnMood(InspectionTreeItem item)
         {
-            var item = treeNav.SelectedItem;
             if (item?.Data is Pawn pawn && pawn.needs?.mood != null)
             {
                 string moodInfo = PawnInfoHelper.GetMoodInfo(pawn);
@@ -963,12 +780,9 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Shows needs info for the selected pawn (Alt+N).
-        /// </summary>
-        private static void ShowPawnNeeds()
+        /// <summary>The Alt+N readout for the focused row's pawn; says none is available for any other row.</summary>
+        internal static void ShowPawnNeeds(InspectionTreeItem item)
         {
-            var item = treeNav.SelectedItem;
             if (item?.Data is Pawn pawn && pawn.needs != null)
             {
                 string needsInfo = PawnInfoHelper.GetNeedsInfo(pawn);
@@ -980,12 +794,9 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Shows health info for the selected pawn (Alt+H).
-        /// </summary>
-        private static void ShowPawnHealth()
+        /// <summary>The Alt+H readout for the focused row's pawn; says none is available for any other row.</summary>
+        internal static void ShowPawnHealth(InspectionTreeItem item)
         {
-            var item = treeNav.SelectedItem;
             if (item?.Data is Pawn pawn && pawn.health != null)
             {
                 string healthInfo = PawnInfoHelper.GetHealthInfo(pawn);
@@ -997,12 +808,9 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Shows gear info for the selected pawn (Alt+G).
-        /// </summary>
-        private static void ShowPawnGear()
+        /// <summary>The Alt+G readout for the focused row's pawn; says none is available for any other row.</summary>
+        internal static void ShowPawnGear(InspectionTreeItem item)
         {
-            var item = treeNav.SelectedItem;
             if (item?.Data is Pawn pawn)
             {
                 string gearInfo = PawnInfoHelper.GetGearInfo(pawn);
@@ -1014,12 +822,9 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Shows top skills for the selected pawn (Alt+K).
-        /// </summary>
-        private static void ShowPawnSkills()
+        /// <summary>The Alt+K readout for the focused row's pawn; says none is available for any other row.</summary>
+        internal static void ShowPawnSkills(InspectionTreeItem item)
         {
-            var item = treeNav.SelectedItem;
             if (item?.Data is Pawn pawn)
             {
                 string skillsInfo = PawnInfoHelper.GetTopSkillsInfo(pawn);
@@ -1033,202 +838,41 @@ namespace RimWorldAccess
 
         #endregion
 
-        #region Announcement Formatters
+        #region Alt+I
 
-        private static string FormatItemAnnouncement(InspectionTreeItem item)
+        /// <summary>
+        /// Alt+I on a tree row: a navigable breakdown for a stat that carries one, a real info card for
+        /// a pawn or thing row, the row's own action when it has one, else the no-breakdown
+        /// announcement. The same nodes reached through <see cref="WorldObjectSelectionScope"/> get
+        /// that scope's generic fallback instead.
+        /// </summary>
+        internal static void ShowInfoFor(InspectionTreeItem item)
         {
-            string label = item.Label.StripTags();
-
-            // State indicator for expandable items
-            string stateIndicator = TreeNavigationHelper.FormatExpansionSpaceSuffix(item);
-
-            // Position among siblings
-            var (position, total) = treeNav.GetSiblingPosition(item);
-            string positionPart = MenuHelper.FormatPosition(position - 1, total);
-
-            // Level suffix
-            string levelSuffix = MenuHelper.GetLevelSuffix("CaravanInspect", item.IndentLevel);
-
-            // Only add period separator if label doesn't already end with punctuation
-            string separator = label.EndsWith(".") || label.EndsWith("!") || label.EndsWith("?") ? " " : ". ";
-            string announcement = $"{label}{stateIndicator}{separator}{positionPart}{levelSuffix}";
-            return announcement;
-        }
-
-        private static string FormatSearchAnnouncement(InspectionTreeItem item, TypeaheadSearchHelper typeahead)
-        {
-            string label = item.Label.StripTags();
-
-            if (typeahead.HasActiveSearch)
-            {
-                string stateIndicator = TreeNavigationHelper.FormatExpansionSpaceSuffix(item);
-                return typeahead.BuildItemAnnouncement($"{label}{stateIndicator}");
-            }
-
-            return FormatItemAnnouncement(item);
-        }
-
-        #endregion
-
-        #region Custom Action Handlers
-
-        private static bool HandleActivate(InspectionTreeItem item)
-        {
-            // Categories toggle expand/collapse via default behavior
-            if (item.IsExpandable && !item.IsExpanded)
-                return false;
-
-            // Item's own OnActivate is handled by TreeNavigationHelper
-            // For stat items with no OnActivate, just re-read the label
-            if (item.Data is StatNodeData)
-            {
-                TolkHelper.SpeakData(item.Label);
-                return true;
-            }
-
-            // If expandable and expanded, let default behavior handle (drill down)
-            if (item.IsExpandable)
-                return false;
-
-            // For items without OnActivate
-            if (item.OnActivate == null)
-            {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                TolkHelper.Speak("RimWorldAccess.Caravan.Inspect.NoActionAvailable".Loc());
-                return true;
-            }
-
-            return false; // Let TreeNavigationHelper call item.OnActivate
-        }
-
-        private static bool HandleDelete(InspectionTreeItem item)
-        {
-            // Item's own OnDelete is handled by TreeNavigationHelper
-            if (item.OnDelete != null)
-                return false; // Let TreeNavigationHelper call it
-
-            TolkHelper.Speak("RimWorldAccess.Caravan.Inspect.CannotAbandon".Loc());
-            SoundDefOf.ClickReject.PlayOneShotOnCamera();
-            return true;
-        }
-
-        private static bool HandleInfo(InspectionTreeItem item)
-        {
-            // Stat with tooltip - open StatBreakdownState for navigable breakdown
             if (item.Data is StatNodeData statData && !string.IsNullOrEmpty(statData.StatTooltip))
             {
                 StatBreakdownState.Open(statData.StatLabel, statData.StatTooltip);
-                return true;
+                return;
             }
 
             if (item.Data is Pawn pawn)
             {
                 InspectPawn(pawn);
-                return true;
+                return;
             }
 
             if (item.Data is Thing thing)
             {
                 InspectThing(thing);
-                return true;
+                return;
             }
 
             if (item.OnActivate != null)
             {
-                // Has some action - execute it
                 item.OnActivate();
-                return true;
+                return;
             }
 
             TolkHelper.Speak("RimWorldAccess.Caravan.Inspect.NoBreakdown".Loc());
-            return true;
-        }
-
-        #endregion
-
-        #region Input Handling
-
-        /// <summary>
-        /// Handles keyboard input for the caravan inspect screen.
-        /// </summary>
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!isActive)
-                return false;
-
-            // Let StatBreakdownState handle input when it's active
-            if (StatBreakdownState.IsActive)
-                return false;
-
-            // Check for changes (e.g., after abandon dialog closed) and refresh if needed
-            CheckForChangesAndRefresh();
-
-            // Handle Alt shortcuts before delegating to TreeNavigationHelper
-            // These are caravan-specific and not part of standard tree navigation
-
-            // Alt+M: Mood
-            if (key == KeyCode.M && alt && !shift && !ctrl)
-            {
-                ShowPawnMood();
-                Event.current.Use();
-                return true;
-            }
-
-            // Alt+N: Needs
-            if (key == KeyCode.N && alt && !shift && !ctrl)
-            {
-                ShowPawnNeeds();
-                Event.current.Use();
-                return true;
-            }
-
-            // Alt+H: Health
-            if (key == KeyCode.H && alt && !shift && !ctrl)
-            {
-                ShowPawnHealth();
-                Event.current.Use();
-                return true;
-            }
-
-            // Alt+G: Gear
-            if (key == KeyCode.G && alt && !shift && !ctrl)
-            {
-                ShowPawnGear();
-                Event.current.Use();
-                return true;
-            }
-
-            // Alt+K: Skills
-            if (key == KeyCode.K && alt && !shift && !ctrl)
-            {
-                ShowPawnSkills();
-                Event.current.Use();
-                return true;
-            }
-
-            // Delegate to TreeNavigationHelper for standard tree navigation
-            Event ev = Event.current;
-            if (ev.type == EventType.KeyDown)
-            {
-                bool handled = treeNav.HandleInput(ev);
-                if (handled)
-                {
-                    ev.Use();
-                    return true;
-                }
-
-                // TreeNavigationHelper returns false for Escape with no active search
-                if (key == KeyCode.Escape)
-                {
-                    Close();
-                    ev.Use();
-                    return true;
-                }
-            }
-
-            // Block ALL unhandled keys to prevent game's native handlers from processing them
-            // This makes the overlay screen modal - it captures all keyboard input while active
-            return true;
         }
 
         #endregion

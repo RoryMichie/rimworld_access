@@ -9,8 +9,10 @@ namespace RimWorldAccess
 {
     /// <summary>
     /// Harmony patches for Dialog_ModSettings to announce when mod settings dialogs open and close.
-    /// Note: Individual mod settings UIs are mod-specific and cannot be generically navigated.
-    /// This patch provides basic dialog-level accessibility.
+    /// This is the FALLBACK tier: when the GenericWindowScope reader attaches to the dialog, the
+    /// scope owns the open/close announcements and full navigation, and both patches here stand
+    /// down via ScopeForWindow.HasAttachedScope. When the scope skips the dialog (not eligible),
+    /// this announce-only tier keeps the dialog from opening silently.
     /// </summary>
     [HarmonyPatch]
     public static class ModSettingsDialogPatch
@@ -35,6 +37,13 @@ namespace RimWorldAccess
         public static void DoWindowContents_Postfix(Dialog_ModSettings __instance, Rect inRect)
         {
             int instanceId = __instance.GetHashCode();
+
+            // The generic reader scope, when it owns this dialog, does its own richer open
+            // announcement and full navigation. Ask ELIGIBILITY, not the attach state: the
+            // dialog draws a teardown pass after its scope detaches, and a check on the
+            // attach state speaks the open line into that gap.
+            if (Shell.ScopeForWindow.GenericReaderEligible(__instance))
+                return;
 
             // Announce only on first render
             if (!announcedDialogs.Contains(instanceId))
@@ -68,8 +77,11 @@ namespace RimWorldAccess
             if (__instance is Dialog_ModSettings)
             {
                 int instanceId = __instance.GetHashCode();
-                announcedDialogs.Remove(instanceId);
-                TolkHelper.Speak("RimWorldAccess.ModSettings.Closed".Loc());
+                bool announcedHere = announcedDialogs.Remove(instanceId);
+                // If the generic reader scope owned this dialog, its pop/refocus is the close
+                // signal — a second "closed" line here would double-speak.
+                if (announcedHere)
+                    TolkHelper.Speak("RimWorldAccess.ModSettings.Closed".Loc());
             }
         }
     }

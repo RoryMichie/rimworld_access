@@ -129,6 +129,18 @@ namespace RimWorldAccess
 
         // Registry
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate IntPtr prism_registry_builder_new_delegate();
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate PrismError prism_registry_builder_add_library_delegate(IntPtr builder, IntPtr path, int priorityOverride, IntPtr outCount);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate IntPtr prism_registry_freeze_delegate(IntPtr builder);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void prism_registry_release_delegate(IntPtr registry);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate IntPtr prism_registry_acquire_best_delegate(IntPtr ctx);
 
         // Backend lifecycle
@@ -196,6 +208,10 @@ namespace RimWorldAccess
         public static prism_config_init_delegate prism_config_init;
         public static prism_init_delegate prism_init;
         public static prism_shutdown_delegate prism_shutdown;
+        public static prism_registry_builder_new_delegate prism_registry_builder_new;
+        public static prism_registry_builder_add_library_delegate prism_registry_builder_add_library;
+        public static prism_registry_freeze_delegate prism_registry_freeze;
+        public static prism_registry_release_delegate prism_registry_release;
         public static prism_registry_acquire_best_delegate prism_registry_acquire_best;
         public static prism_backend_free_delegate prism_backend_free;
         public static prism_backend_name_delegate prism_backend_name;
@@ -226,6 +242,10 @@ namespace RimWorldAccess
             prism_config_init = NativeLibraryLoader.GetFunction<prism_config_init_delegate>(libraryHandle, "prism_config_init");
             prism_init = NativeLibraryLoader.GetFunction<prism_init_delegate>(libraryHandle, "prism_init");
             prism_shutdown = NativeLibraryLoader.GetFunction<prism_shutdown_delegate>(libraryHandle, "prism_shutdown");
+            prism_registry_builder_new = OptionalFunction<prism_registry_builder_new_delegate>(libraryHandle, "prism_registry_builder_new");
+            prism_registry_builder_add_library = OptionalFunction<prism_registry_builder_add_library_delegate>(libraryHandle, "prism_registry_builder_add_library");
+            prism_registry_freeze = OptionalFunction<prism_registry_freeze_delegate>(libraryHandle, "prism_registry_freeze");
+            prism_registry_release = OptionalFunction<prism_registry_release_delegate>(libraryHandle, "prism_registry_release");
             prism_registry_acquire_best = NativeLibraryLoader.GetFunction<prism_registry_acquire_best_delegate>(libraryHandle, "prism_registry_acquire_best");
             prism_backend_free = NativeLibraryLoader.GetFunction<prism_backend_free_delegate>(libraryHandle, "prism_backend_free");
             prism_backend_name = NativeLibraryLoader.GetFunction<prism_backend_name_delegate>(libraryHandle, "prism_backend_name");
@@ -248,6 +268,16 @@ namespace RimWorldAccess
         }
 
         /// <summary>
+        /// Resolves an export older Prism releases lack (null when absent), so a stale
+        /// native library costs a feature rather than all speech.
+        /// </summary>
+        private static T OptionalFunction<T>(IntPtr library, string functionName) where T : Delegate
+        {
+            IntPtr symbol = NativeLibraryLoader.GetSymbol(library, functionName);
+            return symbol == IntPtr.Zero ? null : Marshal.GetDelegateForFunctionPointer<T>(symbol);
+        }
+
+        /// <summary>
         /// Clears all function pointers (called during shutdown).
         /// </summary>
         public static void ClearFunctions()
@@ -255,6 +285,10 @@ namespace RimWorldAccess
             prism_config_init = null;
             prism_init = null;
             prism_shutdown = null;
+            prism_registry_builder_new = null;
+            prism_registry_builder_add_library = null;
+            prism_registry_freeze = null;
+            prism_registry_release = null;
             prism_registry_acquire_best = null;
             prism_backend_free = null;
             prism_backend_name = null;
@@ -286,6 +320,12 @@ namespace RimWorldAccess
         public static (GCHandle handle, IntPtr pointer) MarshalUtf8(string text)
         {
             if (text == null) text = string.Empty;
+            string normalized = TextNormalization.ReplaceLoneSurrogates(text);
+            if (!ReferenceEquals(normalized, text))
+            {
+                TolkHelper.ReportScrubbedSpeech("lone surrogate(s)", text);
+            }
+            text = normalized;
             byte[] utf8 = Encoding.UTF8.GetBytes(text + "\0");
             GCHandle pin = GCHandle.Alloc(utf8, GCHandleType.Pinned);
             return (pin, pin.AddrOfPinnedObject());

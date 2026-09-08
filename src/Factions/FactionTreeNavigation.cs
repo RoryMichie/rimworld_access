@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
 using RimWorld;
-using UnityEngine;
 using Verse;
 using Verse.Sound;
 
@@ -9,8 +8,9 @@ namespace RimWorldAccess
 {
     /// <summary>
     /// Shared tree navigation logic for faction screens.
-    /// Used by both FactionTabState (in-game, windowless) and
-    /// FactionLandingState (pre-game, dialog-based).
+    /// Used only by FactionTabState (the in-game Factions tab); FactionLandingState
+    /// uses FactionLandingScope's own TreeRegionScope tree instead (blueprint
+    /// ruling D15).
     /// Wraps TreeNavigationHelper with faction-specific behavior.
     /// </summary>
     internal class FactionTreeNavigation
@@ -18,6 +18,12 @@ namespace RimWorldAccess
         private readonly TreeNavigationHelper treeNav = new TreeNavigationHelper("FactionTree");
 
         public bool HasActiveSearch => treeNav.HasActiveSearch;
+
+        /// <summary>
+        /// The wrapped tree, exposed for shell-scope routers (FactionLandingState's
+        /// per-action routers delegate to the tree's own public router methods).
+        /// </summary>
+        internal TreeNavigationHelper Tree => treeNav;
 
         public FactionTreeNavigation()
         {
@@ -41,16 +47,6 @@ namespace RimWorldAccess
         public void Reset()
         {
             treeNav.Reset();
-        }
-
-        /// <summary>
-        /// Handles keyboard input for tree navigation.
-        /// Returns true if input was handled.
-        /// Returns false for Escape-close (no active search), letting the caller handle it.
-        /// </summary>
-        public bool HandleInput(Event ev)
-        {
-            return treeNav.HandleInput(ev);
         }
 
         #region Announcements

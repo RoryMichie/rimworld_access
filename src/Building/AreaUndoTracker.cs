@@ -8,12 +8,24 @@ namespace RimWorldAccess
     /// <summary>
     /// Tracks area cell changes for undo support.
     /// Captures state before painting, then allows reverting to that state.
+    /// A single stroke can touch more than one area (Designator_AreaIgnoreRoof clears both
+    /// the BuildRoof and NoRoof grids), so every tracked area gets its own snapshot pair.
     /// </summary>
     public static class AreaUndoTracker
     {
-        private static Area targetArea = null;
-        private static HashSet<IntVec3> cellsBeforePaint = new HashSet<IntVec3>();
-        private static HashSet<IntVec3> cellsAfterPaint = new HashSet<IntVec3>();
+        private sealed class AreaSnapshot
+        {
+            public readonly Area Area;
+            public readonly HashSet<IntVec3> CellsBeforePaint = new HashSet<IntVec3>();
+            public readonly HashSet<IntVec3> CellsAfterPaint = new HashSet<IntVec3>();
+
+            public AreaSnapshot(Area area)
+            {
+                Area = area;
+            }
+        }
+
+        private static readonly List<AreaSnapshot> snapshots = new List<AreaSnapshot>();
         private static bool hasUndoData = false;
         private static bool wasExpanding = true;  // true = expand, false = clear/shrink
 
@@ -28,19 +40,43 @@ namespace RimWorldAccess
             if (area == null)
                 return;
 
-            targetArea = area;
-            wasExpanding = expanding;
-            cellsBeforePaint.Clear();
-            cellsAfterPaint.Clear();
+            CaptureBeforeState(new List<Area> { area }, expanding);
+        }
 
-            // Capture all cells currently in the area
-            Map map = area.Map;
-            if (map != null)
+        /// <summary>
+        /// Captures the state of every area a stroke will touch, before painting begins.
+        /// Call this BEFORE applying any cell changes.
+        /// </summary>
+        public static void CaptureBeforeState(IReadOnlyList<Area> areas, bool expanding)
+        {
+            if (areas == null)
+                return;
+
+            var captured = new List<AreaSnapshot>();
+            foreach (Area area in areas)
             {
+                if (area != null)
+                    captured.Add(new AreaSnapshot(area));
+            }
+
+            if (captured.Count == 0)
+                return;
+
+            snapshots.Clear();
+            snapshots.AddRange(captured);
+            wasExpanding = expanding;
+
+            // Capture all cells currently in each area
+            foreach (AreaSnapshot snapshot in snapshots)
+            {
+                Map map = snapshot.Area.Map;
+                if (map == null)
+                    continue;
+
                 foreach (IntVec3 cell in map.AllCells)
                 {
-                    if (area[cell])
-                        cellsBeforePaint.Add(cell);
+                    if (snapshot.Area[cell])
+                        snapshot.CellsBeforePaint.Add(cell);
                 }
             }
 
@@ -53,54 +89,65 @@ namespace RimWorldAccess
         /// </summary>
         public static void CaptureAfterState()
         {
-            if (targetArea == null)
+            if (snapshots.Count == 0)
                 return;
 
-            cellsAfterPaint.Clear();
+            bool anyChanged = false;
 
-            Map map = targetArea.Map;
-            if (map != null)
+            foreach (AreaSnapshot snapshot in snapshots)
             {
-                foreach (IntVec3 cell in map.AllCells)
+                snapshot.CellsAfterPaint.Clear();
+
+                Map map = snapshot.Area.Map;
+                if (map != null)
                 {
-                    if (targetArea[cell])
-                        cellsAfterPaint.Add(cell);
+                    foreach (IntVec3 cell in map.AllCells)
+                    {
+                        if (snapshot.Area[cell])
+                            snapshot.CellsAfterPaint.Add(cell);
+                    }
                 }
+
+                if (!snapshot.CellsBeforePaint.SetEquals(snapshot.CellsAfterPaint))
+                    anyChanged = true;
             }
 
             // Only mark as having undo data if something actually changed
-            hasUndoData = !cellsBeforePaint.SetEquals(cellsAfterPaint);
+            hasUndoData = anyChanged;
         }
 
         /// <summary>
         /// Undoes the last area change by restoring the before state.
         /// </summary>
-        /// <returns>Number of cells restored</returns>
+        /// <returns>Number of cells restored across every tracked area</returns>
         public static int Undo()
         {
-            if (!hasUndoData || targetArea == null)
+            if (!hasUndoData || snapshots.Count == 0)
                 return 0;
 
             int changedCount = 0;
 
-            if (wasExpanding)
+            foreach (AreaSnapshot snapshot in snapshots)
             {
-                // We were expanding - find cells that were added and remove them
-                var addedCells = cellsAfterPaint.Except(cellsBeforePaint).ToList();
-                foreach (IntVec3 cell in addedCells)
+                if (wasExpanding)
                 {
-                    targetArea[cell] = false;
-                    changedCount++;
+                    // We were expanding - find cells that were added and remove them
+                    var addedCells = snapshot.CellsAfterPaint.Except(snapshot.CellsBeforePaint).ToList();
+                    foreach (IntVec3 cell in addedCells)
+                    {
+                        snapshot.Area[cell] = false;
+                        changedCount++;
+                    }
                 }
-            }
-            else
-            {
-                // We were clearing/shrinking - find cells that were removed and add them back
-                var removedCells = cellsBeforePaint.Except(cellsAfterPaint).ToList();
-                foreach (IntVec3 cell in removedCells)
+                else
                 {
-                    targetArea[cell] = true;
-                    changedCount++;
+                    // We were clearing/shrinking - find cells that were removed and add them back
+                    var removedCells = snapshot.CellsBeforePaint.Except(snapshot.CellsAfterPaint).ToList();
+                    foreach (IntVec3 cell in removedCells)
+                    {
+                        snapshot.Area[cell] = true;
+                        changedCount++;
+                    }
                 }
             }
 
@@ -113,10 +160,14 @@ namespace RimWorldAccess
         /// </summary>
         public static string GetChangeDescription()
         {
-            if (targetArea == null)
+            if (snapshots.Count == 0)
                 return "area";
 
-            return targetArea.Label;
+            if (snapshots.Count == 1)
+                return snapshots[0].Area.Label;
+
+            List<string> labels = snapshots.Select(snapshot => snapshot.Area.Label).ToList();
+            return (string)"RimWorldAccess.Building.AreaUndo.MultipleAreas".Translate(labels.ToCommaList(true));
         }
 
         /// <summary>
@@ -124,9 +175,7 @@ namespace RimWorldAccess
         /// </summary>
         public static void Clear()
         {
-            targetArea = null;
-            cellsBeforePaint.Clear();
-            cellsAfterPaint.Clear();
+            snapshots.Clear();
             hasUndoData = false;
         }
     }

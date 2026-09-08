@@ -57,13 +57,24 @@
   <RimWorldAccess.Input.Cursor.NothingToInspect>Тут немає що оглянути</RimWorldAccess.Input.Cursor.NothingToInspect>
   <RimWorldAccess.Input.Cursor.InvalidPosition>Неправильна позиція</RimWorldAccess.Input.Cursor.InvalidPosition>
   <RimWorldAccess.Input.Cursor.NoAvailableActions>Немає доступних дій</RimWorldAccess.Input.Cursor.NoAvailableActions>
+  <RimWorldAccess.Input.Cursor.Coordinates>{0}, {1}</RimWorldAccess.Input.Cursor.Coordinates>
+
+  <!-- Mouse pointer bridge (Alt+J). PointerOffset is the answer when the pointer cannot
+       be moved: {0} = tile distance, {1} = compass direction of the cursor from it. -->
+  <RimWorldAccess.Input.Cursor.PointerMoved>Вказівник на {0}, {1}</RimWorldAccess.Input.Cursor.PointerMoved>
+  <RimWorldAccess.Input.Cursor.PointerOffset>Курсор {0} клітинок {1} від вказівника</RimWorldAccess.Input.Cursor.PointerOffset>
+  <RimWorldAccess.Input.Cursor.PointerAtCursor>Вказівник на курсорі</RimWorldAccess.Input.Cursor.PointerAtCursor>
+  <RimWorldAccess.Input.Cursor.PointerOffWindow>Вказівник поза вікном гри</RimWorldAccess.Input.Cursor.PointerOffWindow>
+  <RimWorldAccess.Input.Cursor.MouseTrackingOn>Відстеження миші увімкнено</RimWorldAccess.Input.Cursor.MouseTrackingOn>
+  <RimWorldAccess.Input.Cursor.MouseTrackingOff>Відстеження миші вимкнено</RimWorldAccess.Input.Cursor.MouseTrackingOff>
+  <RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOn>Прив'язку вказівника до клавіатури увімкнено</RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOn>
+  <RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOff>Прив'язку вказівника до клавіатури вимкнено</RimWorldAccess.Input.Cursor.PointerFollowsKeyboardOff>
 
   <!-- F1 work menu, F4 animals/mechs menu. -->
   <RimWorldAccess.Input.WorkMenu.NoColonistsAvailable>Немає доступних колоністів</RimWorldAccess.Input.WorkMenu.NoColonistsAvailable>
   <RimWorldAccess.Input.AnimalsMenu.NoAnimalsOrMechs>Немає тварин чи мехів</RimWorldAccess.Input.AnimalsMenu.NoAnimalsOrMechs>
 
   <!-- Gizmo availability guard (G key). -->
-  <RimWorldAccess.Input.Gizmo.UnavailableDuringPlacement>Команди недоступні під час розміщення або перегляду</RimWorldAccess.Input.Gizmo.UnavailableDuringPlacement>
 
   <!-- Right/left bracket order execution feedback. -->
   <!-- {0} = single-pawn prefix ("Bob: " or ""), {1} = action label. -->
@@ -95,15 +106,10 @@
        {0} = tile info. -->
   <RimWorldAccess.Input.Map.Boundary>Край мапи</RimWorldAccess.Input.Map.Boundary>
   <RimWorldAccess.Input.Map.PrefixSelected>Вибрано, {0}</RimWorldAccess.Input.Map.PrefixSelected>
-  <RimWorldAccess.Input.Map.PrefixPreview>Перегляд, {0}</RimWorldAccess.Input.Map.PrefixPreview>
   <RimWorldAccess.Input.Map.PrefixFirstPoint>Перша точка, {0}</RimWorldAccess.Input.Map.PrefixFirstPoint>
   <RimWorldAccess.Input.Map.PrefixSecondPoint>Друга точка, {0}</RimWorldAccess.Input.Map.PrefixSecondPoint>
   <RimWorldAccess.Input.Map.PrefixInArea>В області, {0}</RimWorldAccess.Input.Map.PrefixInArea>
   <RimWorldAccess.Input.Map.PrefixDisconnected>Не з'єднано, {0}</RimWorldAccess.Input.Map.PrefixDisconnected>
 
   <!-- Schedule editor visual overlay (src/Input/UnifiedKeyboardPatch.cs). -->
-  <RimWorldAccess.Input.Schedule.OverlayTitle>Меню графіка - {0} ({1}/{2}) - Година {3}</RimWorldAccess.Input.Schedule.OverlayTitle>
-  <RimWorldAccess.Input.Schedule.OverlayCurrent>Поточне: {0}</RimWorldAccess.Input.Schedule.OverlayCurrent>
-  <RimWorldAccess.Input.Schedule.OverlayInstructions1>Стрілки: Навігація | 1-5: Вибір пензля | Пробіл/Enter: Застосувати пензель</RimWorldAccess.Input.Schedule.OverlayInstructions1>
-  <RimWorldAccess.Input.Schedule.OverlayInstructions2>Shift+Стрілки: Малювати | Ctrl+C/V: Копіювати/Вставити | Tab: Області | Esc: Закрити</RimWorldAccess.Input.Schedule.OverlayInstructions2>
 </LanguageData>

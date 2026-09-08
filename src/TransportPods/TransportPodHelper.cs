@@ -3,22 +3,17 @@ using System.Linq;
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using Verse.AI;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Helper utilities for transport pod accessibility.
-    /// Provides pod detection, grouping, fuel calculations, and announcement formatting.
-    /// </summary>
+    /// <summary>Transport pod detection, grouping, fuel calculations and announcement formatting.</summary>
     public static class TransportPodHelper
     {
-        // Cached reflection fields
         private static readonly System.Reflection.FieldInfo groupIDField =
             AccessTools.Field(typeof(CompTransporter), "groupID");
 
-        /// <summary>
-        /// Gets all transport pods at the specified map position.
-        /// </summary>
+        /// <summary>Every transport pod at a map position.</summary>
         public static List<CompTransporter> GetTransportPodsAt(IntVec3 position, Map map)
         {
             var result = new List<CompTransporter>();
@@ -37,9 +32,7 @@ namespace RimWorldAccess
             return result;
         }
 
-        /// <summary>
-        /// Gets all transport pods on the map that are not currently loading or loaded.
-        /// </summary>
+        /// <summary>Every pod on the map that is neither loading nor loaded.</summary>
         public static List<CompTransporter> GetAllAvailablePods(Map map)
         {
             var result = new List<CompTransporter>();
@@ -58,18 +51,18 @@ namespace RimWorldAccess
             return result;
         }
 
-        /// <summary>
-        /// Gets the CompLaunchable for a transport pod, if it has one.
-        /// </summary>
+        /// <summary>The pod's CompLaunchable, if it has one.</summary>
         public static CompLaunchable GetLaunchable(CompTransporter transporter)
         {
             return transporter?.parent?.TryGetComp<CompLaunchable>();
         }
 
         /// <summary>
-        /// Gets all available pods that could be grouped with the source pod.
-        /// Uses the game's flood fill logic: launchers must be connected through adjacent fueling port givers.
-        /// This matches Command_LoadToTransporter.ProcessInput behavior.
+        /// Every pod that could be grouped with the source, by the game's own flood fill through
+        /// adjacent fueling port givers. Applies the gates Command_LoadToTransporter applies before it
+        /// will merge two pods — InheritInteractionsFrom's max1PerGroup and same-def gate, and
+        /// ProcessInput's mutual reachability — without which the candidate list offers pods vanilla
+        /// would refuse to load.
         /// </summary>
         public static List<CompTransporter> GetGroupablePodsFor(CompTransporter source, Map map)
         {
@@ -77,7 +70,10 @@ namespace RimWorldAccess
             if (source?.parent == null || map == null)
                 return result;
 
-            // Get the source's fueling port giver (the launcher building)
+            // A max1PerGroup transporter never inherits another pod's gizmo at all.
+            if (source.Props != null && source.Props.max1PerGroup)
+                return result;
+
             var sourceLaunchable = source.Launchable as CompLaunchable_TransportPod;
             if (sourceLaunchable?.FuelingPortSource?.parent == null)
                 return result;
@@ -86,8 +82,7 @@ namespace RimWorldAccess
             if (sourceFuelingPortGiver == null)
                 return result;
 
-            // Use flood fill to find all connected fueling port givers
-            // This matches the game's logic in Command_LoadToTransporter.ProcessInput
+            // The same flood fill Command_LoadToTransporter.ProcessInput runs.
             var connectedFuelingPortGivers = new HashSet<Building>();
             map.floodFiller.FloodFill(
                 sourceFuelingPortGiver.Position,
@@ -100,61 +95,57 @@ namespace RimWorldAccess
                 }
             );
 
-            // Find other transporters whose fueling port givers are in the connected set
+            // Restricted to the same def and to mutual reachability, matching the two vanilla gates.
             foreach (var other in GetAllAvailablePods(map))
             {
                 if (other == source)
+                    continue;
+
+                if (other.parent?.def != source.parent.def)
                     continue;
 
                 var otherLaunchable = other.Launchable as CompLaunchable_TransportPod;
                 if (otherLaunchable?.FuelingPortSource?.parent == null)
                     continue;
 
-                if (connectedFuelingPortGivers.Contains(otherLaunchable.FuelingPortSource.parent))
-                {
-                    result.Add(other);
-                }
+                if (!connectedFuelingPortGivers.Contains(otherLaunchable.FuelingPortSource.parent))
+                    continue;
+
+                if (!map.reachability.CanReach(source.parent.Position, other.parent, PathEndMode.Touch, TraverseParms.For(TraverseMode.PassDoors)))
+                    continue;
+
+                result.Add(other);
             }
 
             return result;
         }
 
         /// <summary>
-        /// Checks if a transporter is connected to a fueled launcher.
+        /// True only when this launchable draws fuel from an adjacent fueling-port building and is
+        /// not next to one. The fueling-port concept belongs to CompLaunchable_TransportPod alone; a
+        /// plain CompLaunchable, a shuttle's, carries its own tank and is never "disconnected".
         /// </summary>
-        public static bool IsConnectedToFuel(CompTransporter transporter)
+        public static bool IsDisconnectedFromFuelingPort(CompLaunchable launchable)
         {
-            var launchable = GetLaunchable(transporter);
-            if (launchable == null)
-                return false;
-
-            // Check if it's a transport pod launchable with fuel connection
-            if (launchable is CompLaunchable_TransportPod podLaunchable)
-            {
-                return podLaunchable.ConnectedToFuelingPort;
-            }
-
-            return false;
+            var podLaunchable = launchable as CompLaunchable_TransportPod;
+            return podLaunchable != null && !podLaunchable.ConnectedToFuelingPort;
         }
 
-        /// <summary>
-        /// Gets the current fuel level for a transport pod.
-        /// Uses the public FuelLevel property on CompLaunchable.
-        /// </summary>
+        /// <summary>The current fuel level, from CompLaunchable's own FuelLevel.</summary>
         public static float GetFuelLevel(CompLaunchable launchable)
         {
             if (launchable == null)
                 return 0f;
 
-            // FuelLevel is a public virtual property on CompLaunchable
-            // For transport pods (CompLaunchable_TransportPod), it returns the fuel from the connected launcher
-            // For shuttles that don't require fueling ports, it returns PositiveInfinity
+            // The base CompLaunchable dereferences Refuelable unconditionally, so a launchable whose
+            // parent carries no CompRefuelable would throw. The pod override guards itself.
+            if (!(launchable is CompLaunchable_TransportPod) && launchable.Refuelable == null)
+                return 0f;
+
             return launchable.FuelLevel;
         }
 
-        /// <summary>
-        /// Calculates the fuel needed to launch to a destination at the given distance.
-        /// </summary>
+        /// <summary>The fuel needed to launch a given distance.</summary>
         public static float CalculateFuelCost(CompLaunchable launchable, float distanceInTiles)
         {
             if (launchable == null)
@@ -167,9 +158,7 @@ namespace RimWorldAccess
             return distanceInTiles * props.fuelPerTile;
         }
 
-        /// <summary>
-        /// Gets the maximum launch distance at current fuel level.
-        /// </summary>
+        /// <summary>The maximum launch distance at the current fuel level.</summary>
         public static float GetMaxLaunchDistance(CompLaunchable launchable)
         {
             if (launchable == null)
@@ -179,18 +168,14 @@ namespace RimWorldAccess
             return launchable.MaxLaunchDistanceAtFuelLevel(fuel);
         }
 
-        /// <summary>
-        /// Checks if a destination is within launch range.
-        /// </summary>
+        /// <summary>Whether a destination is within launch range.</summary>
         public static bool CanReachDestination(CompLaunchable launchable, float distanceInTiles)
         {
             float maxRange = GetMaxLaunchDistance(launchable);
             return distanceInTiles <= maxRange;
         }
 
-        /// <summary>
-        /// Gets the group ID for a transporter (uses reflection).
-        /// </summary>
+        /// <summary>The transporter's group ID.</summary>
         public static int GetGroupID(CompTransporter transporter)
         {
             if (transporter == null || groupIDField == null)
@@ -199,9 +184,7 @@ namespace RimWorldAccess
             return (int)groupIDField.GetValue(transporter);
         }
 
-        /// <summary>
-        /// Sets the group ID for a transporter (uses reflection).
-        /// </summary>
+        /// <summary>Sets the transporter's group ID.</summary>
         public static void SetGroupID(CompTransporter transporter, int groupID)
         {
             if (transporter == null || groupIDField == null)
@@ -210,17 +193,13 @@ namespace RimWorldAccess
             groupIDField.SetValue(transporter, groupID);
         }
 
-        /// <summary>
-        /// Generates a new unique group ID for pod grouping.
-        /// </summary>
+        /// <summary>A new unique group ID.</summary>
         public static int GenerateNewGroupID()
         {
             return Find.UniqueIDsManager.GetNextTransporterGroupID();
         }
 
-        /// <summary>
-        /// Groups the specified transporters together with a new group ID.
-        /// </summary>
+        /// <summary>Groups the transporters under a new group ID.</summary>
         public static void GroupTransporters(List<CompTransporter> transporters)
         {
             if (transporters == null || transporters.Count == 0)
@@ -233,9 +212,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the total mass capacity of a group of transporters.
-        /// </summary>
+        /// <summary>The total mass capacity of a group.</summary>
         public static float GetTotalMassCapacity(List<CompTransporter> transporters)
         {
             if (transporters == null)
@@ -244,39 +221,35 @@ namespace RimWorldAccess
             return transporters.Sum(t => t.Props.massCapacity);
         }
 
-        /// <summary>
-        /// Builds an announcement string for a transport pod.
-        /// </summary>
+        /// <summary>The announcement for one transport pod row.</summary>
         public static string BuildPodAnnouncement(CompTransporter transporter, int index, int total, bool isSelected)
         {
             var parts = new List<string>();
 
-            // Pod identification
             string podName = transporter.parent.LabelShort ?? ((string)"RimWorldAccess.TransportPods.Pod.TypeTransportPod".Translate());
             parts.Add(podName);
 
-            // Selection status
             if (isSelected)
             {
                 parts.Add((string)"RimWorldAccess.TransportPods.Pod.Selected".Translate());
             }
 
-            // Fuel connection status
-            if (IsConnectedToFuel(transporter))
-            {
-                var launchable = GetLaunchable(transporter);
-                float fuel = GetFuelLevel(launchable);
-                parts.Add((string)"RimWorldAccess.TransportPods.Pod.FuelLevel".Translate(fuel.ToString("F0")));
-            }
-            else
+            // A pod away from its fueling port has no fuel to report; a shuttle reads its own tank.
+            // An object with no launchable or no refuelable has no fuel concept at all, so it gets no
+            // fuel line rather than a misleading one.
+            CompLaunchable launchable = GetLaunchable(transporter);
+            if (IsDisconnectedFromFuelingPort(launchable))
             {
                 parts.Add((string)"RimWorldAccess.TransportPods.Pod.NotConnectedToFuel".Translate());
             }
+            else if (launchable != null && launchable.Refuelable != null)
+            {
+                float fuel = GetFuelLevel(launchable);
+                parts.Add((string)"RimWorldAccess.TransportPods.Pod.FuelLevel".Translate(fuel.ToString("F0")));
+            }
 
-            // Mass capacity
             parts.Add((string)"RimWorldAccess.TransportPods.Pod.Capacity".Translate(transporter.Props.massCapacity.ToString("F0")));
 
-            // Position in list
             if (total > 1)
             {
                 parts.Add((string)"RimWorldAccess.TransportPods.Pod.PositionInList".Translate(index + 1, total));
@@ -285,9 +258,7 @@ namespace RimWorldAccess
             return string.Join(", ", parts);
         }
 
-        /// <summary>
-        /// Builds an announcement for fuel cost to a destination.
-        /// </summary>
+        /// <summary>The fuel-cost announcement for a destination.</summary>
         public static string BuildFuelCostAnnouncement(CompLaunchable launchable, float distanceInTiles)
         {
             if (launchable == null)
@@ -295,7 +266,6 @@ namespace RimWorldAccess
 
             float fuelCost = CalculateFuelCost(launchable, distanceInTiles);
 
-            // Check for invalid fuel cost (happens if Props is null or calculation fails)
             if (fuelCost >= float.MaxValue || fuelCost < 0)
             {
                 return (string)"RimWorldAccess.TransportPods.Fuel.CostUnavailable".Translate();
@@ -311,9 +281,7 @@ namespace RimWorldAccess
             return (string)"RimWorldAccess.TransportPods.Fuel.CostChemfuel".Translate(fuelCost.ToString("F0"));
         }
 
-        /// <summary>
-        /// Checks if this is a shuttle (Royalty DLC) rather than a transport pod.
-        /// </summary>
+        /// <summary>Whether this is a shuttle rather than a transport pod.</summary>
         public static bool IsShuttle(CompTransporter transporter)
         {
             if (transporter?.parent == null)
@@ -322,9 +290,7 @@ namespace RimWorldAccess
             return transporter.parent.TryGetComp<CompShuttle>() != null;
         }
 
-        /// <summary>
-        /// Gets a descriptive label for the pod type (transport pod or shuttle).
-        /// </summary>
+        /// <summary>The pod type's label: transport pod or shuttle.</summary>
         public static string GetPodTypeLabel(CompTransporter transporter)
         {
             string key = IsShuttle(transporter)

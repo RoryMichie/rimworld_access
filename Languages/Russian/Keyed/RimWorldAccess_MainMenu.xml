@@ -86,7 +86,10 @@
   <RimWorldAccess.ModList.OpeningWebsiteFor>Открытие сайта: {0}</RimWorldAccess.ModList.OpeningWebsiteFor>
   <RimWorldAccess.ModList.OpeningWorkshopPageFor>Открытие страницы в Мастерской: {0}</RimWorldAccess.ModList.OpeningWorkshopPageFor>
   <RimWorldAccess.ModList.OpeningFolderFor>Открытие папки: {0}</RimWorldAccess.ModList.OpeningFolderFor>
+  <RimWorldAccess.ModList.OpeningWorkshop>Открывается страница Steam Workshop</RimWorldAccess.ModList.OpeningWorkshop>
+  <RimWorldAccess.ModList.OpeningForum>Открывается страница модов на форуме Ludeon</RimWorldAccess.ModList.OpeningForum>
   <RimWorldAccess.ModList.UnsubscribedFrom>Отписка от: {0}</RimWorldAccess.ModList.UnsubscribedFrom>
+  <RimWorldAccess.ModList.UnsubscribedFromDownloading>Отписка от загружаемого элемента.</RimWorldAccess.ModList.UnsubscribedFromDownloading>
   <RimWorldAccess.ModList.CouldNotEnableMod>Не удалось включить мод. Возможно, мод с таким же идентификатором пакета уже активен.</RimWorldAccess.ModList.CouldNotEnableMod>
   <RimWorldAccess.ModList.ActionEnabled>включено</RimWorldAccess.ModList.ActionEnabled>
   <RimWorldAccess.ModList.ActionDisabled>отключено</RimWorldAccess.ModList.ActionDisabled>
@@ -94,7 +97,6 @@
   <RimWorldAccess.ModList.ModWithActionAndNext>{0} {1}.{2}</RimWorldAccess.ModList.ModWithActionAndNext>
   <RimWorldAccess.ModList.CanOnlyReorderActiveMods>Переставлять можно только активные моды</RimWorldAccess.ModList.CanOnlyReorderActiveMods>
   <RimWorldAccess.ModList.MovedToPosition>{0}: перемещено на позицию {1}</RimWorldAccess.ModList.MovedToPosition>
-  <RimWorldAccess.ModList.OpenDetailsFirst>Сначала нажмите Enter, чтобы открыть сведения о моде</RimWorldAccess.ModList.OpenDetailsFirst>
   <RimWorldAccess.ModList.CannotReorder>Невозможно переставить: {0}</RimWorldAccess.ModList.CannotReorder>
   <RimWorldAccess.ModList.ChangesSaved>Изменения модов сохранены</RimWorldAccess.ModList.ChangesSaved>
   <RimWorldAccess.ModList.AutoSorted>Моды отсортированы автоматически</RimWorldAccess.ModList.AutoSorted>
@@ -102,33 +104,24 @@
   <RimWorldAccess.ModList.ColumnEmpty>Список модов «{0}», пусто</RimWorldAccess.ModList.ColumnEmpty>
   <RimWorldAccess.ModList.ColumnActive>Активные</RimWorldAccess.ModList.ColumnActive>
   <RimWorldAccess.ModList.ColumnInactive>Неактивные</RimWorldAccess.ModList.ColumnInactive>
+  <!-- Region-grammar rework: the Details region's label, and the
+       refusal spoken when Enter/Space tries to toggle a still-downloading row. -->
+  <RimWorldAccess.ModList.DetailsRegion>Сведения</RimWorldAccess.ModList.DetailsRegion>
+  <RimWorldAccess.ModList.CannotToggleDownloading>Ещё загружается. Пока нельзя переключить.</RimWorldAccess.ModList.CannotToggleDownloading>
   <!-- More mod-list composition strings (ModListState).
        {0} = mod name, {1} = author, {2} = next mod info, {3} = column name. -->
   <RimWorldAccess.ModList.ContainsErrors>содержит ошибки</RimWorldAccess.ModList.ContainsErrors>
   <RimWorldAccess.ModList.ByAuthor>автор: {0}</RimWorldAccess.ModList.ByAuthor>
-  <RimWorldAccess.ModList.OpeningAnnouncement>{0}. {1}, {2} {2_numCase ? мод : мода : модов}. {3}: Alt+R. {4}: Alt+S.</RimWorldAccess.ModList.OpeningAnnouncement>
-  <RimWorldAccess.ModList.OpeningWithMod>{0} ... {1}</RimWorldAccess.ModList.OpeningWithMod>
-  <RimWorldAccess.ModList.ColumnHeader>{0} {0_numCase ? мод : мода : модов}, {1} {1_numCase ? мод : мода : модов}. </RimWorldAccess.ModList.ColumnHeader>
+  <RimWorldAccess.ModList.ColumnHeader>{0}, {1_numCase ? мод : мода : модов}. {2} </RimWorldAccess.ModList.ColumnHeader>
+  <RimWorldAccess.ModList.ColumnPosition>Столбец {0} из {1}.</RimWorldAccess.ModList.ColumnPosition>
   <RimWorldAccess.ModList.NowOnNext> Текущий: {0}, {1}</RimWorldAccess.ModList.NowOnNext>
   <RimWorldAccess.ModList.NowEmpty> Список теперь пуст.</RimWorldAccess.ModList.NowEmpty>
-  <RimWorldAccess.ModList.SearchPosition>{0}, {1} из {2}</RimWorldAccess.ModList.SearchPosition>
 
   <!-- =================================================================
        Scenario load dialog (WindowlessScenarioLoadState).
        Type-to-search list of saved scenarios with delete confirmation.
        {0} = scenario count, {1} = filename.
        ================================================================= -->
-  <RimWorldAccess.ScenarioLoad.FileWithDate>{0} - {1}</RimWorldAccess.ScenarioLoad.FileWithDate>
-  <RimWorldAccess.ScenarioLoad.WithPositionSuffix> ({0})</RimWorldAccess.ScenarioLoad.WithPositionSuffix>
-  <RimWorldAccess.ScenarioLoad.NoSavedScenarios>Сохранённые сценарии не найдены.</RimWorldAccess.ScenarioLoad.NoSavedScenarios>
-  <RimWorldAccess.ScenarioLoad.OpenInstructions>Загрузка сценария. Доступно сценариев: {0}. Печатайте для поиска.</RimWorldAccess.ScenarioLoad.OpenInstructions>
-  <RimWorldAccess.ScenarioLoad.NoScenariosAvailable>Нет доступных сценариев.</RimWorldAccess.ScenarioLoad.NoScenariosAvailable>
-  <RimWorldAccess.ScenarioLoad.NoScenarioSelected>Сценарий не выбран.</RimWorldAccess.ScenarioLoad.NoScenarioSelected>
-  <RimWorldAccess.ScenarioLoad.FailedToLoad>Не удалось загрузить сценарий: {0}</RimWorldAccess.ScenarioLoad.FailedToLoad>
-  <RimWorldAccess.ScenarioLoad.ErrorLoading>Ошибка загрузки сценария: {0}</RimWorldAccess.ScenarioLoad.ErrorLoading>
-  <RimWorldAccess.ScenarioLoad.DeleteConfirm>Удалить {0}? Нажмите Enter для подтверждения, Escape для отмены.</RimWorldAccess.ScenarioLoad.DeleteConfirm>
-  <RimWorldAccess.ScenarioLoad.Deleted>Удалено: {0}</RimWorldAccess.ScenarioLoad.Deleted>
-  <RimWorldAccess.ScenarioLoad.DeleteCancelled>Удаление отменено</RimWorldAccess.ScenarioLoad.DeleteCancelled>
 
   <!-- =================================================================
        Scenario save dialog (WindowlessScenarioSaveState).
@@ -136,14 +129,6 @@
        can be overwritten. {0} = current filename, {1} = position
        fragment, {2} = file modified date.
        ================================================================= -->
-  <RimWorldAccess.ScenarioSave.OpenInstructions>Сохранение сценария. Введите имя файла или нажмите Стрелку вниз, чтобы выбрать существующий файл для перезаписи. Текущее имя: {0}</RimWorldAccess.ScenarioSave.OpenInstructions>
-  <RimWorldAccess.ScenarioSave.SaveAs>Сохранить как: {0} ({1})</RimWorldAccess.ScenarioSave.SaveAs>
-  <RimWorldAccess.ScenarioSave.Overwrite>Перезаписать: {0} - {1} ({2})</RimWorldAccess.ScenarioSave.Overwrite>
-  <RimWorldAccess.ScenarioSave.InvalidSelection>Недопустимый выбор</RimWorldAccess.ScenarioSave.InvalidSelection>
-  <RimWorldAccess.ScenarioSave.FilenameEmpty>Имя файла не может быть пустым</RimWorldAccess.ScenarioSave.FilenameEmpty>
-  <RimWorldAccess.ScenarioSave.FileExists>Файл {0} уже существует. Нажмите Enter ещё раз для перезаписи или Escape для отмены.</RimWorldAccess.ScenarioSave.FileExists>
-  <RimWorldAccess.ScenarioSave.SavedAs>Сохранено как {0}</RimWorldAccess.ScenarioSave.SavedAs>
-  <RimWorldAccess.ScenarioSave.ErrorSaving>Ошибка сохранения: {0}</RimWorldAccess.ScenarioSave.ErrorSaving>
 
   <!-- =================================================================
        Scenario picker (Page_SelectScenario via ScenarioSelectionPatch
@@ -151,29 +136,18 @@
        {0} = page title, {1} = first scenario name,
        {2} = first scenario summary, {3} = category suffix.
        ================================================================= -->
-  <RimWorldAccess.ScenarioSelect.OpenInstructions>{0} - {1} - {2}{3}. Tab для сведений, Alt+E для редактирования.</RimWorldAccess.ScenarioSelect.OpenInstructions>
   <RimWorldAccess.ScenarioSelect.EditingScenario>Редактирование сценария: {0}</RimWorldAccess.ScenarioSelect.EditingScenario>
   <RimWorldAccess.ScenarioSelect.EditingCopyOf>Редактирование копии: {0}</RimWorldAccess.ScenarioSelect.EditingCopyOf>
-  <RimWorldAccess.ScenarioSelect.CategoryBuiltIn> (Встроенный)</RimWorldAccess.ScenarioSelect.CategoryBuiltIn>
-  <RimWorldAccess.ScenarioSelect.CategoryGeneric> ({0})</RimWorldAccess.ScenarioSelect.CategoryGeneric>
-  <RimWorldAccess.ScenarioSelect.CannotEditBuilderEntry>Запись конструктора сценариев нельзя редактировать. Нажмите Enter, чтобы создать новый сценарий.</RimWorldAccess.ScenarioSelect.CannotEditBuilderEntry>
-  <RimWorldAccess.ScenarioSelect.CannotDeleteBuilderEntry>Запись конструктора сценариев нельзя удалить</RimWorldAccess.ScenarioSelect.CannotDeleteBuilderEntry>
-  <RimWorldAccess.ScenarioSelect.CannotDeleteBuiltIn>Встроенные сценарии нельзя удалить</RimWorldAccess.ScenarioSelect.CannotDeleteBuiltIn>
-  <RimWorldAccess.ScenarioSelect.NoDetailsForBuilder>Нет сведений для конструктора сценариев. Нажмите Enter, чтобы открыть.</RimWorldAccess.ScenarioSelect.NoDetailsForBuilder>
+  <RimWorldAccess.ScenarioSelect.ScenariosRegion>Сценарии</RimWorldAccess.ScenarioSelect.ScenariosRegion>
+  <RimWorldAccess.ScenarioSelect.CategoryPrefix>{0}. {1}</RimWorldAccess.ScenarioSelect.CategoryPrefix>
+  <RimWorldAccess.ScenarioSelect.NoContextActions>Для этого сценария нет доступных действий.</RimWorldAccess.ScenarioSelect.NoContextActions>
   <!-- Scenario list and detail tree announcements (ScenarioNavigationState).
        {0} = scenario name, {1} = scenario summary, {2} = category suffix.
        Detail headers are also user-facing tree labels. -->
-  <RimWorldAccess.ScenarioSelect.BuilderEntryLabel>Конструктор сценариев - создать собственный сценарий с нуля</RimWorldAccess.ScenarioSelect.BuilderEntryLabel>
-  <RimWorldAccess.ScenarioSelect.WithPositionSuffix> ({0})</RimWorldAccess.ScenarioSelect.WithPositionSuffix>
-  <RimWorldAccess.ScenarioSelect.NameSummary>{0} - {1}{2}</RimWorldAccess.ScenarioSelect.NameSummary>
-  <RimWorldAccess.ScenarioSelect.WarningSuffix>. Предупреждение: {0}</RimWorldAccess.ScenarioSelect.WarningSuffix>
-  <RimWorldAccess.ScenarioSelect.CategoryCustom> (Свой)</RimWorldAccess.ScenarioSelect.CategoryCustom>
-  <RimWorldAccess.ScenarioSelect.CategoryWorkshop> (Мастерская)</RimWorldAccess.ScenarioSelect.CategoryWorkshop>
   <RimWorldAccess.ScenarioSelect.NoAdditionalDetails>Дополнительных сведений нет</RimWorldAccess.ScenarioSelect.NoAdditionalDetails>
   <RimWorldAccess.ScenarioSelect.DetailsLabel>Сведения</RimWorldAccess.ScenarioSelect.DetailsLabel>
-  <RimWorldAccess.ScenarioSelect.ScenarioListLabel>Список сценариев</RimWorldAccess.ScenarioSelect.ScenarioListLabel>
-  <RimWorldAccess.ScenarioSelect.BuilderSearchLabel>Конструктор сценариев</RimWorldAccess.ScenarioSelect.BuilderSearchLabel>
   <RimWorldAccess.ScenarioSelect.DescriptionLine>Описание: {0}</RimWorldAccess.ScenarioSelect.DescriptionLine>
+  <RimWorldAccess.ScenarioSelect.PlayerFactionWillBe>Ваша фракция: {0}</RimWorldAccess.ScenarioSelect.PlayerFactionWillBe>
   <RimWorldAccess.ScenarioSelect.StartWith>Начать с</RimWorldAccess.ScenarioSelect.StartWith>
   <RimWorldAccess.ScenarioSelect.MapScatteredWith>На карте разбросано</RimWorldAccess.ScenarioSelect.MapScatteredWith>
   <RimWorldAccess.ScenarioSelect.CreateIncident>Создать событие</RimWorldAccess.ScenarioSelect.CreateIncident>
@@ -181,8 +155,10 @@
   <RimWorldAccess.ScenarioSelect.PermanentGameCondition>Постоянное игровое условие</RimWorldAccess.ScenarioSelect.PermanentGameCondition>
   <RimWorldAccess.ScenarioSelect.Deleted>Удалено: {0}</RimWorldAccess.ScenarioSelect.Deleted>
   <RimWorldAccess.ScenarioSelect.UnsubscribedFrom>Отписка от: {0}</RimWorldAccess.ScenarioSelect.UnsubscribedFrom>
-  <RimWorldAccess.ScenarioSelect.CannotUnsubscribe>От этого сценария нельзя отписаться</RimWorldAccess.ScenarioSelect.CannotUnsubscribe>
-  <RimWorldAccess.ScenarioSelect.CannotDelete>Этот сценарий нельзя удалить</RimWorldAccess.ScenarioSelect.CannotDelete>
+  <RimWorldAccess.ScenarioSelect.OpenedSteamWorkshop>Steam Workshop открыт в браузере.</RimWorldAccess.ScenarioSelect.OpenedSteamWorkshop>
+  <RimWorldAccess.ScenarioBuilder.ScenarioRegion>Сценарий</RimWorldAccess.ScenarioBuilder.ScenarioRegion>
+  <RimWorldAccess.ScenarioBuilder.PartsRegion>Части</RimWorldAccess.ScenarioBuilder.PartsRegion>
+  <RimWorldAccess.ScenarioBuilder.NoAdditionalDetails>Нет дополнительных сведений</RimWorldAccess.ScenarioBuilder.NoAdditionalDetails>
 
   <!-- =================================================================
        Scenario builder shell (ScenarioBuilderState + ScenarioBuilderPatch).
@@ -193,7 +169,6 @@
        {0} = scenario title or part name, {1} = field name or
        neighbor part name, {2} = secondary neighbor name.
        ================================================================= -->
-  <RimWorldAccess.ScenarioBuilder.OpenInstructions>Конструктор сценариев: {0}. Раздел метаданных. Нажмите Tab для перехода к частям. Alt+L для загрузки, Alt+S для сохранения, Alt+R для случайной генерации, Alt+A для добавления части.</RimWorldAccess.ScenarioBuilder.OpenInstructions>
   <RimWorldAccess.ScenarioBuilder.UnsavedChangesPrompt>В этом сценарии есть несохранённые изменения.</RimWorldAccess.ScenarioBuilder.UnsavedChangesPrompt>
   <RimWorldAccess.ScenarioBuilder.UnsavedChangesTitle>Несохранённые изменения</RimWorldAccess.ScenarioBuilder.UnsavedChangesTitle>
   <RimWorldAccess.ScenarioBuilder.UnsavedSave>Сохранить</RimWorldAccess.ScenarioBuilder.UnsavedSave>
@@ -206,17 +181,8 @@
   <RimWorldAccess.ScenarioBuilder.AddedMutantEntry>Добавлена новая запись мутанта.</RimWorldAccess.ScenarioBuilder.AddedMutantEntry>
   <RimWorldAccess.ScenarioBuilder.NoLayerTagsAvailable>Нет доступных тегов слоёв для подключения.</RimWorldAccess.ScenarioBuilder.NoLayerTagsAvailable>
   <RimWorldAccess.ScenarioBuilder.AddedConnectionTo>Добавлено подключение к {0}.</RimWorldAccess.ScenarioBuilder.AddedConnectionTo>
+  <RimWorldAccess.ScenarioBuilder.AddedGenericListEntry>Добавлена новая запись.</RimWorldAccess.ScenarioBuilder.AddedGenericListEntry>
   <RimWorldAccess.ScenarioBuilder.RemovedItemType>Удалено: {0}.</RimWorldAccess.ScenarioBuilder.RemovedItemType>
-  <RimWorldAccess.ScenarioBuilder.ConfirmOrCancelEditingFirst>Сначала нажмите Enter для подтверждения или Escape для отмены редактирования</RimWorldAccess.ScenarioBuilder.ConfirmOrCancelEditingFirst>
-  <RimWorldAccess.ScenarioBuilder.PartsSection>Раздел частей</RimWorldAccess.ScenarioBuilder.PartsSection>
-  <RimWorldAccess.ScenarioBuilder.MetadataSection>Раздел метаданных</RimWorldAccess.ScenarioBuilder.MetadataSection>
-  <RimWorldAccess.ScenarioBuilder.FieldSetTo>{0}: установлено {1}</RimWorldAccess.ScenarioBuilder.FieldSetTo>
-  <RimWorldAccess.ScenarioBuilder.FieldEmptyValue>пусто</RimWorldAccess.ScenarioBuilder.FieldEmptyValue>
-  <RimWorldAccess.ScenarioBuilder.PressEnterToEditHint>Нажмите Enter для редактирования.</RimWorldAccess.ScenarioBuilder.PressEnterToEditHint>
-  <RimWorldAccess.ScenarioBuilder.FieldEditCancelled>Отменено. {0} без изменений.</RimWorldAccess.ScenarioBuilder.FieldEditCancelled>
-  <RimWorldAccess.ScenarioBuilder.NoParts>Нет частей сценария. Нажмите Alt+A, чтобы добавить часть.</RimWorldAccess.ScenarioBuilder.NoParts>
-  <RimWorldAccess.ScenarioBuilder.PartHasNoFields>У этой части нет редактируемых полей. Нажмите Delete, чтобы удалить её.</RimWorldAccess.ScenarioBuilder.PartHasNoFields>
-  <RimWorldAccess.ScenarioBuilder.NoItemSelected>Элемент не выбран.</RimWorldAccess.ScenarioBuilder.NoItemSelected>
   <RimWorldAccess.ScenarioBuilder.FieldEmpty>Поле пусто.</RimWorldAccess.ScenarioBuilder.FieldEmpty>
   <RimWorldAccess.ScenarioBuilder.NotATextField>Это не текстовое поле.</RimWorldAccess.ScenarioBuilder.NotATextField>
   <RimWorldAccess.ScenarioBuilder.CannotDeleteAddAction>Действие добавления нельзя удалить.</RimWorldAccess.ScenarioBuilder.CannotDeleteAddAction>
@@ -234,7 +200,6 @@
   <RimWorldAccess.ScenarioBuilder.MovedDownAbove>{0} перемещено вниз, теперь выше {1}.</RimWorldAccess.ScenarioBuilder.MovedDownAbove>
   <RimWorldAccess.ScenarioBuilder.AddedPressEnterToEdit>Добавлено: {0}. Нажмите Enter для редактирования.</RimWorldAccess.ScenarioBuilder.AddedPressEnterToEdit>
   <RimWorldAccess.ScenarioBuilder.LoadedScenario>Загружен сценарий: {0}</RimWorldAccess.ScenarioBuilder.LoadedScenario>
-  <RimWorldAccess.ScenarioBuilder.ScenarioSaved>Сценарий сохранён.</RimWorldAccess.ScenarioBuilder.ScenarioSaved>
   <RimWorldAccess.ScenarioBuilder.RandomizedNew>Сгенерировано случайно. Новый сценарий: {0}</RimWorldAccess.ScenarioBuilder.RandomizedNew>
   <RimWorldAccess.ScenarioBuilder.NewScenarioFallback>Новый сценарий</RimWorldAccess.ScenarioBuilder.NewScenarioFallback>
 
@@ -244,8 +209,7 @@
        {0} = the count of parts available.
        ================================================================= -->
   <RimWorldAccess.ScenarioBuilder.AddPart.NothingToAdd>Нет частей для добавления.</RimWorldAccess.ScenarioBuilder.AddPart.NothingToAdd>
-  <RimWorldAccess.ScenarioBuilder.AddPart.OpenInstructions>Добавить часть. Доступно частей: {0}. Печатайте для поиска.</RimWorldAccess.ScenarioBuilder.AddPart.OpenInstructions>
-  <RimWorldAccess.ScenarioBuilder.AddPart.NoneAvailable>Нет доступных частей.</RimWorldAccess.ScenarioBuilder.AddPart.NoneAvailable>
+  <RimWorldAccess.ScenarioBuilder.AddPart.OpenInstructions>Добавить часть. Доступно частей: {0}.</RimWorldAccess.ScenarioBuilder.AddPart.OpenInstructions>
 
   <!-- =================================================================
        Scenario builder part-edit overlay (ScenarioBuilderPartEditState).
@@ -254,30 +218,8 @@
        come from Common.Stepper; "{0} ({1})" wraps the limit-tag text.
        {0} = label or value, {1} = limit type word.
        ================================================================= -->
-  <RimWorldAccess.ScenarioBuilder.PartEdit.SelectedLabel>Выбрано: {0}</RimWorldAccess.ScenarioBuilder.PartEdit.SelectedLabel>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.SetTo>Установлено: {0}</RimWorldAccess.ScenarioBuilder.PartEdit.SetTo>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.TextSaved>Текст сохранён</RimWorldAccess.ScenarioBuilder.PartEdit.TextSaved>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.AlreadyHasDecimal>Десятичная точка уже есть</RimWorldAccess.ScenarioBuilder.PartEdit.AlreadyHasDecimal>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.ZeroPoint>0 точка</RimWorldAccess.ScenarioBuilder.PartEdit.ZeroPoint>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.NumberPoint>{0} точка</RimWorldAccess.ScenarioBuilder.PartEdit.NumberPoint>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.ValueWithLimit>{0} ({1})</RimWorldAccess.ScenarioBuilder.PartEdit.ValueWithLimit>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.PercentBare>{0}%</RimWorldAccess.ScenarioBuilder.PartEdit.PercentBare>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.PercentWithLimit>{0}% ({1})</RimWorldAccess.ScenarioBuilder.PartEdit.PercentWithLimit>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.Cleared>Очищено</RimWorldAccess.ScenarioBuilder.PartEdit.Cleared>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.LimitMinimum>минимум</RimWorldAccess.ScenarioBuilder.PartEdit.LimitMinimum>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.LimitMaximum>максимум</RimWorldAccess.ScenarioBuilder.PartEdit.LimitMaximum>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.CheckboxToggled>{0}: {1}</RimWorldAccess.ScenarioBuilder.PartEdit.CheckboxToggled>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.Checked>отмечено</RimWorldAccess.ScenarioBuilder.PartEdit.Checked>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.Unchecked>не отмечено</RimWorldAccess.ScenarioBuilder.PartEdit.Unchecked>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.UnsupportedFieldType>Неподдерживаемый тип поля.</RimWorldAccess.ScenarioBuilder.PartEdit.UnsupportedFieldType>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.QuantityHint>{0}: {1}. Введите число или используйте Стрелку вверх/вниз для изменения, Enter для подтверждения.</RimWorldAccess.ScenarioBuilder.PartEdit.QuantityHint>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.QuantityFallback>Значение</RimWorldAccess.ScenarioBuilder.PartEdit.QuantityFallback>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.TextHint>{0}: {1}. Печатайте для редактирования, Ctrl+V чтобы вставить, Insert чтобы прочитать всё, Shift+Enter для новой строки, Enter для подтверждения, Escape для отмены.</RimWorldAccess.ScenarioBuilder.PartEdit.TextHint>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.TextFallback>Текст</RimWorldAccess.ScenarioBuilder.PartEdit.TextFallback>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.TextEmpty>пусто</RimWorldAccess.ScenarioBuilder.PartEdit.TextEmpty>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.TextSummaryLines>{0} {0_numCase ? строка : строки : строк}, {1} {1_numCase ? слово : слова : слов}</RimWorldAccess.ScenarioBuilder.PartEdit.TextSummaryLines>
-  <RimWorldAccess.ScenarioBuilder.PartEdit.TextSummaryWords>{0} {0_numCase ? слово : слова : слов}</RimWorldAccess.ScenarioBuilder.PartEdit.TextSummaryWords>
   <RimWorldAccess.ScenarioBuilder.PartEdit.NoOptionsForField>Для этого поля нет доступных вариантов.</RimWorldAccess.ScenarioBuilder.PartEdit.NoOptionsForField>
+  <RimWorldAccess.ScenarioBuilder.PartEdit.FieldReadOnly>Это поле нельзя редактировать.</RimWorldAccess.ScenarioBuilder.PartEdit.FieldReadOnly>
 
   <!-- =================================================================
        Storyteller picker (StorytellerSelectionPatch + State).
@@ -286,32 +228,22 @@
        {0} = page title, {1} = storyteller label, {2} = description,
        {3} = position suffix.
        ================================================================= -->
-  <RimWorldAccess.Storyteller.ModeIndicator>[{0}]</RimWorldAccess.Storyteller.ModeIndicator>
   <!-- Per-row announcements (StorytellerNavigationState).
        The custom-difficulty marker is a parenthetical added to the difficulty
        label when the def is custom; it then gets the description and position
        suffix appended. {0} = label, {1} = description, {2} = position. -->
-  <RimWorldAccess.Storyteller.LabelDescription>{0} - {1}</RimWorldAccess.Storyteller.LabelDescription>
-  <RimWorldAccess.Storyteller.WithDescriptionSuffix> - {0}</RimWorldAccess.Storyteller.WithDescriptionSuffix>
-  <RimWorldAccess.Storyteller.WithPositionSuffix> ({0})</RimWorldAccess.Storyteller.WithPositionSuffix>
-  <RimWorldAccess.Storyteller.CustomSettingsSuffix> (Свои настройки)</RimWorldAccess.Storyteller.CustomSettingsSuffix>
   <RimWorldAccess.Storyteller.SaveMode>Режим сохранения</RimWorldAccess.Storyteller.SaveMode>
-  <RimWorldAccess.Storyteller.CustomDifficultyOpenInstructions>Настройки своей сложности. Используйте Стрелку вверх и вниз для навигации по разделам, Enter для изменения настроек, Escape, чтобы вернуться.</RimWorldAccess.Storyteller.CustomDifficultyOpenInstructions>
-  <RimWorldAccess.Storyteller.NoSettingsInSection>В этом разделе нет доступных настроек</RimWorldAccess.Storyteller.NoSettingsInSection>
-  <RimWorldAccess.Storyteller.AllSettingsResetTo>Все настройки сброшены к {0}</RimWorldAccess.Storyteller.AllSettingsResetTo>
+  <RimWorldAccess.Storyteller.StorytellersRegion>Рассказчики</RimWorldAccess.Storyteller.StorytellersRegion>
+  <RimWorldAccess.Storyteller.DifficultyRegion>Сложность</RimWorldAccess.Storyteller.DifficultyRegion>
+  <RimWorldAccess.Storyteller.AnomalyRegion>Anomaly</RimWorldAccess.Storyteller.AnomalyRegion>
+  <RimWorldAccess.Storyteller.AnomalySettingsRegion>Настройки аномалии</RimWorldAccess.Storyteller.AnomalySettingsRegion>
+  <RimWorldAccess.Storyteller.CustomDifficultyRegion>Особая сложность</RimWorldAccess.Storyteller.CustomDifficultyRegion>
+  <RimWorldAccess.Storyteller.CustomDifficultyRevealHint>Выбор этого варианта откроет вкладку «Особая сложность».</RimWorldAccess.Storyteller.CustomDifficultyRevealHint>
   <RimWorldAccess.Storyteller.ResetSelectPreset>Сбросить все настройки к шаблону. Выберите шаблон сложности.</RimWorldAccess.Storyteller.ResetSelectPreset>
-  <RimWorldAccess.Storyteller.Confirmed>Рассказчик и сложность подтверждены. Закрытие выбора.</RimWorldAccess.Storyteller.Confirmed>
   <!-- In-game storyteller picker (StorytellerSelectionState) - separate from
        the main-menu Page_SelectStoryteller. {0} = label, {1} = description,
        {2} = customize hint, {3} = section name, {4} = settings count,
        {5} = items noun (already localized). -->
-  <RimWorldAccess.Storyteller.LabelDot>{0}. {1}</RimWorldAccess.Storyteller.LabelDot>
-  <RimWorldAccess.Storyteller.LabelDotWithHint>{0}. {1}{2}</RimWorldAccess.Storyteller.LabelDotWithHint>
-  <RimWorldAccess.Storyteller.CustomizeHintSuffix> Нажмите Enter, чтобы настроить параметры.</RimWorldAccess.Storyteller.CustomizeHintSuffix>
-  <RimWorldAccess.Storyteller.SectionWithCount>{0}. {1} {2}</RimWorldAccess.Storyteller.SectionWithCount>
-  <RimWorldAccess.Storyteller.SwitchToDifficultyHint> Нажмите Tab для перехода к выбору сложности.</RimWorldAccess.Storyteller.SwitchToDifficultyHint>
-  <RimWorldAccess.Storyteller.SwitchToStorytellerHint> Нажмите Tab для перехода к выбору рассказчика. Нажмите Enter для подтверждения.</RimWorldAccess.Storyteller.SwitchToStorytellerHint>
-  <RimWorldAccess.Storyteller.PositionSpacePrefix> {0}</RimWorldAccess.Storyteller.PositionSpacePrefix>
 
   <!-- =================================================================
        Custom difficulty editor (CustomDifficultyEditState).
@@ -319,10 +251,15 @@
        {1} = setting count, {2} = items label (already the section's
        own translated noun: e.g. "settings", "options").
        ================================================================= -->
-  <RimWorldAccess.CustomDifficulty.SectionList>Список разделов</RimWorldAccess.CustomDifficulty.SectionList>
-  <RimWorldAccess.CustomDifficulty.SectionWithCount>{0}. {1} {2}</RimWorldAccess.CustomDifficulty.SectionWithCount>
   <RimWorldAccess.CustomDifficulty.AllSettingsSetTo>Все настройки установлены на {0}</RimWorldAccess.CustomDifficulty.AllSettingsSetTo>
-  <RimWorldAccess.CustomDifficulty.NoSettingSelected>Настройка не выбрана</RimWorldAccess.CustomDifficulty.NoSettingSelected>
+  <RimWorldAccess.Ideology.Preset.OptionsRegion>Параметры</RimWorldAccess.Ideology.Preset.OptionsRegion>
+  <RimWorldAccess.Ideology.Preset.StructureStylesRegion>Структура и стили</RimWorldAccess.Ideology.Preset.StructureStylesRegion>
+  <RimWorldAccess.Ideology.Preset.PresetsRegion>Шаблоны</RimWorldAccess.Ideology.Preset.PresetsRegion>
+  <RimWorldAccess.Ideology.Preset.StyleSlotLabel>Стиль {0}</RimWorldAccess.Ideology.Preset.StyleSlotLabel>
+  <RimWorldAccess.Ideology.Preset.MemesList>Черты: {0}</RimWorldAccess.Ideology.Preset.MemesList>
+  <RimWorldAccess.Ideology.Memes.MemesRegion>Черты</RimWorldAccess.Ideology.Memes.MemesRegion>
+  <RimWorldAccess.Ideology.Memes.StatusRegion>Статус</RimWorldAccess.Ideology.Memes.StatusRegion>
+  <RimWorldAccess.Ideology.Memes.StatusLabel>Статус</RimWorldAccess.Ideology.Memes.StatusLabel>
 
   <!-- =================================================================
        Ideology picker (IdeologyNavigationState).
@@ -330,22 +267,6 @@
        submenus. Most labels come from vanilla; only the join phrasings
        and the Random + tip prefix sentence live here.
        ================================================================= -->
-  <RimWorldAccess.Ideology.OptionsTab>Параметры</RimWorldAccess.Ideology.OptionsTab>
-  <RimWorldAccess.Ideology.PresetsTab>Шаблоны</RimWorldAccess.Ideology.PresetsTab>
-  <RimWorldAccess.Ideology.TabPrefix>{0}. {1}</RimWorldAccess.Ideology.TabPrefix>
-  <RimWorldAccess.Ideology.TabNoneSuffix>{0}. {1}.</RimWorldAccess.Ideology.TabNoneSuffix>
-  <RimWorldAccess.Ideology.PresetsHint>. Alt+S чтобы задать структуру, Alt+Y чтобы задать стиль для выбранного шаблона</RimWorldAccess.Ideology.PresetsHint>
-  <RimWorldAccess.Ideology.PresetSiblingPosition>. {0} из {1}</RimWorldAccess.Ideology.PresetSiblingPosition>
-  <RimWorldAccess.Ideology.OptionWithDescription>{0}. {1}</RimWorldAccess.Ideology.OptionWithDescription>
-  <RimWorldAccess.Ideology.OptionDotPosition>{0}. {1}</RimWorldAccess.Ideology.OptionDotPosition>
-  <RimWorldAccess.Ideology.StructureColon>{0}: {1}</RimWorldAccess.Ideology.StructureColon>
-  <RimWorldAccess.Ideology.StructureRandomTip>{0}: {1}. {2}</RimWorldAccess.Ideology.StructureRandomTip>
-  <RimWorldAccess.Ideology.StructureMemeOption>{0}. {1}</RimWorldAccess.Ideology.StructureMemeOption>
-  <RimWorldAccess.Ideology.CategoryWithDescription>{0}: {1}</RimWorldAccess.Ideology.CategoryWithDescription>
-  <RimWorldAccess.Ideology.StyleSlot>{0} {1}: {2}</RimWorldAccess.Ideology.StyleSlot>
-  <RimWorldAccess.Ideology.StylesAnnouncement>{0}: {1}</RimWorldAccess.Ideology.StylesAnnouncement>
-  <RimWorldAccess.Ideology.StateChangeAnnouncement>{0}. {1}</RimWorldAccess.Ideology.StateChangeAnnouncement>
-  <RimWorldAccess.Ideology.OpeningAnnouncement>{0}. {1}. {2}</RimWorldAccess.Ideology.OpeningAnnouncement>
 
   <!-- =================================================================
        World parameters (WorldParamsPatch + WorldParamsNavigationState).
@@ -355,19 +276,11 @@
        {0} = page-level help/title, {1} = field name, {2} = value,
        {3} = warning suffix.
        ================================================================= -->
-  <RimWorldAccess.WorldParams.OpenInstructions>Создание мира. {0}</RimWorldAccess.WorldParams.OpenInstructions>
-  <RimWorldAccess.WorldParams.OpenHelp>Нажмите Enter, чтобы создать мир с настройками по умолчанию, или Стрелку вверх/вниз для просмотра полей, Стрелку влево/вправо для изменения значений. Tab для перехода к фракциям.</RimWorldAccess.WorldParams.OpenHelp>
-  <RimWorldAccess.WorldParams.SeedTypingIndicator>[Ввод зерна: {0}] (Enter=Подтвердить, Esc=Отменить)</RimWorldAccess.WorldParams.SeedTypingIndicator>
-  <RimWorldAccess.WorldParams.FieldIndicator>[Поле: {0}] (Стрелки для навигации)</RimWorldAccess.WorldParams.FieldIndicator>
-  <RimWorldAccess.WorldParams.Title>Параметры мира</RimWorldAccess.WorldParams.Title>
-  <RimWorldAccess.WorldParams.SeedInstructions>Нажмите Enter, чтобы ввести своё зерно, или R для случайной генерации</RimWorldAccess.WorldParams.SeedInstructions>
-  <RimWorldAccess.WorldParams.SeedConfirmed>Зерно мира: {0} (Подтверждено)</RimWorldAccess.WorldParams.SeedConfirmed>
-  <RimWorldAccess.WorldParams.SeedEmptyCancelled>Ввод зерна отменён (пусто)</RimWorldAccess.WorldParams.SeedEmptyCancelled>
-  <RimWorldAccess.WorldParams.SeedEditCancelled>Редактирование зерна отменено</RimWorldAccess.WorldParams.SeedEditCancelled>
   <RimWorldAccess.WorldParams.SeedRandomized>Зерно мира: {0} (Случайно)</RimWorldAccess.WorldParams.SeedRandomized>
-  <RimWorldAccess.WorldParams.FieldColonValue>{0}: {1}{2}</RimWorldAccess.WorldParams.FieldColonValue>
-  <RimWorldAccess.WorldParams.FieldColonValueNoWarning>{0}: {1}</RimWorldAccess.WorldParams.FieldColonValueNoWarning>
   <RimWorldAccess.WorldParams.WarningPrefix>. {0}</RimWorldAccess.WorldParams.WarningPrefix>
+  <RimWorldAccess.WorldParams.ResetAllDone>Все параметры мира сброшены к значениям по умолчанию.</RimWorldAccess.WorldParams.ResetAllDone>
+  <RimWorldAccess.WorldParams.PlanetRegion>Планета</RimWorldAccess.WorldParams.PlanetRegion>
+  <RimWorldAccess.WorldParams.AddFactionsRow>Добавить фракции</RimWorldAccess.WorldParams.AddFactionsRow>
 
   <!-- Rainfall/Temperature/Population/Landmark density labels for the
        world-params editor. The game's enum lacks vanilla translation
@@ -400,31 +313,15 @@
        per-tile read-outs (terrain, biome, stone, faction relations).
        {0} = page title, {1} = error/info text, {2} = item count.
        ================================================================= -->
-  <RimWorldAccess.StartingSite.OpenInstructions>{0} - Стрелки для навигации, Control+стрелки для перехода по биомам, Page Up/Down для сканера, Z для поиска, 1-5 для информации о клетке, I для подробного информационного меню, F для фракций, Enter для проверки выбора</RimWorldAccess.StartingSite.OpenInstructions>
+  <RimWorldAccess.StartingSite.OpenInstructions>{0} - Стрелки для навигации, Control+стрелки для перехода по биомам, Page Up/Down для сканера, Z для поиска, 1-5 для информации о клетке, F для фракций, R для случайного места, Enter для проверки выбора, Tab для панели кнопок</RimWorldAccess.StartingSite.OpenInstructions>
   <RimWorldAccess.StartingSite.CannotSettleHere>Здесь нельзя поселиться: {0}</RimWorldAccess.StartingSite.CannotSettleHere>
+  <RimWorldAccess.StartingSite.WorldMapRegion>Карта мира</RimWorldAccess.StartingSite.WorldMapRegion>
+  <RimWorldAccess.StartingSite.TileInfoRegion>Информация о клетке</RimWorldAccess.StartingSite.TileInfoRegion>
+  <RimWorldAccess.StartingSite.DevRandomTileSelected>Клетка выбрана случайно (только в режиме отладки): {0}</RimWorldAccess.StartingSite.DevRandomTileSelected>
 
-  <!-- Visual help/menu overlays drawn by StartingSitePatch's Postfix.
-       Visible to sighted users only. Each line has its own key so the
-       caller can join them with Environment.NewLine; this avoids
-       embedding literal newlines in XML and keeps each line independently
-       localizable. {0} = selected item, {1} = position, {2} = total. -->
-  <RimWorldAccess.StartingSite.MenuOverlayTitle>Меню дополнительной информации</RimWorldAccess.StartingSite.MenuOverlayTitle>
-  <RimWorldAccess.StartingSite.MenuOverlaySelected>Выбрано: {0}</RimWorldAccess.StartingSite.MenuOverlaySelected>
-  <RimWorldAccess.StartingSite.MenuOverlayItemPosition>Элемент {0} из {1}</RimWorldAccess.StartingSite.MenuOverlayItemPosition>
-  <RimWorldAccess.StartingSite.MenuOverlayControls>Управление:</RimWorldAccess.StartingSite.MenuOverlayControls>
-  <RimWorldAccess.StartingSite.MenuOverlayControlNavigate>  Стрелки вверх/вниз: навигация по пунктам меню</RimWorldAccess.StartingSite.MenuOverlayControlNavigate>
-  <RimWorldAccess.StartingSite.MenuOverlayControlEnter>  Enter: прочитать подробную информацию</RimWorldAccess.StartingSite.MenuOverlayControlEnter>
-  <RimWorldAccess.StartingSite.MenuOverlayControlEscape>  Escape: закрыть меню</RimWorldAccess.StartingSite.MenuOverlayControlEscape>
-  <RimWorldAccess.StartingSite.HelpOverlayTitle>Выбор места начала:</RimWorldAccess.StartingSite.HelpOverlayTitle>
-  <RimWorldAccess.StartingSite.HelpOverlayLine1>Стрелки: навигация  |  Ctrl+стрелки: переход по биомам  |  PgUp/PgDn: сканер</RimWorldAccess.StartingSite.HelpOverlayLine1>
-  <RimWorldAccess.StartingSite.HelpOverlayLine2>1-5: информация о клетке  |  Z: поиск  |  I: информационное меню  |  F: фракции  |  R: случайно  |  Enter: проверить</RimWorldAccess.StartingSite.HelpOverlayLine2>
   <RimWorldAccess.StartingSite.NoTileSelected>Клетка не выбрана. Сначала используйте стрелки, чтобы перейти к клетке.</RimWorldAccess.StartingSite.NoTileSelected>
   <RimWorldAccess.StartingSite.Selected>Место начала выбрано.</RimWorldAccess.StartingSite.Selected>
-  <RimWorldAccess.StartingSite.MenuOpened>{0}. Выбрано: {1}. Используйте стрелки для навигации, Enter, чтобы прочитать сведения, Escape, чтобы закрыть.</RimWorldAccess.StartingSite.MenuOpened>
-  <RimWorldAccess.StartingSite.MenuTitle>Меню дополнительной информации - доступно категорий: {0}</RimWorldAccess.StartingSite.MenuTitle>
-  <RimWorldAccess.StartingSite.MenuItemPosition>{0} ({1} из {2})</RimWorldAccess.StartingSite.MenuItemPosition>
-
-  <!-- Per-category labels for the I-menu (StartingSiteContext.GetMenuItemName).
+  <!-- Per-category labels for the Tile info region (StartingSiteContext.GetMenuItemName).
        These appear both in the menu list and as headers in the detail readouts. -->
   <RimWorldAccess.StartingSite.Category.RoadsAndRivers>Дороги, реки и побережье</RimWorldAccess.StartingSite.Category.RoadsAndRivers>
   <RimWorldAccess.StartingSite.Category.StoneTypes>Типы камня</RimWorldAccess.StartingSite.Category.StoneTypes>
@@ -461,9 +358,7 @@
        and the live tile read-out. {0} = warning prefix (vanilla Warning),
        {1} = count. -->
   <RimWorldAccess.StartingSite.SettlingAffectsFactionsOne>{0}: поселение здесь затронет {1} фракцию</RimWorldAccess.StartingSite.SettlingAffectsFactionsOne>
-  <RimWorldAccess.StartingSite.SettlingAffectsFactionsMany>{0}: поселение здесь затронет {1} {1_numCase ? фракцию : фракции : фракций}</RimWorldAccess.StartingSite.SettlingAffectsFactionsMany>
-  <RimWorldAccess.StartingSite.NoAdditionalInfo>Для этой клетки нет дополнительной информации.</RimWorldAccess.StartingSite.NoAdditionalInfo>
-  <RimWorldAccess.StartingSite.MenuClosed>Меню закрыто.</RimWorldAccess.StartingSite.MenuClosed>
+  <RimWorldAccess.StartingSite.SettlingAffectsFactionsMany>{0}: поселение здесь затронет {1_numCase ? фракцию : фракции : фракций}</RimWorldAccess.StartingSite.SettlingAffectsFactionsMany>
   <RimWorldAccess.StartingSite.RandomSiteFailed>Не удалось найти подходящее случайное место начала.</RimWorldAccess.StartingSite.RandomSiteFailed>
   <RimWorldAccess.StartingSite.RandomSiteSelected>Выбрано случайное место: {0}</RimWorldAccess.StartingSite.RandomSiteSelected>
   <RimWorldAccess.StartingSite.CannotDetermineBiome>Не удаётся определить биом в текущем месте</RimWorldAccess.StartingSite.CannotDetermineBiome>
@@ -498,18 +393,29 @@
   <RimWorldAccess.StartingPawn.PawnAdded>Персонаж добавлен</RimWorldAccess.StartingPawn.PawnAdded>
   <RimWorldAccess.StartingPawn.PawnRemoved>{0}: убрано</RimWorldAccess.StartingPawn.PawnRemoved>
   <RimWorldAccess.StartingPawn.LabelRandomize>{0}, {1}</RimWorldAccess.StartingPawn.LabelRandomize>
+  <RimWorldAccess.StartingPawn.XenotypePoolSet>{0} выбран. Следующая рандомизация будет использовать этот пул ксенотипов.</RimWorldAccess.StartingPawn.XenotypePoolSet>
+  <RimWorldAccess.StartingPawn.DeleteCustomXenotype>Удалить {0} (пользовательский)…</RimWorldAccess.StartingPawn.DeleteCustomXenotype>
 
-  <!-- Tree-item composition for the starting pawn editor (FormatItemAnnouncement).
-       Splits into per-shape keys so the order of {label}/{state}/{position} can
-       differ per language. {0} = label, {1} = state word (expanded/collapsed),
-       {2} = summary text or position fragment. The bare " ({0})" position
-       suffix is reused by all branches. The " Inspectable." suffix lives
-       in Common.xml as RimWorldAccess.InfoCard.Inspectable. -->
-  <RimWorldAccess.StartingPawn.PawnLabelWithState>{0}, {1}</RimWorldAccess.StartingPawn.PawnLabelWithState>
-  <RimWorldAccess.StartingPawn.CategoryLabelWithState>{0}, {1}</RimWorldAccess.StartingPawn.CategoryLabelWithState>
-  <RimWorldAccess.StartingPawn.CategoryWithSummary>{0}: {1}, {2}</RimWorldAccess.StartingPawn.CategoryWithSummary>
-  <RimWorldAccess.StartingPawn.PositionParenSuffix> ({0})</RimWorldAccess.StartingPawn.PositionParenSuffix>
-  <RimWorldAccess.StartingPawn.SectionPrefix>{0}. {1}</RimWorldAccess.StartingPawn.SectionPrefix>
+  <!-- PawnLabelWithState/CategoryLabelWithState/CategoryWithSummary RETIRED (
+       S1 — StartingPawnScreenScope, the ScreenScope retrofit): composed the old tree's
+       FormatItemAnnouncement, deleted along with PawnAnnouncementFormatter.cs. English keys
+       removed on retirement (translations for these three are left in the other language files
+       for the delta-sync backlog). PositionParenSuffix's last consumer (PawnFilterState) moved
+       onto the composer's own Position fragment (Task 8 packet F). SectionPrefix retired the same
+       way by the tree restoration: "Selected"/"Left behind" are real group
+       rows now, so nothing folds a section name onto a pawn's label. -->
+
+  <!-- StartingPawnScreenScope: new region names and Bio leaf captions. -->
+  <RimWorldAccess.StartingPawn.PawnsRegion>Персонажи</RimWorldAccess.StartingPawn.PawnsRegion>
+  <RimWorldAccess.StartingPawn.PageOptionsRegion>Параметры страницы</RimWorldAccess.StartingPawn.PageOptionsRegion>
+  <RimWorldAccess.StartingPawn.FirstName>Имя</RimWorldAccess.StartingPawn.FirstName>
+  <RimWorldAccess.StartingPawn.NickName>Прозвище</RimWorldAccess.StartingPawn.NickName>
+  <RimWorldAccess.StartingPawn.LastName>Фамилия</RimWorldAccess.StartingPawn.LastName>
+  <RimWorldAccess.StartingPawn.DevStageSelector>Выбор стадии развития</RimWorldAccess.StartingPawn.DevStageSelector>
+  <RimWorldAccess.StartingPawn.XenotypeSelector>Выбор ксенотипа</RimWorldAccess.StartingPawn.XenotypeSelector>
+  <RimWorldAccess.StartingPawn.ExtraFactionLabel>{0}: {1}</RimWorldAccess.StartingPawn.ExtraFactionLabel>
+  <RimWorldAccess.StartingPawn.ChipFactionsTabLater>Открывает вкладку «Фракции», доступную только после начала игры.</RimWorldAccess.StartingPawn.ChipFactionsTabLater>
+  <RimWorldAccess.StartingPawn.ChipSocialTabLater>Открывает вкладку «Общение», доступную только после начала игры.</RimWorldAccess.StartingPawn.ChipSocialTabLater>
   <RimWorldAccess.Reroll.SearchingAttempts>Поиск, {0_numCase ? попытка : попытки : попыток}...</RimWorldAccess.Reroll.SearchingAttempts>
 
   <!-- =================================================================
@@ -519,12 +425,10 @@
        {0} = faction label, {1} = remaining count or disabled reason.
        ================================================================= -->
   <RimWorldAccess.Factions.Title>Фракции</RimWorldAccess.Factions.Title>
-  <RimWorldAccess.Factions.PressAddHint>Нажмите Alt+A, чтобы добавить фракции.</RimWorldAccess.Factions.PressAddHint>
-  <RimWorldAccess.Factions.NoFactionsInList>Фракции. В списке нет фракций. Нажмите Alt+A, чтобы добавить фракции.</RimWorldAccess.Factions.NoFactionsInList>
   <RimWorldAccess.Factions.NoFactionSelected>Фракция не выбрана</RimWorldAccess.Factions.NoFactionSelected>
   <RimWorldAccess.Factions.CannotRemoveLocked>Невозможно убрать {0}: заблокировано сценарием</RimWorldAccess.Factions.CannotRemoveLocked>
   <RimWorldAccess.Factions.CannotModifyTutorial>Нельзя изменять фракции в режиме обучения</RimWorldAccess.Factions.CannotModifyTutorial>
-  <RimWorldAccess.Factions.RemovedRemaining>{0}: убрано. Осталось {1} {1_numCase ? фракция : фракции : фракций}.</RimWorldAccess.Factions.RemovedRemaining>
+  <RimWorldAccess.Factions.RemovedRemaining>{0}: убрано. Осталось {1_numCase ? фракция : фракции : фракций}.</RimWorldAccess.Factions.RemovedRemaining>
   <RimWorldAccess.Factions.NoneRemaining>Фракций не осталось. Нажмите Alt+A, чтобы добавить фракции.</RimWorldAccess.Factions.NoneRemaining>
   <RimWorldAccess.Factions.NoneAvailableToAdd>Нет фракций для добавления</RimWorldAccess.Factions.NoneAvailableToAdd>
   <RimWorldAccess.Factions.AddMenuOpened>Меню добавления фракций открыто</RimWorldAccess.Factions.AddMenuOpened>
@@ -534,18 +438,21 @@
   <RimWorldAccess.Factions.LandingClosed>Отношения с фракциями закрыты.</RimWorldAccess.Factions.LandingClosed>
   <!-- AddFactionMenu and faction list announcements. {0} = label,
        {1} = description, {2} = position, {3} = disabled reason or count. -->
-  <RimWorldAccess.Factions.MaxAllowed>Допустимо не более {0} {0_numCase ? фракции : фракций : фракций}</RimWorldAccess.Factions.MaxAllowed>
+  <RimWorldAccess.Factions.MaxAllowed>Допустимо не более {0_numCase ? фракции : фракций : фракций}</RimWorldAccess.Factions.MaxAllowed>
   <RimWorldAccess.Factions.MaxOfType>Максимум {0} этого типа фракции</RimWorldAccess.Factions.MaxOfType>
   <RimWorldAccess.Factions.WarningNoFactions>Предупреждение: без фракций налёты, торговля и задания не будут происходить как обычно.</RimWorldAccess.Factions.WarningNoFactions>
   <RimWorldAccess.Factions.WarningMissingEmpire>Предупреждение: отсутствие фракции Империя может уменьшить количество заданий Royalty.</RimWorldAccess.Factions.WarningMissingEmpire>
   <RimWorldAccess.Factions.WarningMissingMechanoid>Предупреждение: отсутствие механоидов может уменьшить разнообразие заданий.</RimWorldAccess.Factions.WarningMissingMechanoid>
   <RimWorldAccess.Factions.WarningMissingInsect>Предупреждение: отсутствие насекомых может уменьшить разнообразие заданий.</RimWorldAccess.Factions.WarningMissingInsect>
-  <RimWorldAccess.Factions.LabelWithReason>{0} ({1})</RimWorldAccess.Factions.LabelWithReason>
-  <RimWorldAccess.Factions.LabelWithCount>{0} ({1})</RimWorldAccess.Factions.LabelWithCount>
-  <RimWorldAccess.Factions.WithDescriptionSuffix>. {0}</RimWorldAccess.Factions.WithDescriptionSuffix>
-  <RimWorldAccess.Factions.PositionSpaceSuffix> {0}</RimWorldAccess.Factions.PositionSpaceSuffix>
+  <RimWorldAccess.Factions.WarningMissingMechanoidOdyssey>Внимание: отсутствие механоидов сделает невозможным выполнение основных заданий Odyssey.</RimWorldAccess.Factions.WarningMissingMechanoidOdyssey>
+  <RimWorldAccess.Factions.WarningMissingInsectOdyssey>Внимание: отсутствие насекомых сделает невозможным выполнение основных заданий Odyssey.</RimWorldAccess.Factions.WarningMissingInsectOdyssey>
+  <RimWorldAccess.Factions.ResetDone>Количество фракций сброшено к значениям по умолчанию.</RimWorldAccess.Factions.ResetDone>
   <RimWorldAccess.Factions.LockedSuffix> (заблокировано сценарием)</RimWorldAccess.Factions.LockedSuffix>
-  <RimWorldAccess.Factions.DisabledSuffix> (отключено)</RimWorldAccess.Factions.DisabledSuffix>
+  <!-- Add-faction menu row detail (Task 8 packet I): count-in-list and the disabled
+       reason now ride the composer's Extras fragment, description too; the disabled
+       state itself now speaks through the composer's own Disabled state word, and
+       position through its own Position fields. {0} = how many already in the list. -->
+  <RimWorldAccess.Factions.CountInList>{0} в списке</RimWorldAccess.Factions.CountInList>
 
   <!-- =================================================================
        Pawn filter editor (PawnFilterState + Helper). Configure
@@ -577,9 +484,11 @@
        {0} = current name buffer, {1} = position fragment,
        {2} = preset name to overwrite.
        ================================================================= -->
-  <RimWorldAccess.PawnFilter.PresetSave.OpenInstructions>Сохранение шаблона фильтра. Введите имя или нажмите Стрелку вниз, чтобы выбрать существующий шаблон для перезаписи. Текущее имя: {0}</RimWorldAccess.PawnFilter.PresetSave.OpenInstructions>
-  <RimWorldAccess.PawnFilter.PresetSave.SaveAs>Сохранить как: {0} ({1})</RimWorldAccess.PawnFilter.PresetSave.SaveAs>
-  <RimWorldAccess.PawnFilter.PresetSave.Overwrite>Перезаписать: {0} ({1})</RimWorldAccess.PawnFilter.PresetSave.Overwrite>
+  <RimWorldAccess.PawnFilter.PresetSave.OpenInstructions>Сохранение шаблона фильтра. Enter — задать имя, вводите текст для перехода к существующему шаблону, стрелка вниз — список. Текущее имя: {0}</RimWorldAccess.PawnFilter.PresetSave.OpenInstructions>
+  <!-- SaveAsRow/OverwriteRow (Task 8 packet F): position is now the composer's own Position
+       fragment instead of a baked-in {1} argument, so these carry only the name. -->
+  <RimWorldAccess.PawnFilter.PresetSave.SaveAsRow>Сохранить как: {0}</RimWorldAccess.PawnFilter.PresetSave.SaveAsRow>
+  <RimWorldAccess.PawnFilter.PresetSave.OverwriteRow>Перезаписать: {0}</RimWorldAccess.PawnFilter.PresetSave.OverwriteRow>
   <RimWorldAccess.PawnFilter.PresetSave.NameEmpty>Имя не может быть пустым</RimWorldAccess.PawnFilter.PresetSave.NameEmpty>
   <RimWorldAccess.PawnFilter.PresetSave.PresetOverwritten>Шаблон {0} перезаписан</RimWorldAccess.PawnFilter.PresetSave.PresetOverwritten>
   <RimWorldAccess.PawnFilter.PresetSave.PresetSavedAs>Шаблон сохранён как {0}</RimWorldAccess.PawnFilter.PresetSave.PresetSavedAs>
@@ -593,9 +502,7 @@
        ================================================================= -->
   <RimWorldAccess.PawnFilter.PresetLoad.NoSavedPresets>Сохранённые шаблоны не найдены.</RimWorldAccess.PawnFilter.PresetLoad.NoSavedPresets>
   <RimWorldAccess.PawnFilter.PresetLoad.UnnamedFallback>(без имени)</RimWorldAccess.PawnFilter.PresetLoad.UnnamedFallback>
-  <RimWorldAccess.PawnFilter.PresetLoad.WithPositionSuffix> ({0})</RimWorldAccess.PawnFilter.PresetLoad.WithPositionSuffix>
-  <RimWorldAccess.PawnFilter.PresetLoad.OpenInstructions>Загрузка шаблона фильтра. Доступно шаблонов: {0}. Печатайте для поиска.</RimWorldAccess.PawnFilter.PresetLoad.OpenInstructions>
-  <RimWorldAccess.PawnFilter.PresetLoad.NoPresetsAvailable>Нет доступных шаблонов.</RimWorldAccess.PawnFilter.PresetLoad.NoPresetsAvailable>
+  <RimWorldAccess.PawnFilter.PresetLoad.OpenInstructions>Загрузка шаблона фильтра. Доступно шаблонов: {0}.</RimWorldAccess.PawnFilter.PresetLoad.OpenInstructions>
   <RimWorldAccess.PawnFilter.PresetLoad.NoPresetSelected>Шаблон не выбран.</RimWorldAccess.PawnFilter.PresetLoad.NoPresetSelected>
   <RimWorldAccess.PawnFilter.PresetLoad.Loaded>Загружено: {0}</RimWorldAccess.PawnFilter.PresetLoad.Loaded>
   <RimWorldAccess.PawnFilter.PresetLoad.ErrorLoading>Ошибка загрузки шаблона</RimWorldAccess.PawnFilter.PresetLoad.ErrorLoading>
@@ -618,14 +525,13 @@
        PartWithPosition appends a position suffix in parentheses for
        the navigation announcement.
        {0} = label, {1} = description or position. -->
-  <RimWorldAccess.ScenarioBuilder.AddPart.LabelDescription>{0}: {1}</RimWorldAccess.ScenarioBuilder.AddPart.LabelDescription>
-  <RimWorldAccess.ScenarioBuilder.AddPart.WithPositionSuffix> ({0})</RimWorldAccess.ScenarioBuilder.AddPart.WithPositionSuffix>
   <RimWorldAccess.ScenarioBuilder.Field.Faction>Фракция</RimWorldAccess.ScenarioBuilder.Field.Faction>
   <RimWorldAccess.ScenarioBuilder.Field.PlanetLayer>Слой планеты</RimWorldAccess.ScenarioBuilder.Field.PlanetLayer>
   <RimWorldAccess.ScenarioBuilder.Field.LayerTag>Тег слоя</RimWorldAccess.ScenarioBuilder.Field.LayerTag>
   <RimWorldAccess.ScenarioBuilder.Field.LayerSettings>Настройки слоя</RimWorldAccess.ScenarioBuilder.Field.LayerSettings>
   <RimWorldAccess.ScenarioBuilder.Field.ArrivalMethod>Способ прибытия</RimWorldAccess.ScenarioBuilder.Field.ArrivalMethod>
   <RimWorldAccess.ScenarioBuilder.Field.Item>Предмет</RimWorldAccess.ScenarioBuilder.Field.Item>
+  <RimWorldAccess.ScenarioBuilder.Field.Value>Значение</RimWorldAccess.ScenarioBuilder.Field.Value>
   <RimWorldAccess.ScenarioBuilder.Field.Material>Материал</RimWorldAccess.ScenarioBuilder.Field.Material>
   <RimWorldAccess.ScenarioBuilder.Field.Quality>Качество</RimWorldAccess.ScenarioBuilder.Field.Quality>
   <RimWorldAccess.ScenarioBuilder.Field.Count>Количество</RimWorldAccess.ScenarioBuilder.Field.Count>
@@ -643,9 +549,6 @@
   <RimWorldAccess.ScenarioBuilder.Field.Research>Исследование</RimWorldAccess.ScenarioBuilder.Field.Research>
   <RimWorldAccess.ScenarioBuilder.Field.StartingPawns>Начальные персонажи</RimWorldAccess.ScenarioBuilder.Field.StartingPawns>
   <RimWorldAccess.ScenarioBuilder.Field.PawnChoicePool>Пул выбора персонажей</RimWorldAccess.ScenarioBuilder.Field.PawnChoicePool>
-  <RimWorldAccess.ScenarioBuilder.Field.AllowBabies>Разрешить младенцев</RimWorldAccess.ScenarioBuilder.Field.AllowBabies>
-  <RimWorldAccess.ScenarioBuilder.Field.AllowChildren>Разрешить детей</RimWorldAccess.ScenarioBuilder.Field.AllowChildren>
-  <RimWorldAccess.ScenarioBuilder.Field.AllowAdults>Разрешить взрослых</RimWorldAccess.ScenarioBuilder.Field.AllowAdults>
   <RimWorldAccess.ScenarioBuilder.Field.MinimumAge>Минимальный возраст</RimWorldAccess.ScenarioBuilder.Field.MinimumAge>
   <RimWorldAccess.ScenarioBuilder.Field.MaximumAge>Максимальный возраст</RimWorldAccess.ScenarioBuilder.Field.MaximumAge>
   <RimWorldAccess.ScenarioBuilder.Field.MechType>Тип механоида</RimWorldAccess.ScenarioBuilder.Field.MechType>
@@ -671,23 +574,6 @@
   <RimWorldAccess.ScenarioBuilder.Field.TargetLayer>Целевой слой</RimWorldAccess.ScenarioBuilder.Field.TargetLayer>
   <RimWorldAccess.ScenarioBuilder.Field.ZoomMode>Режим масштаба</RimWorldAccess.ScenarioBuilder.Field.ZoomMode>
   <RimWorldAccess.ScenarioBuilder.Field.FuelCost>Расход топлива</RimWorldAccess.ScenarioBuilder.Field.FuelCost>
-  <RimWorldAccess.ScenarioBuilder.Announce.AddNewItem>Добавить новый элемент. Нажмите Enter, чтобы добавить.</RimWorldAccess.ScenarioBuilder.Announce.AddNewItem>
-  <RimWorldAccess.ScenarioBuilder.Announce.CheckboxField>{0}, флажок, {1}. Нажмите Enter или Пробел для переключения.</RimWorldAccess.ScenarioBuilder.Announce.CheckboxField>
-  <RimWorldAccess.ScenarioBuilder.Announce.EditableField>{0}: {1}. {2}. Нажмите Enter для редактирования.</RimWorldAccess.ScenarioBuilder.Announce.EditableField>
-  <RimWorldAccess.ScenarioBuilder.Announce.FieldCountOne>1 поле</RimWorldAccess.ScenarioBuilder.Announce.FieldCountOne>
-  <RimWorldAccess.ScenarioBuilder.Announce.FieldCountMany>{0_numCase ? поле : поля : полей}</RimWorldAccess.ScenarioBuilder.Announce.FieldCountMany>
-  <RimWorldAccess.ScenarioBuilder.Announce.ItemCountOne>1 элемент</RimWorldAccess.ScenarioBuilder.Announce.ItemCountOne>
-  <RimWorldAccess.ScenarioBuilder.Announce.ItemCountMany>{0_numCase ? элемент : элемента : элементов}</RimWorldAccess.ScenarioBuilder.Announce.ItemCountMany>
-  <RimWorldAccess.ScenarioBuilder.Announce.LabelWithSummary>{0} ({1})</RimWorldAccess.ScenarioBuilder.Announce.LabelWithSummary>
-  <RimWorldAccess.ScenarioBuilder.Announce.ListItemExpandable>{0}, {1}, {2}. Нажмите Delete, чтобы удалить.</RimWorldAccess.ScenarioBuilder.Announce.ListItemExpandable>
-  <RimWorldAccess.ScenarioBuilder.Announce.ListItemSimple>{0}. Нажмите Delete, чтобы удалить.</RimWorldAccess.ScenarioBuilder.Announce.ListItemSimple>
-  <RimWorldAccess.ScenarioBuilder.Announce.PartExpandable>{0}, {1}, {2}</RimWorldAccess.ScenarioBuilder.Announce.PartExpandable>
-  <RimWorldAccess.ScenarioBuilder.Announce.PartReadOnly>{0}, только для чтения</RimWorldAccess.ScenarioBuilder.Announce.PartReadOnly>
-  <RimWorldAccess.ScenarioBuilder.Announce.ReadFullTextSuffix> Нажмите Insert, чтобы прочитать полный текст.</RimWorldAccess.ScenarioBuilder.Announce.ReadFullTextSuffix>
-  <RimWorldAccess.ScenarioBuilder.Announce.TypeHintDropdown>выпадающий список</RimWorldAccess.ScenarioBuilder.Announce.TypeHintDropdown>
-  <RimWorldAccess.ScenarioBuilder.Announce.TypeHintQuantity>количество</RimWorldAccess.ScenarioBuilder.Announce.TypeHintQuantity>
-  <RimWorldAccess.ScenarioBuilder.Announce.TypeHintCheckbox>флажок</RimWorldAccess.ScenarioBuilder.Announce.TypeHintCheckbox>
-  <RimWorldAccess.ScenarioBuilder.Announce.TypeHintText>текст</RimWorldAccess.ScenarioBuilder.Announce.TypeHintText>
   <RimWorldAccess.ScenarioBuilder.AddNewItemLabel>Добавить новый элемент</RimWorldAccess.ScenarioBuilder.AddNewItemLabel>
   <RimWorldAccess.ScenarioBuilder.ConnectionTo>Подключение к {0}</RimWorldAccess.ScenarioBuilder.ConnectionTo>
   <RimWorldAccess.ScenarioBuilder.ConnectionToWithZoom>Подключение к {0} ({1})</RimWorldAccess.ScenarioBuilder.ConnectionToWithZoom>
@@ -697,19 +583,19 @@
   <RimWorldAccess.ScenarioBuilder.ZoomIn>Приблизить</RimWorldAccess.ScenarioBuilder.ZoomIn>
   <RimWorldAccess.ScenarioBuilder.ZoomOut>Отдалить</RimWorldAccess.ScenarioBuilder.ZoomOut>
   <RimWorldAccess.ScenarioBuilder.Value.Empty>(пусто)</RimWorldAccess.ScenarioBuilder.Value.Empty>
-  <RimWorldAccess.ScenarioBuilder.Value.RandomPet>Случайный питомец</RimWorldAccess.ScenarioBuilder.Value.RandomPet>
   <RimWorldAccess.ScenarioBuilder.ItemType.Item>предмет</RimWorldAccess.ScenarioBuilder.ItemType.Item>
   <RimWorldAccess.ScenarioBuilder.ItemType.PawnKindEntry>запись типа персонажа</RimWorldAccess.ScenarioBuilder.ItemType.PawnKindEntry>
   <RimWorldAccess.ScenarioBuilder.ItemType.XenotypeEntry>запись ксенотипа</RimWorldAccess.ScenarioBuilder.ItemType.XenotypeEntry>
   <RimWorldAccess.ScenarioBuilder.ItemType.MutantEntry>запись мутанта</RimWorldAccess.ScenarioBuilder.ItemType.MutantEntry>
   <RimWorldAccess.ScenarioBuilder.ItemType.Connection>подключение</RimWorldAccess.ScenarioBuilder.ItemType.Connection>
+  <RimWorldAccess.ScenarioBuilder.ItemType.GenericListEntry>запись</RimWorldAccess.ScenarioBuilder.ItemType.GenericListEntry>
 
 
   <!-- Mod-list detail nav + requirement status (src/MainMenu/ModListState.cs). -->
-  <RimWorldAccess.ModList.EndOfDetails>Конец сведений о моде</RimWorldAccess.ModList.EndOfDetails>
-  <RimWorldAccess.ModList.StartOfDetails>Начало сведений о моде</RimWorldAccess.ModList.StartOfDetails>
   <RimWorldAccess.ModList.ReqSatisfied>выполнено</RimWorldAccess.ModList.ReqSatisfied>
   <RimWorldAccess.ModList.ReqNotSatisfied>не выполнено</RimWorldAccess.ModList.ReqNotSatisfied>
+  <RimWorldAccess.ModList.ReqEnterToOpenPage>Нажмите Enter, чтобы открыть страницу загрузки.</RimWorldAccess.ModList.ReqEnterToOpenPage>
+  <RimWorldAccess.ModList.ReqEnterToSelect>Нажмите Enter, чтобы выбрать его в списке модов.</RimWorldAccess.ModList.ReqEnterToSelect>
   <!-- Difficulty reset preset tooltip fallback (src/MainMenu/DifficultySettingsHelper.cs). -->
   <RimWorldAccess.CustomDifficulty.ResetTooltip>Сбрасывает все настройки своей сложности к этому шаблону</RimWorldAccess.CustomDifficulty.ResetTooltip>
 
@@ -721,13 +607,10 @@
        ================================================================= -->
   <RimWorldAccess.AnomalySettings.Saved>{0}: сохранено.</RimWorldAccess.AnomalySettings.Saved>
   <RimWorldAccess.AnomalySettings.Closed>{0}: закрыто.</RimWorldAccess.AnomalySettings.Closed>
-  <RimWorldAccess.AnomalySettings.LabelPressEnterToOpen>{0}. Нажмите Enter, чтобы открыть.</RimWorldAccess.AnomalySettings.LabelPressEnterToOpen>
   <RimWorldAccess.AnomalySettings.CannotAcceptDifficultyNotLoaded>Невозможно принять: сложность не загружена.</RimWorldAccess.AnomalySettings.CannotAcceptDifficultyNotLoaded>
 
   <!-- Storyteller page tab-cycle hint (StorytellerSelectionPatch line 61).
        Two variants: with and without the Anomaly Settings tab stop. -->
-  <RimWorldAccess.Storyteller.TabHint>Tab и Shift+Tab для перемещения между Рассказчиком, Сложностью и Режимом сохранения.</RimWorldAccess.Storyteller.TabHint>
-  <RimWorldAccess.Storyteller.TabHintWithAnomaly>Tab и Shift+Tab для перемещения между Рассказчиком, Сложностью, Режимом сохранения и Настройками аномалий.</RimWorldAccess.Storyteller.TabHintWithAnomaly>
   <!-- Hidden display-English sweep (returned/assigned strings localized). -->
   <RimWorldAccess.PawnFilter.Any>Любой</RimWorldAccess.PawnFilter.Any>
   <RimWorldAccess.PawnFilter.SkillLabelAny>{0}: Любой</RimWorldAccess.PawnFilter.SkillLabelAny>
@@ -758,5 +641,11 @@
   <RimWorldAccess.StartingPawn.EditPawnFilter>Изменить фильтр персонажей...</RimWorldAccess.StartingPawn.EditPawnFilter>
   <RimWorldAccess.StartingPawn.AddPawn>Добавить персонажа</RimWorldAccess.StartingPawn.AddPawn>
   <RimWorldAccess.StartingPawn.RemovePawn>Убрать персонажа</RimWorldAccess.StartingPawn.RemovePawn>
+
+  <!-- Credits / victory screen reader. {0} = entry count, {1} = the game's own Skip credits button label. -->
+  <RimWorldAccess.Credits.Opened>Титры. {0_numCase ? запись : записи : записей}. Используйте стрелки для чтения. Escape активирует: {1}.</RimWorldAccess.Credits.Opened>
+  <!-- Spoken when the skip starts. {0} = the seconds the screen itself waits before closing. -->
+  <RimWorldAccess.Credits.Skipping>Титры пропускаются. Закрытие через {0_numCase ? секунду : секунды : секунд}.</RimWorldAccess.Credits.Skipping>
+  <RimWorldAccess.Credits.AlreadySkipping>Титры уже пропускаются.</RimWorldAccess.Credits.AlreadySkipping>
 
 </LanguageData>

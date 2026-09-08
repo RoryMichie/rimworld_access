@@ -6,37 +6,28 @@ using RimWorld;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Helper class for working with RimWorld's architect system.
-    /// Provides methods to retrieve categories, designators, and materials.
-    /// </summary>
+    /// <summary>Categories, designators, and materials of RimWorld's architect system.</summary>
     public static class ArchitectHelper
     {
-        /// <summary>
-        /// Gets all visible designation categories for the current game state.
-        /// </summary>
+        /// <summary>The visible designation categories, in vanilla's order.</summary>
         public static List<DesignationCategoryDef> GetAllCategories()
         {
             List<DesignationCategoryDef> categories = new List<DesignationCategoryDef>();
 
             foreach (DesignationCategoryDef categoryDef in DefDatabase<DesignationCategoryDef>.AllDefsListForReading)
             {
-                // Check if category is visible (research unlocked, etc.)
                 if (categoryDef.Visible)
                 {
                     categories.Add(categoryDef);
                 }
             }
 
-            // Sort by order
             categories.SortBy(c => c.order);
 
             return categories;
         }
 
-        /// <summary>
-        /// Gets all allowed designators for a specific category.
-        /// </summary>
+        /// <summary>The allowed designators of a category, with dropdowns flattened into their elements.</summary>
         public static List<Designator> GetDesignatorsForCategory(DesignationCategoryDef category)
         {
             if (category == null)
@@ -46,29 +37,16 @@ namespace RimWorldAccess
 
             try
             {
-                // First check if we have AllResolvedDesignators (this includes ideology and all resolved designators)
-                List<Designator> allDesignators = category.AllResolvedDesignators;
+                ModLogger.Dev($"Getting designators for category: {category.defName}");
 
-                if (allDesignators == null || allDesignators.Count == 0)
-                {
-                    Log.Warning($"No resolved designators found for category: {category.defName}");
-                    return designators;
-                }
-
-                Log.Message($"Found {allDesignators.Count} designators in category: {category.defName}");
-
-                // Get allowed designators (filters by game rules and research)
                 foreach (Designator designator in category.ResolvedAllowedDesignators)
                 {
-                    // Skip dropdown designators - we'll handle their contents instead
                     if (designator is Designator_Dropdown dropdown)
                     {
-                        // Add all elements from the dropdown
                         if (dropdown.Elements != null)
                         {
                             foreach (Designator element in dropdown.Elements)
                             {
-                                // Check visibility (includes research requirements)
                                 if (element.Visible)
                                 {
                                     designators.Add(element);
@@ -78,7 +56,6 @@ namespace RimWorldAccess
                     }
                     else
                     {
-                        // Check visibility (includes research requirements)
                         if (designator.Visible)
                         {
                             designators.Add(designator);
@@ -86,7 +63,7 @@ namespace RimWorldAccess
                     }
                 }
 
-                Log.Message($"After filtering: {designators.Count} designators available");
+                ModLogger.Dev($"After filtering: {designators.Count} designators available");
 
 
             }
@@ -98,55 +75,38 @@ namespace RimWorldAccess
             return designators;
         }
 
-        /// <summary>
-        /// Gets all valid stuff (materials) for a buildable that requires stuff.
-        /// </summary>
+        /// <summary>The valid stuff for a buildable that is made from stuff.</summary>
         public static List<ThingDef> GetMaterialsForBuildable(BuildableDef buildable)
         {
             List<ThingDef> materials = new List<ThingDef>();
 
+            Map map = Find.CurrentMap;
+            if (map == null)
+                return materials;
+
             if (buildable is ThingDef thingDef && thingDef.MadeFromStuff)
             {
-                // Get all stuff that can be used to make this thing
-                foreach (ThingDef stuffDef in DefDatabase<ThingDef>.AllDefsListForReading)
+                // Fallback mirror of Designator_Build.ProcessInput's stuff filter, for when harvesting
+                // the real menu is impossible (no map, or a mod's ProcessInput threw); the live path
+                // is MaterialMenuHarvest.
+                foreach (ThingDef item in from d in map.resourceCounter.AllCountedAmounts.Keys
+                    orderby d.stuffProps?.commonality ?? float.PositiveInfinity descending, d.BaseMarketValue
+                    select d)
                 {
-                    if (stuffDef.IsStuff && stuffDef.stuffProps.CanMake(thingDef))
+                    if (item.IsStuff && item.stuffProps.CanMake(thingDef) && (DebugSettings.godMode || map.listerThings.ThingsOfDef(item).Count > 0))
                     {
-                        materials.Add(stuffDef);
+                        materials.Add(item);
                     }
                 }
-
-                // Sort by commonality - most common materials first
-                materials.SortBy(m => -m.BaseMarketValue);
             }
 
             return materials;
         }
 
         /// <summary>
-        /// Creates a Designator_Build for a specific buildable and material.
+        /// The designator label with RimWorld's trailing "..." (added when no material is selected)
+        /// stripped, so pluralization cannot produce "wall...s".
         /// </summary>
-        public static Designator_Build CreateBuildDesignator(BuildableDef buildable, ThingDef stuffDef)
-        {
-            Designator_Build designator = new Designator_Build(buildable);
-
-            // Set the stuff if provided
-            if (stuffDef != null && buildable is ThingDef thingDef && thingDef.MadeFromStuff)
-            {
-                designator.SetStuffDef(stuffDef);
-            }
-
-            return designator;
-        }
-
-        /// <summary>
-        /// Gets the designator label with the "..." suffix stripped.
-        /// RimWorld adds "..." to labels when no material is selected (e.g., "wall...").
-        /// This suffix needs to be removed before pluralization to avoid "wall...s".
-        /// </summary>
-        /// <param name="designator">The designator to get the label from</param>
-        /// <param name="fallback">Fallback value if designator is null or label is empty</param>
-        /// <returns>The sanitized label without trailing "..."</returns>
         public static string GetSanitizedLabel(Designator designator, string fallback = "Unknown")
         {
             string label = designator?.Label ?? fallback;
@@ -157,10 +117,7 @@ namespace RimWorldAccess
             return label;
         }
 
-        /// <summary>
-        /// Pluralizes a label while preserving parenthetical suffixes.
-        /// "sandstone grand stele (61%)" -> "sandstone grand steles (61%)"
-        /// </summary>
+        /// <summary>Pluralizes a label, preserving any parenthetical suffix: "grand stele (61%)" -> "grand steles (61%)".</summary>
         public static string PluralizePreservingParentheses(string label, int count)
         {
             if (string.IsNullOrEmpty(label) || count <= 1)
@@ -176,19 +133,15 @@ namespace RimWorldAccess
             return $"{pluralNoun} {suffix}";
         }
 
-        /// <summary>
-        /// Gets the default or most commonly available material for a buildable.
-        /// </summary>
+        /// <summary>The default stuff for a buildable, falling back to its first available material.</summary>
         public static ThingDef GetDefaultMaterial(BuildableDef buildable)
         {
             if (buildable is ThingDef thingDef && thingDef.MadeFromStuff)
             {
-                // Try to get the default stuff
                 ThingDef defaultStuff = GenStuff.DefaultStuffFor(thingDef);
                 if (defaultStuff != null)
                     return defaultStuff;
 
-                // Fall back to the first available material
                 List<ThingDef> materials = GetMaterialsForBuildable(buildable);
                 if (materials.Count > 0)
                     return materials[0];
@@ -197,9 +150,7 @@ namespace RimWorldAccess
             return null;
         }
 
-        /// <summary>
-        /// Checks if a buildable requires material selection.
-        /// </summary>
+        /// <summary>Whether a buildable requires material selection.</summary>
         public static bool RequiresMaterialSelection(BuildableDef buildable)
         {
             if (buildable is ThingDef thingDef)
@@ -209,9 +160,7 @@ namespace RimWorldAccess
             return false;
         }
 
-        /// <summary>
-        /// Formats a list of materials as FloatMenuOptions.
-        /// </summary>
+        /// <summary>A buildable's materials as FloatMenuOptions, each labelled with its stock count.</summary>
         public static List<FloatMenuOption> CreateMaterialOptions(BuildableDef buildable, Action<ThingDef> onSelected)
         {
             List<FloatMenuOption> options = new List<FloatMenuOption>();
@@ -219,7 +168,6 @@ namespace RimWorldAccess
 
             foreach (ThingDef material in materials)
             {
-                // Check if we have this material available
                 int availableCount = 0;
                 if (Find.CurrentMap != null)
                 {
@@ -242,9 +190,7 @@ namespace RimWorldAccess
             return options;
         }
 
-        /// <summary>
-        /// Formats a list of designators as FloatMenuOptions.
-        /// </summary>
+        /// <summary>Designators as FloatMenuOptions, each labelled with its cost or description.</summary>
         public static List<FloatMenuOption> CreateDesignatorOptions(List<Designator> designators, Action<Designator> onSelected)
         {
             List<FloatMenuOption> options = new List<FloatMenuOption>();
@@ -253,7 +199,6 @@ namespace RimWorldAccess
             {
                 string label = designator.LabelCap;
 
-                // Add cost and skill information for build designators
                 if (designator is Designator_Build buildDesignator)
                 {
                     string extraInfo = GetBuildableExtraInfo(buildDesignator.PlacingDef);
@@ -264,7 +209,6 @@ namespace RimWorldAccess
                 }
                 else
                 {
-                    // For non-build designators (orders), add description if available
                     string description = GetDesignatorDescriptionText(designator);
                     if (!string.IsNullOrEmpty(description))
                     {
@@ -272,7 +216,6 @@ namespace RimWorldAccess
                     }
                 }
 
-                // Add action
                 options.Add(new FloatMenuOption(label, () => onSelected(designator)));
             }
 
@@ -280,8 +223,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets extra information (cost, skill requirement, and description) for a buildable.
-        /// Format: ": {cost}, requires Construction {level} ({description})" matching tree view style.
+        /// A buildable's cost, skill requirement and description, formatted as the tree view does:
+        /// ": {cost}, requires Construction {level} ({description})".
         /// </summary>
         private static string GetBuildableExtraInfo(BuildableDef buildable)
         {
@@ -292,7 +235,6 @@ namespace RimWorldAccess
             string skillInfo = GetSkillRequirement(buildable);
             string description = GetDescription(buildable);
 
-            // Build list of info parts (cost, skill)
             var infoParts = new List<string>();
             if (!string.IsNullOrEmpty(costInfo))
                 infoParts.Add(costInfo);
@@ -301,7 +243,6 @@ namespace RimWorldAccess
 
             string combinedInfo = string.Join(", ", infoParts);
 
-            // Build the formatted string: ": cost, skill (description)"
             if (!string.IsNullOrEmpty(combinedInfo) && !string.IsNullOrEmpty(description))
             {
                 return $": {combinedInfo} ({description})";
@@ -318,9 +259,7 @@ namespace RimWorldAccess
             return "";
         }
 
-        /// <summary>
-        /// Gets the skill requirement for a buildable, if any.
-        /// </summary>
+        /// <summary>A buildable's construction skill requirement, or "" when it has none.</summary>
         public static string GetSkillRequirement(BuildableDef buildable)
         {
             if (buildable is ThingDef thingDef && thingDef.constructionSkillPrerequisite > 0)
@@ -330,9 +269,7 @@ namespace RimWorldAccess
             return "";
         }
 
-        /// <summary>
-        /// Gets brief cost information for display (no "Cost:" prefix).
-        /// </summary>
+        /// <summary>A buildable's costs as a comma-separated list, with no "Cost:" prefix.</summary>
         public static string GetBriefCostInfo(BuildableDef buildable)
         {
             if (buildable == null)
@@ -340,20 +277,17 @@ namespace RimWorldAccess
 
             List<string> costParts = new List<string>();
 
-            // Get stuff cost first (most common)
             if (buildable is ThingDef thingDef && thingDef.MadeFromStuff)
             {
                 int stuffCount = buildable.CostStuffCount;
                 if (stuffCount > 0)
                 {
-                    // Use the mod's shared localized "material" term (matches GetResourceName) so the
-                    // stuff-cost readout follows the player's language; the fixed costs below already
-                    // use the localized thingDef.label.
+                    // The shared localized "material" term, so this readout follows the player's
+                    // language as the fixed costs below already do via thingDef.label.
                     costParts.Add($"{stuffCount} {(string)"RimWorldAccess.Common.Material".Translate()}");
                 }
             }
 
-            // Get fixed costs
             List<ThingDefCountClass> costs = buildable.CostList;
             if (costs != null)
             {
@@ -366,9 +300,7 @@ namespace RimWorldAccess
             return string.Join(", ", costParts);
         }
 
-        /// <summary>
-        /// Cleans up description text by removing newlines and collapsing whitespace.
-        /// </summary>
+        /// <summary>Description text with newlines removed and whitespace collapsed.</summary>
         private static string CleanupDescription(string description)
         {
             if (string.IsNullOrEmpty(description))
@@ -379,9 +311,7 @@ namespace RimWorldAccess
             return description;
         }
 
-        /// <summary>
-        /// Gets the description for a buildable as a formatted string.
-        /// </summary>
+        /// <summary>A buildable's cleaned-up description.</summary>
         public static string GetDescription(BuildableDef buildable)
         {
             if (buildable == null)
@@ -389,9 +319,7 @@ namespace RimWorldAccess
             return CleanupDescription(buildable.description);
         }
 
-        /// <summary>
-        /// Gets the description text for a designator (for orders/commands).
-        /// </summary>
+        /// <summary>An order designator's cleaned-up description.</summary>
         public static string GetDesignatorDescriptionText(Designator designator)
         {
             if (designator == null)
@@ -399,9 +327,7 @@ namespace RimWorldAccess
             return CleanupDescription(designator.Desc);
         }
 
-        /// <summary>
-        /// Formats categories as FloatMenuOptions.
-        /// </summary>
+        /// <summary>Categories as FloatMenuOptions.</summary>
         public static List<FloatMenuOption> CreateCategoryOptions(List<DesignationCategoryDef> categories, Action<DesignationCategoryDef> onSelected)
         {
             List<FloatMenuOption> options = new List<FloatMenuOption>();

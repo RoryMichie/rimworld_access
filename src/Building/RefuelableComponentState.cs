@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Verse;
 using RimWorld;
-using Verse.Sound;
 
 namespace RimWorldAccess
 {
@@ -10,10 +9,16 @@ namespace RimWorldAccess
     /// Keyboard navigation for CompRefuelable. Options are built dynamically from
     /// Props flags so buildings only expose what actually applies (e.g. a mortar's
     /// reinforced barrel shows only the view option; a fueled smelter shows all three).
+    ///
+    /// Map-controls migration: cursor/typeahead arithmetic (selectedIndex, the private
+    /// TypeaheadSearchHelper, SelectNext/Previous/JumpToFirst/Last,
+    /// ProcessTypeaheadCharacter/Backspace, AnnounceCurrentOption/AnnounceWithSearch) moved to
+    /// RefuelableScope (ScreenScope + the shared typeahead engine); this state shrinks to the option
+    /// DATA model, the mutation methods, and the vanilla- mirroring status text builders.
     /// </summary>
     public static class RefuelableComponentState
     {
-        private enum OptionKind
+        public enum OptionKind
         {
             ViewStatus,
             ToggleAutoRefuel,
@@ -23,18 +28,27 @@ namespace RimWorldAccess
         private class Option
         {
             public OptionKind Kind;
-            public string Label;
         }
 
         private static CompRefuelable refuelable = null;
         private static Building building = null;
         private static bool isActive = false;
         private static List<Option> options = new List<Option>();
-        private static int selectedIndex = 0;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
 
-        public static bool IsActive => isActive;
-        public static bool HasActiveSearch => typeahead.HasActiveSearch;
+        /// <summary>
+        /// False while our own <see cref="OpenTargetFuelDialog"/> has a real
+        /// Dialog_Slider open (<see cref="SliderDialogState.IsActive"/>) so
+        /// <see cref="RimWorldAccess.Shell.InspectComponentScopeMirror"/> pops this
+        /// menu's scope off the focus stack for the dialog's duration — the same stand-down
+        /// <see cref="RimWorldAccess.Shell.GizmoScopeMirror"/> already applies for gizmo-opened sliders
+        /// (VF's refuel-from-inventory, turret quota). Without this, the mirror would keep re-floating
+        /// this menu's scope above SliderDialogScope every reconcile pass, starving the real dialog of
+        /// keyboard input. LOAD-BEARING: do not simplify.
+        /// </summary>
+        public static bool IsActive => isActive && !SliderDialogState.IsActive;
+
+        /// <summary>Live region name for RefuelableScope, matching RefuelableAdapter.CategoryDisplayName's own derivation (no InspectionCategoryLocalizer entry exists for this dynamic category).</summary>
+        public static string RegionName => (refuelable?.Props?.FuelGizmoLabel ?? "Fuel".TranslateSimple()).CapitalizeFirst();
 
         public static void Open(Building targetBuilding)
         {
@@ -51,8 +65,6 @@ namespace RimWorldAccess
             building = targetBuilding;
             refuelable = comp;
             isActive = true;
-            selectedIndex = 0;
-            typeahead.ClearSearch();
 
             BuildOptions();
             TolkHelper.SpeakData(BuildVanillaFuelStatus());
@@ -64,72 +76,59 @@ namespace RimWorldAccess
             refuelable = null;
             building = null;
             isActive = false;
-            selectedIndex = 0;
             options.Clear();
-            typeahead.ClearSearch();
         }
 
         private static void BuildOptions()
         {
             options.Clear();
-            options.Add(new Option { Kind = OptionKind.ViewStatus, Label = "RimWorldAccess.Building.Refuel.OptionViewStatus".Translate() });
+            options.Add(new Option { Kind = OptionKind.ViewStatus });
 
             if (refuelable.Props.showAllowAutoRefuelToggle)
-                options.Add(new Option { Kind = OptionKind.ToggleAutoRefuel, Label = AutoRefuelLabel() });
+                options.Add(new Option { Kind = OptionKind.ToggleAutoRefuel });
 
             if (refuelable.Props.targetFuelLevelConfigurable)
-                options.Add(new Option { Kind = OptionKind.AdjustTargetFuel, Label = TargetFuelLabel() });
+                options.Add(new Option { Kind = OptionKind.AdjustTargetFuel });
         }
 
-        private static string AutoRefuelLabel()
-            => refuelable.allowAutoRefuel
-                ? "RimWorldAccess.Building.Refuel.AutoRefuelOn".Translate()
-                : "RimWorldAccess.Building.Refuel.AutoRefuelOff".Translate();
+        // ------------------------------------------------------------------
+        // Row data for RefuelableScope (rebuilt fresh via RefreshContent -> BuildOptions).
+        // ------------------------------------------------------------------
+
+        public static int OptionCount => options.Count;
+
+        public static OptionKind KindOf(int index) => options[index].Kind;
+
+        /// <summary>Live label for the Button-kind rows (ViewStatus/AdjustTargetFuel); read fresh, never cached.</summary>
+        public static string LabelOf(int index)
+        {
+            switch (options[index].Kind)
+            {
+                case OptionKind.ViewStatus:
+                    return "RimWorldAccess.Building.Refuel.OptionViewStatus".Translate();
+                case OptionKind.AdjustTargetFuel:
+                    return TargetFuelLabel();
+                default:
+                    return "";
+            }
+        }
+
+        /// <summary>Live checkbox state for the ToggleAutoRefuel row.</summary>
+        public static bool AllowAutoRefuel => refuelable != null && refuelable.allowAutoRefuel;
 
         private static string TargetFuelLabel()
             => "RimWorldAccess.Building.Refuel.TargetFuelLevelLabel".Translate(
                 refuelable.TargetFuelLevel.ToStringDecimalIfSmall(),
                 refuelable.Props.fuelCapacity.ToStringDecimalIfSmall());
 
-        public static void SelectNext()
-        {
-            if (options.Count == 0) return;
-            typeahead.ClearSearch();
-            selectedIndex = MenuHelper.SelectNext(selectedIndex, options.Count);
-            AnnounceCurrentOption();
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-        }
+        public static bool IsAdjustTargetFuelOption(int index)
+            => index >= 0 && index < options.Count && options[index].Kind == OptionKind.AdjustTargetFuel;
 
-        public static void SelectPrevious()
+        public static void ExecuteSelected(int index)
         {
-            if (options.Count == 0) return;
-            typeahead.ClearSearch();
-            selectedIndex = MenuHelper.SelectPrevious(selectedIndex, options.Count);
-            AnnounceCurrentOption();
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-        }
+            if (refuelable == null || building == null || index < 0 || index >= options.Count) return;
 
-        public static void JumpToFirst()
-        {
-            if (options.Count == 0) return;
-            typeahead.ClearSearch();
-            selectedIndex = 0;
-            AnnounceCurrentOption();
-        }
-
-        public static void JumpToLast()
-        {
-            if (options.Count == 0) return;
-            typeahead.ClearSearch();
-            selectedIndex = options.Count - 1;
-            AnnounceCurrentOption();
-        }
-
-        public static void ExecuteSelected()
-        {
-            if (refuelable == null || building == null || options.Count == 0) return;
-
-            switch (options[selectedIndex].Kind)
+            switch (options[index].Kind)
             {
                 case OptionKind.ViewStatus:
                     AnnounceDetailedStatus();
@@ -138,73 +137,67 @@ namespace RimWorldAccess
                     ToggleAutoRefuel();
                     break;
                 case OptionKind.AdjustTargetFuel:
-                    TolkHelper.Speak("RimWorldAccess.Building.Refuel.AdjustHint".Loc(
-                        refuelable.TargetFuelLevel.ToStringDecimalIfSmall(),
-                        refuelable.Props.fuelCapacity.ToStringDecimalIfSmall()));
+                    OpenTargetFuelDialog();
                     break;
             }
         }
 
-        private static bool IsOnTargetFuelOption()
-            => options.Count > 0 && options[selectedIndex].Kind == OptionKind.AdjustTargetFuel;
+        /// <summary>
+        /// MUTATION vehicle A, the same template <see cref="OpenTargetFuelDialog"/>
+        /// establishes: CompRefuelable.CompGetGizmosExtra only yields this
+        /// Command_Toggle when Find.Selector.SelectedObjects.Count != 1 (the
+        /// single-selection case this menu actually runs in instead draws
+        /// Gizmo_SetFuelLevel, which carries no toggle at all) — so this state
+        /// can never reach vanilla's own toggle instance through enumeration.
+        /// Command_Toggle.ProcessInput has no selection-count gate of its own,
+        /// so constructing the identical isActive/toggleAction wiring vanilla's
+        /// comp would build and driving its real ProcessInput rides the same
+        /// vanilla vehicle A pattern — including its own turnOnSound/turnOffSound
+        /// pick (Command_Toggle.CurActivateSound, decompiled Verse/Command_Toggle.cs:21-31,
+        /// reads isActive() BEFORE toggleAction flips it), which now plays
+        /// correctly instead of the old unconditional Checkbox_TurnedOn.
+        /// </summary>
+        public static void ToggleAutoRefuel()
+        {
+            if (refuelable == null) return;
+            var gizmo = new Command_Toggle
+            {
+                isActive = () => refuelable.allowAutoRefuel,
+                toggleAction = delegate { refuelable.allowAutoRefuel = !refuelable.allowAutoRefuel; },
+            };
+            gizmo.ProcessInput(null);
+        }
 
-        public static void IncreaseTargetFuel()
+        /// <summary>
+        /// MUTATION vehicle A: constructs and drives the real vanilla
+        /// Command_SetTargetFuelLevel gizmo directly, rather than stepping
+        /// TargetFuelLevel by a hand-picked +/-10%-of-capacity amount.
+        /// CompRefuelable.CompGetGizmosExtra only yields this gizmo type when
+        /// multiple refuelables are selected together
+        /// (Find.Selector.SelectedObjects.Count != 1) — for the single-building
+        /// case this state actually runs in, vanilla instead draws
+        /// Gizmo_SetFuelLevel, a mouse-drag-only slider gizmo with no keyboard
+        /// equivalent and no Dialog_Slider at all (verified:
+        /// RimWorld/Gizmo_SetFuelLevel.cs's Target setter writes
+        /// refuelable.TargetFuelLevel directly from a drag position). But
+        /// Command_SetTargetFuelLevel.ProcessInput itself has no selection-count
+        /// gate of its own — only CompGetGizmosExtra's dispatch branch does — so
+        /// constructing the command directly and calling its own ProcessInput
+        /// rides the exact same vanilla method regardless of what else is
+        /// selected, opening the real Dialog_Slider (with the pod-launcher
+        /// max-launch-distance readout for free, via the command's own
+        /// textGetter) instead of our own hand-rolled stepper.
+        /// SliderDialogPatch/SliderDialogState/SliderDialogScope already make
+        /// every Dialog_Slider fully keyboard-accessible the moment it's added
+        /// to the window stack, so nothing further is needed here; IsActive's
+        /// SliderDialogState.IsActive term yields this menu's own scope for the
+        /// dialog's duration.
+        /// </summary>
+        public static void OpenTargetFuelDialog()
         {
             if (refuelable == null || building == null) return;
-            if (!IsOnTargetFuelOption())
-            {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                return;
-            }
-
-            float increment = refuelable.Props.fuelCapacity * 0.1f;
-            refuelable.TargetFuelLevel += increment;
-            RefreshSelectedLabel();
-            TolkHelper.SpeakData(options[selectedIndex].Label);
-        }
-
-        public static void DecreaseTargetFuel()
-        {
-            if (refuelable == null || building == null) return;
-            if (!IsOnTargetFuelOption())
-            {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                return;
-            }
-
-            float decrement = refuelable.Props.fuelCapacity * 0.1f;
-            refuelable.TargetFuelLevel -= decrement;
-            RefreshSelectedLabel();
-            TolkHelper.SpeakData(options[selectedIndex].Label);
-        }
-
-        private static void ToggleAutoRefuel()
-        {
-            refuelable.allowAutoRefuel = !refuelable.allowAutoRefuel;
-            RefreshSelectedLabel();
-            TolkHelper.Speak(refuelable.allowAutoRefuel
-                ? "RimWorldAccess.Building.Refuel.ToggleValueOn".Loc()
-                : "RimWorldAccess.Building.Refuel.ToggleValueOff".Loc());
-            SoundDefOf.Checkbox_TurnedOn.PlayOneShotOnCamera();
-        }
-
-        private static void RefreshSelectedLabel()
-        {
-            if (options.Count == 0) return;
-            var opt = options[selectedIndex];
-            switch (opt.Kind)
-            {
-                case OptionKind.ToggleAutoRefuel: opt.Label = AutoRefuelLabel(); break;
-                case OptionKind.AdjustTargetFuel: opt.Label = TargetFuelLabel(); break;
-            }
-        }
-
-        private static void AnnounceCurrentOption()
-        {
-            if (options.Count == 0) return;
-            string label = options[selectedIndex].Label;
-            string position = MenuHelper.FormatPosition(selectedIndex, options.Count);
-            TolkHelper.SpeakData(string.IsNullOrEmpty(position) ? label : $"{label}. {position}");
+            var gizmo = new Command_SetTargetFuelLevel { refuelable = refuelable };
+            gizmo.ProcessInput(null);
         }
 
         /// <summary>
@@ -251,7 +244,7 @@ namespace RimWorldAccess
             return b.Build();
         }
 
-        private static void AnnounceDetailedStatus()
+        public static void AnnounceDetailedStatus()
         {
             if (refuelable == null || building == null) return;
 
@@ -266,70 +259,12 @@ namespace RimWorldAccess
 
             if (refuelable.Props.showAllowAutoRefuelToggle)
             {
-                b.Add(AutoRefuelLabel());
+                b.Add(refuelable.allowAutoRefuel
+                    ? "RimWorldAccess.Building.Refuel.AutoRefuelOn".Translate()
+                    : "RimWorldAccess.Building.Refuel.AutoRefuelOff".Translate());
             }
 
             TolkHelper.SpeakData(b.Build());
-        }
-
-        // Typeahead plumbing
-
-        public static bool ProcessTypeaheadCharacter(char c)
-        {
-            var labels = options.Select(o => o.Label).ToList();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0) { selectedIndex = newIndex; AnnounceWithSearch(); }
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
-            return true;
-        }
-
-        public static bool ProcessBackspace()
-        {
-            if (!typeahead.HasActiveSearch) return false;
-            var labels = options.Select(o => o.Label).ToList();
-            if (typeahead.ProcessBackspace(labels, out int newIndex))
-            {
-                if (newIndex >= 0) selectedIndex = newIndex;
-                AnnounceWithSearch();
-            }
-            return true;
-        }
-
-        public static void ClearTypeaheadSearch()
-        {
-            typeahead.ClearSearchAndAnnounce();
-            AnnounceCurrentOption();
-        }
-
-        public static bool SelectNextMatch()
-        {
-            if (!typeahead.HasActiveSearch) return false;
-            int next = typeahead.GetNextMatch(selectedIndex);
-            if (next >= 0) { selectedIndex = next; AnnounceWithSearch(); }
-            return true;
-        }
-
-        public static bool SelectPreviousMatch()
-        {
-            if (!typeahead.HasActiveSearch) return false;
-            int prev = typeahead.GetPreviousMatch(selectedIndex);
-            if (prev >= 0) { selectedIndex = prev; AnnounceWithSearch(); }
-            return true;
-        }
-
-        private static void AnnounceWithSearch()
-        {
-            if (options.Count == 0 || selectedIndex < 0 || selectedIndex >= options.Count) return;
-            string label = options[selectedIndex].Label;
-            if (typeahead.HasActiveSearch)
-                TolkHelper.SpeakData(typeahead.BuildItemAnnouncement(label));
-            else
-                AnnounceCurrentOption();
         }
     }
 }

@@ -46,8 +46,6 @@
        label, resolved at call time. -->
   <RimWorldAccess.Ideology.RitualSound.Playing>{0}, 播放中。</RimWorldAccess.Ideology.RitualSound.Playing>
   <RimWorldAccess.Ideology.RitualSound.Stopped>{0}, 已停止。</RimWorldAccess.Ideology.RitualSound.Stopped>
-  <RimWorldAccess.Ideology.RitualSound.Preview>试听仪式音效</RimWorldAccess.Ideology.RitualSound.Preview>
-  <RimWorldAccess.Ideology.RitualSound.Stop>停止仪式音效</RimWorldAccess.Ideology.RitualSound.Stop>
 
   <!-- Tab open/close composition.
          TabClosed: spoken when Escape closes the tab. {0} = tab label.
@@ -67,20 +65,22 @@
        (e.g. a minimal/custom ideology with no visible sections).
          {0} = ideology name, {1} = vanilla "NoneLower" translation. -->
   <RimWorldAccess.Ideology.Tree.Empty>{0}. {1}</RimWorldAccess.Ideology.Tree.Empty>
+  <RimWorldAccess.Ideology.OtherPrecepts>其他戒律</RimWorldAccess.Ideology.OtherPrecepts>
 
   <!-- IdeoBuilder module strings (src/IdeoBuilder/).
        Navigation hints for the two-tab builder shell. -->
   <RimWorldAccess.Ideology.Builder.TabForIdeoList>Tab 键打开文化形态列表</RimWorldAccess.Ideology.Builder.TabForIdeoList>
-  <RimWorldAccess.Ideology.Builder.TabToReturnToList>Tab 键返回列表</RimWorldAccess.Ideology.Builder.TabToReturnToList>
 
   <!-- Spoken when a section or action is disabled but has no specific reason string. -->
   <RimWorldAccess.Ideology.Builder.Unavailable>不可用</RimWorldAccess.Ideology.Builder.Unavailable>
 
   <!-- Spoken when the ] edit-menu is opened on a precept that has no editable options. -->
   <RimWorldAccess.Ideology.Builder.NoEditOptions>无可编辑选项</RimWorldAccess.Ideology.Builder.NoEditOptions>
-  <!-- Hidden display-English sweep (returned/assigned strings localized). -->
-  <RimWorldAccess.Ideology.Builder.PreceptSection.Active>已设置教义, {0}</RimWorldAccess.Ideology.Builder.PreceptSection.Active>
-  <RimWorldAccess.Ideology.Builder.PreceptSection.NotSet>未设置, {0}</RimWorldAccess.Ideology.Builder.PreceptSection.NotSet>
+  <!-- Hidden display-English sweep (returned/assigned strings localized).
+       The two section names are BARE names: the precept editor is a tree again, so the
+       child count rides the shared expansion suffix instead of the section label. -->
+  <RimWorldAccess.Ideology.Builder.PreceptSection.ActiveName>已设置的教义</RimWorldAccess.Ideology.Builder.PreceptSection.ActiveName>
+  <RimWorldAccess.Ideology.Builder.PreceptSection.NotSetName>未设置</RimWorldAccess.Ideology.Builder.PreceptSection.NotSetName>
   <RimWorldAccess.Ideology.Builder.PreceptSummary>已设置 {0}, 未设置 {1}</RimWorldAccess.Ideology.Builder.PreceptSummary>
   <RimWorldAccess.Ideology.Builder.PreceptCurrent>当前</RimWorldAccess.Ideology.Builder.PreceptCurrent>
 
@@ -97,4 +97,20 @@
   <RimWorldAccess.Ideology.Builder.DiscardConfirm>返回将放弃此自定义文化形态。是否继续？</RimWorldAccess.Ideology.Builder.DiscardConfirm>
   <RimWorldAccess.Ideology.Builder.DiscardContinue>继续</RimWorldAccess.Ideology.Builder.DiscardContinue>
   <RimWorldAccess.Ideology.Builder.DiscardCancel>取消</RimWorldAccess.Ideology.Builder.DiscardCancel>
+  <RimWorldAccess.Ideology.Builder.RandomizeAllConfirm>随机化将替换整个文化形态。是否继续？</RimWorldAccess.Ideology.Builder.RandomizeAllConfirm>
+  <RimWorldAccess.Ideology.Builder.RandomizeAllContinue>继续</RimWorldAccess.Ideology.Builder.RandomizeAllContinue>
+  <RimWorldAccess.Ideology.Builder.RandomizeAllCancel>取消</RimWorldAccess.Ideology.Builder.RandomizeAllCancel>
+  <RimWorldAccess.Ideology.Builder.EditorRegion>文化形态</RimWorldAccess.Ideology.Builder.EditorRegion>
+  <RimWorldAccess.Ideology.Builder.ListRegion>文化形态</RimWorldAccess.Ideology.Builder.ListRegion>
+  <RimWorldAccess.Ideology.Builder.DescriptionLock>锁定描述</RimWorldAccess.Ideology.Builder.DescriptionLock>
+  <RimWorldAccess.Ideology.Builder.DevMaxPoints>开发者: 最大发展点数</RimWorldAccess.Ideology.Builder.DevMaxPoints>
+  <RimWorldAccess.Ideology.Builder.StatusLabel>状态</RimWorldAccess.Ideology.Builder.StatusLabel>
+  <RimWorldAccess.Ideology.Builder.Appearance.MixedFrequency>混合</RimWorldAccess.Ideology.Builder.Appearance.MixedFrequency>
+  <RimWorldAccess.Ideology.Builder.Appearance.GenderFragment>性别: {0}</RimWorldAccess.Ideology.Builder.Appearance.GenderFragment>
+  <RimWorldAccess.Ideology.Viewer.ListRegion>文化形态</RimWorldAccess.Ideology.Viewer.ListRegion>
+  <RimWorldAccess.Ideology.Viewer.DetailsRegion>详情</RimWorldAccess.Ideology.Viewer.DetailsRegion>
+  <RimWorldAccess.Ideology.Viewer.EditorRegion>编辑器</RimWorldAccess.Ideology.Viewer.EditorRegion>
+  <RimWorldAccess.Ideology.Viewer.PressEnterToEdit>按回车键编辑</RimWorldAccess.Ideology.Viewer.PressEnterToEdit>
+  <RimWorldAccess.Ideology.Reform.ChangesRegion>变更</RimWorldAccess.Ideology.Reform.ChangesRegion>
+  <RimWorldAccess.Ideology.Reform.EditRegion>编辑</RimWorldAccess.Ideology.Reform.EditRegion>
 </LanguageData>

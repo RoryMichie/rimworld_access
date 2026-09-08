@@ -19,6 +19,13 @@ namespace RimWorldAccess
         public bool MultiLine { get; }
         public Func<string, AcceptanceReport> CustomValidator { get; }
 
+        /// <summary>
+        /// The buffer is the game's to write, not the player's: every edit key refuses
+        /// with a voice while navigation, selection and copy work as in any other field.
+        /// See <see cref="ReadOnlyText"/>.
+        /// </summary>
+        public bool ReadOnly { get; }
+
         public TextFieldSpec(
             string labelKey,
             int? maxLength = null,
@@ -27,7 +34,8 @@ namespace RimWorldAccess
             bool forbidGrammarSpecials = false,
             bool mustBeFilename = false,
             bool multiLine = false,
-            Func<string, AcceptanceReport> customValidator = null)
+            Func<string, AcceptanceReport> customValidator = null,
+            bool readOnly = false)
         {
             LabelKey = labelKey;
             MaxLength = maxLength;
@@ -37,17 +45,19 @@ namespace RimWorldAccess
             MustBeFilename = mustBeFilename;
             MultiLine = multiLine;
             CustomValidator = customValidator;
+            ReadOnly = readOnly;
         }
 
         /// <summary>
         /// Spec for an arbitrary IRenameable target. Mirrors <see cref="Dialog_Rename{T}"/>'s
-        /// 28-character cap and non-empty requirement.
+        /// length cap and non-empty requirement. That dialog keeps the field's text only
+        /// while "text.Length &lt; MaxNameLength", so its default 28 accepts 27 characters.
         /// </summary>
         public static TextFieldSpec ForIRenameable(IRenameable target, string labelKey = null)
         {
             return new TextFieldSpec(
                 labelKey: labelKey ?? "RimWorldAccess.TextInput.LabelDefault",
-                maxLength: 28,
+                maxLength: 27,
                 minLength: 1);
         }
 
@@ -59,6 +69,21 @@ namespace RimWorldAccess
         {
             return RimWorldDialogIntrospector.Extract(dialog);
         }
+
+        /// <summary>
+        /// Spec for a whole-number field standing in for one of vanilla's own
+        /// <see cref="Verse.Listing_Standard.IntEntry"/> boxes: digits only, no sign, and no
+        /// length cap. The absent cap is deliberate and matches the widget being mirrored —
+        /// IntEntry bounds a count by VALUE through its own inline clamp, never by how many
+        /// characters were typed — so the caller's gated commit owns the range and this owns
+        /// only what the keyboard may put in the buffer.
+        /// </summary>
+        public static TextFieldSpec WholeNumber(string labelKey)
+        {
+            return new TextFieldSpec(labelKey: labelKey, minLength: 0, allowedChars: DigitsOnly);
+        }
+
+        private static readonly Regex DigitsOnly = new Regex("^[0-9]*$");
 
         /// <summary>Permissive spec — non-empty, no other rules.</summary>
         public static TextFieldSpec Unrestricted(string labelKey)
@@ -74,6 +99,16 @@ namespace RimWorldAccess
         public static TextFieldSpec MultiLineUnrestricted(string labelKey)
         {
             return new TextFieldSpec(labelKey: labelKey, maxLength: null, minLength: 0, multiLine: true);
+        }
+
+        /// <summary>
+        /// Text the player reads but never writes — the dev log's message details and any
+        /// other pane whose content belongs to the game. Multi-line, so Up/Down step lines
+        /// exactly as they do in an editable long-form field.
+        /// </summary>
+        public static TextFieldSpec ReadOnlyText(string labelKey)
+        {
+            return new TextFieldSpec(labelKey: labelKey, maxLength: null, minLength: 0, multiLine: true, readOnly: true);
         }
     }
 }

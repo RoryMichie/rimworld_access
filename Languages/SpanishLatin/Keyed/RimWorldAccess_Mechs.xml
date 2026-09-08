@@ -70,6 +70,7 @@
          {2} = position suffix. -->
   <RimWorldAccess.Mechs.Submenu.NoOverseer>Sin supervisor</RimWorldAccess.Mechs.Submenu.NoOverseer>
   <RimWorldAccess.Mechs.Submenu.NoControlGroup>Sin grupo de control</RimWorldAccess.Mechs.Submenu.NoControlGroup>
+  <RimWorldAccess.Mechs.Submenu.AreaNotAllowed>{0} no puede tener un área asignable</RimWorldAccess.Mechs.Submenu.AreaNotAllowed>
   <RimWorldAccess.Mechs.Submenu.CurrentMarker>{0} (actual)</RimWorldAccess.Mechs.Submenu.CurrentMarker>
   <RimWorldAccess.Mechs.Submenu.Option>{0}. {1}</RimWorldAccess.Mechs.Submenu.Option>
   <RimWorldAccess.Mechs.Submenu.OptionAnnounce>{0} ({1})</RimWorldAccess.Mechs.Submenu.OptionAnnounce>
@@ -87,9 +88,6 @@
        Sort feedback (Alt+S). Mirrors the Animals sort vocabulary.
        CannotSort/SortedBy: {0} = column name, {1} = direction word.
        NowAt: {0} = the rebuilt cell announcement after a resort. -->
-  <RimWorldAccess.Mechs.Sort.CannotSort>{0} no se puede ordenar</RimWorldAccess.Mechs.Sort.CannotSort>
-  <RimWorldAccess.Mechs.Sort.Cleared>Orden restablecido, orden predeterminado</RimWorldAccess.Mechs.Sort.Cleared>
-  <RimWorldAccess.Mechs.Sort.SortedBy>Ordenado por {0} ({1})</RimWorldAccess.Mechs.Sort.SortedBy>
   <RimWorldAccess.Mechs.Sort.NowAt>Ahora en {0}</RimWorldAccess.Mechs.Sort.NowAt>
 
   <!-- =================================================================
@@ -97,6 +95,7 @@
        Allowed Area: {0} = mech name, {1} = area label, {2} = position. -->
   <RimWorldAccess.Mechs.Paint.Single.AreaAlreadySet>{0}: ya está en {1}. {2}</RimWorldAccess.Mechs.Paint.Single.AreaAlreadySet>
   <RimWorldAccess.Mechs.Paint.Single.AreaApplied>{0}: {1} aplicada. {2}</RimWorldAccess.Mechs.Paint.Single.AreaApplied>
+  <RimWorldAccess.Mechs.Paint.Single.AreaNotAllowed>{0}: no puede tener un área asignable. {1}</RimWorldAccess.Mechs.Paint.Single.AreaNotAllowed>
 
   <!-- Single-step paint for Draft / Auto Repair checkbox columns.
        {0} = mech name, {1} = column name, {2} = value label, {3} = position.

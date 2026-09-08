@@ -1,114 +1,21 @@
-using System;
 using HarmonyLib;
 using RimWorld;
-using UnityEngine;
+using RimWorldAccess.Shell;
 using Verse;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Patches for the Archonexus relocation selection screen
-    /// (Dialog_ChooseThingsForNewColony). Routes input to ArchonexusColonyState and
-    /// keeps the dialog's escape hatch open: vanilla OnCancelKeyPressed is only
-    /// intercepted to clear an active typeahead search; otherwise it closes the
-    /// dialog and fires the questline's cancel callback as it should.
-    /// </summary>
-    [HarmonyPatch(typeof(Dialog_ChooseThingsForNewColony), "DoWindowContents")]
-    public static class ArchonexusColonyPatch
-    {
-        // Reclaim IMGUI focus when the Alt+I info card opened over this dialog closes. This dialog
-        // drives input from its own DoWindowContents pass, so it only receives KeyDown while
-        // focused; without this it stays dead to the keyboard after the card closes (same root
-        // cause as the ideoligion load picker — see HostFocusReturn). The confirmation prompt does
-        // not need tracking here: it is intercepted into a windowless dialog and never takes a window.
-        private static readonly HostFocusReturn childFocus = new HostFocusReturn();
-
-        static bool Prefix(Window __instance)
-        {
-            try
-            {
-                if (!(__instance is Dialog_ChooseThingsForNewColony d))
-                    return true;
-
-                ArchonexusColonyState.EnsureOpen(d);
-
-                // Must run every frame in the dialog's own GUI pass for the focus reclaim
-                // to take effect (see HostFocusReturn).
-                childFocus.Track(d);
-
-                // An overlay owns the keyboard — yield so we don't also process the keys:
-                //  - A windowless confirmation prompt. The accept-confirmation Dialog_MessageBox is
-                //    intercepted by DialogInterceptionPatch into WindowlessDialogState, so there is
-                //    no message-box window to detect; we must check the state flags.
-                //  - The Alt+I info card (a real Dialog_InfoCard window, routed by UnifiedKeyboardPatch).
-                // childFocus.Track restores focus when a tracked child window closes.
-                if (WindowlessDialogState.IsActive || WindowlessConfirmationState.IsActive)
-                    return true;
-                if (Find.WindowStack != null && Find.WindowStack.WindowOfType<Dialog_InfoCard>() != null)
-                    return true;
-
-                if (Event.current.type == EventType.KeyDown)
-                {
-                    if (ArchonexusColonyState.HandleInput(Event.current))
-                        Event.current.Use();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"[RimWorld Access] Error in ArchonexusColonyPatch.Prefix: {ex}");
-            }
-            return true;
-        }
-    }
+    // Lifecycle patches for the Archonexus relocation selection screen
+    // (Dialog_ChooseThingsForNewColony). Keyboard input and Escape/Enter ownership belong to
+    // RimWorldAccess.Shell.ArchonexusColonyScope; its class remarks carry the Escape posture and
+    // the empty-sections/pawn-info gating. A dispatcher-driven scope needs no window focus
+    // reclaim, and the info-card/modal yields are ordinary modal-stack masking, both children
+    // being ScopeForWindow-registered.
 
     /// <summary>
-    /// Block vanilla Window.OnAcceptKeyPressed for this dialog: its base behavior
-    /// is Close+Use, which would discard selections silently when Enter is pressed.
-    /// Our state handles Enter as Accept (running ConfirmArchonexusSettlementConsequences).
-    /// </summary>
-    [HarmonyPatch(typeof(Window), "OnAcceptKeyPressed")]
-    public static class ArchonexusColonyPatch_OnAccept
-    {
-        [HarmonyPrefix]
-        static bool Prefix(Window __instance)
-        {
-            if (__instance is Dialog_ChooseThingsForNewColony && ArchonexusColonyState.IsActive)
-                return false;
-            return true;
-        }
-    }
-
-    /// <summary>
-    /// Intercept vanilla OnCancelKeyPressed only when a typeahead search is active —
-    /// then our state clears the search. Otherwise let vanilla close the dialog and
-    /// fire the questline's cancel callback (closeOnCancel + the dialog's own override
-    /// already wire that up correctly).
-    /// </summary>
-    [HarmonyPatch(typeof(Window), "OnCancelKeyPressed")]
-    public static class ArchonexusColonyPatch_OnCancel
-    {
-        [HarmonyPrefix]
-        static bool Prefix(Window __instance)
-        {
-            if (__instance is Dialog_ChooseThingsForNewColony && ArchonexusColonyState.IsActive && ArchonexusColonyState.HasActiveSearch)
-                return false;
-            return true;
-        }
-    }
-
-    /// <summary>
-    /// Grabs IMGUI keyboard focus when the dialog opens. The dialog sets
-    /// forceCatchAcceptAndCancelEventEvenIfUnfocused, but our DoWindowContents
-    /// prefix still needs to receive raw KeyDown events, which only flow to the
-    /// focused window in RimWorld's window stack.
-    ///
-    /// We patch the dialog's OWN PostOpen, not Window.PostOpen, because the
-    /// dialog overrides PostOpen and does NOT call base.PostOpen() — so a patch
-    /// on Window.PostOpen never fires for this dialog. (See feedback memory
-    /// on Harmony inherited-method patching: this is safe precisely because
-    /// the subtype declares its own override.) The first open often grabs focus
-    /// naturally; on Escape + re-accept-quest the new instance previously did
-    /// NOT regain focus, leaving the dialog dead to keystrokes.
+    /// Opens ArchonexusColonyState for the shell scope. Patched on the dialog's OWN PostOpen, not
+    /// Window.PostOpen: Dialog_ChooseThingsForNewColony overrides PostOpen and does NOT call base,
+    /// so a declaring-type patch never fires for it. EnsureOpen is idempotent per instance.
     /// </summary>
     [HarmonyPatch(typeof(Dialog_ChooseThingsForNewColony), "PostOpen")]
     public static class ArchonexusColonyPatch_PostOpen
@@ -116,7 +23,7 @@ namespace RimWorldAccess
         [HarmonyPostfix]
         static void Postfix(Dialog_ChooseThingsForNewColony __instance)
         {
-            Find.WindowStack.Notify_ManuallySetFocus(__instance);
+            ArchonexusColonyState.EnsureOpen(__instance);
         }
     }
 
@@ -128,6 +35,29 @@ namespace RimWorldAccess
         {
             if (__instance is Dialog_ChooseThingsForNewColony)
                 ArchonexusColonyState.Close();
+        }
+    }
+
+    /// <summary>
+    /// The declaring-type trap, instantiated for <see cref="Dialog_ChooseThingsForNewColony"/>
+    /// (QA R6): it overrides <c>OnCancelKeyPressed</c> as
+    /// <c>base.OnCancelKeyPressed(); if (cancel != null) cancel();</c>
+    /// (Dialog_ChooseThingsForNewColony.cs:400-407). <see cref="WindowCancelKeyRouterPatch"/> does
+    /// fire on the <c>base</c> call — a direct, non-virtual call into the patched method — but a
+    /// false return there skips only Window's own Close() body, while the override's
+    /// <c>cancel()</c> tail lives in a different, unpatched method and runs regardless, firing the
+    /// questline's cancel callback on a search-active Escape. This twin patches the override
+    /// directly and delegates to the same rule, so a false return skips the WHOLE override. On an
+    /// unblocked frame it returns true and the override runs in full, its base call harmlessly
+    /// re-checked by the router itself.
+    /// </summary>
+    [HarmonyPatch(typeof(Dialog_ChooseThingsForNewColony), "OnCancelKeyPressed")]
+    public static class ArchonexusColonyPatch_OnCancelKeyPressed
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(Dialog_ChooseThingsForNewColony __instance)
+        {
+            return WindowCancelKeyRouterPatch.Prefix(__instance);
         }
     }
 }

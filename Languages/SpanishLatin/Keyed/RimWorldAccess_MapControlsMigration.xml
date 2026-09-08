@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    ScreenScope migration: map controls (Door/Forbid/
+    Temperature/Plant Selection/Refuelable/Windowless Area Manager). New keys only;
+    every reused key stays in its original file (RimWorldAccess_Building.xml, not
+    touched by this packet). Placeholders follow string.Format ({0}, {1}, ...).
+  -->
+
+  <RimWorldAccess.Building.Door.DetailedStatusRowLabel>Estado detallado</RimWorldAccess.Building.Door.DetailedStatusRowLabel>
+
+  <RimWorldAccess.Building.Forbid.CheckboxLabel>Prohibido</RimWorldAccess.Building.Forbid.CheckboxLabel>
+  <RimWorldAccess.Building.Forbid.DetailedStatusRowLabel>Estado detallado</RimWorldAccess.Building.Forbid.DetailedStatusRowLabel>
+
+  <RimWorldAccess.Building.PlantSelect.NoneSelected>Ninguna</RimWorldAccess.Building.PlantSelect.NoneSelected>
+
+  <RimWorldAccess.Building.Refuel.AutoRefuelCheckboxLabel>Recarga automática</RimWorldAccess.Building.Refuel.AutoRefuelCheckboxLabel>
+
+  <RimWorldAccess.Building.AreaMgr.AreasRegionName>Áreas</RimWorldAccess.Building.AreaMgr.AreasRegionName>
+  <RimWorldAccess.Building.AreaMgr.AreaCellCount>{0} ({1} cuadros)</RimWorldAccess.Building.AreaMgr.AreaCellCount>
+</LanguageData>

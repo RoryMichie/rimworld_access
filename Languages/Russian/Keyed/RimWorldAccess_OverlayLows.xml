@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Caravan.Split.KeyboardModeActive>Режим клавиатуры активен</RimWorldAccess.Caravan.Split.KeyboardModeActive>
+  <RimWorldAccess.Caravan.Split.KeyboardInstructions>Вкладки: люди, предметы, еда и медикаменты | Left/Right: смена вкладок/караванов
+Up/Down: навигация/статы | Пробел/Enter: переключить/кол-во | Shift+Enter: максимум | Del: убрать
+Tab: сводка (Up/Down: статы, L/R: караваны) | Alt+I: обзор | Alt+S: разделить</RimWorldAccess.Caravan.Split.KeyboardInstructions>
+  <RimWorldAccess.Pawns.SkillsTable.Incapable>недоступен</RimWorldAccess.Pawns.SkillsTable.Incapable>
+  <RimWorldAccess.Pawns.Presence.Colonist>{0} поселенец</RimWorldAccess.Pawns.Presence.Colonist>
+  <RimWorldAccess.Pawns.Presence.Colonists>{0_numCase ? поселенец : поселенца : поселенцев}</RimWorldAccess.Pawns.Presence.Colonists>
+  <RimWorldAccess.Pawns.Presence.Mech>{0} механоид</RimWorldAccess.Pawns.Presence.Mech>
+  <RimWorldAccess.Pawns.Presence.Mechs>{0_numCase ? механоид : механоида : механоидов}</RimWorldAccess.Pawns.Presence.Mechs>
+  <RimWorldAccess.Pawns.Presence.Animal>{0} животное</RimWorldAccess.Pawns.Presence.Animal>
+  <RimWorldAccess.Pawns.Presence.Animals>{0_numCase ? животное : животных : животных}</RimWorldAccess.Pawns.Presence.Animals>
+</LanguageData>

@@ -17,6 +17,7 @@
   <!-- Combat log (Alt+B). -->
   <RimWorldAccess.Combat.Log.NoBattleLog>无可用战斗记录</RimWorldAccess.Combat.Log.NoBattleLog>
   <RimWorldAccess.Combat.Log.Header>{0}的战斗记录</RimWorldAccess.Combat.Log.Header>
+  <RimWorldAccess.Combat.Log.BattleHeader>战斗: {0}。</RimWorldAccess.Combat.Log.BattleHeader>
   <RimWorldAccess.Combat.Log.NoEntries>未找到战斗记录条目。</RimWorldAccess.Combat.Log.NoEntries>
   <RimWorldAccess.Combat.Log.ShowingLastN>显示共 {0} 条中的最近 10 条。</RimWorldAccess.Combat.Log.ShowingLastN>
   <RimWorldAccess.Combat.Log.Total>共 {0} 条。</RimWorldAccess.Combat.Log.Total>

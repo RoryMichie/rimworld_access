@@ -68,6 +68,7 @@
   <RimWorldAccess.Research.Detail.UnlocksNone>Desbloquea (ninguno)</RimWorldAccess.Research.Detail.UnlocksNone>
   <RimWorldAccess.Research.Detail.DependentsWithCount>Dependientes ({0} elementos)</RimWorldAccess.Research.Detail.DependentsWithCount>
   <RimWorldAccess.Research.Detail.DependentsNone>Dependientes (ninguno)</RimWorldAccess.Research.Detail.DependentsNone>
+  <RimWorldAccess.Research.Detail.ContentSourceWithExpansion>{0}. Parte de la expansión {1}.</RimWorldAccess.Research.Detail.ContentSourceWithExpansion>
 
   <!-- Research row inside a category (prereqs / dependents).
        {0} = project label, {1} = cost, {2} = status word. -->
@@ -91,7 +92,7 @@
 
   <RimWorldAccess.Research.Detail.TechprintsComplete>Completo</RimWorldAccess.Research.Detail.TechprintsComplete>
   <RimWorldAccess.Research.Detail.TechprintsProgress>{0}/{1}</RimWorldAccess.Research.Detail.TechprintsProgress>
-  <RimWorldAccess.Research.Detail.RequiresTechprints>Requiere planos técnicos: {0}</RimWorldAccess.Research.Detail.RequiresTechprints>
+  <RimWorldAccess.Research.Detail.RequiresTechprints>Requiere tecnoplanos: {0}</RimWorldAccess.Research.Detail.RequiresTechprints>
 
   <RimWorldAccess.Research.Detail.MechanitorMet>Cumplido</RimWorldAccess.Research.Detail.MechanitorMet>
   <RimWorldAccess.Research.Detail.MechanitorNotMet>No cumplido</RimWorldAccess.Research.Detail.MechanitorNotMet>
@@ -100,6 +101,9 @@
   <RimWorldAccess.Research.Detail.AnalyzeComplete>Completo</RimWorldAccess.Research.Detail.AnalyzeComplete>
   <RimWorldAccess.Research.Detail.AnalyzeProgress>{0}/{1}</RimWorldAccess.Research.Detail.AnalyzeProgress>
   <RimWorldAccess.Research.Detail.RequiresAnalyzing>Requiere analizar: {0} - {1}</RimWorldAccess.Research.Detail.RequiresAnalyzing>
+  <RimWorldAccess.Research.Detail.AnalyzedThingRow>{0}. {1}.</RimWorldAccess.Research.Detail.AnalyzedThingRow>
+  <RimWorldAccess.Research.Detail.StudiedYes>Estudiado</RimWorldAccess.Research.Detail.StudiedYes>
+  <RimWorldAccess.Research.Detail.StudiedNo>No estudiado</RimWorldAccess.Research.Detail.StudiedNo>
 
   <RimWorldAccess.Research.Detail.GravEngineInspected>Inspeccionado</RimWorldAccess.Research.Detail.GravEngineInspected>
   <RimWorldAccess.Research.Detail.GravEngineNotInspected>No inspeccionado</RimWorldAccess.Research.Detail.GravEngineNotInspected>
@@ -109,7 +113,12 @@
   <RimWorldAccess.Research.Detail.UnlockCategoryBuilding>Construcción</RimWorldAccess.Research.Detail.UnlockCategoryBuilding>
   <RimWorldAccess.Research.Detail.UnlockCategoryPlant>Planta</RimWorldAccess.Research.Detail.UnlockCategoryPlant>
   <RimWorldAccess.Research.Detail.UnlockCategoryItem>Objeto</RimWorldAccess.Research.Detail.UnlockCategoryItem>
-  <RimWorldAccess.Research.Detail.UnlockCategoryRecipe>Receta</RimWorldAccess.Research.Detail.UnlockCategoryRecipe>
+  <RimWorldAccess.Research.Detail.UnlockCategoryTerrain>Terreno</RimWorldAccess.Research.Detail.UnlockCategoryTerrain>
+  <RimWorldAccess.Research.Detail.UnlockCategorySurgery>Cirugía</RimWorldAccess.Research.Detail.UnlockCategorySurgery>
+  <RimWorldAccess.Research.Detail.UnlockCategoryPsychicRitual>Ritual psíquico</RimWorldAccess.Research.Detail.UnlockCategoryPsychicRitual>
+  <RimWorldAccess.Research.Detail.UnlockCategoryWorkType>Tipo de trabajo</RimWorldAccess.Research.Detail.UnlockCategoryWorkType>
+  <RimWorldAccess.Research.Detail.UnlockedWithHeader>Desbloqueado con {0} ({1} elementos)</RimWorldAccess.Research.Detail.UnlockedWithHeader>
+  <RimWorldAccess.Research.Detail.UnlockedWithProjectStatus>{0} ({1})</RimWorldAccess.Research.Detail.UnlockedWithProjectStatus>
 
   <!-- No-info-card message for non-target tree sections. -->
   <RimWorldAccess.Research.Detail.NoInfoCardForSection>No hay ficha de información para esta sección</RimWorldAccess.Research.Detail.NoInfoCardForSection>
@@ -120,7 +129,9 @@
   <RimWorldAccess.Research.Desc.ResearchCost>Costo de investigación: {0}</RimWorldAccess.Research.Desc.ResearchCost>
   <RimWorldAccess.Research.Desc.KnowledgeCost>Costo de conocimiento: {0}</RimWorldAccess.Research.Desc.KnowledgeCost>
   <RimWorldAccess.Research.Desc.KnowledgeCategory>Categoría de conocimiento: {0}</RimWorldAccess.Research.Desc.KnowledgeCategory>
-  <RimWorldAccess.Research.Desc.Progress>Progreso: {0}%</RimWorldAccess.Research.Desc.Progress>
+  <RimWorldAccess.Research.Desc.TechLevel>Nivel tecnológico: {0}.</RimWorldAccess.Research.Desc.TechLevel>
+  <RimWorldAccess.Research.Desc.ProgressDetail>Progreso: {0} de {1}, {2}.</RimWorldAccess.Research.Desc.ProgressDetail>
+  <RimWorldAccess.Research.Desc.StatusInProgress>Actualmente en investigación.</RimWorldAccess.Research.Desc.StatusInProgress>
   <RimWorldAccess.Research.Desc.StatusCompleted>Estado: completado</RimWorldAccess.Research.Desc.StatusCompleted>
   <RimWorldAccess.Research.Desc.StatusAvailable>Estado: disponible para investigar</RimWorldAccess.Research.Desc.StatusAvailable>
   <RimWorldAccess.Research.Desc.StatusLocked>Estado: bloqueado</RimWorldAccess.Research.Desc.StatusLocked>
@@ -130,11 +141,11 @@
   <!-- Research action announcements (start / stop / blocked). -->
   <RimWorldAccess.Research.Action.Stopped>Investigación de {0} detenida</RimWorldAccess.Research.Action.Stopped>
   <RimWorldAccess.Research.Action.AlreadyCompleted>{0} ya está completado</RimWorldAccess.Research.Action.AlreadyCompleted>
-  <RimWorldAccess.Research.Action.MissingPrereqs>No se puede iniciar la investigación: faltan requisitos - {0}</RimWorldAccess.Research.Action.MissingPrereqs>
-  <RimWorldAccess.Research.Action.NeedTechprints>No se puede iniciar la investigación: se necesitan {0} planos técnicos, solo {1} aplicados</RimWorldAccess.Research.Action.NeedTechprints>
-  <RimWorldAccess.Research.Action.StudyFirst>No se puede iniciar la investigación: primero debes estudiar los elementos requeridos</RimWorldAccess.Research.Action.StudyFirst>
+  <RimWorldAccess.Research.Action.Locked>No se puede iniciar la investigación: {0}</RimWorldAccess.Research.Action.Locked>
   <RimWorldAccess.Research.Action.Started>Investigación de {0} iniciada</RimWorldAccess.Research.Action.Started>
   <RimWorldAccess.Research.Action.StartedReplacing>Investigación de {0} iniciada. {1} detenida al {2}% de progreso.</RimWorldAccess.Research.Action.StartedReplacing>
+  <RimWorldAccess.Research.Action.DebugFinished>Investigación de {0} terminada.</RimWorldAccess.Research.Action.DebugFinished>
+  <RimWorldAccess.Research.Action.DebugTechprintApplied>Tecnoplano aplicado. {0} de {1}.</RimWorldAccess.Research.Action.DebugTechprintApplied>
 
   <!-- Missing prerequisite list fragments.
        Unknown: spoken when currentProject is null or no parts collected.

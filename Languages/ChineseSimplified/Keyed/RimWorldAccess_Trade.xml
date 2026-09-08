@@ -47,7 +47,6 @@
   <RimWorldAccess.Trade.Open.NoSession>无进行中的交易会话</RimWorldAccess.Trade.Open.NoSession>
   <RimWorldAccess.Trade.Open.SessionNotInitialized>交易会话未正确初始化</RimWorldAccess.Trade.Open.SessionNotInitialized>
   <RimWorldAccess.Trade.Cancelled>交易已取消</RimWorldAccess.Trade.Cancelled>
-  <RimWorldAccess.Trade.NoItemsInCategory>此类别中没有物品</RimWorldAccess.Trade.NoItemsInCategory>
 
   <!-- =================================================================
        Tab / category names.
@@ -57,17 +56,9 @@
        suffix: {0} = category name, {1} = currency phrase
        (Trade.Currency.YouHave / TraderHas).
        ================================================================= -->
-  <RimWorldAccess.Trade.Tab.YourItems>你的物品</RimWorldAccess.Trade.Tab.YourItems>
-  <RimWorldAccess.Trade.Tab.TraderItems>{0}的物品</RimWorldAccess.Trade.Tab.TraderItems>
-  <RimWorldAccess.Trade.Tab.TradeSummary>交易概览</RimWorldAccess.Trade.Tab.TradeSummary>
-  <RimWorldAccess.Trade.Tab.Unknown>未知</RimWorldAccess.Trade.Tab.Unknown>
-  <RimWorldAccess.Trade.Tab.Empty>{0} - 无物品</RimWorldAccess.Trade.Tab.Empty>
-  <RimWorldAccess.Trade.Tab.SwitchedReturning>交易概览为空。返回{0}</RimWorldAccess.Trade.Tab.SwitchedReturning>
 
   <!-- Currency holdings phrasing (Alt+B and tab-switch suffix).
        YouHave / TraderHas: {0} = formatted currency string. -->
-  <RimWorldAccess.Trade.Currency.YouHave>你拥有 {0}</RimWorldAccess.Trade.Currency.YouHave>
-  <RimWorldAccess.Trade.Currency.TraderHas>贸易商拥有 {0}</RimWorldAccess.Trade.Currency.TraderHas>
   <RimWorldAccess.Trade.Currency.Both>你拥有 {0}. 贸易商拥有 {1}</RimWorldAccess.Trade.Currency.Both>
   <RimWorldAccess.Trade.Currency.None>无可用货币</RimWorldAccess.Trade.Currency.None>
   <!-- Bare nouns used inside larger sentences ("X silver", "X favor"). -->
@@ -80,7 +71,6 @@
 
   <!-- Price formatting (FormatPrice). Silver matches ToStringMoney's
        "$N" prefix; Favor: "{0} favor". {0} = formatted number. -->
-  <RimWorldAccess.Trade.Price.Silver>${0}</RimWorldAccess.Trade.Price.Silver>
   <RimWorldAccess.Trade.Price.Favor>{0} 点荣誉</RimWorldAccess.Trade.Price.Favor>
 
   <!-- =================================================================
@@ -100,15 +90,9 @@
        Reset: {0} = item label.
        Buying/Selling/Gifting: {0} = count, {1} = item label,
                                 {2} = formatted price. -->
-  <RimWorldAccess.Trade.Max.Reset>将 {0} 重置为无</RimWorldAccess.Trade.Max.Reset>
-  <RimWorldAccess.Trade.Max.Buying>购买全部 {0} {1}, {2}</RimWorldAccess.Trade.Max.Buying>
-  <RimWorldAccess.Trade.Max.Selling>出售全部 {0} {1}, {2}</RimWorldAccess.Trade.Max.Selling>
-  <RimWorldAccess.Trade.Max.Gifting>赠送全部 {0} {1}, {2}</RimWorldAccess.Trade.Max.Gifting>
 
   <!-- Reset action (Alt+R). {0} = item label. -->
-  <RimWorldAccess.Trade.Reset.SingleItem>重置 {0}</RimWorldAccess.Trade.Reset.SingleItem>
   <RimWorldAccess.Trade.Reset.AllTrades>已重置全部交易</RimWorldAccess.Trade.Reset.AllTrades>
-  <RimWorldAccess.Trade.Reset.CannotResetBalance>无法重置收支条目</RimWorldAccess.Trade.Reset.CannotResetBalance>
 
   <!-- =================================================================
        Pending-trade announcement on the list view.
@@ -137,16 +121,6 @@
        *.YoursOnly / TheirsOnly: shared but trader won't trade;
                               {0} = count.
        ================================================================= -->
-  <RimWorldAccess.Trade.Item.SoloAvailable>{0} 可交易</RimWorldAccess.Trade.Item.SoloAvailable>
-  <RimWorldAccess.Trade.Item.SoloPrice>{0}</RimWorldAccess.Trade.Item.SoloPrice>
-  <RimWorldAccess.Trade.Item.SoloPriceWithQuality>{0}, {1}</RimWorldAccess.Trade.Item.SoloPriceWithQuality>
-  <RimWorldAccess.Trade.Item.NotTradeable>不可交易</RimWorldAccess.Trade.Item.NotTradeable>
-  <RimWorldAccess.Trade.Item.YoursAt>你的: {0}, 单价 {1}</RimWorldAccess.Trade.Item.YoursAt>
-  <RimWorldAccess.Trade.Item.TheirsAt>对方的: {0}, 单价 {1}</RimWorldAccess.Trade.Item.TheirsAt>
-  <RimWorldAccess.Trade.Item.YoursAtWithQuality>你的: {0}, 单价 {1}（{2}）</RimWorldAccess.Trade.Item.YoursAtWithQuality>
-  <RimWorldAccess.Trade.Item.TheirsAtWithQuality>对方的: {0}, 单价 {1}（{2}）</RimWorldAccess.Trade.Item.TheirsAtWithQuality>
-  <RimWorldAccess.Trade.Item.YoursOnly>你的: {0}</RimWorldAccess.Trade.Item.YoursOnly>
-  <RimWorldAccess.Trade.Item.TheirsOnly>对方的: {0}</RimWorldAccess.Trade.Item.TheirsOnly>
 
   <!-- Price quality words (GetPriceQuality). Buying = lower=better,
        Selling = higher=better; the four PriceType buckets get separate
@@ -165,23 +139,12 @@
        Mode.Adjusting is the constant marker word; {0} = upper bound.
        Each context (gift, shared, sell-only, buy-only) is a separate
        sentence so word order can vary. -->
-  <RimWorldAccess.Trade.Mode.Adjusting>调整中</RimWorldAccess.Trade.Mode.Adjusting>
-  <RimWorldAccess.Trade.Mode.GiftUpTo>最多赠送 {0}</RimWorldAccess.Trade.Mode.GiftUpTo>
-  <RimWorldAccess.Trade.Mode.SellUpTo>最多出售 {0}</RimWorldAccess.Trade.Mode.SellUpTo>
-  <RimWorldAccess.Trade.Mode.BuyUpTo>最多购买 {0}</RimWorldAccess.Trade.Mode.BuyUpTo>
-  <RimWorldAccess.Trade.Mode.SellAndBuy>最多出售 {0}, 最多购买 {1}</RimWorldAccess.Trade.Mode.SellAndBuy>
-  <RimWorldAccess.Trade.Mode.ExitFirst>请先退出数量模式</RimWorldAccess.Trade.Mode.ExitFirst>
-  <RimWorldAccess.Trade.Mode.ExitFirstHint>请先退出数量模式（按回车或 Esc）</RimWorldAccess.Trade.Mode.ExitFirstHint>
 
   <!-- =================================================================
        Reject / error paths.
        ================================================================= -->
-  <RimWorldAccess.Trade.Reject.CannotAdjustItem>无法调整此物品的数量</RimWorldAccess.Trade.Reject.CannotAdjustItem>
   <RimWorldAccess.Trade.Reject.WillNotTrade>贸易商不会交易此物品</RimWorldAccess.Trade.Reject.WillNotTrade>
   <RimWorldAccess.Trade.Reject.CannotAdjustAmount>无法调整到此数量</RimWorldAccess.Trade.Reject.CannotAdjustAmount>
-  <RimWorldAccess.Trade.Reject.CannotAdjustMax>无法调整到最大值</RimWorldAccess.Trade.Reject.CannotAdjustMax>
-  <RimWorldAccess.Trade.Reject.CannotAdjustMin>无法调整到最小值</RimWorldAccess.Trade.Reject.CannotAdjustMin>
-  <RimWorldAccess.Trade.Reject.CannotInspect>无法查看此物品</RimWorldAccess.Trade.Reject.CannotInspect>
 
   <!-- =================================================================
        Numeric input mode (digit/sign keys in quantity mode).
@@ -189,12 +152,6 @@
        user presses a sign key with an empty buffer.
        Numeric.Typing: {0} = current numeric buffer string.
        Numeric.Cleared / Numeric.Invalid mark transitional states. -->
-  <RimWorldAccess.Trade.Numeric.PromptSelling>出售。请输入数量。</RimWorldAccess.Trade.Numeric.PromptSelling>
-  <RimWorldAccess.Trade.Numeric.PromptBuying>购买。请输入数量。</RimWorldAccess.Trade.Numeric.PromptBuying>
-  <RimWorldAccess.Trade.Numeric.PromptGifting>赠送。请输入数量。</RimWorldAccess.Trade.Numeric.PromptGifting>
-  <RimWorldAccess.Trade.Numeric.Typing>正在输入: {0}</RimWorldAccess.Trade.Numeric.Typing>
-  <RimWorldAccess.Trade.Numeric.Cleared>已清除</RimWorldAccess.Trade.Numeric.Cleared>
-  <RimWorldAccess.Trade.Numeric.Invalid>无效: {0}</RimWorldAccess.Trade.Numeric.Invalid>
   <!-- After a numeric edit, the announcement is composed from one of
        the *.Body keys plus the *.Suffix key.
        NoTradeBody: {0} = item label.
@@ -202,10 +159,6 @@
        {1} = count, {2} = item label.
        BuyingBodyWithPrice / SellingBodyWithPrice: same plus
        {3} = formatted price. Suffix: {0} = current buffer. -->
-  <RimWorldAccess.Trade.Numeric.NoTradeBody>{0}: 不交易</RimWorldAccess.Trade.Numeric.NoTradeBody>
-  <RimWorldAccess.Trade.Numeric.GiftingBody>{0} {1} {2}</RimWorldAccess.Trade.Numeric.GiftingBody>
-  <RimWorldAccess.Trade.Numeric.BuyingSellingBody>{0} {1} {2}, 价格 {3}</RimWorldAccess.Trade.Numeric.BuyingSellingBody>
-  <RimWorldAccess.Trade.Numeric.Suffix>. 正在输入: {0}</RimWorldAccess.Trade.Numeric.Suffix>
 
   <!-- =================================================================
        Gift mode toggle and gift confirmation paths.
@@ -216,10 +169,7 @@
   <RimWorldAccess.Trade.Gift.ModeGift>礼物模式</RimWorldAccess.Trade.Gift.ModeGift>
   <RimWorldAccess.Trade.Gift.ModeTrade>交易模式</RimWorldAccess.Trade.Gift.ModeTrade>
   <RimWorldAccess.Trade.Gift.SwitchedTo>已切换到{0}</RimWorldAccess.Trade.Gift.SwitchedTo>
-  <RimWorldAccess.Trade.Gift.NoSession>无进行中的赠礼会话</RimWorldAccess.Trade.Gift.NoSession>
   <RimWorldAccess.Trade.Gift.NoGifts>没有可赠送的礼物</RimWorldAccess.Trade.Gift.NoGifts>
-  <RimWorldAccess.Trade.Gift.ErrorCalculating>计算礼物价值时出错</RimWorldAccess.Trade.Gift.ErrorCalculating>
-  <RimWorldAccess.Trade.Gift.ErrorOffering>赠送礼物时出错</RimWorldAccess.Trade.Gift.ErrorOffering>
   <!-- Gift completion: {0} = goodwill change (positive integer). -->
   <RimWorldAccess.Trade.Gift.Offered>已赠送礼物, 好感度 +{0}</RimWorldAccess.Trade.Gift.Offered>
 
@@ -240,27 +190,16 @@
        In gift mode the row is the goodwill delta; if no faction info
        is available, GiftBalanceFallback is spoken.
        Position suffix is appended in C# via PositionSuffix. -->
-  <RimWorldAccess.Trade.Balance.Spending>净收支: 支出 {0} {1}</RimWorldAccess.Trade.Balance.Spending>
-  <RimWorldAccess.Trade.Balance.Receiving>净收支: 收入 {0} {1}</RimWorldAccess.Trade.Balance.Receiving>
-  <RimWorldAccess.Trade.Balance.Balanced>净收支: 收支平衡</RimWorldAccess.Trade.Balance.Balanced>
-  <RimWorldAccess.Trade.Balance.Goodwill>好感度 +{0}</RimWorldAccess.Trade.Balance.Goodwill>
-  <RimWorldAccess.Trade.Balance.GiftFallback>礼物模式收支</RimWorldAccess.Trade.Balance.GiftFallback>
   <!-- Position suffix appended after the balance text; {0} = body,
        {1} = position phrase. -->
-  <RimWorldAccess.Trade.Balance.WithPosition>{0}. {1}</RimWorldAccess.Trade.Balance.WithPosition>
 
   <!-- =================================================================
        Detailed announcement (Tab key for full inventory + price).
        Each line is a separate key so commas/colons can localize.
        *.PriceLine: {0} = price (caller pre-formats with one decimal),
                     {1} = currency noun. -->
-  <RimWorldAccess.Trade.Detail.YouHave>你拥有: {0}</RimWorldAccess.Trade.Detail.YouHave>
-  <RimWorldAccess.Trade.Detail.TraderHas>贸易商拥有: {0}</RimWorldAccess.Trade.Detail.TraderHas>
-  <RimWorldAccess.Trade.Detail.SellPrice>出售价: 每件 {0} {1}</RimWorldAccess.Trade.Detail.SellPrice>
-  <RimWorldAccess.Trade.Detail.BuyPrice>购买价: 每件 {0} {1}</RimWorldAccess.Trade.Detail.BuyPrice>
   <!-- {0} = action word ("Buying"/"Selling"), {1} = count,
        {2} = total cost (caller F0-formatted), {3} = currency noun. -->
-  <RimWorldAccess.Trade.Detail.CurrentTrade>当前交易: {0} {1}, 共 {2} {3}</RimWorldAccess.Trade.Detail.CurrentTrade>
 
   <!-- Price-breakdown popup (Tab in trader/colony list).
        PriceTitleBuy / Sell: {0} = clean item label. -->
@@ -275,7 +214,7 @@
        ================================================================= -->
   <RimWorldAccess.Sellable.Open.NoDialog>无对话框</RimWorldAccess.Sellable.Open.NoDialog>
   <RimWorldAccess.Sellable.Open.Closed>已关闭</RimWorldAccess.Sellable.Open.Closed>
-  <RimWorldAccess.Sellable.Open.Controls>切换选项卡: 左、右。导航: 上、下。</RimWorldAccess.Sellable.Open.Controls>
+  <RimWorldAccess.Sellable.Open.Controls>切换类别：Tab。浏览：上下方向键。</RimWorldAccess.Sellable.Open.Controls>
   <RimWorldAccess.Sellable.Open.TraderFallback>贸易商</RimWorldAccess.Sellable.Open.TraderFallback>
   <!-- {0} = trader name, {1} = restock phrase (may be empty),
        {2} = "{count} categories" phrase, {3} = controls phrase. -->
@@ -292,11 +231,6 @@
   <!-- Tab switch + selection.
        TabSwitch: {0} = tab name, {1} = item count.
        The empty case ("No items") shares the global key. -->
-  <RimWorldAccess.Sellable.Tab.SwitchOne>{0}. 1 件物品。</RimWorldAccess.Sellable.Tab.SwitchOne>
-  <RimWorldAccess.Sellable.Tab.SwitchMany>{0}. {1} 件物品。</RimWorldAccess.Sellable.Tab.SwitchMany>
-  <RimWorldAccess.Sellable.Tab.NoItems>无物品</RimWorldAccess.Sellable.Tab.NoItems>
-  <RimWorldAccess.Sellable.Tab.UnknownTab>未知</RimWorldAccess.Sellable.Tab.UnknownTab>
-  <RimWorldAccess.Sellable.Item.Unknown>未知物品</RimWorldAccess.Sellable.Item.Unknown>
 
   <!-- Item announcement composition.
        Bare: {0} = name.
@@ -305,15 +239,52 @@
        Description and position concatenate on top of bare via the
        *.WithDescription / *.WithDescriptionPosition / *.WithPosition
        variants so we don't glue strings. -->
-  <RimWorldAccess.Sellable.Item.Bare>{0}.</RimWorldAccess.Sellable.Item.Bare>
-  <RimWorldAccess.Sellable.Item.WithDescription>{0}. {1}.</RimWorldAccess.Sellable.Item.WithDescription>
-  <RimWorldAccess.Sellable.Item.WithPosition>{0}. {1}</RimWorldAccess.Sellable.Item.WithPosition>
-  <RimWorldAccess.Sellable.Item.WithDescriptionPosition>{0}. {1}. {2}</RimWorldAccess.Sellable.Item.WithDescriptionPosition>
 
   <!-- Typeahead context (active search prefix on item announcement).
        Prefix: {0} = current search buffer, {1} = item announcement.
        NoMatchesPrefix: {0} = buffer, {1} = item announcement. -->
-  <RimWorldAccess.Sellable.Search.Prefix>搜索“{0}”: {1}</RimWorldAccess.Sellable.Search.Prefix>
-  <RimWorldAccess.Sellable.Search.NoMatchesPrefix>没有匹配“{0}”的结果。{1}</RimWorldAccess.Sellable.Search.NoMatchesPrefix>
 
+  <RimWorldAccess.Trade.Column.Yours>我方数量</RimWorldAccess.Trade.Column.Yours>
+  <RimWorldAccess.Trade.Column.Theirs>商人数量</RimWorldAccess.Trade.Column.Theirs>
+  <RimWorldAccess.Trade.Column.SellPrice>出售价</RimWorldAccess.Trade.Column.SellPrice>
+  <RimWorldAccess.Trade.Column.BuyPrice>购买价</RimWorldAccess.Trade.Column.BuyPrice>
+  <RimWorldAccess.Trade.Column.TradeAmount>交易数量</RimWorldAccess.Trade.Column.TradeAmount>
+
+  <!-- Trade classic view (TradeClassicScope, TradeViewOpener). -->
+  <RimWorldAccess.Trade.Tab.YourItems>你的物品</RimWorldAccess.Trade.Tab.YourItems>
+  <RimWorldAccess.Trade.Tab.TraderItems>{0}的物品</RimWorldAccess.Trade.Tab.TraderItems>
+  <RimWorldAccess.Trade.Tab.TradeSummary>交易概览</RimWorldAccess.Trade.Tab.TradeSummary>
+  <RimWorldAccess.Trade.Currency.YouHave>你拥有 {0}</RimWorldAccess.Trade.Currency.YouHave>
+  <RimWorldAccess.Trade.Currency.TraderHas>贸易商拥有 {0}</RimWorldAccess.Trade.Currency.TraderHas>
+  <RimWorldAccess.Trade.Max.Reset>已将 {0} 重置为无</RimWorldAccess.Trade.Max.Reset>
+  <RimWorldAccess.Trade.Max.Buying>全部购买 {0} {1}，{2}</RimWorldAccess.Trade.Max.Buying>
+  <RimWorldAccess.Trade.Max.Selling>全部出售 {0} {1}，{2}</RimWorldAccess.Trade.Max.Selling>
+  <RimWorldAccess.Trade.Max.Gifting>全部赠送 {0} {1}，{2}</RimWorldAccess.Trade.Max.Gifting>
+  <RimWorldAccess.Trade.Reset.SingleItem>重置 {0}</RimWorldAccess.Trade.Reset.SingleItem>
+  <RimWorldAccess.Trade.Reset.CannotResetBalance>无法重置收支条目</RimWorldAccess.Trade.Reset.CannotResetBalance>
+  <RimWorldAccess.Trade.Item.SoloAvailable>{0} 可交易</RimWorldAccess.Trade.Item.SoloAvailable>
+  <RimWorldAccess.Trade.Item.SoloPriceWithQuality>{0}，{1}</RimWorldAccess.Trade.Item.SoloPriceWithQuality>
+  <RimWorldAccess.Trade.Item.NotTradeable>不可交易</RimWorldAccess.Trade.Item.NotTradeable>
+  <RimWorldAccess.Trade.Item.YoursAt>你的: {0}, 单价 {1}</RimWorldAccess.Trade.Item.YoursAt>
+  <RimWorldAccess.Trade.Item.TheirsAt>对方的: {0}, 单价 {1}</RimWorldAccess.Trade.Item.TheirsAt>
+  <RimWorldAccess.Trade.Item.YoursAtWithQuality>你的: {0}, 单价 {1}（{2}）</RimWorldAccess.Trade.Item.YoursAtWithQuality>
+  <RimWorldAccess.Trade.Item.TheirsAtWithQuality>对方的: {0}, 单价 {1}（{2}）</RimWorldAccess.Trade.Item.TheirsAtWithQuality>
+  <RimWorldAccess.Trade.Item.YoursOnly>你的: {0}</RimWorldAccess.Trade.Item.YoursOnly>
+  <RimWorldAccess.Trade.Item.TheirsOnly>对方的: {0}</RimWorldAccess.Trade.Item.TheirsOnly>
+  <RimWorldAccess.Trade.Reject.CannotAdjustMax>无法调整到最大值</RimWorldAccess.Trade.Reject.CannotAdjustMax>
+  <RimWorldAccess.Trade.Reject.CannotAdjustMin>无法调整到最小值</RimWorldAccess.Trade.Reject.CannotAdjustMin>
+  <RimWorldAccess.Trade.Balance.Spending>净收支: 支出 {0} {1}</RimWorldAccess.Trade.Balance.Spending>
+  <RimWorldAccess.Trade.Balance.Receiving>净收支: 收入 {0} {1}</RimWorldAccess.Trade.Balance.Receiving>
+  <RimWorldAccess.Trade.Balance.Balanced>净收支: 收支平衡</RimWorldAccess.Trade.Balance.Balanced>
+  <RimWorldAccess.Trade.Balance.Goodwill>好感度 {0}</RimWorldAccess.Trade.Balance.Goodwill>
+  <RimWorldAccess.Trade.Balance.GiftFallback>礼物模式收支</RimWorldAccess.Trade.Balance.GiftFallback>
+  <RimWorldAccess.Trade.View.Classic>经典视图</RimWorldAccess.Trade.View.Classic>
+  <RimWorldAccess.Trade.View.Table>表格视图</RimWorldAccess.Trade.View.Table>
+  <RimWorldAccess.Trade.View.SwitchToClassic>切换到经典视图</RimWorldAccess.Trade.View.SwitchToClassic>
+  <RimWorldAccess.Trade.View.SwitchToTable>切换到表格视图</RimWorldAccess.Trade.View.SwitchToTable>
+  <RimWorldAccess.Trade.Sort.By>排序方式: {0}</RimWorldAccess.Trade.Sort.By>
+  <RimWorldAccess.Trade.Sort.ThenBy>其次按: {0}</RimWorldAccess.Trade.Sort.ThenBy>
+  <RimWorldAccess.Trade.Numeric.PromptSelling>出售。请输入数量。</RimWorldAccess.Trade.Numeric.PromptSelling>
+  <RimWorldAccess.Trade.Numeric.PromptBuying>购买。请输入数量。</RimWorldAccess.Trade.Numeric.PromptBuying>
+  <RimWorldAccess.Trade.Numeric.PromptGifting>赠送。请输入数量。</RimWorldAccess.Trade.Numeric.PromptGifting>
 </LanguageData>

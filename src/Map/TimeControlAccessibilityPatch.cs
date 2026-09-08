@@ -7,7 +7,7 @@ namespace RimWorldAccess
     /// <summary>
     /// Harmony patch to announce time speed changes for screen reader accessibility.
     ///
-    /// Time controls are now bound to Shift+1/2/3 (handled in UnifiedKeyboardPatch):
+    /// Time controls are now bound to Shift+1/2/3 (handled by AmbientScopes' time-speed claims):
     /// - Shift+1: Normal speed
     /// - Shift+2: Fast speed
     /// - Shift+3: Superfast speed

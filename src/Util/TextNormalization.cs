@@ -45,5 +45,51 @@ namespace RimWorldAccess
             }
             return sb.ToString().Normalize(NormalizationForm.FormC);
         }
+
+        /// <summary>
+        /// Replaces unpaired UTF-16 surrogates with U+FFFD. Game/mod code that
+        /// truncates strings can split an emoji's surrogate pair; a lone surrogate
+        /// cannot encode to valid UTF-8, and the Prism native layer rejects such an
+        /// utterance outright (InvalidUtf8), silently dropping the speech.
+        /// </summary>
+        public static string ReplaceLoneSurrogates(string text)
+        {
+            int firstBad = -1;
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (char.IsHighSurrogate(c) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+                {
+                    i++;
+                    continue;
+                }
+                if (char.IsSurrogate(c))
+                {
+                    firstBad = i;
+                    break;
+                }
+            }
+
+            if (firstBad < 0)
+            {
+                return text;
+            }
+
+            var chars = text.ToCharArray();
+            for (int i = firstBad; i < chars.Length; i++)
+            {
+                char c = chars[i];
+                if (char.IsHighSurrogate(c) && i + 1 < chars.Length && char.IsLowSurrogate(chars[i + 1]))
+                {
+                    i++;
+                    continue;
+                }
+                if (char.IsSurrogate(c))
+                {
+                    chars[i] = '\uFFFD';
+                }
+            }
+            return new string(chars);
+        }
     }
 }

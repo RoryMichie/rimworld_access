@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using HarmonyLib;
 using UnityEngine;
 using Verse;
@@ -9,267 +8,276 @@ using RimWorld;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patch to handle input during architect placement mode.
-    /// Handles Space (select/place cell), Shift+Space (cancel blueprint),
-    /// Enter (confirm), and Escape (cancel).
-    /// Also modifies arrow key announcements to include selected cell status.
+    /// Placement handler bodies for architect/designator cell placement. Keyboard dispatch
+    /// lives in <see cref="RimWorldAccess.Shell.PlacementScope"/>, which calls the thin public
+    /// routers below; each router recomputes the shared designator/mode locals itself.
     /// </summary>
-    [HarmonyPatch(typeof(UIRoot))]
-    [HarmonyPatch("UIRootOnGUI")]
     public static class ArchitectPlacementInputPatch
     {
         private static float lastSpaceTime = 0f;
         private const float SpaceCooldown = 0.2f;
 
-        /// <summary>
-        /// Prefix patch to handle architect placement input at GUI event level.
-        /// </summary>
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.Normal)]
-        public static void Prefix()
+        // Manual-mode Enter places the building itself when nothing has been placed yet under
+        // the current selection; these track "yet". Reconciled per frame, so any selection
+        // change (including deselect) starts a fresh count.
+        private static Designator manualSessionDesignator;
+        private static int manualSessionPlacements;
+
+        internal static bool InArchitectMode()
         {
-            // Only active during gameplay (not in main menu)
-            if (Current.ProgramState != ProgramState.Playing)
-                return;
+            return ArchitectState.IsInPlacementMode;
+        }
 
-            // Check if we're in placement mode (either via ArchitectState or directly via DesignatorManager)
-            bool inArchitectMode = ArchitectState.IsInPlacementMode;
-            bool hasActiveDesignator = Find.DesignatorManager != null &&
-                                      Find.DesignatorManager.SelectedDesignator != null;
-
-            // Check if local map targeting is active for transport pod landing specifically
-            // We need to differentiate between transport pod landing and weapon/ability targeting
-            bool inTransportPodTargeting = false;
-            if (Find.Targeter != null && Find.Targeter.IsTargeting)
-            {
-                // Check if the mouseAttachment matches the transport pod cursor
-                // This ensures we only handle transport pod landing, not weapon targeting
-                var mouseAttachmentField = AccessTools.Field(typeof(Targeter), "mouseAttachment");
-                if (mouseAttachmentField != null)
-                {
-                    Texture2D mouseAttachment = mouseAttachmentField.GetValue(Find.Targeter) as Texture2D;
-                    if (mouseAttachment != null &&
-                        CompLaunchable.TargeterMouseAttachment != null &&
-                        mouseAttachment == CompLaunchable.TargeterMouseAttachment)
-                    {
-                        inTransportPodTargeting = true;
-                    }
-                }
-            }
-
-            // Only active when in architect placement mode OR when a designator is selected (e.g., from gizmos)
-            // OR when transport pod landing targeting is active
-            if (!inArchitectMode && !hasActiveDesignator && !inTransportPodTargeting)
-                return;
-
-            // Only process keyboard events
-            if (Event.current.type != EventType.KeyDown)
-                return;
-
-            // Don't process when shape selection menu is active
-            // Don't process when viewing mode is active UNLESS ShapePlacementState is also active
-            // (user is placing a door from viewing mode gizmo - ViewingModeState yields Space to us)
-            if (ShapeSelectionMenuState.IsActive)
-                return;
-
-            // Don't process when area selection menu is active
-            if (AreaSelectionMenuState.IsActive)
-                return;
-
-            // Don't let placement mode steal keys from overlay screens
-            if (WindowlessInventoryState.IsActive
-                || GizmoNavigationState.IsActive
-                || WindowlessInspectionState.IsActive
-                || WindowlessFloatMenuState.IsActive
-                || LearningHelperState.IsActive)
-                return;
-
-            if (ViewingModeState.IsActive && !ShapePlacementState.IsActive)
-                return;
-
-            // Don't let placement mode steal Enter from gizmo navigation
-            // Gizmo navigation needs Enter key to execute selected gizmo
-            if (GizmoNavigationState.IsActive)
-            {
-                if (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter)
-                {
-                    // Don't consume - let UnifiedKeyboardPatch route to GizmoNavigationState
-                    return;
-                }
-                // For other keys, let placement mode handle them normally
-            }
-
-            // Don't let placement mode steal keys from active scanner search
-            // Scanner search needs Enter, Escape, Backspace, and letter keys
-            if (ScannerSearchState.IsActive)
-            {
-                KeyCode k = Event.current.keyCode;
-                if (k == KeyCode.Return || k == KeyCode.KeypadEnter || k == KeyCode.Escape ||
-                    k == KeyCode.Backspace || (k >= KeyCode.A && k <= KeyCode.Z) ||
-                    (k >= KeyCode.Alpha0 && k <= KeyCode.Alpha9))
-                {
-                    // Don't consume - let UnifiedKeyboardPatch route to search
-                    return;
-                }
-            }
-
-            // Don't let placement mode steal keys from active Go To coordinate input
-            // Go To needs Enter, Escape, Backspace, numbers, +/-, comma, space
-            if (GoToState.IsActive)
-            {
-                KeyCode k = Event.current.keyCode;
-                if (k == KeyCode.Return || k == KeyCode.KeypadEnter || k == KeyCode.Escape ||
-                    k == KeyCode.Backspace || k == KeyCode.Space || k == KeyCode.Comma ||
-                    k == KeyCode.Equals || k == KeyCode.Minus ||
-                    k == KeyCode.KeypadPlus || k == KeyCode.KeypadMinus ||
-                    (k >= KeyCode.Alpha0 && k <= KeyCode.Alpha9) ||
-                    (k >= KeyCode.Keypad0 && k <= KeyCode.Keypad9))
-                {
-                    // Don't consume - let UnifiedKeyboardPatch route to goto
-                    return;
-                }
-            }
-
-            // Check we have a valid map
-            if (Find.CurrentMap == null)
-            {
-                if (inArchitectMode)
-                    ArchitectState.Cancel();
-                else if (hasActiveDesignator)
-                    Find.DesignatorManager.Deselect();
-                return;
-            }
-
-            KeyCode key = Event.current.keyCode;
-            bool handled = false;
-            bool shiftHeld = Event.current.shift;
-            bool ctrlHeld = KeyboardHelper.IsCtrlHeld;
-
-            // Handle local map targeting mode (transport pod landing) first
-            if (inTransportPodTargeting)
-            {
-                handled = HandleTargetingModeInput(key, shiftHeld);
-                if (handled)
-                {
-                    Event.current.Use();
-                }
-                return;
-            }
-
-            // Get the active designator (from either source)
-            Designator activeDesignator = inArchitectMode ?
-                ArchitectState.SelectedDesignator :
-                Find.DesignatorManager.SelectedDesignator;
-
-            if (activeDesignator == null)
-                return;
-
-            // Check designator type - use ShapeHelper methods for consistent classification
-            bool isZoneDesignator = ShapeHelper.IsZoneDesignator(activeDesignator);
-            bool isBuildDesignator = ShapeHelper.IsBuildDesignator(activeDesignator);
-            bool isPlaceDesignator = ShapeHelper.IsPlaceDesignator(activeDesignator);
-            bool isCellsDesignator = ShapeHelper.IsCellsDesignator(activeDesignator);
-            bool isOrderDesignator = ShapeHelper.IsOrderDesignator(activeDesignator);
-
-            // Get available shapes for ANY designator that has DrawStyleCategory
-            // This includes buildings, orders (Hunt, Haul), zones, and other multi-cell designators
-            var availableShapes = ShapeHelper.GetAvailableShapes(activeDesignator);
-            bool supportsShapes = availableShapes.Count >= 1;
-
-            // Tab key - open shape selection menu or switch to manual mode
-            if (key == KeyCode.Tab)
-            {
-                handled = HandleTabKey(activeDesignator, shiftHeld, supportsShapes, inArchitectMode, availableShapes);
-            }
-            // Ctrl+A - step outward: enclosure, then entire map.
-            else if (ctrlHeld && !shiftHeld && key == KeyCode.A)
-            {
-                handled = HandleCtrlAKey();
-            }
-            // Ctrl+Shift+A - step back to the previous Ctrl+A scope.
-            else if (ctrlHeld && shiftHeld && key == KeyCode.A)
-            {
-                handled = HandleCtrlShiftAKey();
-            }
-            // Shift+Space - Remove shape points OR cancel blueprint at cursor position
-            else if (shiftHeld && key == KeyCode.Space)
-            {
-                handled = HandleShiftSpaceKey();
-            }
-            // Shift+R - rotate building counter-clockwise
-            else if (shiftHeld && key == KeyCode.R)
-            {
-                handled = HandleRotateKey(activeDesignator, inArchitectMode, RotationDirection.Counterclockwise);
-            }
-            // R key - rotate building clockwise
-            else if (key == KeyCode.R)
-            {
-                handled = HandleRotateKey(activeDesignator, inArchitectMode, RotationDirection.Clockwise);
-            }
-            // Space key - unified handling for all designator types
-            else if (key == KeyCode.Space)
-            {
-                // Cooldown to prevent rapid toggling
-                if (Time.time - lastSpaceTime < SpaceCooldown)
-                {
-                    Event.current.Use();
-                    return;
-                }
-
-                lastSpaceTime = Time.time;
-                IntVec3 currentPosition = MapNavigationState.CurrentCursorPosition;
-                handled = HandleSpaceKey(activeDesignator, currentPosition, inArchitectMode, isPlaceDesignator, isZoneDesignator, isOrderDesignator, isCellsDesignator);
-            }
-            // Enter key - confirm and execute designation
-            else if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                handled = HandleEnterKey(activeDesignator, inArchitectMode, isPlaceDesignator, isZoneDesignator, isOrderDesignator, isCellsDesignator);
-            }
-            // Escape key - cancel shape placement, rectangle, or cancel placement
-            else if (key == KeyCode.Escape)
-            {
-                handled = HandleEscapeKey(inArchitectMode);
-            }
-
-            if (handled)
-            {
-                Event.current.Use();
-            }
+        internal static bool HasActiveDesignator()
+        {
+            return Find.DesignatorManager != null && Find.DesignatorManager.SelectedDesignator != null;
         }
 
         /// <summary>
-        /// Handles Tab key input for shape selection.
-        /// Tab opens shape selection menu, Shift+Tab switches to manual mode.
-        /// Works for designators selected via architect menu OR via gizmos (e.g., zone expand/shrink).
+        /// True while the targeter is picking a transport-pod landing spot. Distinguished from
+        /// weapon/ability targeting by comparing <c>Targeter</c>'s private mouseAttachment texture
+        /// against <see cref="CompLaunchable.TargeterMouseAttachment"/>.
         /// </summary>
-        /// <returns>True if the key was handled, false otherwise.</returns>
+        internal static bool InTransportPodTargeting()
+        {
+            if (Find.Targeter == null || !Find.Targeter.IsTargeting)
+                return false;
+
+            var mouseAttachmentField = AccessTools.Field(typeof(Targeter), "mouseAttachment");
+            if (mouseAttachmentField == null)
+                return false;
+
+            Texture2D mouseAttachment = mouseAttachmentField.GetValue(Find.Targeter) as Texture2D;
+            return mouseAttachment != null
+                && CompLaunchable.TargeterMouseAttachment != null
+                && mouseAttachment == CompLaunchable.TargeterMouseAttachment;
+        }
+
+        /// <summary>
+        /// The map modes where the shell owns input but the player is still choosing a
+        /// CELL, so ambient map navigation — the scanner's browse keys, its Z search, and
+        /// Ctrl+G — must keep working alongside the cell cursor. Transport-pod/shuttle landing
+        /// belongs here too: it has no designator and no architect mode, so omitting
+        /// <see cref="InTransportPodTargeting"/> lets the modal backstop swallow every scanner
+        /// key while picking a landing spot.
+        /// </summary>
+        internal static bool InCellSelectionMode()
+        {
+            return InArchitectMode()
+                || ViewingModeState.IsActive
+                || ShapePlacementState.IsActive
+                || InTransportPodTargeting()
+                || (Find.CurrentMap != null && HasActiveDesignator());
+        }
+
+        internal static Designator GetActiveDesignator()
+        {
+            return InArchitectMode() ? ArchitectState.SelectedDesignator : Find.DesignatorManager?.SelectedDesignator;
+        }
+
+        /// <summary>
+        /// Side-effect-free mirror of <c>HandleTabKey</c>'s <c>canUseShapes</c> local, used as the
+        /// shell claim's when: gate so Tab/Shift+Tab fall through to vanilla colonist cycling for
+        /// a designator with no shapes to offer.
+        /// </summary>
+        internal static bool CanUseShapes()
+        {
+            Designator activeDesignator = GetActiveDesignator();
+            if (activeDesignator == null)
+                return false;
+            return ShapeHelper.GetAvailableShapes(activeDesignator).Count >= 1;
+        }
+
+        /// <summary>
+        /// Side-effect-free mirror of <c>HandleEnterKey</c>'s branch conditions, used as the shell
+        /// claim's when: gate so Enter falls through for a gizmo-selected orders/cells designator.
+        /// </summary>
+        internal static bool CanHandleEnter()
+        {
+            Designator activeDesignator = GetActiveDesignator();
+            if (activeDesignator == null)
+                return false;
+            if (ShapePlacementState.IsActive)
+                return true;
+
+            bool inArchitectMode = InArchitectMode();
+            bool isPlaceDesignator = ShapeHelper.IsPlaceDesignator(activeDesignator);
+            DesignatorClassification classification = ShapeHelper.ClassifyDesignator(activeDesignator);
+            bool isZoneDesignator = classification.IsZone;
+            bool isOrderDesignator = classification.IsOrder;
+            bool isCellsDesignator = ShapeHelper.IsCellsDesignator(activeDesignator);
+            return isPlaceDesignator
+                || isZoneDesignator
+                || (inArchitectMode && (isOrderDesignator || isCellsDesignator));
+        }
+
+        // Per-frame housekeeping, called from PlacementScopeMirror.Reconcile().
+
+        /// <summary>Cancels placement state when the map has gone away.</summary>
+        internal static void CleanupIfMapMissing()
+        {
+            if (Find.CurrentMap != null)
+                return;
+            if (InArchitectMode())
+                ArchitectState.Cancel();
+            else if (HasActiveDesignator())
+                Find.DesignatorManager.Deselect();
+        }
+
+        /// <summary>Resets placement state left behind after the designator went away.</summary>
+        internal static void CleanupStaleState()
+        {
+            if (Find.CurrentMap == null)
+                return;
+            if (ShapePlacementState.CurrentPhase != PlacementPhase.Inactive ||
+                ArchitectState.CurrentMode == ArchitectMode.PlacementMode)
+            {
+                if (Find.DesignatorManager?.SelectedDesignator == null)
+                {
+                    ModLogger.Dev("[ArchitectPlacementInputPatch] Detected stale placement state, cleaning up");
+                    ShapePlacementState.Reset();
+                    ArchitectState.Reset();
+                }
+            }
+        }
+
+        /// <summary>Restarts the manual-placement count whenever the active designator changes.</summary>
+        internal static void ReconcileManualSession()
+        {
+            Designator current = Find.CurrentMap == null ? null : GetActiveDesignator();
+            if (!ReferenceEquals(current, manualSessionDesignator))
+            {
+                manualSessionDesignator = current;
+                manualSessionPlacements = 0;
+            }
+        }
+
+        // Key routers — called directly by PlacementScope's claims.
+
+        public static void HandleTab(bool shiftHeld)
+        {
+            Designator activeDesignator = GetActiveDesignator();
+            if (activeDesignator == null)
+                return;
+            bool inArchitectMode = InArchitectMode();
+            var availableShapes = ShapeHelper.GetAvailableShapes(activeDesignator);
+            bool supportsShapes = availableShapes.Count >= 1;
+            HandleTabKey(activeDesignator, shiftHeld, supportsShapes, inArchitectMode, availableShapes);
+        }
+
+        /// <summary>
+        /// The ']' menu for the tool currently being placed, so the architect tree's
+        /// designator-options menu stays reachable once the tool is in hand — the keyboard's only
+        /// route to Allow Tool's "select strip mine tool" entry, which lives on Mine's menu.
+        /// </summary>
+        public static void HandleDesignatorOptions()
+        {
+            DesignatorOptionsOpener.Open(GetActiveDesignator());
+        }
+
+        public static void HandleCtrlA()
+        {
+            HandleCtrlAKey();
+        }
+
+        public static void HandleCtrlShiftA()
+        {
+            HandleCtrlShiftAKey();
+        }
+
+        public static void HandleShiftSpace()
+        {
+            HandleShiftSpaceKey();
+        }
+
+        public static void HandleRotate(RotationDirection direction)
+        {
+            Designator activeDesignator = GetActiveDesignator();
+            if (activeDesignator == null)
+                return;
+            HandleRotateKey(activeDesignator, InArchitectMode(), direction);
+        }
+
+        public static void HandleSpace()
+        {
+            Designator activeDesignator = GetActiveDesignator();
+            if (activeDesignator == null)
+                return;
+
+            // Anti-rapid-toggle cooldown. It must stay inside the handler rather than move to the
+            // claim's when: gate — a cooldown-blocked Space still consumes the key.
+            if (Time.time - lastSpaceTime < SpaceCooldown)
+                return;
+            lastSpaceTime = Time.time;
+
+            bool inArchitectMode = InArchitectMode();
+            bool isPlaceDesignator = ShapeHelper.IsPlaceDesignator(activeDesignator);
+            DesignatorClassification classification = ShapeHelper.ClassifyDesignator(activeDesignator);
+            bool isZoneDesignator = classification.IsZone;
+            bool isOrderDesignator = classification.IsOrder;
+            bool isCellsDesignator = ShapeHelper.IsCellsDesignator(activeDesignator);
+            IntVec3 currentPosition = MapNavigationState.CurrentCursorPosition;
+            HandleSpaceKey(activeDesignator, currentPosition, inArchitectMode, isPlaceDesignator, isZoneDesignator, isOrderDesignator, isCellsDesignator);
+        }
+
+        public static void HandleEnter()
+        {
+            Designator activeDesignator = GetActiveDesignator();
+            if (activeDesignator == null)
+                return;
+            bool inArchitectMode = InArchitectMode();
+            bool isPlaceDesignator = ShapeHelper.IsPlaceDesignator(activeDesignator);
+            DesignatorClassification classification = ShapeHelper.ClassifyDesignator(activeDesignator);
+            bool isZoneDesignator = classification.IsZone;
+            bool isOrderDesignator = classification.IsOrder;
+            bool isCellsDesignator = ShapeHelper.IsCellsDesignator(activeDesignator);
+            HandleEnterKey(activeDesignator, inArchitectMode, isPlaceDesignator, isZoneDesignator, isOrderDesignator, isCellsDesignator, classification.IsDelete);
+        }
+
+        public static void HandleEscape()
+        {
+            HandleEscapeKey(InArchitectMode());
+        }
+
+        /// <summary>
+        /// Transport-pod-landing confirm (Space/Enter/KeypadEnter — all three take the same
+        /// branch). The shell's exact-modifier chord matching supplies the no-Shift guard.
+        /// </summary>
+        public static void HandleTransportPodConfirm()
+        {
+            HandleTargetingModeInput(KeyCode.Space, shiftHeld: false);
+        }
+
+        public static void HandleTransportPodCancel()
+        {
+            HandleTargetingModeInput(KeyCode.Escape, shiftHeld: false);
+        }
+
+        /// <summary>
+        /// Tab opens the shape selection menu, Shift+Tab switches to manual mode, for designators
+        /// selected via the architect menu or via a gizmo. Returns true if the key was handled.
+        /// </summary>
         private static bool HandleTabKey(Designator activeDesignator, bool shiftHeld, bool supportsShapes, bool inArchitectMode, List<ShapeType> availableShapes)
         {
-            // Allow shape selection when we have an active designator that supports shapes,
-            // whether it was selected via architect menu (inArchitectMode) or via gizmo (activeDesignator != null)
             bool canUseShapes = supportsShapes && activeDesignator != null;
 
-            // Tab key - open shape selection menu (for any designator that supports shapes)
             if (!shiftHeld)
             {
                 if (canUseShapes)
                 {
-                    // Block Tab if placement is in progress with points set
-                    // User must press Escape to clear selection first
+                    // Changing shape mid-placement is blocked; Escape clears the selection first.
                     if (ShapePlacementState.IsPlacementInProgress)
                     {
                         TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.CannotChangeShapeWhilePlacing".Loc());
                         return true;
                     }
 
-                    // Check if only Manual shape is available - nothing to cycle through
                     if (availableShapes.Count == 1 && availableShapes[0] == ShapeType.Manual)
                     {
                         TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.NoShapesAvailable".Loc());
                         return true;
                     }
 
-                    // Cancel any active shape placement before opening menu
                     if (ShapePlacementState.IsActive)
                     {
                         ShapePlacementState.Reset();
@@ -277,39 +285,32 @@ namespace RimWorldAccess
 
                     if (availableShapes.Count > 1)
                     {
-                        // Multiple shapes available - open shape selection menu
                         ShapeSelectionMenuState.Open(activeDesignator);
                     }
                     else
                     {
-                        // Only one non-Manual shape - activate it directly
                         ShapePlacementState.Enter(activeDesignator, availableShapes[0]);
                     }
                     return true;
                 }
             }
-            // Shift+Tab - quick switch to Manual mode (for any designator with shapes)
             else if (canUseShapes)
             {
-                // Block Shift+Tab if placement is in progress with points set
-                // User must press Escape to clear selection first
                 if (ShapePlacementState.IsPlacementInProgress)
                 {
                     TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.CannotChangeShapeWhilePlacing".Loc());
                     return true;
                 }
 
-                // Check if already in manual mode
                 if (ShapePlacementState.IsActive && ShapePlacementState.CurrentShape == ShapeType.Manual)
                 {
                     TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.AlreadyInManualMode".Loc());
                     return true;
                 }
 
-                // Reset to manual mode and cancel any shape in progress
                 if (ShapePlacementState.IsActive)
                 {
-                    ShapePlacementState.Reset(); // Use Reset instead of Cancel to avoid announcement
+                    ShapePlacementState.Reset(); // Reset, not Cancel: Cancel would announce.
                 }
                 ShapePlacementState.Enter(activeDesignator, ShapeType.Manual);
                 return true;
@@ -319,14 +320,11 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles R key input for rotating buildings.
-        /// If the building is not rotatable, announces that it can't be rotated.
+        /// Rotates the building being placed, announcing when the def is not rotatable (doors and
+        /// the like auto-detect their orientation). Returns true if the key was handled.
         /// </summary>
-        /// <returns>True if the key was handled, false otherwise.</returns>
         private static bool HandleRotateKey(Designator activeDesignator, bool inArchitectMode, RotationDirection direction)
         {
-            // Check if the building can be rotated before attempting rotation
-            // Some buildings like doors auto-detect their orientation and cannot be manually rotated
             bool canRotate = true;
             string buildingLabel = null;
 
@@ -347,12 +345,10 @@ namespace RimWorldAccess
                 }
             }
 
-            // If not rotatable, announce and return
             if (!canRotate)
             {
                 string name = buildingLabel ?? activeDesignator.Label
                     ?? "RimWorldAccess.Building.ArchitectPlace.RotateFallbackSubject".Translate();
-                // Capitalize first letter for better announcement
                 if (!string.IsNullOrEmpty(name))
                 {
                     name = char.ToUpper(name[0]) + name.Substring(1);
@@ -361,47 +357,34 @@ namespace RimWorldAccess
                 return true;
             }
 
-            // Building is rotatable - proceed with rotation
             if (inArchitectMode)
             {
                 ArchitectState.RotateBuilding(direction);
             }
-            else if (activeDesignator.GetType().Name == "Designator_MoveGravship")
+            else if (BuildingReflection.IsGravshipDesignator(activeDesignator))
             {
-                // Gravship landing designator — rotate via marker.GravshipRotation
-                var markerField = AccessTools.Field(activeDesignator.GetType(), "marker");
-                if (markerField != null)
+                var marker = BuildingReflection.GetGravshipMarker(activeDesignator);
+                if (marker != null)
                 {
-                    var marker = markerField.GetValue(activeDesignator);
-                    if (marker != null)
-                    {
-                        var rotProp = AccessTools.Property(marker.GetType(), "GravshipRotation");
-                        if (rotProp != null)
-                        {
-                            Rot4 currentRot = (Rot4)rotProp.GetValue(marker);
-                            currentRot.Rotate(direction);
-                            rotProp.SetValue(marker, currentRot);
+                    Rot4 currentRot = marker.GravshipRotation;
+                    currentRot.Rotate(direction);
+                    marker.GravshipRotation = currentRot;
 
-                            string dirName = currentRot == Rot4.North ? "RimWorldAccess.Map.Direction.North".Translate().ToString() :
-                                             currentRot == Rot4.East ? "RimWorldAccess.Map.Direction.East".Translate().ToString() :
-                                             currentRot == Rot4.South ? "RimWorldAccess.Map.Direction.South".Translate().ToString() :
-                                             "RimWorldAccess.Map.Direction.West".Translate().ToString();
-                            TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.GravshipFacing".Loc(dirName));
-                        }
-                    }
+                    string dirName = currentRot == Rot4.North ? "RimWorldAccess.Map.Direction.North".Translate().ToString() :
+                                     currentRot == Rot4.East ? "RimWorldAccess.Map.Direction.East".Translate().ToString() :
+                                     currentRot == Rot4.South ? "RimWorldAccess.Map.Direction.South".Translate().ToString() :
+                                     "RimWorldAccess.Map.Direction.West".Translate().ToString();
+                    TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.GravshipFacing".Loc(dirName));
                 }
             }
             else if (activeDesignator is Designator_Place designatorPlace)
             {
-                // Use reflection to access private placingRot field
-                var rotField = AccessTools.Field(typeof(Designator_Place), "placingRot");
-                if (rotField != null)
+                if (BuildingReflection.HasPlacingRotField)
                 {
-                    Rot4 currentRot = (Rot4)rotField.GetValue(designatorPlace);
+                    Rot4 currentRot = BuildingReflection.GetPlacingRot(designatorPlace);
                     currentRot.Rotate(direction);
-                    rotField.SetValue(designatorPlace, currentRot);
+                    BuildingReflection.SetPlacingRot(designatorPlace, currentRot);
 
-                    // Build a proper announcement with direction and special info
                     string announcement = GetDesignatorRotationAnnouncement(designatorPlace, currentRot);
                     TolkHelper.SpeakData(announcement);
                 }
@@ -410,14 +393,11 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles Ctrl+A input for stepping outward through selection scopes.
-        /// First press selects the current enclosure (room or blueprint flood);
-        /// when no enclosure is detected the press jumps straight to entire map.
-        /// A subsequent press while the enclosure is selected expands to entire map.
-        /// Pressing again at entire-map scope is a no-op with an announcement.
-        /// Only works for rectangle/oval shapes since lines cannot meaningfully fill a room.
+        /// Ctrl+A steps outward through selection scopes: enclosure (room or blueprint flood),
+        /// then entire map, jumping straight to entire map when no enclosure is detected. Only
+        /// rectangle/oval shapes qualify — a line cannot meaningfully fill a room. Returns true
+        /// if the key was handled.
         /// </summary>
-        /// <returns>True if the key was handled, false otherwise.</returns>
         private static bool HandleCtrlAKey()
         {
             if (!ShapePlacementState.IsActive)
@@ -441,21 +421,18 @@ namespace RimWorldAccess
 
             CtrlAStage currentStage = ShapePlacementState.CurrentCtrlAStage;
 
-            // Already at the broadest scope — nothing to expand to.
             if (currentStage == CtrlAStage.EntireMap)
             {
                 TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.CtrlA.EntireMapAlreadySelected".Loc());
                 return true;
             }
 
-            // From the enclosure stage we step out to the entire map.
             if (currentStage == CtrlAStage.Enclosure)
             {
                 ApplyEntireMapScope(map, shape);
                 return true;
             }
 
-            // First press (CtrlAStage.None): try enclosure first, fall back to entire map.
             IntVec3 cursor = MapNavigationState.CurrentCursorPosition;
             bool cursorValid = cursor.IsValid && cursor.InBounds(map);
 
@@ -463,7 +440,7 @@ namespace RimWorldAccess
             IntVec3 cornerB;
             string scopeLabel;
 
-            // Fast path: RimWorld's Room system already identifies finished enclosures.
+            // RimWorld's Room system already identifies enclosures made of finished walls.
             Room room = cursorValid ? cursor.GetRoom(map) : null;
             bool useRoom = room != null
                 && !room.PsychologicallyOutdoors
@@ -479,11 +456,10 @@ namespace RimWorldAccess
             }
             else if (cursorValid && TryBlueprintEnclosureBounds(cursor, map, out cornerA, out cornerB, out scopeLabel))
             {
-                // Blueprint-walled enclosure detected via flood fill — corners already set above.
+                // Corners come from the out parameters.
             }
             else
             {
-                // No enclosure to step through — jump straight to entire map.
                 ApplyEntireMapScope(map, shape, isNoEnclosure: true);
                 return true;
             }
@@ -522,10 +498,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles Ctrl+Shift+A input by popping the most recent Ctrl+A scope and
-        /// restoring the prior selection (or clearing it if the prior step had no points).
+        /// Ctrl+Shift+A pops the most recent Ctrl+A scope and restores the prior selection, or
+        /// clears it when the prior step had no points. Returns true if the key was handled.
         /// </summary>
-        /// <returns>True if the key was handled, false otherwise.</returns>
         private static bool HandleCtrlShiftAKey()
         {
             if (!ShapePlacementState.IsActive)
@@ -560,7 +535,6 @@ namespace RimWorldAccess
 
             if (stage == CtrlAStage.None)
             {
-                // Restored to a state with no Ctrl+A selection in effect.
                 if (!ShapePlacementState.HasFirstPoint)
                 {
                     TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.CtrlA.ClearedMoveToFirstPoint".Loc());
@@ -582,11 +556,10 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Tries to detect a blueprint-walled enclosure surrounding <paramref name="cursor"/>.
-        /// RimWorld's Room system only recognises enclosures formed by finished walls, so this
-        /// flood-fills from the cursor treating wall blueprints and frames as boundaries. When
-        /// the fill stays bounded (does not escape to the map edge), the bounding box of the
-        /// interior cells is returned as shape corners.
+        /// Detects a blueprint-walled enclosure around <paramref name="cursor"/>, which the Room
+        /// system misses because it only recognises finished walls: flood-fills treating wall
+        /// blueprints and frames as boundaries, and returns the interior's bounding box as shape
+        /// corners when the fill does not escape to the map edge.
         /// </summary>
         private static bool TryBlueprintEnclosureBounds(IntVec3 cursor, Map map,
             out IntVec3 cornerA, out IntVec3 cornerB, out string scopeLabel)
@@ -616,12 +589,11 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles Shift+Space input for removing shape points or cancelling blueprints.
+        /// Shift+Space removes the last shape point, or cancels the blueprint under the cursor
+        /// when no shape points are pending. Returns true if the key was handled.
         /// </summary>
-        /// <returns>True if the key was handled, false otherwise.</returns>
         private static bool HandleShiftSpaceKey()
         {
-            // If in shape placement mode with points set, remove points step-by-step
             if (ShapePlacementState.IsActive &&
                 ShapePlacementState.CurrentShape != ShapeType.Manual &&
                 ShapePlacementState.HasFirstPoint)
@@ -629,7 +601,6 @@ namespace RimWorldAccess
                 ShapePlacementState.RemoveLastPoint();
                 return true;
             }
-            // If in shape placement mode but no points set, announce that
             else if (ShapePlacementState.IsActive &&
                      ShapePlacementState.CurrentShape != ShapeType.Manual &&
                      !ShapePlacementState.HasFirstPoint)
@@ -637,7 +608,6 @@ namespace RimWorldAccess
                 TolkHelper.Speak("RimWorldAccess.Building.Place.NoPointsToRemove".Loc());
                 return true;
             }
-            // Otherwise, cancel blueprint at cursor position (existing behavior)
             else
             {
                 IntVec3 currentPosition = MapNavigationState.CurrentCursorPosition;
@@ -647,16 +617,14 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles Space key input for placing cells, setting shape points, or toggling selections.
+        /// Space places a cell, sets the next shape point, or toggles a selection depending on
+        /// designator type and placement phase. Returns true if the key was handled.
         /// </summary>
-        /// <returns>True if the key was handled, false otherwise.</returns>
         private static bool HandleSpaceKey(Designator activeDesignator, IntVec3 currentPosition, bool inArchitectMode, bool isPlaceDesignator, bool isZoneDesignator, bool isOrderDesignator, bool isCellsDesignator)
         {
-            // Check if we're in shape placement mode with a non-Manual shape
-            // This applies to ALL designator types (build, orders, zones)
+            // The two-point shape workflow is the same for every designator type.
             if (ShapePlacementState.IsActive && ShapePlacementState.CurrentShape != ShapeType.Manual)
             {
-                // Two-point placement workflow - same for all designator types
                 if (ShapePlacementState.CurrentPhase == PlacementPhase.SettingFirstCorner)
                 {
                     ShapePlacementState.SetFirstPoint(currentPosition);
@@ -666,108 +634,54 @@ namespace RimWorldAccess
                     ShapePlacementState.SetSecondPoint(currentPosition);
                 }
             }
-            // Manual mode or ShapePlacementState inactive - single cell designation
             else
             {
-                // For build/place designators (buildings, install)
+                // A rect designator's unit of work is a rectangle; a mouse click without a drag is a
+                // 1x1 one, so Space is exactly that.
+                if (RectDesignationRouter.IsRectDesignator(activeDesignator))
+                {
+                    ShapePlacementState.PlaceSingleCellRect(currentPosition);
+                    return true;
+                }
+
                 if (isPlaceDesignator)
                 {
-                    AcceptanceReport report = activeDesignator.CanDesignateCell(currentPosition);
-
-                    if (report.Accepted)
+                    string placedPhrase;
+                    if (TryManualSinglePlacement(activeDesignator, currentPosition, inArchitectMode, out placedPhrase))
                     {
-                        // Check meditation focus / tree protection before placing
-                        var (placingDef, placingRot) =
-                            MeditationProtectionHelper.GetPlacementInfo(activeDesignator);
-
-                        if (placingDef != null &&
-                            MeditationProtectionHelper.IsArtificialBuilding(
-                                placingDef, Faction.OfPlayer))
-                        {
-                            var protection = MeditationProtectionHelper.CheckProtection(
-                                Find.CurrentMap, placingDef, Faction.OfPlayer,
-                                currentPosition, placingRot);
-
-                            if (protection.IsProtected)
-                            {
-                                string message =
-                                    MeditationProtectionHelper.FormatManualBlockMessage(protection);
-                                TolkHelper.SpeakData(message);
-                                return true;
-                            }
-                        }
-
-                        try
-                        {
-                            activeDesignator.DesignateSingleCell(currentPosition);
-                            activeDesignator.Finalize(true);
-
-                            string label = activeDesignator.Label;
-                            TolkHelper.Speak("RimWorldAccess.Building.View.PlacedAt".Loc(
-                                label, currentPosition.x, currentPosition.z));
-
-                            // Clear selected cells for next placement (both architect and gizmo modes)
-                            // User presses Enter to confirm and exit placement mode
-                            if (inArchitectMode)
-                            {
-                                ArchitectState.ClearSelectedCells();
-                            }
-                            // For gizmo placement, stay in placement mode like architect mode
-                            // User presses Enter to confirm and exit
-                        }
-                        catch (System.Exception ex)
-                        {
-                            TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.ErrorPlacing".Loc(ex.Message), SpeechPriority.High);
-                            Log.Error($"Error in single cell designation: {ex}");
-                        }
-                    }
-                    else
-                    {
-                        string reason = report.Reason.NullOrEmpty()
-                            ? "RimWorldAccess.Building.View.CannotPlaceHere".Translate().ToString()
-                            : report.Reason;
-                        TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.InvalidReason".Loc(reason));
+                        // Space stays in placement mode; Enter confirms and exits.
+                        TolkHelper.SpeakData(placedPhrase);
                     }
                 }
-                // For zone designators
                 else if (isZoneDesignator)
                 {
                     if (inArchitectMode)
                     {
-                        // Toggle cell in the selection list (architect menu mode)
                         ArchitectState.ToggleCell(currentPosition);
                     }
                     else
                     {
-                        // Gizmo mode (e.g., expand/shrink from zone gizmo)
-                        // Use GizmoZoneEditState for proper zone cell toggling with
-                        // connectivity checks, adjacency enforcement, and state tracking
-                        // (same behavior as viewing mode's Space key)
-                        GizmoZoneEditState.EnsureInitialized(activeDesignator);
-                        GizmoZoneEditState.ToggleZoneCellAtCursor();
+                        // From a zone gizmo: GizmoZoneEditState carries the connectivity and
+                        // adjacency checks the architect-mode selection list does not need.
+                        GizmoZoneEditState.ToggleZoneCellAtCursor(activeDesignator);
                     }
                 }
-                // For orders (Hunt, Haul, etc.) and cells designators (Mine)
                 else if ((isOrderDesignator || isCellsDesignator) && inArchitectMode)
                 {
-                    // Toggle cell in the selection list
                     ArchitectState.ToggleCell(currentPosition);
                 }
-                // For gravship landing placement designator
-                else if (activeDesignator.GetType().Name == "Designator_MoveGravship")
+                else if (BuildingReflection.IsGravshipDesignator(activeDesignator))
                 {
-                    // Compensate for vanilla rounding bug in even-sized gravships.
+                    // Compensate for a vanilla rounding bug in even-sized gravships:
                     // GetSizeRotAdjustedCell uses size/2 but PrefabUtility.GetRoot uses (size-1)/2,
                     // causing a +1 offset per axis when that dimension is even.
                     IntVec3 placementPos = currentPosition;
-                    var markerField = AccessTools.Field(activeDesignator.GetType(), "marker");
-                    var marker = markerField?.GetValue(activeDesignator) as GravshipLandingMarker;
+                    var marker = BuildingReflection.GetGravshipMarker(activeDesignator);
                     if (marker != null)
                     {
                         IntVec2 size = marker.gravship.Bounds.Size;
                         Rot4 rot = marker.GravshipRotation;
 
-                        // Replicate GetSizeRotAdjustedCell math
                         IntVec3 halfX = new IntVec3(size.x / 2, 0, 0);
                         IntVec3 halfZ = new IntVec3(0, 0, size.z / 2);
                         IntVec3 adjusted = currentPosition;
@@ -776,7 +690,6 @@ namespace RimWorldAccess
                         else if (rot == Rot4.South) adjusted -= halfX + halfZ;
                         else if (rot == Rot4.West) adjusted += -halfX + halfZ;
 
-                        // See where the marker would actually end up
                         IntVec3 wouldPlace = PrefabUtility.GetRoot(adjusted, size, rot);
                         IntVec3 offset = wouldPlace - currentPosition;
                         if (offset != IntVec3.Zero)
@@ -795,10 +708,7 @@ namespace RimWorldAccess
                     }
                     else
                     {
-                        string reason = report.Reason.NullOrEmpty()
-                            ? "RimWorldAccess.Building.View.CannotPlaceHere".Translate().ToString()
-                            : report.Reason;
-                        TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.InvalidReason".Loc(reason));
+                        TolkHelper.Speak(PlacementDescriber.DescribeRejection(report));
                     }
                 }
             }
@@ -807,41 +717,121 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles Enter key input for confirming and executing designations.
+        /// The manual single-building placement Space runs and first-press Enter borrows:
+        /// vanilla's own CanDesignateCell gate, the meditation-protection and god-mode wipe
+        /// guards, then DesignateSingleCell + Finalize. True only when the building was placed,
+        /// with the "placed at" sentence in <paramref name="placedPhrase"/> for the caller to
+        /// speak; every refusal speaks for itself and returns false.
         /// </summary>
-        /// <returns>True if the key was handled, false otherwise.</returns>
-        private static bool HandleEnterKey(Designator activeDesignator, bool inArchitectMode, bool isPlaceDesignator, bool isZoneDesignator, bool isOrderDesignator, bool isCellsDesignator)
+        private static bool TryManualSinglePlacement(Designator activeDesignator, IntVec3 currentPosition, bool inArchitectMode, out string placedPhrase)
         {
-            // If in shape placement previewing phase, execute the designation and enter viewing mode
-            // This works for ALL designator types (build, orders, zones)
+            placedPhrase = null;
+            AcceptanceReport report = activeDesignator.CanDesignateCell(currentPosition);
+            if (!report.Accepted)
+            {
+                TolkHelper.Speak(PlacementDescriber.DescribeRejection(report));
+                return false;
+            }
+
+            var (placingDef, placingRot) =
+                MeditationProtectionHelper.GetPlacementInfo(activeDesignator);
+            if (placingDef != null &&
+                MeditationProtectionHelper.IsArtificialBuilding(placingDef, Faction.OfPlayer))
+            {
+                var protection = MeditationProtectionHelper.CheckProtection(
+                    Find.CurrentMap, placingDef, Faction.OfPlayer,
+                    currentPosition, placingRot);
+                if (protection.IsProtected)
+                {
+                    TolkHelper.SpeakData(
+                        MeditationProtectionHelper.FormatManualBlockMessage(protection));
+                    return false;
+                }
+            }
+
+            if (!GodModeWipeWarning.WarnBeforeInstantPlace(
+                activeDesignator, currentPosition, Find.CurrentMap))
+            {
+                return false;
+            }
+
+            try
+            {
+                activeDesignator.DesignateSingleCell(currentPosition);
+                activeDesignator.Finalize(true);
+
+                // The new blueprint occupies cells and blocks interaction spots, so the
+                // listed placement spots are now stale.
+                PlacementSpotScanner.NotifyPlacementCompleted();
+                manualSessionPlacements++;
+
+                if (inArchitectMode)
+                {
+                    ArchitectState.ClearSelectedCells();
+                }
+                placedPhrase = "RimWorldAccess.Building.View.PlacedAt"
+                    .Translate(activeDesignator.Label, currentPosition.x, currentPosition.z)
+                    .ToString();
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.ErrorPlacing".Loc(ex.Message), SpeechPriority.High);
+                Log.Error($"Error in single cell designation: {ex}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Enter confirms and executes the pending designation. Returns true if the key was
+        /// handled.
+        /// </summary>
+        private static bool HandleEnterKey(Designator activeDesignator, bool inArchitectMode, bool isPlaceDesignator, bool isZoneDesignator, bool isOrderDesignator, bool isCellsDesignator, bool isDeleteDesignator)
+        {
             if (ShapePlacementState.IsActive && ShapePlacementState.CurrentPhase == PlacementPhase.Previewing)
             {
-                // Save the current shape before placing (for restore after undo)
+                // Kept for restore after undo.
                 ShapeType currentShape = ShapePlacementState.CurrentShape;
 
                 try
                 {
-                    // Pass silent: true because ViewingModeState.Enter will announce the placement
+                    // Silent because ViewingModeState.Enter announces the placement.
                     var result = ShapePlacementState.PlaceDesignations(silent: true);
 
-                    // Check if this is a zone deletion that needs confirmation
                     if (result.NeedsFullDeletionConfirmation)
                     {
-                        // Show confirmation dialog for zone deletion
                         ShowZoneDeletionConfirmation(result, activeDesignator, currentShape);
                         return true;
                     }
                     else if (result.PlacedCount > 0)
                     {
-                        ViewingModeState.Enter(result, activeDesignator, currentShape);
-                        // Reset shape placement state after placing
-                        ShapePlacementState.Reset();
+                        // Viewing mode over a selection change is wrong, and the branch below would
+                        // otherwise enter it. The exit may reset the active designator, so this is
+                        // the only place the silent result can speak.
+                        if (result.WasRectDesignation)
+                        {
+                            ShapePlacementState.AnnounceResult(result);
+                            ShapePlacementState.ExitAfterRectDesignation(result);
+                            return true;
+                        }
+
+                        // God-mode terrain is set directly, leaving no things for viewing mode
+                        // to track; announce the result and stay in placement mode instead.
+                        if (isPlaceDesignator && (result.PlacedBlueprints == null || result.PlacedBlueprints.Count == 0))
+                        {
+                            ShapePlacementState.AnnounceResult(result);
+                            ShapePlacementState.ClearSelectionAndStay(silent: true);
+                        }
+                        else
+                        {
+                            ViewingModeState.Enter(result, activeDesignator, currentShape);
+                            ShapePlacementState.Reset();
+                        }
                     }
                     else
                     {
-                        // No placements - give appropriate feedback based on designator type
-                        // Stay in shape placement mode so user can try again (like Escape when corners are set)
-                        bool isDeleteDesignator = ShapeHelper.IsDeleteDesignator(activeDesignator);
+                        // Nothing placed: report why and stay in placement mode so the next attempt
+                        // needs no re-entry.
                         if (isDeleteDesignator)
                         {
                             TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.NoZoneCellsTryAgain".Loc());
@@ -850,7 +840,6 @@ namespace RimWorldAccess
                         {
                             TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.NoValidCellsTryAgain".Loc());
                         }
-                        // Clear selection but stay in placement mode (don't exit entirely)
                         ShapePlacementState.ClearSelectionAndStay(silent: true);
                     }
                 }
@@ -862,24 +851,35 @@ namespace RimWorldAccess
                 }
                 return true;
             }
-            // If in shape placement mode but corners not yet set, give guidance
-            else if (ShapePlacementState.IsActive && ShapePlacementState.CurrentShape != ShapeType.Manual)
+            // A half-built shape prompts for its second point; with no point yet, Enter falls to the completion branch below.
+            else if (ShapePlacementState.IsActive && ShapePlacementState.CurrentShape != ShapeType.Manual
+                && ShapePlacementState.CurrentPhase == PlacementPhase.SettingSecondCorner)
             {
-                if (ShapePlacementState.CurrentPhase == PlacementPhase.SettingFirstCorner)
-                {
-                    TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.PlaceFirstPoint".Loc());
-                }
-                else if (ShapePlacementState.CurrentPhase == PlacementPhase.SettingSecondCorner)
-                {
-                    TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.PlaceSecondPoint".Loc());
-                }
+                TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.PlaceSecondPoint".Loc());
                 return true;
             }
-            // For place designators (build, reinstall) not in shape mode
             else if (isPlaceDesignator)
             {
-                // Normal exit - placement completed
-                TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.PlacementCompleted".Loc());
+                string announcement = "RimWorldAccess.Building.ArchitectPlace.PlacementCompleted"
+                    .Translate().ToString();
+                // Manual mode with nothing placed yet: Enter stands in for the forgotten Space,
+                // placing at the cursor before closing. A refused cell speaks its reason and
+                // stays in placement mode, leaving Escape as the way out.
+                bool manualFirstPress = manualSessionPlacements == 0
+                    && (!ShapePlacementState.IsActive || ShapePlacementState.CurrentShape == ShapeType.Manual)
+                    && !RectDesignationRouter.IsRectDesignator(activeDesignator);
+                if (manualFirstPress)
+                {
+                    string placedPhrase;
+                    if (!TryManualSinglePlacement(
+                            activeDesignator, MapNavigationState.CurrentCursorPosition,
+                            inArchitectMode, out placedPhrase))
+                    {
+                        return true;
+                    }
+                    announcement = placedPhrase + ". " + announcement;
+                }
+                TolkHelper.SpeakData(announcement);
                 if (ShapePlacementState.IsActive)
                 {
                     ShapePlacementState.Reset();
@@ -890,26 +890,21 @@ namespace RimWorldAccess
                     Find.DesignatorManager.Deselect();
                 return true;
             }
-            // For zone designators (not in shape mode) - execute from selected cells
             else if (isZoneDesignator && inArchitectMode)
             {
                 Map map = Find.CurrentMap;
                 ExecuteZonePlacement(activeDesignator, map);
-                // Reset ShapePlacementState if it was active (Manual mode)
                 if (ShapePlacementState.IsActive)
                 {
                     ShapePlacementState.Reset();
                 }
                 return true;
             }
-            // For zone designators in gizmo mode (not architect mode) - confirm and exit
             else if (isZoneDesignator && !inArchitectMode)
             {
-                // In gizmo mode, changes are applied immediately via GizmoZoneEditState
-                // Enter just confirms and exits editing mode
+                // GizmoZoneEditState already applied each change, so Enter only exits.
                 TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.ZoneEditingCompleted".Loc());
 
-                // Reset states
                 if (ShapePlacementState.IsActive)
                 {
                     ShapePlacementState.Reset();
@@ -921,10 +916,8 @@ namespace RimWorldAccess
                 Find.DesignatorManager.Deselect();
                 return true;
             }
-            // For orders and cells designators in architect mode (not in shape mode)
             else if (inArchitectMode && (isOrderDesignator || isCellsDesignator))
             {
-                // Execute the placement from selected cells
                 ArchitectState.ExecutePlacement(Find.CurrentMap);
                 return true;
             }
@@ -933,42 +926,32 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles Escape key input for cancelling shape placement or exiting placement mode.
+        /// Escape steps back one level: clear the pending points, else return to viewing mode,
+        /// else leave placement entirely. Returns true if the key was handled.
         /// </summary>
-        /// <returns>True if the key was handled, false otherwise.</returns>
         private static bool HandleEscapeKey(bool inArchitectMode)
         {
-            // If shape placement is active, check what to do based on points and stack
             if (ShapePlacementState.IsActive)
             {
-                // Case 1: Points are set - clear them and stay in placement mode
                 if (ShapePlacementState.HasFirstPoint)
                 {
-                    // Clear points via previewHelper, stay in placement mode
-                    // This resets to SettingFirstCorner phase
-                    // Use silent=true so we control the announcement here
+                    // Silent so the announcement below is the only one.
                     ShapePlacementState.ClearSelectionAndStay(silent: true);
                     TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.SelectionCleared".Loc());
                 }
-                // Case 2: No points set, but we came from viewing mode - return to it
                 else if (ShapePlacementState.HasViewingModeOnStack)
                 {
                     ShapePlacementState.Reset();
-                    // Re-activate viewing mode with existing segments intact
                     ViewingModeState.Reactivate();
                 }
-                // Case 3: No points set, no viewing mode on stack - exit architect entirely
                 else
                 {
-                    TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.PlacementCancelled".Loc());
+                    // No pending points and no viewing-mode stack: leaving discards nothing,
+                    // so say "exited" — "cancelled" would imply placed work was undone.
+                    TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.ExitedPlacement".Loc());
                     ShapePlacementState.Reset();
 
-                    // Check if we need to return to a parent menu (Schedule/Animals → Manage Areas)
-                    if (WindowlessAreaState.HasPendingReturn)
-                    {
-                        WindowlessAreaState.CompletePendingReturn();
-                    }
-                    else if (inArchitectMode)
+                    if (inArchitectMode)
                     {
                         ArchitectState.Reset();
                     }
@@ -980,14 +963,9 @@ namespace RimWorldAccess
             }
             else
             {
-                TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.PlacementCancelled".Loc());
+                TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.ExitedPlacement".Loc());
 
-                // Check if we need to return to a parent menu (Schedule/Animals → Manage Areas)
-                if (WindowlessAreaState.HasPendingReturn)
-                {
-                    WindowlessAreaState.CompletePendingReturn();
-                }
-                else if (inArchitectMode)
+                if (inArchitectMode)
                 {
                     ArchitectState.Cancel();
                 }
@@ -1008,16 +986,13 @@ namespace RimWorldAccess
             if (map == null)
                 return;
 
-            // Get all things at this position
             List<Thing> thingList = position.GetThingList(map);
 
-            // Look for blueprints or frames
             bool foundAndCanceled = false;
             for (int i = thingList.Count - 1; i >= 0; i--)
             {
                 Thing thing = thingList[i];
 
-                // Check if it's a player-owned blueprint or frame
                 if (thing.Faction == Faction.OfPlayer && (thing is Frame || thing is Blueprint))
                 {
                     string thingLabel = thing.LabelShort;
@@ -1036,12 +1011,11 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles keyboard input during local map targeting mode (e.g., transport pod landing).
-        /// Returns true if input was handled.
+        /// Confirms or cancels local map targeting (transport pod landing). Returns true if the
+        /// input was handled.
         /// </summary>
         private static bool HandleTargetingModeInput(KeyCode key, bool shiftHeld)
         {
-            // Space or Enter - confirm target at cursor position
             if (key == KeyCode.Space || key == KeyCode.Return || key == KeyCode.KeypadEnter)
             {
                 if (shiftHeld)
@@ -1056,7 +1030,6 @@ namespace RimWorldAccess
                     return true;
                 }
 
-                // Validate landing spot using the game's validation
                 if (!DropCellFinder.IsGoodDropSpot(targetCell, map, allowFogged: false, canRoofPunch: true))
                 {
                     string reason = GetLandingInvalidReason(targetCell, map);
@@ -1064,10 +1037,9 @@ namespace RimWorldAccess
                     return true;
                 }
 
-                // Create target info and let the targeter process it
                 LocalTargetInfo target = new LocalTargetInfo(targetCell);
 
-                // Get the action BEFORE stopping targeting (StopTargeting clears the action)
+                // StopTargeting clears the action, so read it first.
                 var actionField = HarmonyLib.AccessTools.Field(typeof(Targeter), "action");
                 System.Action<LocalTargetInfo> action = null;
                 if (actionField != null)
@@ -1075,10 +1047,8 @@ namespace RimWorldAccess
                     action = actionField.GetValue(Find.Targeter) as System.Action<LocalTargetInfo>;
                 }
 
-                // Check if we have an action to invoke
                 if (action != null)
                 {
-                    // Stop targeting and invoke the action
                     Find.Targeter.StopTargeting();
                     action.Invoke(target);
                     TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.LandingConfirmed".Loc(
@@ -1086,7 +1056,6 @@ namespace RimWorldAccess
                 }
                 else
                 {
-                    // No action available - stop targeting but report the error
                     Find.Targeter.StopTargeting();
                     TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.CouldNotConfirmTarget".Loc(), SpeechPriority.High);
                 }
@@ -1094,7 +1063,6 @@ namespace RimWorldAccess
                 return true;
             }
 
-            // Escape - cancel targeting
             if (key == KeyCode.Escape)
             {
                 Find.Targeter.StopTargeting();
@@ -1106,16 +1074,14 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets a human-readable reason why a landing spot is invalid.
-        /// Note: Thin roofs are VALID - pods punch through them.
-        /// Only thick roofs (overhead mountain) block landing.
+        /// A human-readable reason why a landing spot is invalid. Only thick roofs (overhead
+        /// mountain) block landing; pods punch through thin ones.
         /// </summary>
         private static string GetLandingInvalidReason(IntVec3 cell, Map map)
         {
             if (map == null || !cell.InBounds(map))
                 return "RimWorldAccess.Building.ArchitectPlace.LandReason.OutOfBounds".Translate();
 
-            // Check terrain
             TerrainDef terrain = cell.GetTerrain(map);
             if (terrain != null)
             {
@@ -1123,30 +1089,24 @@ namespace RimWorldAccess
                     return "RimWorldAccess.Building.ArchitectPlace.LandReason.Water".Translate();
             }
 
-            // Check for thick roof (can't punch through mountain)
-            // Note: Thin roofs are OK - pods punch through
             RoofDef roof = cell.GetRoof(map);
             if (roof != null && roof.isThickRoof)
                 return "RimWorldAccess.Building.ArchitectPlace.LandReason.OverheadMountain".Translate();
 
-            // Check if walkable (basic passability)
             if (!cell.Walkable(map))
                 return "RimWorldAccess.Building.ArchitectPlace.LandReason.Impassable".Translate();
 
-            // Check for buildings/edifices
             Building building = cell.GetEdifice(map);
             if (building != null)
             {
-                // IsClearableFreeBuilding buildings (like conduits) are OK
+                // Clearable free buildings (conduits and the like) do not block landing.
                 if (!building.IsClearableFreeBuilding)
                     return building.LabelCap;
             }
 
-            // Check for fog
             if (cell.Fogged(map))
                 return "RimWorldAccess.Building.ArchitectPlace.LandReason.Fogged".Translate();
 
-            // Check for existing skyfallers or transporters
             List<Thing> things = cell.GetThingList(map);
             foreach (Thing thing in things)
             {
@@ -1159,23 +1119,18 @@ namespace RimWorldAccess
             return "RimWorldAccess.Building.ArchitectPlace.LandReason.InvalidSpot".Translate();
         }
 
-        // Note: IsZoneDesignator moved to ShapeHelper.IsZoneDesignator()
-
         /// <summary>
-        /// Shows a confirmation dialog when a zone shrink operation would delete the entire zone.
-        /// This action cannot be undone with Escape in viewing mode.
+        /// Confirms a zone shrink that would delete the whole zone, which Escape in viewing mode
+        /// cannot undo.
         /// </summary>
         private static void ShowZoneDeletionConfirmation(PlacementResult pendingResult, Designator designator, ShapeType currentShape)
         {
             string zoneName = pendingResult.ZonePendingDeletion?.label
                 ?? "RimWorldAccess.Building.ArchitectPlace.DeleteZoneFallbackName".Translate();
 
-            // Visual dialog text keeps the paragraph break (genuine dialog
-            // formatting, not an announcement separator).
+            // The visual text keeps its paragraph break; the spoken form is phrase fragments.
             string message = "RimWorldAccess.Building.ArchitectPlace.DeleteZoneDialogText".Translate(zoneName);
 
-            // Announce the dialog for screen readers using clean phrase
-            // fragments composed via AnnouncementBuilder (no newline separators).
             string announcement = new AnnouncementBuilder()
                 .Add("RimWorldAccess.Building.ArchitectPlace.DeleteZoneConfirmHeading".Translate())
                 .Add("RimWorldAccess.Building.ArchitectPlace.DeleteZoneWillDelete".Translate(zoneName))
@@ -1189,11 +1144,10 @@ namespace RimWorldAccess
                 "RimWorldAccess.Building.ArchitectPlace.DeleteZoneConfirmTitle".Translate(),
                 () =>
                 {
-                    // User confirmed deletion
                     var result = ShapePlacementState.ExecuteConfirmedZoneDeletion(pendingResult, silent: true);
                     TolkHelper.Speak("RimWorldAccess.Building.Place.ZoneDeleted".Loc(zoneName));
 
-                    // Exit the entire build/zone interface - deletion cannot be undone
+                    // Deletion cannot be undone, so leave the whole build/zone interface.
                     ShapePlacementState.Reset();
                     ArchitectState.Reset();
                     Find.DesignatorManager.Deselect();
@@ -1201,7 +1155,6 @@ namespace RimWorldAccess
                 "CancelButton".Translate(),
                 () =>
                 {
-                    // User cancelled - stay in shape placement mode
                     TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.DeletionCancelled".Loc());
                 },
                 null,  // title
@@ -1225,11 +1178,10 @@ namespace RimWorldAccess
 
             try
             {
-                // Use cursor-based zone selection to determine expand vs create
+                // The cell under the cursor decides expand vs. create.
                 IntVec3 referenceCell = ArchitectState.SelectedCells[0];
                 ZoneSelectionResult selectionResult = ZoneSelectionHelper.SelectZoneAtCell(designator, referenceCell);
 
-                // Use the designator's standard DesignateMultiCell method
                 designator.DesignateMultiCell(ArchitectState.SelectedCells);
 
                 string label = designator.Label ?? "RimWorldAccess.Building.ArchitectPlace.ZoneFallbackName".Translate();
@@ -1242,7 +1194,7 @@ namespace RimWorldAccess
                     ? "RimWorldAccess.Building.ArchitectPlace.ZoneExpandedWithCells".Translate(zoneName, cellCount)
                     : "RimWorldAccess.Building.ArchitectPlace.ZoneCreatedWithCells".Translate(zoneName, cellCount);
                 TolkHelper.SpeakData(announcement);
-                Log.Message($"Zone placement executed: {zoneName} {(selectionResult.IsExpansion ? "expanded" : "created")} with {cellCount} cells");
+                ModLogger.Dev($"Zone placement executed: {zoneName} {(selectionResult.IsExpansion ? "expanded" : "created")} with {cellCount} cells");
             }
             catch (System.Exception ex)
             {
@@ -1255,76 +1207,45 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets a rotation announcement for a Designator_Place (used by reinstall gizmo, etc.)
-        /// Delegates to shared ArchitectState method to avoid duplication.
-        /// </summary>
+        /// <summary>Rotation announcement for a Designator_Place (reinstall gizmo and the like).</summary>
         private static string GetDesignatorRotationAnnouncement(Designator_Place designatorPlace, Rot4 rotation)
         {
             return ArchitectState.GetRotationAnnouncementForDef(designatorPlace.PlacingDef, rotation);
         }
     }
 
-    // NOTE: ArchitectPlacementAnnouncementPatch was removed.
-    // Arrow key handling and preview updates are now handled atomically by
-    // MapArrowKeyHandler in OnGUI context (via UnifiedKeyboardPatch at Priority 10.5).
-    // This fixes the key repeat desync issue where Input.GetKeyDown() in the Prefix
-    // wouldn't fire on repeat frames but Input.GetKey() in this Postfix would.
-
-    /// <summary>
-    /// Harmony patch to intercept pause key (Space) during architect placement mode.
-    /// Prevents Space from pausing the game when in placement mode.
-    /// </summary>
+    /// <summary>Keeps Space from pausing the game while architect placement mode is active.</summary>
     [HarmonyPatch(typeof(TimeControls))]
     [HarmonyPatch("DoTimeControlsGUI")]
     public static class ArchitectPlacementTimeControlsPatch
     {
-        /// <summary>
-        /// Prefix patch that intercepts the pause key event during architect placement.
-        /// Returns false to skip TimeControls processing when Space is pressed in placement mode.
-        /// </summary>
         [HarmonyPrefix]
         [HarmonyPriority(Priority.First)]
         public static bool Prefix()
         {
-            // Only intercept when in architect placement mode
             if (!ArchitectState.IsInPlacementMode)
-                return true; // Continue with normal processing
+                return true;
 
-            // Check if this is a KeyDown event for the pause toggle key
             if (Event.current.type == EventType.KeyDown &&
                 KeyBindingDefOf.TogglePause.KeyDownEvent)
             {
-                // Consume the event so TimeControls doesn't process it
                 Event.current.Use();
-
-                // Log for debugging
-                Log.Message("Space key intercepted during architect placement mode");
-
-                // Don't let TimeControls process this event
+                ModLogger.Dev("Space key intercepted during architect placement mode");
                 return false;
             }
 
-            // Allow normal processing for other events
             return true;
         }
     }
 
-    /// <summary>
-    /// Harmony patch to render visual feedback during architect placement.
-    /// Shows selected cells and current designation area.
-    /// </summary>
+    /// <summary>Draws the selected cells and cursor cell during architect placement.</summary>
     [HarmonyPatch(typeof(SelectionDrawer))]
     [HarmonyPatch("DrawSelectionOverlays")]
     public static class ArchitectPlacementVisualizationPatch
     {
-        /// <summary>
-        /// Postfix to draw visual indicators for selected cells during architect placement.
-        /// </summary>
         [HarmonyPostfix]
         public static void Postfix()
         {
-            // Only active when in architect placement mode
             if (!ArchitectState.IsInPlacementMode)
                 return;
 
@@ -1332,12 +1253,10 @@ namespace RimWorldAccess
             if (map == null)
                 return;
 
-            // Draw highlights for selected cells (for multi-cell designators)
             foreach (IntVec3 cell in ArchitectState.SelectedCells)
             {
                 if (cell.InBounds(map))
                 {
-                    // Draw a subtle highlight over selected cells
                     Graphics.DrawMesh(
                         MeshPool.plane10,
                         cell.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays),
@@ -1348,11 +1267,9 @@ namespace RimWorldAccess
                 }
             }
 
-            // Draw highlight for current cursor position
             IntVec3 cursorPos = MapNavigationState.CurrentCursorPosition;
             if (cursorPos.InBounds(map))
             {
-                // Use a different color for the current cursor
                 Graphics.DrawMesh(
                     MeshPool.plane10,
                     cursorPos.ToVector3ShiftedWithAltitude(AltitudeLayer.MetaOverlays),

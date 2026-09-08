@@ -10,57 +10,63 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages the windowless learning helper menu state for browsing tutorial concepts.
-    /// Two modes: Active Lessons (unlearned concepts) and All Lessons (full concept database).
-    /// Two-level navigation: Up/Down to navigate list, Enter to open detail view with help text,
-    /// Tab to toggle between active/all modes.
+    /// The windowless learning helper's data and mutations: the concept list in Active or All
+    /// lessons mode, the help text, and the progressive-knowledge tracking that fills in a
+    /// concept's completion as the player reads its help lines.
     ///
-    /// Knowledge increases progressively as the user arrows through content lines in detail view.
-    /// Each new line visited fills a proportional amount of the remaining knowledge gap.
-    /// Knowledge is committed to the database when leaving detail view (Escape) or via
-    /// the "Mark as Learned" button.
+    /// A pure data/mutation backend behind <see cref="Shell.LearningHelperScope"/>, which owns
+    /// every cursor and typeahead concern, reads this class through
+    /// <see cref="ConceptAt"/>/<see cref="ConceptCount"/> and drives reading through
+    /// <see cref="BeginReading"/>/<see cref="TrackLineVisit"/>/<see cref="CommitReading"/>. No
+    /// selectedIndex survives here: "which concept is selected" is purely the scope's region
+    /// cursor, and progressive reading therefore tracks its concept BY REFERENCE.
+    ///
+    /// Each newly visited content line fills a proportional share of the remaining knowledge gap.
+    /// Knowledge commits when leaving the content region or via "Mark as Learned", never per line —
+    /// a per-line commit would reintroduce the auto-removal-mid-read bug this design avoids.
     /// </summary>
     public static class LearningHelperState
     {
         private static bool isActive = false;
         private static bool showAllMode = false;
         private static List<ConceptDef> concepts = null;
-        private static int currentIndex = 0;
-        private static TwoLevelMenuHelper detailHelper = null;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
+        private static int openGeneration = 0;
 
-        // Cached reflection access to LearningReadout.activeConcepts
         private static FieldInfo activeConceptsField = null;
 
-        // Progressive reading state — knowledge is tracked locally while in detail view
-        // and only committed to the game's database when leaving detail view.
-        // This prevents the game from auto-removing the concept while the user is still reading.
+        // Progressive reading state: tracked locally against the concept open in the content
+        // region, committed to the game's database only on leaving it or via Mark as Learned.
+        private static ConceptDef readingConcept = null;
         private static float pendingKnowledge = 0f;
         private static float detailStartKnowledge = 0f;
-        private static HashSet<int> visitedLines = new HashSet<int>();
+        private static readonly HashSet<int> visitedLines = new HashSet<int>();
         private static int totalContentLines = 0;
 
-        // Frame on which the Learning Helper last consumed an Escape. Used by
-        // LearningHelperPageInputPatch: on the final Escape that closes the menu, IsActive has
-        // already flipped to false by the time the WindowStack calls Page.OnCancelKeyPressed, so
-        // the instant-state check alone would let the underlying setup page close on that same
-        // press. This frame stamp keeps the page from closing on the menu-closing Escape.
-        private static int lastEscapeFrame = -1;
-
         public static bool IsActive => isActive;
-        public static bool EscapeConsumedThisFrame => lastEscapeFrame == Time.frameCount;
-
-        /// <summary>Records that the Learning Helper handled an Escape this frame.</summary>
-        public static void NotifyEscapeConsumed() => lastEscapeFrame = Time.frameCount;
-
-        public static bool IsInDetailView => detailHelper?.IsInDetailView ?? false;
-        public static bool IsInButtonsSection => detailHelper?.IsInButtonsSection ?? false;
-        public static TypeaheadSearchHelper Typeahead => typeahead;
-        public static int CurrentIndex => currentIndex;
         public static bool ShowAllMode => showAllMode;
 
         /// <summary>
-        /// Opens the learning helper menu. Starts in active lessons mode.
+        /// Bumped on every genuinely fresh <see cref="Open"/>, so
+        /// <see cref="Shell.LearningHelperScope.OnPush"/> can tell a new open from a re-float and
+        /// reset its one-shot opening-announcement guard.
+        /// </summary>
+        internal static int OpenGeneration => openGeneration;
+
+        public static int ConceptCount => concepts?.Count ?? 0;
+
+        /// <summary>The concept at a given index in the current mode's list, or null out of range.</summary>
+        public static ConceptDef ConceptAt(int index)
+        {
+            if (concepts == null || index < 0 || index >= concepts.Count)
+                return null;
+            return concepts[index];
+        }
+
+        /// <summary>
+        /// Opens the learning helper in active-lessons mode. Refuses with an announcement when
+        /// adaptive training is off, since the scope is never pushed then. A zero-concept open
+        /// still activates: the mode row is always present and navigable, and the scope's OnFocus
+        /// speaks the distinct "no active lessons" notice instead of a per-row announcement.
         /// </summary>
         public static void Open()
         {
@@ -74,604 +80,167 @@ namespace RimWorldAccess
             concepts = CollectActiveConcepts();
 
             isActive = true;
-            currentIndex = 0;
-            typeahead.ClearSearch();
+            openGeneration++;
             ResetReadingProgress();
-
-            InitializeDetailHelper();
-
-            if (concepts.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.Learning.OpeningNoActive".Loc("LearningHelper".Translate()));
-            }
-            else
-            {
-                TolkHelper.Speak("LearningHelper".Loc());
-                AnnounceCurrentSelection();
-            }
         }
 
-        /// <summary>
-        /// Closes the learning helper menu.
-        /// </summary>
+        /// <summary>Closes the menu, committing any pending reading progress first.</summary>
         public static void Close()
         {
-            // Commit any pending knowledge before closing
-            CommitPendingKnowledge();
-
+            CommitReading();
             isActive = false;
             concepts = null;
-            currentIndex = 0;
             showAllMode = false;
-            typeahead.ClearSearch();
-            ResetReadingProgress();
-            detailHelper?.Reset();
         }
 
-        /// <summary>
-        /// Closes the menu and announces closure.
-        /// </summary>
+        /// <summary>Closes the menu and announces it.</summary>
         public static void CloseMenu()
         {
             Close();
             TolkHelper.Speak("RimWorldAccess.Learning.Closed".Loc("LearningHelper".Translate()));
         }
 
-        /// <summary>
-        /// Toggles between active lessons and all lessons mode.
-        /// </summary>
+        /// <summary>Flips between Active and All lessons, rebuilding the list. Touches no cursor state: the scope repositions and announces.</summary>
         public static void ToggleMode()
         {
-            if (detailHelper != null && detailHelper.IsInDetailView)
+            SetMode(!showAllMode);
+        }
+
+        /// <summary>Selects Active or All lessons outright and rebuilds the list, for the scope's mode-row ComboBox picker.</summary>
+        public static void SetMode(bool showAll)
+        {
+            showAllMode = showAll;
+            concepts = showAllMode ? CollectAllConcepts() : CollectActiveConcepts();
+        }
+
+        /// <summary>Re-derives the concept list for the current mode (a completed lesson may have dropped out of Active mode).</summary>
+        public static void RefreshConcepts()
+        {
+            concepts = showAllMode ? CollectAllConcepts() : CollectActiveConcepts();
+        }
+
+        // Progressive reading knowledge.
+
+        /// <summary>
+        /// Begins or restarts progressive reading for a concept: snapshots its database knowledge
+        /// as the baseline and clears the visited-lines set. Called whenever the scope's cursor
+        /// enters the Lesson content region.
+        /// </summary>
+        public static void BeginReading(ConceptDef conc)
+        {
+            readingConcept = conc;
+            if (conc == null)
             {
-                CommitPendingKnowledge();
                 ResetReadingProgress();
-                detailHelper.GoBackToList();
-            }
-
-            showAllMode = !showAllMode;
-            typeahead.ClearSearch();
-
-            if (showAllMode)
-            {
-                concepts = CollectAllConcepts();
-                currentIndex = 0;
-                InitializeDetailHelper();
-                TolkHelper.Speak("RimWorldAccess.Learning.AllLessonsCount".Loc("LearningHelper".Translate(), concepts.Count));
-            }
-            else
-            {
-                concepts = CollectActiveConcepts();
-                currentIndex = 0;
-                InitializeDetailHelper();
-                TolkHelper.Speak("RimWorldAccess.Learning.ActiveLessons".Loc("LearningHelper".Translate()));
-            }
-
-            if (concepts.Count > 0)
-            {
-                AnnounceCurrentSelection();
-            }
-            else if (showAllMode)
-            {
-                TolkHelper.Speak("RimWorldAccess.Learning.NoLessonsAvailable".Loc());
-            }
-            else
-            {
-                TolkHelper.Speak("RimWorldAccess.Learning.NoActive".Loc());
-            }
-        }
-
-        /// <summary>
-        /// Moves selection to the next item or detail position.
-        /// </summary>
-        public static void SelectNext()
-        {
-            if (concepts == null || concepts.Count == 0)
                 return;
-
-            if (detailHelper.IsInDetailView)
-            {
-                detailHelper.SelectNextDetailPosition();
-                TrackLineVisit();
             }
-            else
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                    currentIndex = typeahead.GetNextMatch(currentIndex);
-                else
-                    currentIndex = MenuHelper.SelectNext(currentIndex, concepts.Count);
-                detailHelper.ResetDetailPosition();
-                detailHelper.RefreshButtons();
-                AnnounceCurrentSelection();
-            }
-        }
-
-        /// <summary>
-        /// Moves selection to the previous item or detail position.
-        /// </summary>
-        public static void SelectPrevious()
-        {
-            if (concepts == null || concepts.Count == 0)
-                return;
-
-            if (detailHelper.IsInDetailView)
-            {
-                detailHelper.SelectPreviousDetailPosition();
-                TrackLineVisit();
-            }
-            else
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                    currentIndex = typeahead.GetPreviousMatch(currentIndex);
-                else
-                    currentIndex = MenuHelper.SelectPrevious(currentIndex, concepts.Count);
-                detailHelper.ResetDetailPosition();
-                detailHelper.RefreshButtons();
-                AnnounceCurrentSelection();
-            }
-        }
-
-        public static void SelectNextButton()
-        {
-            detailHelper?.SelectNextButton();
-        }
-
-        public static void SelectPreviousButton()
-        {
-            detailHelper?.SelectPreviousButton();
-        }
-
-        /// <summary>
-        /// Opens detail view for the current concept. Initializes progressive reading state.
-        /// </summary>
-        public static void EnterDetailView()
-        {
-            if (concepts == null || concepts.Count == 0)
-                return;
-
-            if (currentIndex < 0 || currentIndex >= concepts.Count)
-                return;
-
-            ConceptDef conc = concepts[currentIndex];
-
-            // Initialize progressive reading state
             detailStartKnowledge = PlayerKnowledgeDatabase.GetKnowledge(conc);
             pendingKnowledge = detailStartKnowledge;
             visitedLines.Clear();
             totalContentLines = SplitHelpText(conc).Length;
-
-            typeahead.ClearSearch();
-            detailHelper.RefreshButtons();
-            detailHelper.EnterDetailView();
-            detailHelper.AnnounceDetailPosition();
         }
 
         /// <summary>
-        /// Activates the currently selected button.
+        /// Tracks a newly visited 0-based content line for the concept being read, spreading the
+        /// remaining knowledge gap evenly across all its lines. Called after every cursor move
+        /// inside the Lesson content region.
         /// </summary>
-        public static void ActivateCurrentButton()
+        public static void TrackLineVisit(int lineIndex)
         {
-            if (!detailHelper.ActivateCurrentButton())
+            if (readingConcept == null || totalContentLines <= 0)
                 return;
-
-            ButtonInfo button = detailHelper.GetCurrentButton();
-            if (button == null) return;
-
-            try
+            if (lineIndex < 0 || lineIndex >= totalContentLines)
+                return;
+            if (visitedLines.Add(lineIndex)) // Returns true only if newly added.
             {
-                button.Action?.Invoke();
+                float knowledgePerLine = (1f - detailStartKnowledge) / totalContentLines;
+                pendingKnowledge = Mathf.Clamp01(detailStartKnowledge + visitedLines.Count * knowledgePerLine);
+            }
+        }
 
-                if (!isActive)
-                    return;
+        /// <summary>
+        /// Commits pending reading progress to the game's database and clears reading state.
+        /// Partial progress persists as-is: the game only auto-removes a concept from the Active
+        /// list at >= 99.9%, so a partial commit never does. Called on leaving the content region
+        /// and on close; Mark as Learned commits through <see cref="MarkLearned"/> instead.
+        /// </summary>
+        public static void CommitReading()
+        {
+            if (readingConcept != null && pendingKnowledge > PlayerKnowledgeDatabase.GetKnowledge(readingConcept))
+            {
+                PlayerKnowledgeDatabase.SetKnowledge(readingConcept, pendingKnowledge);
+            }
+            ResetReadingProgress();
+        }
 
-                // Mark as Learned sets to 1.0 — update our pending state to match
+        /// <summary>Marks a concept fully learned through PlayerKnowledgeDatabase's own gated setter.</summary>
+        public static void MarkLearned(ConceptDef conc)
+        {
+            if (conc == null)
+                return;
+            if (ReferenceEquals(conc, readingConcept))
+            {
                 pendingKnowledge = 1f;
-
-                // Refresh button to show "Already Learned"
-                detailHelper.RefreshButtons();
-                TolkHelper.Speak("RimWorldAccess.Learning.MarkLearnedConfirmation".Loc("MarkLearned".Translate()));
             }
-            catch (Exception ex)
-            {
-                Log.Warning($"[RimWorld Access] Failed to activate learning helper button: {ex.Message}");
-                TolkHelper.Speak("RimWorldAccess.Learning.ButtonActivationFailed".Loc());
-            }
+            PlayerKnowledgeDatabase.SetKnowledge(conc, 1f);
         }
 
-        /// <summary>
-        /// Handles Escape key: clear search → detail→list → close.
-        /// When leaving detail view, commits pending knowledge to the database.
-        /// </summary>
-        public static void HandleEscape()
+        /// <summary>Whether a concept counts as complete — the committed database value, or the pending in-progress read if it has reached the completion threshold.</summary>
+        public static bool IsComplete(ConceptDef conc)
         {
-            if (detailHelper != null && detailHelper.IsInDetailView)
-            {
-                // Commit reading progress before leaving detail view
-                CommitPendingKnowledge();
-                ResetReadingProgress();
-
-                detailHelper.GoBackToList();
-                typeahead.ClearSearch();
-
-                // Refresh list in case completion removed the concept from active list
-                RefreshConcepts();
-                if (concepts.Count == 0)
-                {
-                    if (showAllMode)
-                    {
-                        TwoLevelMenuHelper.SpeakReturnToList("RimWorldAccess.Learning.NoLessonsAvailable".Translate());
-                    }
-                    else
-                    {
-                        TwoLevelMenuHelper.SpeakReturnToList("RimWorldAccess.Learning.NoActiveRemaining".Translate());
-                    }
-                    return;
-                }
-
-                if (currentIndex >= concepts.Count)
-                    currentIndex = concepts.Count - 1;
-
-                detailHelper.ResetDetailPosition();
-                detailHelper.RefreshButtons();
-                TwoLevelMenuHelper.SpeakReturnToList();
-                AnnounceCurrentSelection();
-            }
-            else
-            {
-                CloseMenu();
-            }
+            if (conc == null)
+                return false;
+            if (ReferenceEquals(conc, readingConcept) && pendingKnowledge >= 0.999f)
+                return true;
+            return PlayerKnowledgeDatabase.IsComplete(conc);
         }
 
-        /// <summary>
-        /// Handles Backspace for typeahead search deletion.
-        /// </summary>
-        public static void HandleBackspace()
+        /// <summary>The knowledge percentage text for a concept ("42%") — the live pending value while it is the one being read, else the committed database value.</summary>
+        public static string KnowledgeText(ConceptDef conc)
         {
-            if (detailHelper.IsInDetailView)
-                return;
-
-            if (typeahead.ProcessBackspace(GetItemLabels(), out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    currentIndex = newIndex;
-                }
-                AnnounceWithSearch();
-            }
+            if (conc == null)
+                return "0%";
+            float knowledge = ReferenceEquals(conc, readingConcept) ? pendingKnowledge : PlayerKnowledgeDatabase.GetKnowledge(conc);
+            int percent = Mathf.Clamp(Mathf.RoundToInt(knowledge * 100f), 0, 100);
+            return percent + "%";
         }
 
-        /// <summary>
-        /// Handles typeahead character input.
-        /// </summary>
-        public static void HandleTypeahead(char c)
-        {
-            var labels = GetItemLabels();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    currentIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
-        }
-
-        public static void SetCurrentIndex(int index)
-        {
-            if (concepts == null || concepts.Count == 0) return;
-            currentIndex = Mathf.Clamp(index, 0, concepts.Count - 1);
-            detailHelper?.ResetDetailPosition();
-            detailHelper?.RefreshButtons();
-        }
-
-        public static void JumpToFirst()
-        {
-            if (concepts == null || concepts.Count == 0)
-                return;
-
-            bool wasInDetailView = detailHelper.IsInDetailView;
-            if (wasInDetailView)
-            {
-                CommitPendingKnowledge();
-                ResetReadingProgress();
-            }
-            detailHelper.GoBackToList();
-            if (!wasInDetailView && typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                currentIndex = typeahead.GetFirstMatch();
-            }
-            else
-            {
-                currentIndex = MenuHelper.JumpToFirst();
-                typeahead.ClearSearch();
-            }
-            detailHelper.ResetDetailPosition();
-            detailHelper.RefreshButtons();
-
-            if (wasInDetailView)
-            {
-                RefreshConcepts();
-                if (currentIndex >= concepts.Count && concepts.Count > 0)
-                    currentIndex = concepts.Count - 1;
-                TwoLevelMenuHelper.SpeakReturnToList();
-            }
-            AnnounceCurrentSelection();
-        }
-
-        public static void JumpToLast()
-        {
-            if (concepts == null || concepts.Count == 0)
-                return;
-
-            bool wasInDetailView = detailHelper.IsInDetailView;
-            if (wasInDetailView)
-            {
-                CommitPendingKnowledge();
-                ResetReadingProgress();
-            }
-            detailHelper.GoBackToList();
-            if (!wasInDetailView && typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                currentIndex = typeahead.GetLastMatch();
-            }
-            else
-            {
-                currentIndex = MenuHelper.JumpToLast(concepts.Count);
-                typeahead.ClearSearch();
-            }
-            detailHelper.ResetDetailPosition();
-            detailHelper.RefreshButtons();
-
-            if (wasInDetailView)
-            {
-                RefreshConcepts();
-                if (currentIndex >= concepts.Count && concepts.Count > 0)
-                    currentIndex = concepts.Count - 1;
-                TwoLevelMenuHelper.SpeakReturnToList();
-            }
-            AnnounceCurrentSelection();
-        }
-
-        public static void JumpToDetailStart()
-        {
-            detailHelper?.JumpToDetailStart();
-            TrackLineVisit();
-        }
-
-        public static void JumpToDetailEnd()
-        {
-            detailHelper?.JumpToDetailEnd();
-            TrackLineVisit();
-        }
-
-        /// <summary>
-        /// Announces current selection with search context.
-        /// </summary>
-        public static void AnnounceWithSearch()
-        {
-            if (concepts == null || concepts.Count == 0 || currentIndex < 0 || currentIndex >= concepts.Count)
-                return;
-
-            ConceptDef conc = concepts[currentIndex];
-            string label = ConceptHelpOverrides.DisplayLabel(conc);
-            string knowledge = GetKnowledgeText(conc);
-            string position = MenuHelper.FormatPosition(currentIndex, concepts.Count);
-            string searchInfo = typeahead.HasActiveSearch ? "RimWorldAccess.Learning.SearchSuffix".Translate(typeahead.SearchBuffer).ToString() : "";
-
-            TolkHelper.SpeakData($"{label}, {knowledge}. {position}{searchInfo}");
-        }
-
-        // ===== Progressive Reading Knowledge =====
-
-        /// <summary>
-        /// Tracks which content line the user is currently on and updates pending knowledge.
-        /// Called after each detail view navigation.
-        /// </summary>
-        private static void TrackLineVisit()
-        {
-            if (detailHelper == null || !detailHelper.IsInDetailView)
-                return;
-
-            if (concepts == null || currentIndex < 0 || currentIndex >= concepts.Count)
-                return;
-
-            int pos = detailHelper.DetailPosition;
-
-            // Content lines are at positions 1 through totalContentLines (0 = header, after = buttons)
-            if (pos >= 1 && pos <= totalContentLines && totalContentLines > 0)
-            {
-                int lineIndex = pos - 1;
-                if (visitedLines.Add(lineIndex)) // Returns true only if newly added
-                {
-                    // Spread the remaining knowledge gap evenly across all content lines
-                    float knowledgePerLine = (1f - detailStartKnowledge) / totalContentLines;
-                    pendingKnowledge = Mathf.Clamp01(detailStartKnowledge + visitedLines.Count * knowledgePerLine);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Commits the pending knowledge to the game's database.
-        /// Partial progress is persisted (e.g., 60% stays as 60%).
-        /// The game only triggers "newly learned" removal at >= 99.9%,
-        /// so partial commits won't cause the lesson to disappear from the active list.
-        /// </summary>
-        private static void CommitPendingKnowledge()
-        {
-            if (concepts == null || currentIndex < 0 || currentIndex >= concepts.Count)
-                return;
-
-            ConceptDef conc = concepts[currentIndex];
-
-            // Only update if we have new knowledge to commit
-            if (pendingKnowledge > PlayerKnowledgeDatabase.GetKnowledge(conc))
-            {
-                PlayerKnowledgeDatabase.SetKnowledge(conc, pendingKnowledge);
-            }
-        }
-
-        /// <summary>
-        /// Resets progressive reading state.
-        /// </summary>
         private static void ResetReadingProgress()
         {
+            readingConcept = null;
             pendingKnowledge = 0f;
             detailStartKnowledge = 0f;
             visitedLines.Clear();
             totalContentLines = 0;
         }
 
-        /// <summary>
-        /// Gets the knowledge percentage text for a concept.
-        /// Uses pending knowledge if we're in detail view for the current concept.
-        /// </summary>
-        private static string GetKnowledgeText(ConceptDef conc)
+        // Content.
+
+        /// <summary>The concept's help text, split into arrow-able lines (RimWorld Access's own corrected documentation takes priority over the game's own help text).</summary>
+        public static string[] HelpLines(ConceptDef conc)
         {
-            float knowledge;
-            if (detailHelper != null && detailHelper.IsInDetailView &&
-                concepts != null && currentIndex >= 0 && currentIndex < concepts.Count &&
-                concepts[currentIndex] == conc)
-            {
-                // Use pending (live) knowledge while reading
-                knowledge = pendingKnowledge;
-            }
-            else
-            {
-                knowledge = PlayerKnowledgeDatabase.GetKnowledge(conc);
-            }
-
-            int percent = Mathf.Clamp(Mathf.RoundToInt(knowledge * 100f), 0, 100);
-            return $"{percent}%";
-        }
-
-        // ===== Private Methods =====
-
-        private static void InitializeDetailHelper()
-        {
-            detailHelper = new TwoLevelMenuHelper(
-                getContentLineCount: () =>
-                {
-                    if (concepts == null || currentIndex < 0 || currentIndex >= concepts.Count)
-                        return 0;
-                    return SplitHelpText(concepts[currentIndex]).Length;
-                },
-                populateButtons: PopulateButtons,
-                getHeaderAnnouncement: () =>
-                {
-                    if (concepts == null || currentIndex < 0 || currentIndex >= concepts.Count)
-                        return "";
-                    ConceptDef conc = concepts[currentIndex];
-                    return $"{ConceptHelpOverrides.DisplayLabel(conc)}, {GetKnowledgeText(conc)}";
-                },
-                getContentLineAnnouncement: (idx) =>
-                {
-                    if (concepts == null || currentIndex < 0 || currentIndex >= concepts.Count)
-                        return "";
-                    string[] lines = SplitHelpText(concepts[currentIndex]);
-                    return idx >= 0 && idx < lines.Length ? lines[idx] : "";
-                },
-                endOfItemMessage: "RimWorldAccess.Learning.EndOfLesson".Translate(),
-                startOfItemMessage: "RimWorldAccess.Learning.StartOfLesson".Translate(),
-                openFirstMessage: "RimWorldAccess.Learning.OpenLessonFirst".Translate()
-            );
-            detailHelper.RefreshButtons();
-        }
-
-        private static void PopulateButtons(List<ButtonInfo> buttons)
-        {
-            if (concepts == null || concepts.Count == 0) return;
-            if (currentIndex < 0 || currentIndex >= concepts.Count) return;
-
-            ConceptDef conc = concepts[currentIndex];
-
-            // Check both database and pending state for completion
-            bool isComplete = PlayerKnowledgeDatabase.IsComplete(conc) || pendingKnowledge >= 0.999f;
-
-            if (isComplete)
-            {
-                buttons.Add(new ButtonInfo
-                {
-                    Label = "AlreadyLearned".Translate(),
-                    IsDisabled = true,
-                    DisabledReason = "AlreadyLearned".Translate()
-                });
-            }
-            else
-            {
-                buttons.Add(new ButtonInfo
-                {
-                    Label = "MarkLearned".Translate(),
-                    Action = () =>
-                    {
-                        pendingKnowledge = 1f;
-                        PlayerKnowledgeDatabase.SetKnowledge(conc, 1f);
-                    }
-                });
-            }
-        }
-
-        private static void AnnounceCurrentSelection()
-        {
-            if (concepts == null || concepts.Count == 0)
-                return;
-
-            if (currentIndex < 0 || currentIndex >= concepts.Count)
-                return;
-
-            if (detailHelper != null && detailHelper.IsInDetailView)
-            {
-                detailHelper.AnnounceDetailPosition();
-                return;
-            }
-
-            ConceptDef conc = concepts[currentIndex];
-            string label = ConceptHelpOverrides.DisplayLabel(conc);
-            string knowledge = GetKnowledgeText(conc);
-            string position = MenuHelper.FormatPosition(currentIndex, concepts.Count);
-
-            TolkHelper.SpeakData($"{label}, {knowledge}. {position}");
+            return SplitHelpText(conc);
         }
 
         private static string[] SplitHelpText(ConceptDef conc)
         {
-            // RimWorld Access's corrected documentation is authoritative for our users, so
-            // prefer our read-time override (vanilla/DLC concepts we re-documented) and fall
-            // back to the game's own help text only when we have not overridden it.
+            // The mod's corrected documentation is authoritative here, so the read-time override
+            // wins and the game's own help text is the fallback.
             string text = ConceptHelpOverrides.GetHelpText(conc) ?? conc.HelpTextAdjusted;
             if (string.IsNullOrEmpty(text))
                 return new string[] { "RimWorldAccess.Learning.NoHelpText".Translate().ToString() };
 
-            // Split by newlines, filter empty lines
             string[] lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-            // Trim whitespace from each line
             for (int i = 0; i < lines.Length; i++)
                 lines[i] = lines[i].Trim();
 
-            // Filter out empty lines after trimming
             lines = lines.Where(l => l.Length > 0).ToArray();
 
             return lines.Length > 0 ? lines : new string[] { text.Trim() };
         }
 
-        private static List<string> GetItemLabels()
-        {
-            List<string> labels = new List<string>();
-            if (concepts != null)
-            {
-                foreach (var conc in concepts)
-                    labels.Add(ConceptHelpOverrides.DisplayLabel(conc));
-            }
-            return labels;
-        }
-
-        /// <summary>
-        /// Collects currently active (unlearned) concepts from the game's LearningReadout.
-        /// </summary>
+        /// <summary>The currently active, unlearned concepts from the game's LearningReadout.</summary>
         private static List<ConceptDef> CollectActiveConcepts()
         {
             try
@@ -694,8 +263,9 @@ namespace RimWorldAccess
                 if (activeConcepts == null)
                     return new List<ConceptDef>();
 
-                // Return a copy sorted by priority (lower = higher priority)
-                return activeConcepts.OrderBy(c => c.priority).ToList();
+                // Vanilla shows Active Lessons in activation order and never re-sorts, so this
+                // copy stays unsorted.
+                return new List<ConceptDef>(activeConcepts);
             }
             catch (Exception ex)
             {
@@ -704,38 +274,26 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Collects all non-triggered concepts from the game's concept database.
-        /// Matches the filter used by LearningReadout in showAllMode.
-        /// </summary>
+        /// <summary>All non-triggered concepts, matching LearningReadout's showAllMode filter.</summary>
         private static List<ConceptDef> CollectAllConcepts()
         {
             try
             {
+                // The sort key is deliberately ConceptHelpOverrides.DisplayLabel — what the player
+                // actually hears, label corrections included — not vanilla's raw Def.label. The
+                // comparer is culture-sensitive to match vanilla's own ordering
+                // (LearningReadout.cs:217). No search re-sort: vanilla boosts matches to the top in
+                // real time, while this mod's typeahead jumps the cursor within the fixed order, a
+                // deliberate divergence the shared typeahead grammar preserves.
                 return DefDatabase<ConceptDef>.AllDefsListForReading
                     .Where(c => !c.TriggeredDirect)
-                    .OrderBy(c => c.priority)
+                    .OrderBy(c => ConceptHelpOverrides.DisplayLabel(c), StringComparer.CurrentCultureIgnoreCase)
                     .ToList();
             }
             catch (Exception ex)
             {
                 Log.Warning($"[RimWorld Access] Failed to collect all concepts: {ex.Message}");
                 return new List<ConceptDef>();
-            }
-        }
-
-        /// <summary>
-        /// Refreshes the concepts list based on current mode.
-        /// </summary>
-        private static void RefreshConcepts()
-        {
-            if (showAllMode)
-            {
-                concepts = CollectAllConcepts();
-            }
-            else
-            {
-                concepts = CollectActiveConcepts();
             }
         }
     }

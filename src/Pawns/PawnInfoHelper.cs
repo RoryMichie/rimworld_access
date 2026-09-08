@@ -132,7 +132,9 @@ namespace RimWorldAccess
             if (needs != null && needs.Count > 0)
             {
                 var sortedNeeds = needs
-                    .Where(n => n.def.showOnNeedList)
+                    // The virtual property, not the def flag: Need_Outdoors and kin
+                    // hide themselves at runtime, and the vanilla needs card obeys.
+                    .Where(n => n.ShowOnNeedList)
                     .OrderBy(n => n.CurLevelPercentage)
                     .ToList();
 
@@ -395,6 +397,25 @@ namespace RimWorldAccess
             if (pawn.ageTracker != null)
             {
                 ab.Add("RimWorldAccess.Pawns.Character.Age".Translate(pawn.ageTracker.AgeBiologicalYears));
+
+                // Developer info (dev mode only) — mirrors the "Dev mode info" block
+                // Pawn_AgeTracker.AgeTooltipString appends under Prefs.DevMode. Each
+                // value reads a public ageTracker member. The deadline is presented as
+                // its raw signed tick count (sign conveys past/future, as vanilla's
+                // parenthetical value does) rather than vanilla's extra period-formatted
+                // variant, which embeds untranslated "past deadline"/"in future" literals.
+                if (Prefs.DevMode)
+                {
+                    var ageTracker = pawn.ageTracker;
+                    ab.Add("RimWorldAccess.Dev.Info.Age".Translate(
+                        ageTracker.AgeBiologicalTicks,
+                        ageTracker.BirthAbsTicks,
+                        ageTracker.BiologicalTicksPerTick,
+                        ageTracker.Growth,
+                        ageTracker.AgeReversalDemandedDeadlineTicks,
+                        ageTracker.CurLifeStage?.ToString() ?? "",
+                        pawn.Sterile().ToString()));
+                }
             }
 
             if (pawn.story != null && pawn.story.traits != null)
@@ -489,13 +510,16 @@ namespace RimWorldAccess
             if (pawn == null)
                 return "RimWorldAccess.Pawns.Info.NoPawnSelected".Translate();
 
-            if (pawn.workSettings == null)
+            if (pawn.workSettings == null || !pawn.workSettings.EverWork)
                 return "RimWorldAccess.Pawns.WorkInfo.NoSettings".Translate(pawn.LabelShort);
 
             var ab = new AnnouncementBuilder()
                 .Add("RimWorldAccess.Pawns.WorkInfo.Header".Translate(pawn.LabelShort));
 
-            var workTypes = DefDatabase<WorkTypeDef>.AllDefsListForReading;
+            // Enumeration order matches WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder
+            // (naturalPriority descending) — the same order RimWorld.PawnColumnDefGenerator
+            // builds the Work tab's columns from.
+            var workTypes = WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder;
             var enabledWork = new List<string>();
             var disabledWork = new List<string>();
 
@@ -527,7 +551,7 @@ namespace RimWorldAccess
                 }
             }
 
-            if (disabledWork.Count > 0 && disabledWork.Count <= 10)
+            if (disabledWork.Count > 0)
             {
                 ab.Add("RimWorldAccess.Pawns.WorkInfo.DisabledHeader".Translate(disabledWork.Count));
                 foreach (var work in disabledWork)

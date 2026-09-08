@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Core module strings (src/Core/). Five files contribute, but most produce
+    no player-facing output:
+
+      - rimworld_access.cs          (entry point — Log.* only, intentionally English)
+      - GameStartPatch.cs           (no user-facing strings)
+      - ModLogger.cs                (logging helper — intentionally English)
+      - ReloadHelper.cs             (#if DEBUG hot-reload — dev-only TolkHelper
+                                     lines are intentionally English)
+      - RimWorldAccessSettings.cs   (the Mod Settings panel — THIS file's scope)
+
+    Intentionally left in English per docs/decisions.md Decision 5:
+      * Every Log.Message / Log.Warning / Log.Error in rimworld_access.cs
+        ("Initializing accessibility features...", "Applying Harmony patches...",
+        "Total patches applied: {count}", "Main menu keyboard navigation
+        enabled!", "Use Arrow keys to navigate, Enter to select.",
+        "Tearing down for reload...", "Shutting down...", etc.) — these go to
+        RimWorld's debug console for bug triage, not to players.
+      * ModLogger prefix "[RimWorld Access] " — log decoration.
+      * ReloadHelper.cs TolkHelper.Speak announcements ("Reloading RimWorld
+        Access", "RimWorld Access reloaded", "Reload failed: ...") — the
+        entire file is wrapped in #if DEBUG and only fires in the developer
+        hot-reload path, never in a shipped player build.
+      * "[RimWorld Access] Settings loaded." Log.Message in the Mod ctor.
+
+    The keys below cover the only truly player-facing surface in this
+    module: the Options > Mod Settings panel for RimWorld Access.
+  -->
+
+  <!-- Settings panel category name (RimWorldAccessMod_Settings.SettingsCategory).
+       Shown as the row label in Options > Mod Settings. Translators may keep
+       "RimWorld Access" verbatim (brand name) or transliterate/adjust
+       capitalization for their locale. -->
+  <RimWorldAccess.Core.Settings.Category>RimWorld Access</RimWorldAccess.Core.Settings.Category>
+
+  <!-- Checkbox labels in DoSettingsWindowContents, top-to-bottom order.
+       Each one toggles a single RimWorldAccessSettings bool. The parenthetical
+       examples are part of the label — translators should adapt the example
+       text (e.g. "3 of 7", "level 2") so it matches how the corresponding
+       announcement is phrased in their language. -->
+  <RimWorldAccess.Core.Settings.WrapNavigation.Label>Döngüsel gezinme</RimWorldAccess.Core.Settings.WrapNavigation.Label>
+  <RimWorldAccess.Core.Settings.ShowPawnActivityOnMap.Label>Harita imleci hareket ettiğinde kişi etkinliğini göster</RimWorldAccess.Core.Settings.ShowPawnActivityOnMap.Label>
+  <RimWorldAccess.Core.Settings.ShowCoverInfo.Label>Çatışma modundaki ve düşman kişiler için siper bilgisini göster</RimWorldAccess.Core.Settings.ShowCoverInfo.Label>
+  <RimWorldAccess.Core.Settings.AnnounceTerrain.Label>Harita imleci hareket ettiğinde araziyi seslendir</RimWorldAccess.Core.Settings.AnnounceTerrain.Label>
+  <RimWorldAccess.Core.Settings.HoverSpeech.Label>Fare takibi</RimWorldAccess.Core.Settings.HoverSpeech.Label>
+  <RimWorldAccess.Core.Settings.HoverSpeech.Desc>Fareyi hareket ettirdikçe üzerinde olduğu öğeyi seslendirir.</RimWorldAccess.Core.Settings.HoverSpeech.Desc>
+  <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Label>Fare işaretçisi klavye imlecini takip eder</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Label>
+  <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>Her hareketten sonra fare imlecini klavye imlecinin bulunduğu kareye taşır. Oyun içinde ayarlamak için {0}.</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>
+  <RimWorldAccess.Core.Settings.ScannerAutoJump.Label>Tarayıcı otomatik atlama</RimWorldAccess.Core.Settings.ScannerAutoJump.Label>
+  <RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>Gezinirken imleci her tarayıcı öğesine taşır. Oyun içinde ayarlamak için {0}.</RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>
+
+  <!-- Opens the Configure Spoken Announcements screen (a real window, not this panel);
+       see RimWorldAccess_AnnounceConfig.xml for that screen's own strings. -->
+  <RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button>Seslendirilen bildirimleri yapılandır...</RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button>
+
+  <!-- SubmenuTreeNavigation is the only checkbox with a tooltip. The label is
+       deliberately whimsical ("Rashad Hates Treeviews") — translators can
+       preserve the joke or replace it with something equivalent in their
+       culture as long as it still telegraphs what the setting does. The
+       tooltip is the canonical explanation. -->
+  <RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Label>Rashad ağaç görünümlerinden nefret eder (alt menü tarzı gezinme)</RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Label>
+  <RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Tooltip>Ağaç görünümlerinin çalışma şeklini değiştirir. Bir kategoriyi genişlettiğinde o kategori kaybolur ve yalnızca öğeleri arasında gezinirsin. Geri gitmek için Sol Ok tuşuna bas. Geri döndüğünde konumun hatırlanır.</RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Tooltip>
+
+  <RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Label>Seçili kişinin etkinliğini seslendir</RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Label>
+  <RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Desc>Seçili kişinin ne yaptığını gerçek zamanlı olarak seslendirir. Harita imlecini hareket ettirmek seslendirmeyi durdurur.</RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Desc>
+
+  <RimWorldAccess.Core.Settings.ShowWhatsNew.Label>Güncelleme sonrası Yenilikler mesajını göster</RimWorldAccess.Core.Settings.ShowWhatsNew.Label>
+  <RimWorldAccess.Core.Settings.ShowWhatsNew.Desc>Açıksa, RimWorld Access güncellendiğinde ana menüde Yenilikler mesajı açılır. Kapalıysa, yalnızca modun güncellendiğine dair kısa bir bildirim duyarsın ve Yenilikler'i istediğin zaman menüden açabilirsin.</RimWorldAccess.Core.Settings.ShowWhatsNew.Desc>
+
+  <!-- Table verbosity (docs/table-model.md). The examples inside the labels
+       should be adapted to match each language's actual table announcements. -->
+</LanguageData>

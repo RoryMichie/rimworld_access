@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    New keys added by the migration of the What's New reader
+    (WhatsNewState/WhatsNewScope) and the Learning Helper (LearningHelperState/
+    LearningHelperScope) onto ScreenScope. Every other player-facing string
+    these two screens use is unchanged and still lives in
+    RimWorldAccess_WhatsNew.xml / RimWorldAccess_Learning.xml.
+  -->
+
+  <!-- What's New: the migrated content region's name. -->
+  <RimWorldAccess.OverlayMigration.WhatsNew.RegionName>Duyuru</RimWorldAccess.OverlayMigration.WhatsNew.RegionName>
+
+  <!-- Learning Helper: the two migrated content regions' names. -->
+  <RimWorldAccess.OverlayMigration.Learning.LessonsRegionName>Dersler</RimWorldAccess.OverlayMigration.Learning.LessonsRegionName>
+  <RimWorldAccess.OverlayMigration.Learning.ContentRegionName>Ders içeriği</RimWorldAccess.OverlayMigration.Learning.ContentRegionName>
+
+  <!-- The Lessons region's mode row (a ComboBox; Enter opens its two-option list) — replaces the
+       retired Tab toggle. ModeActive/ModeAll double as the picker's own option labels, and are
+       also spoken as the mode-change announcement when lessons
+       remain in the new mode; ModeAllCount is the count-aware variant for All lessons ({0} = total). -->
+  <RimWorldAccess.OverlayMigration.Learning.ModeLabel>Ders listesi modu</RimWorldAccess.OverlayMigration.Learning.ModeLabel>
+  <RimWorldAccess.OverlayMigration.Learning.ModeActive>Etkin dersler</RimWorldAccess.OverlayMigration.Learning.ModeActive>
+  <RimWorldAccess.OverlayMigration.Learning.ModeAll>Tüm dersler</RimWorldAccess.OverlayMigration.Learning.ModeAll>
+  <RimWorldAccess.OverlayMigration.Learning.ModeAllCount>Tüm dersler, toplam {0} ders</RimWorldAccess.OverlayMigration.Learning.ModeAllCount>
+
+  <!-- Replace RimWorldAccess.Learning.NoActive / .NoActiveRemaining / .OpeningNoActive (ORPHANED
+       by this migration): those said "Press Tab to browse all lessons", which is no longer true
+       now that Tab cycles regions and the mode row (Enter opens its list) switches modes instead. -->
+  <RimWorldAccess.OverlayMigration.Learning.NoActiveShort>Etkin ders yok.</RimWorldAccess.OverlayMigration.Learning.NoActiveShort>
+  <RimWorldAccess.OverlayMigration.Learning.NoActiveRemainingShort>Kalan etkin ders yok.</RimWorldAccess.OverlayMigration.Learning.NoActiveRemainingShort>
+  <RimWorldAccess.OverlayMigration.Learning.OpeningNoActive>Etkin ders yok. Her şeyi görüntülemek için mod satırını 'Tüm dersler' olarak değiştir.</RimWorldAccess.OverlayMigration.Learning.OpeningNoActive>
+</LanguageData>

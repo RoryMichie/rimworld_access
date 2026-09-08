@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Population labels for the world-params editor (WorldParamsFieldValues.cs).
+    Population previously reused the Rainfall.* keys, so the two sliders
+    announced identical wording and translators had no way to differ them.
+
+    Vanilla's own Population slider anchors this range as Sparse/Normal/Crowded
+    (Menus_Main.xml: PlanetPopulation_Low = "Sparse", PlanetPopulation_High =
+    "Crowded"), the same vocabulary vanilla uses for Landmark Density
+    (PlanetLandmarkDensity_Low/High) rather than Rainfall/Temperature's
+    Low/High wording. These keys mirror that vocabulary and the
+    LandmarkDensity.* interpolation pattern already in
+    RimWorldAccess_MainMenu.xml, giving Population its own distinct set of
+    7 step labels.
+  -->
+  <RimWorldAccess.WorldParams.Population.Sparse>稀少</RimWorldAccess.WorldParams.Population.Sparse>
+  <RimWorldAccess.WorldParams.Population.MoreSparse>略微更稀少</RimWorldAccess.WorldParams.Population.MoreSparse>
+  <RimWorldAccess.WorldParams.Population.SlightSparse>略微稀少</RimWorldAccess.WorldParams.Population.SlightSparse>
+  <RimWorldAccess.WorldParams.Population.Normal>中等</RimWorldAccess.WorldParams.Population.Normal>
+  <RimWorldAccess.WorldParams.Population.SlightCrowded>略微密集</RimWorldAccess.WorldParams.Population.SlightCrowded>
+  <RimWorldAccess.WorldParams.Population.MoreCrowded>略微更密集</RimWorldAccess.WorldParams.Population.MoreCrowded>
+  <RimWorldAccess.WorldParams.Population.Crowded>密集</RimWorldAccess.WorldParams.Population.Crowded>
+</LanguageData>

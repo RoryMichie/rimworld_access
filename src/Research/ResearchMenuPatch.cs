@@ -6,15 +6,26 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patch to intercept the Research tab opening and replace it with our accessible version.
-    /// This ensures the accessible Research menu opens even when triggered from the world map.
+    /// Opens the accessible screen for the Research tab while the real vanilla window keeps drawing.
+    /// This no longer replaces the window, it just makes sure the windowless state is active while it
+    /// is open. The IsActive guard is load-bearing: this prefix now runs EVERY FRAME the window is
+    /// open, and
+    /// <see cref="WindowlessResearchMenuState.Open"/> speaks its title
+    /// unconditionally, so re-entering it every pass would repeat the
+    /// announcement forever. Open() cannot refuse (unlike Wildlife/Animals),
+    /// so there is no empty-roster CloseTab branch here.
     /// </summary>
     [HarmonyPatch(typeof(MainTabWindow_Research), nameof(MainTabWindow_Research.DoWindowContents))]
     public static class ResearchMenuPatch
     {
         [HarmonyPrefix]
-        public static bool Prefix()
+        public static void Prefix()
         {
+            if (WindowlessResearchMenuState.IsActive)
+            {
+                return;
+            }
+
             // If on the world map, switch to colony map first
             if (Find.World?.renderer?.wantedMode == WorldRenderMode.Planet)
             {
@@ -22,14 +33,7 @@ namespace RimWorldAccess
                 MapNavigationState.RestoreCursorForCurrentMap();
             }
 
-            // Open our windowless version instead
             WindowlessResearchMenuState.Open();
-
-            // Close the window that was just opened
-            Find.WindowStack.TryRemove(typeof(MainTabWindow_Research), doCloseSound: false);
-
-            // Return false to prevent the original DoWindowContents from executing
-            return false;
         }
     }
 }

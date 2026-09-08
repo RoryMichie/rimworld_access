@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Research module strings (src/Research/). Two state files contribute:
+      - WindowlessResearchMenuState.cs  (the accessible research menu that
+        replaces MainTabWindow_Research; hierarchical tree of tabs,
+        status groups, and projects)
+      - WindowlessResearchDetailState.cs  (the detail view opened from a
+        project; tree of description, prerequisites, unlocks, dependents,
+        and the start/stop action)
+
+    Shared phrases (no info card available, already at edge, etc.) are
+    delegated to RimWorldAccess_Common.xml so translators only localize
+    them once. Only strings unique to the research UI live here.
+
+    Placeholders follow string.Format ({0}, {1}, ...). One/Many key
+    variants are used where English needs singular vs. plural agreement
+    (e.g. "1 hidden prerequisite" vs "3 hidden prerequisites");
+    translators with different plural classes can either collapse or
+    split these further.
+  -->
+
+  <!-- Menu open/close announcements (WindowlessResearchMenuState). -->
+  <RimWorldAccess.Research.Menu.Title>Menu de recherche</RimWorldAccess.Research.Menu.Title>
+  <RimWorldAccess.Research.Menu.Closed>Menu de recherche fermé</RimWorldAccess.Research.Menu.Closed>
+  <RimWorldAccess.Research.Menu.ProjectNotAvailable>Projet de recherche non disponible</RimWorldAccess.Research.Menu.ProjectNotAvailable>
+  <RimWorldAccess.Research.Menu.ProjectNotFound>Projet de recherche {0} introuvable dans le menu</RimWorldAccess.Research.Menu.ProjectNotFound>
+
+  <!-- Root label for the built category tree. -->
+  <RimWorldAccess.Research.Tree.RootLabel>Recherche</RimWorldAccess.Research.Tree.RootLabel>
+
+  <!-- Status group labels. {0} = number of projects in the group. -->
+  <RimWorldAccess.Research.Status.InProgress>En cours ({0})</RimWorldAccess.Research.Status.InProgress>
+  <RimWorldAccess.Research.Status.Available>Disponible ({0})</RimWorldAccess.Research.Status.Available>
+  <RimWorldAccess.Research.Status.Completed>Terminé ({0})</RimWorldAccess.Research.Status.Completed>
+  <RimWorldAccess.Research.Status.Locked>Bloqué ({0})</RimWorldAccess.Research.Status.Locked>
+
+  <!-- Short status words used inline in labels (e.g. after prereq/dep rows). -->
+  <RimWorldAccess.Research.Status.CompletedWord>Terminé</RimWorldAccess.Research.Status.CompletedWord>
+  <RimWorldAccess.Research.Status.AvailableWord>Disponible</RimWorldAccess.Research.Status.AvailableWord>
+  <RimWorldAccess.Research.Status.LockedWord>Bloqué</RimWorldAccess.Research.Status.LockedWord>
+
+  <!-- Project label formatting (menu list entries).
+       Cost/knowledge/progress suffixes are composed together with the
+       project name by the caller. {0} = the numeric value. -->
+  <RimWorldAccess.Research.Label.CostSuffix> - coût : {0}</RimWorldAccess.Research.Label.CostSuffix>
+  <RimWorldAccess.Research.Label.KnowledgeSuffix> - connaissance : {0}</RimWorldAccess.Research.Label.KnowledgeSuffix>
+  <RimWorldAccess.Research.Label.ProgressSuffix> - {0}% terminé</RimWorldAccess.Research.Label.ProgressSuffix>
+  <RimWorldAccess.Research.Label.StatusSuffix> - {0}</RimWorldAccess.Research.Label.StatusSuffix>
+
+  <!-- Detail view navigation (WindowlessResearchDetailState).
+       BackTo: {0} = the previous research project we return to. -->
+  <RimWorldAccess.Research.Detail.BackTo>Retour à {0}</RimWorldAccess.Research.Detail.BackTo>
+  <RimWorldAccess.Research.Detail.ReturnedToMenu>Retour au menu de recherche</RimWorldAccess.Research.Detail.ReturnedToMenu>
+
+  <!-- Detail top-level node labels. -->
+  <RimWorldAccess.Research.Detail.DescriptionLabel>Description</RimWorldAccess.Research.Detail.DescriptionLabel>
+  <RimWorldAccess.Research.Detail.StartResearch>Démarrer la recherche</RimWorldAccess.Research.Detail.StartResearch>
+  <RimWorldAccess.Research.Detail.StopResearch>Arrêter la recherche</RimWorldAccess.Research.Detail.StopResearch>
+  <RimWorldAccess.Research.Detail.StartResearchHint>Appuyez sur Entrée pour démarrer cette recherche</RimWorldAccess.Research.Detail.StartResearchHint>
+  <RimWorldAccess.Research.Detail.StopResearchHint>Appuyez sur Entrée pour arrêter cette recherche</RimWorldAccess.Research.Detail.StopResearchHint>
+
+  <!-- Category headers inside the detail tree.
+       WithCount: {0} = number of child items; None is used when empty. -->
+  <RimWorldAccess.Research.Detail.PrerequisitesWithCount>Prérequis ({0} éléments)</RimWorldAccess.Research.Detail.PrerequisitesWithCount>
+  <RimWorldAccess.Research.Detail.PrerequisitesNone>Prérequis (aucun)</RimWorldAccess.Research.Detail.PrerequisitesNone>
+  <RimWorldAccess.Research.Detail.UnlocksWithCount>Déverrouille ({0} éléments)</RimWorldAccess.Research.Detail.UnlocksWithCount>
+  <RimWorldAccess.Research.Detail.UnlocksNone>Déverrouille (aucun)</RimWorldAccess.Research.Detail.UnlocksNone>
+  <RimWorldAccess.Research.Detail.DependentsWithCount>Dépendants ({0} éléments)</RimWorldAccess.Research.Detail.DependentsWithCount>
+  <RimWorldAccess.Research.Detail.DependentsNone>Dépendants (aucun)</RimWorldAccess.Research.Detail.DependentsNone>
+
+  <!-- Content-source row, mirroring vanilla's DrawContentSource: {0} = mod name,
+       {1} = expansion name (shown only when the mod is a DLC expansion). -->
+  <RimWorldAccess.Research.Detail.ContentSourceWithExpansion>{0}. Fait partie de l'extension {1}.</RimWorldAccess.Research.Detail.ContentSourceWithExpansion>
+
+  <!-- Research row inside a category (prereqs / dependents).
+       {0} = project label, {1} = cost, {2} = status word. -->
+  <RimWorldAccess.Research.Detail.ResearchRow>{0} - coût : {1} {2}</RimWorldAccess.Research.Detail.ResearchRow>
+
+  <!-- Hidden prerequisite summary. AllCompleted is used when nothing is
+       missing; IncompleteCount takes {0} = number still incomplete.
+       HiddenOne/Many compose with the status word: {0} = count (omitted
+       in One form), {1} = status word. -->
+  <RimWorldAccess.Research.Detail.HiddenAllCompleted>Tout terminé</RimWorldAccess.Research.Detail.HiddenAllCompleted>
+  <RimWorldAccess.Research.Detail.HiddenIncompleteCount>{0} incomplets</RimWorldAccess.Research.Detail.HiddenIncompleteCount>
+  <RimWorldAccess.Research.Detail.HiddenOne>1 prérequis caché - {0}</RimWorldAccess.Research.Detail.HiddenOne>
+  <RimWorldAccess.Research.Detail.HiddenMany>{0} prérequis cachés - {1}</RimWorldAccess.Research.Detail.HiddenMany>
+
+  <!-- Prerequisite bench/facility/techprint/mechanitor/analyze/grav rows.
+       Each row has an inline status tail. {0} = value or main label. -->
+  <RimWorldAccess.Research.Detail.BenchAvailable>Disponible</RimWorldAccess.Research.Detail.BenchAvailable>
+  <RimWorldAccess.Research.Detail.BenchNotAvailable>Non disponible</RimWorldAccess.Research.Detail.BenchNotAvailable>
+  <RimWorldAccess.Research.Detail.RequiresBench>Poste requis : {0} - {1}</RimWorldAccess.Research.Detail.RequiresBench>
+  <RimWorldAccess.Research.Detail.RequiresFacility>Équipement requis : {0} - {1}</RimWorldAccess.Research.Detail.RequiresFacility>
+
+  <RimWorldAccess.Research.Detail.TechprintsComplete>Terminé</RimWorldAccess.Research.Detail.TechprintsComplete>
+  <RimWorldAccess.Research.Detail.TechprintsProgress>{0}/{1}</RimWorldAccess.Research.Detail.TechprintsProgress>
+  <RimWorldAccess.Research.Detail.RequiresTechprints>Schémas techniques requis : {0}</RimWorldAccess.Research.Detail.RequiresTechprints>
+
+  <RimWorldAccess.Research.Detail.MechanitorMet>Rempli</RimWorldAccess.Research.Detail.MechanitorMet>
+  <RimWorldAccess.Research.Detail.MechanitorNotMet>Non rempli</RimWorldAccess.Research.Detail.MechanitorNotMet>
+  <RimWorldAccess.Research.Detail.RequiresMechanitor>Nécessite un méchanitor - {0}</RimWorldAccess.Research.Detail.RequiresMechanitor>
+
+  <RimWorldAccess.Research.Detail.AnalyzeComplete>Terminé</RimWorldAccess.Research.Detail.AnalyzeComplete>
+  <RimWorldAccess.Research.Detail.AnalyzeProgress>{0}/{1}</RimWorldAccess.Research.Detail.AnalyzeProgress>
+  <RimWorldAccess.Research.Detail.RequiresAnalyzing>Analyse requise : {0} - {1}</RimWorldAccess.Research.Detail.RequiresAnalyzing>
+  <RimWorldAccess.Research.Detail.AnalyzedThingRow>{0}. {1}.</RimWorldAccess.Research.Detail.AnalyzedThingRow>
+  <RimWorldAccess.Research.Detail.StudiedYes>Étudié</RimWorldAccess.Research.Detail.StudiedYes>
+  <RimWorldAccess.Research.Detail.StudiedNo>Non étudié</RimWorldAccess.Research.Detail.StudiedNo>
+
+  <RimWorldAccess.Research.Detail.GravEngineInspected>Inspecté</RimWorldAccess.Research.Detail.GravEngineInspected>
+  <RimWorldAccess.Research.Detail.GravEngineNotInspected>Non inspecté</RimWorldAccess.Research.Detail.GravEngineNotInspected>
+  <RimWorldAccess.Research.Detail.RequiresGravEngine>Nécessite l'inspection du moteur à graviton - {0}</RimWorldAccess.Research.Detail.RequiresGravEngine>
+
+  <!-- Unlocked item categories. Nouns used in labels like "(Building)". -->
+  <RimWorldAccess.Research.Detail.UnlockCategoryBuilding>Construction</RimWorldAccess.Research.Detail.UnlockCategoryBuilding>
+  <RimWorldAccess.Research.Detail.UnlockCategoryPlant>Plante</RimWorldAccess.Research.Detail.UnlockCategoryPlant>
+  <RimWorldAccess.Research.Detail.UnlockCategoryItem>Objet</RimWorldAccess.Research.Detail.UnlockCategoryItem>
+  <RimWorldAccess.Research.Detail.UnlockCategoryTerrain>Terrain</RimWorldAccess.Research.Detail.UnlockCategoryTerrain>
+  <RimWorldAccess.Research.Detail.UnlockCategorySurgery>Opération</RimWorldAccess.Research.Detail.UnlockCategorySurgery>
+  <RimWorldAccess.Research.Detail.UnlockCategoryPsychicRitual>Rituel psychique</RimWorldAccess.Research.Detail.UnlockCategoryPsychicRitual>
+  <RimWorldAccess.Research.Detail.UnlockCategoryWorkType>Type de travail</RimWorldAccess.Research.Detail.UnlockCategoryWorkType>
+
+  <!-- Unlocks sub-group header, used when a set of unlocked defs also requires other research
+       projects beyond this one (ResearchPrerequisitesUtility.UnlockedDefsGroupedByPrerequisites).
+       {0} = comma-joined "{project} ({status})" list of the other required projects,
+       {1} = number of items in the sub-group. -->
+  <RimWorldAccess.Research.Detail.UnlockedWithHeader>Déverrouillé avec {0} ({1} éléments)</RimWorldAccess.Research.Detail.UnlockedWithHeader>
+  <RimWorldAccess.Research.Detail.UnlockedWithProjectStatus>{0} ({1})</RimWorldAccess.Research.Detail.UnlockedWithProjectStatus>
+
+  <!-- No-info-card message for non-target tree sections. -->
+  <RimWorldAccess.Research.Detail.NoInfoCardForSection>Aucun onglet d'information pour cette section</RimWorldAccess.Research.Detail.NoInfoCardForSection>
+
+  <!-- Description content builder (StringBuilder in BuildDescriptionContent).
+       Each key is a single line in the composed text block. -->
+  <RimWorldAccess.Research.Desc.ProjectLine>Projet : {0}</RimWorldAccess.Research.Desc.ProjectLine>
+  <RimWorldAccess.Research.Desc.ResearchCost>Coût de recherche : {0}</RimWorldAccess.Research.Desc.ResearchCost>
+  <RimWorldAccess.Research.Desc.KnowledgeCost>Coût en connaissance : {0}</RimWorldAccess.Research.Desc.KnowledgeCost>
+  <RimWorldAccess.Research.Desc.KnowledgeCategory>Catégorie de connaissance : {0}</RimWorldAccess.Research.Desc.KnowledgeCategory>
+  <RimWorldAccess.Research.Desc.TechLevel>Niveau technique : {0}.</RimWorldAccess.Research.Desc.TechLevel>
+  <RimWorldAccess.Research.Desc.ProgressDetail>Progression : {0} sur {1}, {2}.</RimWorldAccess.Research.Desc.ProgressDetail>
+  <RimWorldAccess.Research.Desc.StatusInProgress>Recherche en cours.</RimWorldAccess.Research.Desc.StatusInProgress>
+  <RimWorldAccess.Research.Desc.StatusCompleted>État : Terminé</RimWorldAccess.Research.Desc.StatusCompleted>
+  <RimWorldAccess.Research.Desc.StatusAvailable>État : Disponible pour la recherche</RimWorldAccess.Research.Desc.StatusAvailable>
+  <RimWorldAccess.Research.Desc.StatusLocked>État : Bloqué</RimWorldAccess.Research.Desc.StatusLocked>
+  <RimWorldAccess.Research.Desc.RequiredBench>Poste requis : {0}</RimWorldAccess.Research.Desc.RequiredBench>
+  <RimWorldAccess.Research.Desc.RequiredFacilitiesPrefix>Équipements requis : </RimWorldAccess.Research.Desc.RequiredFacilitiesPrefix>
+
+  <!-- Research action announcements (start / stop / blocked). -->
+  <RimWorldAccess.Research.Action.Stopped>Recherche arrêtée sur {0}</RimWorldAccess.Research.Action.Stopped>
+  <RimWorldAccess.Research.Action.AlreadyCompleted>Déjà terminé : {0}</RimWorldAccess.Research.Action.AlreadyCompleted>
+  <RimWorldAccess.Research.Action.Locked>Impossible de démarrer la recherche : {0}</RimWorldAccess.Research.Action.Locked>
+  <RimWorldAccess.Research.Action.Started>Recherche démarrée sur {0}</RimWorldAccess.Research.Action.Started>
+  <RimWorldAccess.Research.Action.StartedReplacing>Recherche démarrée sur {0}. Recherche arrêtée sur {1} à {2}% de progression.</RimWorldAccess.Research.Action.StartedReplacing>
+  <RimWorldAccess.Research.Action.DebugFinished>Terminé : {0}.</RimWorldAccess.Research.Action.DebugFinished>
+  <RimWorldAccess.Research.Action.DebugTechprintApplied>Schéma technique appliqué. {0} / {1}.</RimWorldAccess.Research.Action.DebugTechprintApplied>
+
+  <!-- Missing prerequisite list fragments.
+       Unknown: spoken when currentProject is null or no parts collected.
+       HiddenOne/Many: {0} = count of hidden missing prereqs (omitted in One form). -->
+  <RimWorldAccess.Research.MissingPrereqs.Unknown>Inconnu</RimWorldAccess.Research.MissingPrereqs.Unknown>
+  <RimWorldAccess.Research.MissingPrereqs.HiddenOne>1 prérequis caché</RimWorldAccess.Research.MissingPrereqs.HiddenOne>
+  <RimWorldAccess.Research.MissingPrereqs.HiddenMany>{0} prérequis cachés</RimWorldAccess.Research.MissingPrereqs.HiddenMany>
+</LanguageData>

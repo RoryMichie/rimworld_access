@@ -4,15 +4,13 @@ using System.Linq;
 using System.Reflection;
 using RimWorld;
 using RimWorld.Planet;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// State management for transport pod world map targeting.
-    /// Tracks when launch targeting is active and provides fuel cost calculations.
-    /// Works with WorldScannerState to announce fuel costs for each destination.
+    /// Launch-targeting session state for transport pods and shuttles on the world map,
+    /// including the fuel costs WorldScannerState announces per destination.
     /// </summary>
     public static class TransportPodLaunchState
     {
@@ -23,41 +21,30 @@ namespace RimWorldAccess
         private static bool isConfirmingDestination = false;
         private static PlanetTile cachedOriginTile = PlanetTile.Invalid;
 
-        // Single-BFS cache: all tiles reachable within maxRange, with their traversal distances.
-        // Built once on Open(), used for O(1) reachability checks and distance lookups.
-        // Keyed by tile ID (int) rather than PlanetTile to avoid layer mismatch issues
-        // (biome center tiles use layer -1, but BFS produces tiles on the actual layer).
+        // Every tile reachable within maxRange with its traversal distance, built once on
+        // Open(). Keyed by tile ID, not PlanetTile: biome center tiles carry layer -1 while
+        // the BFS produces tiles on the real layer, so PlanetTile keys would miss.
         private static Dictionary<int, int> reachableTileDistances = null;
 
-        /// <summary>
-        /// Gets the origin tile for this launch.
-        /// </summary>
+        /// <summary>The tile this launch departs from.</summary>
         public static PlanetTile OriginTile => cachedOriginTile;
 
-        /// <summary>
-        /// Gets whether launch targeting mode is currently active.
-        /// </summary>
+        /// <summary>Whether launch targeting is active.</summary>
         public static bool IsActive => isActive;
 
         /// <summary>
-        /// Gets whether we're in the process of confirming a destination.
-        /// Used by DialogInterceptionPatch to intercept FloatMenus for arrival options.
+        /// Whether a destination confirmation is in flight; DialogInterceptionPatch reads this
+        /// to intercept the arrival-options FloatMenu.
         /// </summary>
         public static bool IsConfirmingDestination => isConfirmingDestination;
 
-        /// <summary>
-        /// Gets the available fuel level for the current launch.
-        /// </summary>
+        /// <summary>Fuel available for this launch.</summary>
         public static float AvailableFuel => cachedFuelLevel;
 
-        /// <summary>
-        /// Gets the maximum launch distance at current fuel level.
-        /// </summary>
+        /// <summary>Maximum launch distance at the current fuel level.</summary>
         public static float MaxRange => cachedMaxRange;
 
-        /// <summary>
-        /// Opens launch targeting state when StartChoosingDestination is called.
-        /// </summary>
+        /// <summary>Opens the session for a CompLaunchable's StartChoosingDestination.</summary>
         public static void Open(CompLaunchable launchable)
         {
             if (launchable == null)
@@ -69,14 +56,12 @@ namespace RimWorldAccess
             currentLaunchable = launchable;
             isActive = true;
 
-            // Cache fuel info
             cachedFuelLevel = TransportPodHelper.GetFuelLevel(launchable);
             cachedMaxRange = TransportPodHelper.GetMaxLaunchDistance(launchable);
 
-            // Cache origin tile. Thing.Tile walks ParentHolder, so this resolves to the
-            // caravan's tile for caravan-held shuttles (Odyssey DLC) — where parent.Map is null —
-            // not just spawned-on-map shuttles. Without this, the reachability cache stays empty
-            // and FilterToReachableItems strips every scanner destination.
+            // Thing.Tile walks ParentHolder, so a caravan-held shuttle (parent.Map null) still
+            // resolves. Without it the reachability cache stays empty and FilterToReachableItems
+            // strips every scanner destination.
             cachedOriginTile = launchable.parent?.Tile ?? PlanetTile.Invalid;
 
             BuildReachableTileCache();
@@ -85,8 +70,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Opens launch targeting state for shuttles or other non-CompLaunchable launches.
-        /// Used when WorldTargeter.BeginTargeting is called directly (e.g., permit shuttles).
+        /// Opens the session for a non-CompLaunchable launch, where WorldTargeter.BeginTargeting
+        /// is called directly.
         /// </summary>
         public static void Open(PlanetTile originTile, int maxLaunchDistance)
         {
@@ -105,11 +90,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Performs a single BFS FloodFill on the Surface layer, collecting all tiles
-        /// within maxRange along with their traversal distances.
-        /// Built on Surface because landing destinations are always surface tiles.
-        /// If the origin is on a different layer (e.g., orbit), converts to its
-        /// surface equivalent first, matching the game's cross-layer handling.
+        /// One BFS FloodFill collecting every tile within maxRange and its traversal distance.
+        /// Runs on the Surface layer, since landing destinations are always surface tiles; an
+        /// origin on another layer is converted first, as the game does.
         /// </summary>
         private static void BuildReachableTileCache()
         {
@@ -120,7 +103,6 @@ namespace RimWorldAccess
 
             int maxRange = (int)cachedMaxRange;
 
-            // Build BFS on Surface layer — landing destinations are always on the surface.
             PlanetLayer surface = Find.WorldGrid.Surface;
             PlanetTile surfaceOrigin = (cachedOriginTile.Layer == surface)
                 ? cachedOriginTile
@@ -144,9 +126,7 @@ namespace RimWorldAccess
                 maxTiles);
         }
 
-        /// <summary>
-        /// Closes launch targeting state.
-        /// </summary>
+        /// <summary>Closes the session and drops the reachability cache.</summary>
         public static void Close()
         {
             isActive = false;
@@ -158,18 +138,13 @@ namespace RimWorldAccess
             reachableTileDistances = null;
         }
 
-        /// <summary>
-        /// Clears the confirming destination flag.
-        /// Called after the float menu has been processed.
-        /// </summary>
+        /// <summary>Clears the confirming flag once the float menu has been processed.</summary>
         public static void ClearConfirmingFlag()
         {
             isConfirmingDestination = false;
         }
 
-        /// <summary>
-        /// Calculates the fuel cost to reach a destination at the given distance.
-        /// </summary>
+        /// <summary>Fuel cost to reach a destination at the given distance.</summary>
         public static float CalculateFuelCost(float distanceInTiles)
         {
             if (currentLaunchable == null)
@@ -179,20 +154,15 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Checks if a destination at the given approximate distance is reachable.
-        /// Uses approximate distance for fast checks (scanner filtering).
-        /// Note: ApproxDistanceInTiles underestimates vs the game's TraversalDistanceBetween,
-        /// so this may include some tiles that are actually out of range.
+        /// Fast reachability check for scanner filtering. ApproxDistanceInTiles underestimates
+        /// TraversalDistanceBetween, so this admits some tiles that are truly out of range.
         /// </summary>
         public static bool CanReachDistance(float distanceInTiles)
         {
             return distanceInTiles <= cachedMaxRange;
         }
 
-        /// <summary>
-        /// Checks if a destination tile is reachable, using the pre-built BFS cache.
-        /// O(1) lookup — no pathfinding per call.
-        /// </summary>
+        /// <summary>Reachability from the BFS cache: an O(1) lookup, no pathfinding.</summary>
         public static bool CanReachTile(PlanetTile destination)
         {
             if (reachableTileDistances == null || cachedMaxRange <= 0)
@@ -201,10 +171,7 @@ namespace RimWorldAccess
             return reachableTileDistances.ContainsKey((int)destination);
         }
 
-        /// <summary>
-        /// Gets the BFS traversal distance for a tile from the cache.
-        /// Returns -1 if the tile is not in the reachable cache.
-        /// </summary>
+        /// <summary>Cached BFS traversal distance for a tile, or -1 when it is not cached.</summary>
         public static int GetCachedDistance(PlanetTile tile)
         {
             if (reachableTileDistances != null && reachableTileDistances.TryGetValue((int)tile, out int dist))
@@ -213,38 +180,31 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets the traversal distance (actual tile hops) to a destination from the BFS cache.
-        /// Falls back to TraversalDistanceBetween if the tile wasn't in the cache
-        /// (e.g., for tiles beyond max range that the user navigated to directly).
+        /// Traversal distance in tile hops, from the cache, falling back to
+        /// TraversalDistanceBetween for tiles beyond max range that the user navigated to.
         /// </summary>
         public static int GetTraversalDistance(PlanetTile destination)
         {
             if (!cachedOriginTile.Valid || !destination.Valid)
                 return 0;
 
-            // Fast path: lookup from BFS cache
             if (reachableTileDistances != null && reachableTileDistances.TryGetValue((int)destination, out int dist))
                 return dist;
 
-            // Slow path: tile not in cache (beyond range), compute individually
             return Find.WorldGrid.TraversalDistanceBetween(
                 cachedOriginTile, destination, passImpassable: true, int.MaxValue, canTraverseLayers: true);
         }
 
-        /// <summary>
-        /// Builds a fuel cost announcement for a destination.
-        /// </summary>
+        /// <summary>The fuel-cost announcement for a destination.</summary>
         public static string GetFuelCostAnnouncement(float distanceInTiles)
         {
             if (!isActive)
                 return "";
 
-            // For transport pods with CompLaunchable, use detailed fuel cost calculation
             if (currentLaunchable != null)
                 return TransportPodHelper.BuildFuelCostAnnouncement(currentLaunchable, distanceInTiles);
 
-            // For shuttles (no CompLaunchable), use approximate distance for quick check
-            // Note: accurate range checking uses CanReachTile with traversal distance
+            // A shuttle has no CompLaunchable; CanReachTile does the accurate range check.
             if (cachedMaxRange > 0 && distanceInTiles > cachedMaxRange)
                 return (string)"RimWorldAccess.TransportPods.Fuel.OutOfRange".Translate();
 
@@ -252,19 +212,16 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets fuel cost announcement using traversal distance.
-        /// Uses the game's own FuelNeededToLaunchAtDist for transport pods,
-        /// and traversal distance vs max range for shuttles.
+        /// The fuel-cost announcement from traversal distance: the game's own
+        /// FuelNeededToLaunchAtDist for pods, distance against max range for shuttles.
         /// </summary>
         public static string GetFuelCostAnnouncementForTile(PlanetTile destination)
         {
             if (!isActive || !cachedOriginTile.Valid || !destination.Valid)
                 return "";
 
-            // Use BFS cache for traversal distance (O(1) lookup)
             int traversalDist = GetTraversalDistance(destination);
 
-            // For transport pods with CompLaunchable, use the game's own fuel cost method
             if (currentLaunchable != null)
             {
                 float fuelNeeded = currentLaunchable.FuelNeededToLaunchAtDist(traversalDist, destination.Layer);
@@ -273,23 +230,18 @@ namespace RimWorldAccess
                 return (string)"RimWorldAccess.TransportPods.Fuel.CostChemfuel".Translate(fuelNeeded.ToString("F0"));
             }
 
-            // For shuttles (no CompLaunchable), check traversal distance vs max range
             if (cachedMaxRange > 0 && traversalDist > (int)cachedMaxRange)
                 return (string)"RimWorldAccess.TransportPods.Fuel.OutOfRange".Translate();
 
             return "";
         }
 
-        /// <summary>
-        /// Gets the origin tile index for distance calculations.
-        /// </summary>
+        /// <summary>Origin tile index for distance calculations.</summary>
         public static int GetOriginTile()
         {
-            // Use cached origin tile (works for both CompLaunchable and shuttle launches)
             if (cachedOriginTile.Valid)
                 return cachedOriginTile;
 
-            // Fallback to CompLaunchable's map tile
             if (currentLaunchable?.parent?.Map == null)
                 return -1;
 
@@ -297,68 +249,19 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Handles keyboard input during launch targeting.
-        /// Returns true if input was handled.
+        /// Confirms the selected world tile, invoking WorldTargeter's private action callback
+        /// by reflection so the game runs its own arrival-options logic (which may raise a
+        /// FloatMenu). No float-menu guard is needed here: ShellDispatcherPatch's
+        /// LegacyKeyboardOverlayActive stand-down already stops the shell dispatching.
         /// </summary>
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!isActive)
-                return false;
-
-            // If WorldTargeter stopped (e.g., after successful launch), close our state
-            if (Find.WorldTargeter == null || !Find.WorldTargeter.IsTargeting)
-            {
-                Close();
-                return false;
-            }
-
-            // Enter - confirm current destination
-            // But skip if WindowlessFloatMenuState is active (arrival options menu is showing)
-            if ((key == KeyCode.Return || key == KeyCode.KeypadEnter) && !shift && !ctrl && !alt)
-            {
-                // If the float menu is showing arrival options, let it handle Enter
-                if (WindowlessFloatMenuState.IsActive)
-                    return false;
-
-                ConfirmCurrentDestination();
-                return true;
-            }
-
-            // Escape - cancel targeting
-            // But skip if WindowlessFloatMenuState is active (let it close first)
-            if (key == KeyCode.Escape)
-            {
-                if (WindowlessFloatMenuState.IsActive)
-                    return false;
-
-                CancelTargeting();
-                return true;
-            }
-
-            // F - announce fuel status
-            if (key == KeyCode.F && !shift && !ctrl && !alt)
-            {
-                AnnounceFuelStatus();
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Confirms the currently selected world tile as the destination.
-        /// Uses reflection to invoke the WorldTargeter's action callback, which triggers
-        /// the game's arrival options logic (and may create a FloatMenu).
-        /// </summary>
-        private static void ConfirmCurrentDestination()
+        internal static void ConfirmCurrentDestination()
         {
             if (!GuardHelper.RequireWorldNav(SpeechPriority.High)) return;
 
             PlanetTile selectedTile = WorldNavigationState.CurrentSelectedTile;
             if (!GuardHelper.RequireValidTile(selectedTile, SpeechPriority.High)) return;
 
-            // No pre-check for range — let the game's own ChoseWorldTarget handle validation.
-            // It uses TraversalDistanceBetween and shows proper messages like "Beyond maximum range".
+            // No range pre-check: the game's ChoseWorldTarget validates and reports itself.
 
             if (Find.WorldTargeter == null || !Find.WorldTargeter.IsTargeting)
             {
@@ -366,12 +269,11 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Set flag so DialogInterceptionPatch knows to intercept any FloatMenu
+            // Tells DialogInterceptionPatch to intercept whatever FloatMenu this raises.
             isConfirmingDestination = true;
 
             try
             {
-                // Get the action field from WorldTargeter using reflection
                 var actionField = typeof(WorldTargeter).GetField("action", BindingFlags.NonPublic | BindingFlags.Instance);
                 if (actionField == null)
                 {
@@ -388,51 +290,46 @@ namespace RimWorldAccess
                     return;
                 }
 
-                // Create GlobalTargetInfo for the selected tile
-                // Check for world objects at the tile first (like settlements)
                 GlobalTargetInfo targetInfo;
                 var worldObjects = Find.WorldObjects?.ObjectsAt(selectedTile)?.ToList();
                 if (worldObjects != null && worldObjects.Count > 0)
                 {
-                    // Use the first world object (typically a settlement or site)
                     targetInfo = new GlobalTargetInfo(worldObjects[0]);
                 }
                 else
                 {
-                    // Just a tile with no world object
                     targetInfo = new GlobalTargetInfo(selectedTile);
                 }
 
-                // Invoke the action callback
-                // If it returns true, targeting is complete (single option was executed)
-                // If it returns false, a FloatMenu was likely created for multiple options
+                // True: the sole arrival option ran. False: a FloatMenu offered several.
                 bool completed = action(targetInfo);
 
                 if (completed)
                 {
-                    // The action was auto-executed (single option).
-                    // BUT: it may have opened a confirmation dialog (e.g., hostile settlement warning).
-                    // If a dialog was opened, don't stop targeting — the user might cancel the dialog
-                    // and want to pick a different destination.
-                    if (WindowlessDialogState.IsActive)
+                    // The option may have opened a confirmation dialog. Targeting must stay
+                    // open in that case, so a cancel returns the user to picking a destination.
+                    if (RimWorldAccess.Shell.FocusStack.AnyLiveModal)
                     {
-                        // A confirmation dialog was opened — let it handle the outcome.
-                        // If confirmed: the launch action runs and targeting ends naturally.
-                        // If cancelled: we stay in targeting mode.
                         isConfirmingDestination = false;
                     }
                     else
                     {
-                        // No dialog — action completed immediately (e.g., form caravan on empty tile)
                         Find.WorldTargeter.StopTargeting();
                         isConfirmingDestination = false;
-                        TolkHelper.Speak("RimWorldAccess.TransportPods.Launch.TargetSelected".Loc(), SpeechPriority.Normal);
+                        // "Completed" means only that the world action ran: "Land in existing
+                        // map" spends its run opening a LOCAL targeter that announces its own
+                        // prompt, which "Target selected" would contradict.
+                        bool localTargetingStarted = Find.CurrentMap != null
+                            && ExternalMapTargeting.MapTargetingActive;
+                        if (!localTargetingStarted)
+                        {
+                            TolkHelper.Speak("RimWorldAccess.TransportPods.Launch.TargetSelected".Loc(), SpeechPriority.Normal);
+                        }
                     }
                 }
                 else
                 {
-                    // Multiple options available - FloatMenu should have been intercepted
-                    // The flag will be cleared when the menu is processed
+                    // The FloatMenu was intercepted; the flag clears when it is processed.
                     int traversalDist = GetTraversalDistance(selectedTile);
                     string fuelInfo = GetFuelCostAnnouncementForTile(selectedTile);
                     if (!string.IsNullOrEmpty(fuelInfo))
@@ -449,30 +346,24 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Cancels launch targeting and returns to map.
-        /// </summary>
-        private static void CancelTargeting()
+        /// <summary>Cancels launch targeting and returns to the map.</summary>
+        internal static void CancelTargeting()
         {
-            // Cache the return target BEFORE closing state (Close() nulls currentLaunchable)
+            // Resolve the return target first: Close() nulls currentLaunchable.
             Thing returnTarget = currentLaunchable?.parent;
             Map returnMap = returnTarget?.Map;
 
-            // For shuttle launches without CompLaunchable, try to return to the current map
             if (returnMap == null)
                 returnMap = Find.CurrentMap;
 
-            // Stop world targeting
             if (Find.WorldTargeter != null && Find.WorldTargeter.IsTargeting)
             {
                 Find.WorldTargeter.StopTargeting();
             }
 
-            // Close our state
             Close();
             TolkHelper.Speak("RimWorldAccess.TransportPods.Launch.Cancelled".Loc(), SpeechPriority.Normal);
 
-            // Return to map view
             if (returnTarget != null)
             {
                 CameraJumper.TryJump(returnTarget);
@@ -483,10 +374,8 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Announces the current fuel status.
-        /// </summary>
-        private static void AnnounceFuelStatus()
+        /// <summary>Announces the current fuel status.</summary>
+        internal static void AnnounceFuelStatus()
         {
             if (currentLaunchable != null)
                 TolkHelper.Speak("RimWorldAccess.TransportPods.Launch.FuelStatusPod".Loc(cachedFuelLevel.ToString("F0"), cachedMaxRange.ToString("F0")), SpeechPriority.Normal);
@@ -496,17 +385,13 @@ namespace RimWorldAccess
                 TolkHelper.Speak("RimWorldAccess.TransportPods.Launch.FuelStatusUnlimited".Loc(), SpeechPriority.Normal);
         }
 
-        /// <summary>
-        /// Called by WorldScannerState to check if fuel costs should be announced.
-        /// </summary>
+        /// <summary>Whether the scanner should announce fuel costs.</summary>
         public static bool ShouldAnnounceFuelCosts()
         {
             return isActive;
         }
 
-        /// <summary>
-        /// Called by WorldNavigationPatch when world targeting ends.
-        /// </summary>
+        /// <summary>Hook for WorldNavigationPatch when world targeting ends.</summary>
         public static void OnWorldTargetingEnded()
         {
             if (isActive)

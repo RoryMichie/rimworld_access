@@ -7,14 +7,33 @@ using RimWorld;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Helper class to query and format information about tiles on the map.
-    /// Provides both summarized and detailed information for screen reader accessibility.
+    /// Queries and formats spoken information about map tiles: the one-line summary plus the
+    /// per-aspect readouts behind the number keys.
     /// </summary>
     public static class TileInfoHelper
     {
+        // TerrainDef exposes smoothedTerrain (rough -> smoothed) but no reverse flag, so the
+        // smoothed *results* are collected from DefDatabase once.
+        private static HashSet<TerrainDef> _smoothedResultTerrainCache;
+
+        private static bool IsSmoothedResultTerrain(TerrainDef terrain)
+        {
+            if (_smoothedResultTerrainCache == null)
+            {
+                _smoothedResultTerrainCache = new HashSet<TerrainDef>();
+                foreach (TerrainDef def in DefDatabase<TerrainDef>.AllDefsListForReading)
+                {
+                    if (def.smoothedTerrain != null)
+                        _smoothedResultTerrainCache.Add(def.smoothedTerrain);
+                }
+            }
+
+            return _smoothedResultTerrainCache.Contains(terrain);
+        }
+
         /// <summary>
-        /// Gets a concise summary of what's on a tile.
-        /// Format: "[item1, item2, ... last item], indoors/outdoors, {lighting level}, at X, Z"
+        /// A concise summary of what is on a tile: contents, then terrain and roof, then
+        /// coordinates.
         /// </summary>
         public static string GetTileSummary(IntVec3 position, Map map)
         {
@@ -68,7 +87,7 @@ namespace RimWorldAccess
             {
                 if (thing is Pawn pawn)
                 {
-                    if (!pawn.IsHiddenFromPlayer())
+                    if (!HiddenPawns.IsHidden(pawn))
                         pawns.Add(pawn);
                 }
                 else
@@ -97,17 +116,15 @@ namespace RimWorldAccess
                 string terrainLabel = isPolluted
                     ? (string)"PollutedTerrain".Translate(terrain.label).CapitalizeFirst()
                     : (string)terrain.LabelCap;
-                if (terrain.defName.EndsWith("_Smooth"))
-                    terrainLabel += "RimWorldAccess.Map.Tile.FloorSuffix".Translate();
+                if (IsSmoothedResultTerrain(terrain))
+                    terrainLabel = "RimWorldAccess.Map.Tile.FloorLabel".Translate(terrainLabel);
                 ColorDef floorPaint = map.terrainGrid.ColorAt(position);
                 if (floorPaint != null && !floorPaint.label.NullOrEmpty())
                     terrainLabel += "RimWorldAccess.Map.Tile.PaintSuffix".Translate(floorPaint.LabelCap);
                 builder.Add(terrainLabel);
             }
 
-            // Announce the roof's own label (e.g. "Constructed roof", "Rock roof (thin)",
-            // "Overhead mountain") so users can distinguish thin, thick, and mountain roofs
-            // during navigation rather than a generic "roofed"/"underground".
+            // The roof's own label distinguishes thin, thick, and mountain roofs.
             RoofDef roof = position.GetRoof(map);
             if (roof != null)
                 builder.Add(roof.LabelCap);
@@ -123,8 +140,7 @@ namespace RimWorldAccess
             if (zone != null)
                 builder.Add(zone.label);
 
-            // Plan markers are a sibling overlay of zones (map.planManager), not a TerrainDef or a
-            // Thing, so announce the plan's name and color when the cursor sits on one of its cells.
+            // Plans are a sibling overlay of zones (map.planManager), neither terrain nor Thing.
             Plan plan = map.planManager.PlanAt(position);
             if (plan != null)
                 builder.Add("RimWorldAccess.Map.Tile.Plan".Translate(
@@ -164,8 +180,8 @@ namespace RimWorldAccess
             else if (thing is Building building)
             {
                 string label = building.LabelShort;
-                if (building.def.defName.StartsWith("Smoothed") && building.def.building != null && !building.def.building.isNaturalRock)
-                    label += "RimWorldAccess.Map.Tile.WallSuffix".Translate();
+                if (building.def.IsSmoothed)
+                    label = "RimWorldAccess.Map.Tile.WallLabel".Translate(label);
                 if (building is Building_Door door)
                 {
                     label = (door.Open
@@ -241,17 +257,15 @@ namespace RimWorldAccess
                 (string)"RimWorldAccess.Map.Tile.CellSuffix".Translate(GetDesignationLabel(d))));
         }
 
-        /// <summary>
-        /// Gets information about items and pawns at a tile (key 1).
-        /// Lists all items with stack counts and all pawns with their labels.
-        /// </summary>
+        /// <summary>Items (with stack counts) and pawns at a tile, for key 1.</summary>
         public static string GetItemsAndPawnsInfo(IntVec3 position, Map map)
         {
             if (map == null || !position.InBounds(map))
                 return "RimWorldAccess.Map.Tile.OutOfBounds".Translate();
 
             List<Thing> things = position.GetThingList(map);
-            var pawns = things.OfType<Pawn>().ToList();
+            // Vanilla's own cell readouts never name a pawn it hides from the player.
+            var pawns = things.OfType<Pawn>().Where(p => !HiddenPawns.IsHidden(p)).ToList();
             var items = things.Where(t => !(t is Pawn) && !(t is Building) && !(t is Plant)
                 && !(t is Mote) && t.def.category != ThingCategory.Mote).ToList();
 
@@ -282,12 +296,8 @@ namespace RimWorldAccess
 
             string result = builder.Build();
 
-            // When a drafted shooter is selected, follow the tile contents with the
-            // same ranged hit-chance breakdown a sighted player sees on mouse-over.
-            // Each report names its own target, so it stays clear with several pawns
-            // on the tile. Returns null unless the game's gating applies (drafted,
-            // ranged weapon, target is not the shooter), leaving other readouts
-            // untouched. Placed last so it never runs into the item list.
+            // The hit-chance breakdown a sighted player gets on mouse-over. Each report names its
+            // own target, and it goes last so it never runs into the item list.
             var reports = new List<string>();
             foreach (var pawn in pawns)
             {
@@ -301,10 +311,7 @@ namespace RimWorldAccess
             return result;
         }
 
-        /// <summary>
-        /// Gets information about flooring at a tile (key 2).
-        /// Shows terrain type, smoothness, beauty, and cleanliness.
-        /// </summary>
+        /// <summary>Terrain type, smoothness, beauty, and cleanliness at a tile, for key 2.</summary>
         public static string GetFlooringInfo(IntVec3 position, Map map)
         {
             if (map == null || !position.InBounds(map))
@@ -330,9 +337,9 @@ namespace RimWorldAccess
             if (fertility > 0.0001f)
                 builder.Add("RimWorldAccess.Map.Tile.Flooring.Fertility".Translate(fertility.ToStringPercent()));
 
-            if (terrain.defName.EndsWith("_Smooth"))
+            if (IsSmoothedResultTerrain(terrain))
                 builder.Add("RimWorldAccess.Map.Tile.Flooring.Smooth".Translate());
-            else if (terrain.defName.EndsWith("_Rough"))
+            else if (terrain.smoothedTerrain != null)
                 builder.Add("RimWorldAccess.Map.Tile.Flooring.Rough".Translate());
 
             float beauty = terrain.GetStatValueAbstract(StatDefOf.Beauty);
@@ -350,38 +357,30 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets information about resources at a tile (key 3): plants, fish, and deep
-        /// mineral deposits. Plants show species, growth, and harvestable status. Fish
-        /// (Odyssey) show species and current/max population, matching vanilla's mouseover.
-        /// Deep ore is shown only when a powered ground-penetrating scanner is active.
-        /// When nothing is present, the empty message lists only the resource types that
-        /// are relevant to this tile's context (water adds fish; an active scanner adds
-        /// mineral deposits).
+        /// Resources at a tile, for key 3: plants (species, growth, harvestable), Odyssey fish
+        /// (species and current/max population, as vanilla's mouseover shows), and deep mineral
+        /// deposits. Deep ore appears only under an active powered scanner, and the empty message
+        /// names only the resource types this tile's context makes relevant.
         /// </summary>
         public static string GetPlantsInfo(IntVec3 position, Map map)
         {
             if (map == null || !position.InBounds(map))
                 return "RimWorldAccess.Map.Tile.OutOfBounds".Translate();
 
-            // Plants present at this cell
             List<Thing> things = position.GetThingList(map);
             var plants = things.OfType<Plant>().ToList();
             bool hasPlants = plants.Count > 0;
 
-            // Deep ore, only when a powered ground-penetrating scanner is active
             bool scannerActive = map.deepResourceGrid.AnyActiveDeepScannersOnMap();
             string deepOreInfo = scannerActive ? GetDeepOreInfo(position, map) : null;
             bool hasDeepOre = !string.IsNullOrEmpty(deepOreInfo);
 
-            // Fish, only with Odyssey active and on a tracked water body. Reporting matches
-            // vanilla's MouseoverReadout (species list + current/max population, plus GillRot).
             WaterBody waterBody = null;
             bool onWaterBody = ModsConfig.OdysseyActive
                 && map.waterBodyTracker.TryGetWaterBodyAt(position, out waterBody)
                 && waterBody != null;
             bool hasFish = onWaterBody && waterBody.HasFish;
 
-            // Nothing present: announce only the resource types relevant to this tile.
             if (!hasPlants && !hasDeepOre && !hasFish)
             {
                 if (onWaterBody && scannerActive)
@@ -395,7 +394,6 @@ namespace RimWorldAccess
 
             var builder = new AnnouncementBuilder().DefaultSep(Separator.Comma);
 
-            // Plants
             if (hasPlants)
             {
                 foreach (var plant in plants)
@@ -413,7 +411,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Fish (species, current/max population, and GillRot if active)
             if (hasFish)
             {
                 var allFish = waterBody.CommonFishIncludingExtras.Concat(waterBody.UncommonFish);
@@ -430,7 +427,6 @@ namespace RimWorldAccess
                     builder.Add(gillRot.LabelCap);
             }
 
-            // Deep mineral deposits
             if (hasDeepOre)
                 builder.Add("RimWorldAccess.Map.Tile.Plants.DeepHeader".Translate(deepOreInfo), Separator.Period);
 
@@ -438,8 +434,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets information about brightness and temperature at a tile (key 4).
-        /// Shows light level (simplified), temperature, and indoor/outdoor status.
+        /// Light level, temperature, vacuum, and indoor/outdoor status at a tile, key 4.
         /// </summary>
         public static string GetLightInfo(IntVec3 position, Map map)
         {
@@ -480,8 +475,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets power information for objects at a tile (key 6).
-        /// Shows power status for any buildings connected to a power network.
+        /// Power status of any buildings at a tile connected to a power network, key 6.
         /// </summary>
         public static string GetPowerInfo(IntVec3 position, Map map)
         {
@@ -514,8 +508,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets information about room stats at a tile (key 5).
-        /// Shows room name and all stats with quality tier descriptions.
+        /// Room name and stats with quality tiers for the room at a tile, key 5.
         /// </summary>
         public static string GetRoomStatsInfo(IntVec3 position, Map map)
         {
@@ -527,7 +520,6 @@ namespace RimWorldAccess
             if (room == null)
                 return "RimWorldAccess.Map.Tile.Room.None".Translate();
 
-            // Check if outdoor (no roof) or not a proper room
             RoofDef roof = position.GetRoof(map);
             if (roof == null)
                 return "RimWorldAccess.Map.Tile.Room.Outdoors".Translate();
@@ -539,9 +531,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets information about room stats for a given room.
-        /// Shows room name and all non-hidden stats with quality tier descriptions.
-        /// Used by both the 5 key and the gizmo navigation.
+        /// Room name and non-hidden stats with quality tiers, shared by key 5 and gizmo
+        /// navigation.
         /// </summary>
         public static string GetRoomStatsInfo(Room room)
         {
@@ -560,18 +551,17 @@ namespace RimWorldAccess
 
             // Stats ordered by volatility: dynamic first, static last
             var statOrder = new[] { "Cleanliness", "Wealth", "Impressiveness", "Beauty", "Space" };
-            var visibleStats = DefDatabase<RoomStatDef>.AllDefsListForReading.Where(def => !def.isHidden).ToList();
+            // Vanilla's own gate: hidden stats surface only under the debug toggle.
+            var visibleStats = DefDatabase<RoomStatDef>.AllDefsListForReading
+                .Where(def => !def.isHidden || DebugViewSettings.showAllRoomStats).ToList();
 
             void AppendStat(RoomStatDef statDef)
             {
                 float value = room.GetStat(statDef);
                 RoomStatScoreStage stage = statDef.GetScoreStage(value);
                 string stageLabel = stage?.label?.CapitalizeFirst() ?? "";
-                // Vanilla draws a "*" before stats relevant to the room's role
-                // (with a "* StatRelatesToCurrentRoom" footnote). For screen reader users
-                // we surface the same information with the translated phrase as a suffix
-                // on relevant stats — no leading asterisks for the screen reader to read
-                // out as "star, star, star".
+                // Vanilla marks role-relevant stats with a leading "*" and a footnote; the
+                // same information reads better as a trailing phrase than as "star, star".
                 bool isRelated = room.Role != null && room.Role.IsStatRelated(statDef);
                 string statLine = string.IsNullOrEmpty(stageLabel)
                     ? "RimWorldAccess.Map.Tile.Room.Stat".Translate(string.Empty, statDef.LabelCap, statDef.ScoreToString(value))
@@ -597,38 +587,31 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets temperature control information for coolers and heaters.
-        /// Returns direction (cooling/heating) and target temperature.
+        /// Cooling/heating direction and target temperature for a temperature-control
+        /// building, or null when it has none.
         /// </summary>
         private static string GetTemperatureControlInfo(Building building)
         {
             if (building == null)
                 return null;
 
-            // Check if this building has temperature control
             CompTempControl tempControl = building.TryGetComp<CompTempControl>();
             if (tempControl == null)
                 return null;
 
-            // Determine if this is a cooler or heater based on building type
             Building_TempControl tempControlBuilding = building as Building_TempControl;
             if (tempControlBuilding == null)
                 return null;
 
-            // For coolers specifically, we need to determine the cooling/heating direction
             string directionInfo = "";
-            if (building.GetType().Name == "Building_Cooler")
+            if (building is Building_Cooler)
             {
-                // Coolers cool to the south (blue side) and heat to the north (red side)
-                // IntVec3.South.RotatedBy(Rotation) gives the cooling direction
-                // IntVec3.North.RotatedBy(Rotation) gives the heating direction
+                // Coolers cool to their south (blue) side and heat to their north (red) one.
                 Rot4 rotation = building.Rotation;
 
-                // Get the actual cardinal direction for the blue (cooling) side
                 IntVec3 coolingSide = IntVec3.South.RotatedBy(rotation);
                 string coolingDir = GetCardinalDirection(coolingSide);
 
-                // Get the actual cardinal direction for the red (heating) side
                 IntVec3 heatingSide = IntVec3.North.RotatedBy(rotation);
                 string heatingDir = GetCardinalDirection(heatingSide);
 
@@ -636,11 +619,9 @@ namespace RimWorldAccess
             }
             else
             {
-                // For other temperature control devices (heaters, vents, etc.)
                 directionInfo = "RimWorldAccess.Map.Tile.TempControl.Generic".Translate();
             }
 
-            // Add target temperature
             float targetTemp = tempControl.TargetTemperature;
             string tempString = MenuHelper.FormatTemperature(targetTemp, "F0");
 
@@ -648,8 +629,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Converts an IntVec3 direction to a cardinal direction string.
-        /// Delegates to BuildingCellHelper for shared implementation.
+        /// Cardinal direction name for an IntVec3 offset.
         /// </summary>
         private static string GetCardinalDirection(IntVec3 direction)
         {
@@ -657,20 +637,16 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets a suffix for a pawn based on their status (hostile or trader).
-        /// Returns " (hostile)" if the pawn is hostile to the player,
-        /// returns " (trader)" if the pawn is a trader,
-        /// returns null if neither.
+        /// Hostile- or trader-status suffix for a pawn, or null when neither applies;
+        /// hostility wins.
         /// </summary>
         public static string GetPawnSuffix(Pawn pawn)
         {
-            // Check if pawn is hostile to player (takes priority over trader status)
             if (pawn.Faction != null && pawn.Faction.HostileTo(Faction.OfPlayer))
             {
                 return "RimWorldAccess.Map.Tile.Pawn.HostileSuffix".Translate();
             }
 
-            // Check if pawn is a trader
             if (pawn.trader?.traderKind != null)
             {
                 return "RimWorldAccess.Map.Tile.Pawn.TraderSuffix".Translate();
@@ -698,7 +674,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Simple pawn formatting without activity.
+        /// Pawn list without activity grouping.
         /// </summary>
         private static string FormatPawnsSimple(List<Pawn> pawns, Dictionary<Thing, List<Designation>> thingDesignations = null)
         {
@@ -727,12 +703,11 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Formats pawns with activity grouping.
-        /// Pawns doing the same activity are grouped: "A and B (sleeping)"
+        /// Pawn list grouping pawns that share an activity, suffix, cover, and
+        /// designations: "A and B (sleeping)".
         /// </summary>
         private static string FormatPawnsWithActivityGrouping(List<Pawn> pawns, Dictionary<Thing, List<Designation>> thingDesignations = null)
         {
-            // Group pawns by activity, suffix, cover info, and designations
             bool showCover = RimWorldAccessMod_Settings.Settings?.ShowCoverInfo ?? true;
             var groups = new List<(List<Pawn> pawns, string activity, string suffix, string coverInfo, string designationInfo)>();
 
@@ -743,7 +718,6 @@ namespace RimWorldAccess
                 string coverInfo = showCover ? CoverHelper.GetCoverInfo(pawn) : null;
                 string designationInfo = GetThingDesignationSuffix(pawn, thingDesignations);
 
-                // Find existing group with same activity, suffix, cover info, and designations
                 var existingGroup = groups.FirstOrDefault(g => g.activity == activity && g.suffix == suffix && g.coverInfo == coverInfo && g.designationInfo == designationInfo);
                 if (existingGroup.pawns != null)
                 {
@@ -776,10 +750,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Formats a list of pawn names with proper grammar.
-        /// 1 pawn: "Name"
-        /// 2 pawns: "Name1 and Name2"
-        /// 3+ pawns: "Name1, Name2, and Name3"
+        /// Joins pawn names with list grammar: "A", "A and B", "A, B, and C".
         /// </summary>
         private static string FormatPawnNames(List<Pawn> pawns)
         {
@@ -789,14 +760,12 @@ namespace RimWorldAccess
             if (pawns.Count == 2)
                 return "RimWorldAccess.Map.Tile.Pawn.AndJoin".Translate(pawns[0].LabelShort, pawns[1].LabelShort);
 
-            // 3+: "A, B, and C"
             var names = pawns.Select(p => p.LabelShort).ToList();
             return "RimWorldAccess.Map.Tile.Pawn.OxfordJoin".Translate(string.Join(", ", names.Take(names.Count - 1)), names.Last());
         }
 
         /// <summary>
-        /// Gets information about areas at a tile (key 7).
-        /// Shows which allowed areas and special areas (home area) the tile is part of.
+        /// Allowed and special areas containing a tile, behind key 7.
         /// </summary>
         public static string GetAreasInfo(IntVec3 position, Map map)
         {
@@ -819,26 +788,22 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets location context for a position (zone/named storage, or room).
-        /// Used by scanner announcements for mobile entities (pawns, animals).
+        /// Parenthesized location context for a position — "(in Stockpile zone 1)" — or
+        /// null when neither a zone, a named storage group, nor a roled room applies.
         /// </summary>
-        /// <param name="position">The position to check</param>
-        /// <param name="map">The map to check on</param>
-        /// <returns>Location context string like "(in Stockpile zone 1)" or null if no meaningful location</returns>
         public static string GetLocationContext(IntVec3 position, Map map)
         {
             if (map == null || !position.InBounds(map))
                 return null;
 
-            // Priority 1: Check for zone OR named storage (mutually exclusive - can't have both)
-            // RimWorld enforces that ISlotGroupParent things (shelves) and zones cannot overlap
+            // Zones and ISlotGroupParent things (shelves) cannot overlap, so a zone answer
+            // is final.
             Zone zone = position.GetZone(map);
             if (zone != null)
             {
                 return "RimWorldAccess.Map.Tile.Location.InZone".Translate(zone.label);
             }
 
-            // Check for named storage group (shelves, etc.) - only if no zone (mutually exclusive)
             List<Thing> things = position.GetThingList(map);
             foreach (var thing in things)
             {
@@ -852,7 +817,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Priority 2: Check for indoor room with a meaningful role
             Room room = position.GetRoom(map);
             if (room != null && room.ProperRoom && !room.PsychologicallyOutdoors)
             {
@@ -863,7 +827,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // No meaningful location context
             return null;
         }
 
@@ -883,8 +846,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets designation labels for a specific thing (e.g., "chop" for a tree, "hunt" for an animal).
-        /// Returns comma-separated labels or null if no designations target this thing.
+        /// Comma-separated designation labels targeting a thing ("chop", "hunt"), or null.
         /// </summary>
         private static string GetThingDesignationSuffix(Thing thing, Dictionary<Thing, List<Designation>> thingDesignations)
         {
@@ -895,8 +857,7 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets information about designations/orders at a tile.
-        /// Returns a comma-separated list of active designations.
+        /// Comma-separated list of the designations active at a tile, or null.
         /// </summary>
         public static string GetDesignationsInfo(IntVec3 position, Map map)
         {
@@ -911,14 +872,13 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets a human-readable label for a designation using game strings.
+        /// Player-facing label for a designation, from the game's own strings.
         /// </summary>
         private static string GetDesignationLabel(Designation designation)
         {
             if (designation == null || designation.def == null)
                 return "RimWorldAccess.Map.Tile.UnknownOrder".Translate();
 
-            // Get localized label from the Designator that uses this DesignationDef
             string label = GetLocalizedDesignationLabel(designation.def);
 
             return label;
@@ -932,30 +892,16 @@ namespace RimWorldAccess
             if (def == null)
                 return "RimWorldAccess.Map.Label.Unknown".Translate();
 
-            // Try to find the Designator that uses this DesignationDef
             var designators = Find.ReverseDesignatorDatabase?.AllDesignators;
             if (designators != null)
             {
                 foreach (var designator in designators)
                 {
-                    // Use reflection to get the protected Designation property
-                    var designationProp = designator.GetType().GetProperty("Designation",
-                        System.Reflection.BindingFlags.Instance |
-                        System.Reflection.BindingFlags.NonPublic |
-                        System.Reflection.BindingFlags.Public);
-
-                    if (designationProp != null)
-                    {
-                        var designatorDef = designationProp.GetValue(designator) as DesignationDef;
-                        if (designatorDef == def)
-                        {
-                            return designator.Label;
-                        }
-                    }
+                    if (GetDesignationDef(designator) == def)
+                        return designator.Label;
                 }
             }
 
-            // Fallback: use LabelCap if available, otherwise format defName
             string label = def.LabelCap;
             if (string.IsNullOrEmpty(label))
             {
@@ -965,8 +911,20 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets work/process progress information for buildings with active processes.
-        /// Returns a formatted string like "fermenting, 45%" or null if no progress to report.
+        /// Designator.Designation is protected; read it off the designator's own runtime
+        /// type so mod subclasses resolve too.
+        /// </summary>
+        internal static DesignationDef GetDesignationDef(Designator designator)
+        {
+            var designationProp = designator.GetType().GetProperty("Designation",
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Public);
+            return designationProp == null ? null : designationProp.GetValue(designator) as DesignationDef;
+        }
+
+        /// <summary>
+        /// Progress of a building's active process ("fermenting, 45%"), or null.
         /// </summary>
         private static string GetBuildingProgressInfo(Building building)
         {
@@ -987,24 +945,20 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets transport pod related information for a building.
-        /// For pod launchers: announces fuel port location
-        /// For transport pods: announces if connected to fuel
+        /// For a transport pod, whether it is connected to fuel; for a pod launcher, its
+        /// fuel level and fueling-port location. Null for anything else.
         /// </summary>
         private static string GetTransportPodInfo(Building building, Map map)
         {
             if (building == null || map == null)
                 return null;
 
-            // Check if this is a transport pod (has CompTransporter)
             CompTransporter transporter = building.TryGetComp<CompTransporter>();
             if (transporter != null)
             {
-                // Check if it's connected to a fueling port
                 CompLaunchable launchable = building.TryGetComp<CompLaunchable>();
                 if (launchable != null)
                 {
-                    // Use reflection to check ConnectedToFuelingPort if available
                     var connectedProp = HarmonyLib.AccessTools.Property(launchable.GetType(), "ConnectedToFuelingPort");
                     if (connectedProp != null)
                     {
@@ -1013,7 +967,6 @@ namespace RimWorldAccess
                             bool connected = (bool)connectedProp.GetValue(launchable);
                             if (connected)
                             {
-                                // Get fuel level if connected
                                 float fuel = TransportPodHelper.GetFuelLevel(launchable);
                                 return "RimWorldAccess.Map.Tile.TransportPod.Fueled".Translate(fuel.ToString("F0"));
                             }
@@ -1026,7 +979,7 @@ namespace RimWorldAccess
                     }
                 }
 
-                // Fallback: check if there's an adjacent fueling port
+                // Fall back to looking for an adjacent fueling port.
                 bool hasAdjacentFuel = false;
                 foreach (IntVec3 adjacent in GenAdj.CellsAdjacent8Way(building))
                 {
@@ -1035,9 +988,8 @@ namespace RimWorldAccess
                         Building adjacentBuilding = adjacent.GetFirstBuilding(map);
                         if (adjacentBuilding != null)
                         {
-                            // Check if it's a pod launcher/fueling port
                             CompRefuelable refuelable = adjacentBuilding.TryGetComp<CompRefuelable>();
-                            if (refuelable != null && adjacentBuilding.def.defName.Contains("Launcher"))
+                            if (refuelable != null && adjacentBuilding.def.building != null && adjacentBuilding.def.building.hasFuelingPort)
                             {
                                 hasAdjacentFuel = true;
                                 break;
@@ -1051,11 +1003,9 @@ namespace RimWorldAccess
                     : "RimWorldAccess.Map.Tile.TransportPod.NotConnected").Translate();
             }
 
-            // Check if this is a pod launcher (has CompRefuelable and is a launcher type)
             CompRefuelable refuelableComp = building.TryGetComp<CompRefuelable>();
-            if (refuelableComp != null && building.def.defName.Contains("Launcher"))
+            if (refuelableComp != null && building.def.building != null && building.def.building.hasFuelingPort)
             {
-                // Find the fueling port cell and announce its exact coordinates
                 IntVec3 fuelingPortCell = FuelingPortUtility.GetFuelingPortCell(building);
                 if (fuelingPortCell.IsValid && fuelingPortCell.InBounds(map))
                 {
@@ -1075,7 +1025,6 @@ namespace RimWorldAccess
             int dx = to.x - from.x;
             int dz = to.z - from.z;
 
-            // Determine primary direction
             if (System.Math.Abs(dx) > System.Math.Abs(dz))
             {
                 return (dx > 0
@@ -1090,7 +1039,6 @@ namespace RimWorldAccess
             }
             else if (dx != 0 && dz != 0)
             {
-                // Diagonal
                 string ns = (dz > 0
                     ? "RimWorldAccess.Map.Direction.Lower.North"
                     : "RimWorldAccess.Map.Direction.Lower.South").Translate();
@@ -1104,22 +1052,19 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Checks if a position is a fueling port cell for a nearby launcher (empty cell where pods should be placed).
-        /// Returns announcement text if this is a fueling port cell, null otherwise.
+        /// Announcement text when a position is some launcher's fueling-port cell — the
+        /// empty cell pods belong on — otherwise null.
         /// </summary>
         private static string GetEmptyFuelingPortInfo(IntVec3 position, Map map)
         {
             if (map == null || !position.InBounds(map))
                 return null;
 
-            // Use FuelingPortUtility to check if this cell is a fueling port for some launcher
             Building fuelingPortGiver = FuelingPortUtility.FuelingPortGiverAtFuelingPortCell(position, map);
             if (fuelingPortGiver != null)
             {
-                // This is a fueling port cell - announce it
                 string launcherName = fuelingPortGiver.LabelShort ?? "RimWorldAccess.Map.Tile.TransportPod.LauncherFallback".Translate().ToString();
 
-                // Check current fuel level
                 CompRefuelable refuelable = fuelingPortGiver.TryGetComp<CompRefuelable>();
                 if (refuelable != null)
                 {
@@ -1133,15 +1078,14 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Checks if the game is currently in drop pod landing targeting mode.
-        /// Detects this by checking for the specific mouse attachment texture used for drop pods.
+        /// Whether the game is in drop-pod landing targeting, identified by the targeter's
+        /// mouse-attachment texture.
         /// </summary>
         private static bool IsDropPodLandingTargeting()
         {
             if (Find.Targeter == null || !Find.Targeter.IsTargeting)
                 return false;
 
-            // Use reflection to check the mouseAttachment field
             var mouseAttachmentField = HarmonyLib.AccessTools.Field(typeof(Targeter), "mouseAttachment");
             if (mouseAttachmentField == null)
                 return false;
@@ -1151,24 +1095,17 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets deep ore deposit info for a tile if conditions are met.
-        /// Returns info like "gold, 300 remaining" or null if no deep ore or conditions not met.
-        /// Matches sighted player visibility - only shows when a powered scanner exists.
+        /// Deep ore at a tile ("gold, 300 remaining"), or null. Gated on a powered scanner
+        /// existing, matching what a sighted player can see.
         /// </summary>
-        /// <param name="position">The tile position to check</param>
-        /// <param name="map">The map to check on</param>
-        /// <returns>Deep ore info string or null</returns>
         public static string GetDeepOreInfo(IntVec3 position, Map map)
         {
             if (map == null || !position.InBounds(map))
                 return null;
 
-            // Check if there's an active (powered) deep scanner on the map
-            // This matches the visibility rules for sighted players
             if (!map.deepResourceGrid.AnyActiveDeepScannersOnMap())
                 return null;
 
-            // Get the deep ore at this position
             ThingDef oreDef = map.deepResourceGrid.ThingDefAt(position);
             if (oreDef == null)
                 return null;
@@ -1181,8 +1118,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Checks if the current architect designator should show deep ore info.
-        /// Returns true if placing a building with PlaceWorker_ShowDeepResources (like deep drill).
+        /// Whether the architect designator now in placement mode reveals deep resources,
+        /// as a deep drill does.
         /// </summary>
         public static bool ShouldShowDeepOreForCurrentDesignator()
         {
@@ -1193,17 +1130,14 @@ namespace RimWorldAccess
             if (designator == null)
                 return false;
 
-            // Check if it's a build designator
             if (!(designator is Designator_Build buildDesignator))
                 return false;
 
-            // Get the BuildableDef being placed
             BuildableDef placingDef = buildDesignator.PlacingDef;
             if (placingDef == null)
                 return false;
 
-            // Check if it's a ThingDef with CompDeepDrill component
-            // This matches RimWorld's DeepResourceGrid.DrawPlacingMouseAttachments() logic
+            // Mirrors DeepResourceGrid.DrawPlacingMouseAttachments.
             if (placingDef is ThingDef thingDef && thingDef.CompDefFor<CompDeepDrill>() != null)
             {
                 return true;

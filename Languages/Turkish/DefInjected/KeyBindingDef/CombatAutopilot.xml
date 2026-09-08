@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RWA_GizmoEngage.label>düğme: hedefe saldır</RWA_GizmoEngage.label>
+  <RWA_GizmoSeekDestroy.label>düğme: bul ve yok et</RWA_GizmoSeekDestroy.label>
+  <RWA_GizmoCombatPolicy.label>düğme: savaş kuralı</RWA_GizmoCombatPolicy.label>
+  <RWA_GizmoPause.label>düğme: otomasyonu duraklat</RWA_GizmoPause.label>
+  <RWA_GizmoHuntAnimals.label>düğme: hayvanları avla</RWA_GizmoHuntAnimals.label>
+  <RWA_GizmoAutocastAll.label>düğme: tümünü otomatik kullan</RWA_GizmoAutocastAll.label>
+  <RWA_GizmoPatrol.label>düğme: devriye</RWA_GizmoPatrol.label>
+</LanguageData>

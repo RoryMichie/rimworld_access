@@ -9,15 +9,10 @@ using Verse.Sound;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Helper class for social tab data extraction and interactions.
-    /// Provides methods for relations, opinions, ideology, and social interactions.
-    /// </summary>
+    /// <summary>Social-tab data and interactions: relations, opinions, ideology and romance.</summary>
     public static class SocialTabHelper
     {
-        /// <summary>
-        /// Represents a relation with another pawn.
-        /// </summary>
+        /// <summary>A relation with another pawn.</summary>
         public class RelationInfo
         {
             public Pawn OtherPawn { get; set; }
@@ -38,9 +33,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Represents ideology and role information.
-        /// </summary>
+        /// <summary>Ideology and role information.</summary>
         public class IdeologyInfo
         {
             public Ideo Ideo { get; set; }
@@ -50,13 +43,9 @@ namespace RimWorldAccess
             public string RoleName { get; set; }
         }
 
-        // Uses RimWorld.PregnancyApproach enum (Normal, AvoidPregnancy, TryForBaby)
 
         #region Ideology & Role
 
-        /// <summary>
-        /// Gets ideology and role information for a pawn.
-        /// </summary>
         public static IdeologyInfo GetIdeologyInfo(Pawn pawn)
         {
             if (pawn?.ideo == null || !ModsConfig.IdeologyActive)
@@ -70,7 +59,6 @@ namespace RimWorldAccess
                 Certainty = pawn.ideo.Certainty
             };
 
-            // Get role
             if (pawn.Ideo != null)
             {
                 info.Role = pawn.Ideo.GetRole(pawn);
@@ -81,41 +69,79 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets all active roles from the pawn's ideology.
+        /// Every role vanilla's "Choose role..." menu would list, inactive and ineligible ones
+        /// included so they stay navigable with a reason. Mirrors SocialCardUtility's cachedRoles:
+        /// RitualUtility.AllRolesForPawn, which does not filter by Active, sorted by
+        /// displayOrderInImpact.
         /// </summary>
+        /// <summary>Compat gates over the roles section: a mod that Harmony-hides vanilla's role
+        /// dropdown registers the same condition here, so this data-model reading stays in parity.</summary>
+        private static readonly List<Func<Pawn, bool>> roleSelectionSuppressors =
+            new List<Func<Pawn, bool>>();
+
+        public static void RegisterRoleSelectionSuppressor(Func<Pawn, bool> suppressor)
+        {
+            if (suppressor != null)
+                roleSelectionSuppressors.Add(suppressor);
+        }
+
         public static List<Precept_Role> GetAvailableRoles(Pawn pawn)
         {
-            var roles = new List<Precept_Role>();
             if (pawn?.Ideo == null || !ModsConfig.IdeologyActive)
-                return roles;
+                return new List<Precept_Role>();
 
-            foreach (var role in pawn.Ideo.RolesListForReading)
+            for (int i = 0; i < roleSelectionSuppressors.Count; i++)
             {
-                if (role.Active)
-                    roles.Add(role);
+                try
+                {
+                    if (roleSelectionSuppressors[i](pawn))
+                        return new List<Precept_Role>();
+                }
+                catch (Exception ex)
+                {
+                    ModLogger.LimitedError("Role selection suppressor error", ex);
+                }
             }
 
-            return roles;
+            return RitualUtility.AllRolesForPawn(pawn)
+                .OrderBy(r => r.def.displayOrderInImpact)
+                .ToList();
         }
 
         /// <summary>
-        /// Assigns a pawn to an ideology role.
+        /// Opens the RoleChange ritual dialog for <paramref name="newRole"/>, or null to remove the
+        /// current role — the flow vanilla's "Choose role..." button starts. The assignment happens
+        /// through the ritual, so its requirement, confirmation text and quality gates all apply.
         /// </summary>
-        public static bool AssignRole(Precept_Role role, Pawn pawn)
+        public static bool OpenRoleChangeRitual(Pawn pawn, Precept_Role newRole)
         {
             try
             {
-                if (role == null || pawn == null)
+                if (pawn?.Ideo == null)
                     return false;
 
-                role.Assign(pawn, addThoughts: true);
-                string roleName = role.LabelForPawn(pawn);
-                TolkHelper.Speak("RimWorldAccess.Pawns.Social.RoleAssigned".Loc(pawn.LabelShort, roleName));
+                var roleChangeRitual = (Precept_Ritual)pawn.Ideo.GetPrecept(PreceptDefOf.RoleChange);
+                if (roleChangeRitual == null)
+                    return false;
+
+                TargetInfo ritualTarget = roleChangeRitual.targetFilter.BestTarget(pawn, TargetInfo.Invalid);
+                if (!ritualTarget.IsValid)
+                {
+                    Messages.Message((Find.IdeoManager.classicMode
+                        ? "AbilityDisabledNoRitualSpot"
+                        : "AbilityDisabledNoAltarIdeogramOrRitualsSpot").Translate(), pawn, MessageTypeDefOf.RejectInput);
+                    return false;
+                }
+
+                var dialog = (Dialog_BeginRitual)roleChangeRitual.GetRitualBeginWindow(
+                    ritualTarget, null, null, pawn, new Dictionary<string, Pawn> { { "role_changer", pawn } });
+                dialog.SetRoleToChangeTo(newRole);
+                Find.WindowStack.Add(dialog);
                 return true;
             }
             catch (Exception ex)
             {
-                Log.Error($"[RimWorldAccess] Error assigning role: {ex}");
+                Log.Error($"[RimWorldAccess] Error opening role change ritual: {ex}");
                 TolkHelper.Speak("RimWorldAccess.Pawns.Social.ErrorAssignRole".Loc(), SpeechPriority.High);
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
                 return false;
@@ -123,47 +149,23 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Unassigns a pawn from an ideology role.
-        /// </summary>
-        public static bool UnassignRole(Precept_Role role, Pawn pawn)
-        {
-            try
-            {
-                if (role == null || pawn == null)
-                    return false;
-
-                string roleName = role.LabelForPawn(pawn);
-                role.Unassign(pawn, generateThoughts: true);
-                TolkHelper.Speak("RimWorldAccess.Pawns.Social.RoleUnassigned".Loc(pawn.LabelShort, roleName));
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"[RimWorldAccess] Error unassigning role: {ex}");
-                TolkHelper.Speak("RimWorldAccess.Pawns.Social.ErrorUnassignRole".Loc(), SpeechPriority.High);
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Checks if a pawn is eligible for a specific role (meets all requirements).
+        /// Mirrors the option gate in vanilla's Choose-role float menu: the role must be active with
+        /// its requirements met, and leader roles are restricted to the primary ideoligion.
         /// </summary>
         public static bool IsEligibleForRole(Precept_Role role, Pawn pawn)
         {
             if (role == null || pawn == null)
                 return false;
 
-            return role.RequirementsMet(pawn);
+            return role.Active
+                && role.RequirementsMet(pawn)
+                && (!role.def.leaderRole || pawn.Ideo == Faction.OfPlayer.ideos.PrimaryIdeo);
         }
 
         #endregion
 
         #region Relations
 
-        /// <summary>
-        /// Gets all relations for a pawn.
-        /// </summary>
         public static List<RelationInfo> GetRelations(Pawn pawn)
         {
             var relations = new List<RelationInfo>();
@@ -171,7 +173,6 @@ namespace RimWorldAccess
             if (pawn?.relations == null)
                 return relations;
 
-            // Get all pawns this pawn has relations with
             var relatedPawns = pawn.relations.RelatedPawns;
 
             foreach (var otherPawn in relatedPawns)
@@ -180,7 +181,7 @@ namespace RimWorldAccess
                 relations.Add(relationInfo);
             }
 
-            // Also include pawns with non-zero opinions even if no direct relations
+            // Pawns with a non-zero opinion count even without a direct relation.
             if (pawn.Map != null)
             {
                 var allPawns = pawn.Map.mapPawns.AllPawnsSpawned;
@@ -197,7 +198,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Sort by opinion (most positive first)
             relations = relations.OrderByDescending(r => r.MyOpinion).ToList();
 
             return relations;
@@ -207,15 +207,15 @@ namespace RimWorldAccess
         {
             var labels = new List<string>();
 
-            // Use PawnRelationUtility.GetRelations to catch implied/derived relations
-            // (e.g. Parent stores Child as an implied inverse, not in DirectRelations)
+            // GetRelations catches implied relations: Parent stores Child as an inverse, not in
+            // DirectRelations.
             foreach (var def in pawn.GetRelations(otherPawn))
             {
                 labels.Add(def.GetGenderSpecificLabelCap(otherPawn));
             }
 
-            // Add friendship/rivalry labels if no family relations.
-            // "Friend" / "Rival" / "Acquaintance" reuse the vanilla keys of the same names.
+            // Friendship and rivalry labels when no family relation applies, under vanilla's own
+            // keys of the same names.
             if (labels.Count == 0)
             {
                 int opinion = pawn.relations.OpinionOf(otherPawn);
@@ -275,7 +275,7 @@ namespace RimWorldAccess
 
             bool hasFactors = false;
 
-            // Add relation opinion modifiers — mirrors vanilla Pawn_RelationsTracker.OpinionExplanation
+            // Relation opinion modifiers, mirroring Pawn_RelationsTracker.OpinionExplanation.
             foreach (var def in pawn.GetRelations(otherPawn))
             {
                 if (def.opinionOffset != 0)
@@ -328,6 +328,15 @@ namespace RimWorldAccess
             {
                 lines.Add("RimWorldAccess.Pawns.Social.Relation.LovePartners".Translate());
             }
+
+            // Mirrors the two debug tooltip lines SocialCardUtility.GetPawnRowTooltip appends under
+            // Prefs.DevMode, in vanilla's own "F2" format.
+            if (Prefs.DevMode)
+            {
+                lines.Add("RimWorldAccess.Dev.Info.SocialRelation".Translate(
+                    pawn.relations.CompatibilityWith(otherPawn).ToString("F2"),
+                    pawn.relations.SecondaryRomanceChanceFactor(otherPawn).ToString("F2")));
+            }
         }
 
         private static RimWorld.PregnancyApproach GetPregnancyApproach(Pawn pawn, Pawn partner)
@@ -338,10 +347,7 @@ namespace RimWorldAccess
             return pawn.relations.GetPregnancyApproachForPartner(partner);
         }
 
-        /// <summary>
-        /// Sets pregnancy approach between two pawns.
-        /// Uses the game's Pawn_RelationsTracker API which sets it on both pawns.
-        /// </summary>
+        /// <summary>Sets the pregnancy approach through Pawn_RelationsTracker, which writes it on both pawns.</summary>
         public static bool SetPregnancyApproach(Pawn pawn, Pawn partner, RimWorld.PregnancyApproach approach)
         {
             try
@@ -370,9 +376,7 @@ namespace RimWorldAccess
 
         #region Romance
 
-        /// <summary>
-        /// Represents a potential romance target with eligibility and chance info.
-        /// </summary>
+        /// <summary>A potential romance target, with its eligibility and chance.</summary>
         public class RomanceTargetInfo
         {
             public Pawn Target { get; set; }
@@ -382,10 +386,7 @@ namespace RimWorldAccess
             public string Reason { get; set; }
         }
 
-        /// <summary>
-        /// Checks if the Try Romance button should be visible for this pawn.
-        /// Mirrors SocialCardUtility.CanDrawTryRomance.
-        /// </summary>
+        /// <summary>Mirrors SocialCardUtility.CanDrawTryRomance.</summary>
         public static bool CanTryRomance(Pawn pawn)
         {
             return ModsConfig.BiotechActive
@@ -394,9 +395,7 @@ namespace RimWorldAccess
                 && pawn.IsFreeColonist;
         }
 
-        /// <summary>
-        /// Checks if the pawn is on romance cooldown and returns the translated cooldown message.
-        /// </summary>
+        /// <summary>The translated cooldown message while the pawn is on romance cooldown.</summary>
         public static bool IsRomanceOnCooldown(Pawn pawn, out string cooldownText)
         {
             if (pawn.relations.IsTryRomanceOnCooldown)
@@ -409,19 +408,15 @@ namespace RimWorldAccess
             return false;
         }
 
-        /// <summary>
-        /// Checks if the pawn is eligible to initiate romance.
-        /// Wraps RelationsUtility.RomanceEligible.
-        /// </summary>
+        /// <summary>Wraps RelationsUtility.RomanceEligible.</summary>
         public static AcceptanceReport GetRomanceInitiatorEligibility(Pawn pawn)
         {
             return RelationsUtility.RomanceEligible(pawn, initiator: true, forOpinionExplanation: false);
         }
 
         /// <summary>
-        /// Gets all romance targets for a pawn, sorted like vanilla:
-        /// viable targets descending by chance, then non-viable alphabetically.
-        /// Mirrors SocialCardUtility.RomanceOptions.
+        /// Romance targets sorted as vanilla sorts them — viable descending by chance, then
+        /// non-viable alphabetically. Mirrors SocialCardUtility.RomanceOptions.
         /// </summary>
         public static List<RomanceTargetInfo> GetRomanceTargets(Pawn romancer)
         {
@@ -433,7 +428,7 @@ namespace RimWorldAccess
                 if (target == romancer)
                     continue;
 
-                // Skip if not attracted (matches vanilla filter in RelationsUtility.RomanceOption)
+                // Vanilla's own attraction filter, from RelationsUtility.RomanceOption.
                 if (!RelationsUtility.AttractedToGender(romancer, target.gender))
                     continue;
 
@@ -470,19 +465,16 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Builds a descriptive romance factor breakdown for StatBreakdownState.
-        /// Includes overall chance header and reformats the game's "x" notation
-        /// into clearer multiplier format for screen reader users.
+        /// The romance factor breakdown for StatBreakdownState: the game's own factors, with its
+        /// visual "x" multiplier notation spelled out.
         /// </summary>
         public static string BuildRomanceBreakdown(Pawn romancer, Pawn target)
         {
-            // Get the game's factor breakdown and reformat for accessibility
             string factors = InteractionWorker_RomanceAttempt.RomanceFactors(romancer, target).StripTags();
-            // Replace "x" multiplier notation (e.g. ": x22%") with plain percentage
-            // The "x" is visual shorthand that reads poorly with screen readers
+            // The "x" in ": x22%" is visual shorthand that reads poorly aloud.
             factors = System.Text.RegularExpressions.Regex.Replace(factors, @": x(\d)", ": $1");
-            // Strip leading " - " so each factor line is a flat root item in StatBreakdownState
-            // Without this, the " - " prefix causes indent level 1, creating a collapsed parent node
+            // The leading " - " would read as indent level 1 and collapse the lines under a parent
+            // node, so each factor line is flattened to a root item.
             factors = System.Text.RegularExpressions.Regex.Replace(factors, @"(?m)^ - ", "");
 
             return factors;
@@ -491,16 +483,15 @@ namespace RimWorldAccess
         private static MethodInfo giveRomanceJobWithWarningMethod;
 
         /// <summary>
-        /// Initiates a romance attempt, showing warning dialog if the pawn has existing relationships.
-        /// Uses reflection to call RelationsUtility.GiveRomanceJobWithWarning (private).
-        /// Returns false if the pawn already has a romance job queued.
+        /// Starts a romance attempt through the private RelationsUtility.GiveRomanceJobWithWarning,
+        /// which warns about existing relationships. False when a romance job is already queued.
         /// </summary>
         public static bool InitiateRomance(Pawn romancer, Pawn target)
         {
             try
             {
-                // Guard against duplicate romance jobs - vanilla doesn't need this because
-                // the float menu closes after selection, but our tree keeps the action available
+                // Vanilla's float menu closes after selection; this tree keeps the action available,
+                // so duplicate romance jobs need guarding here.
                 if (romancer.CurJob?.def == JobDefOf.TryRomance ||
                     romancer.jobs.jobQueue.Any(j => j.job.def == JobDefOf.TryRomance))
                 {

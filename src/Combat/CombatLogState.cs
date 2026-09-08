@@ -28,7 +28,7 @@ namespace RimWorldAccess
                 if (cursorPosition.IsValid && cursorPosition.InBounds(Find.CurrentMap))
                 {
                     pawn = Find.CurrentMap.thingGrid.ThingsListAt(cursorPosition)
-                        .OfType<Pawn>().FirstOrDefault();
+                        .OfType<Pawn>().FirstOrDefault(p => !HiddenPawns.IsHidden(p));
                 }
             }
 
@@ -92,7 +92,7 @@ namespace RimWorldAccess
                         if (currentBattleName != null)
                             sb.AppendLine();
 
-                        sb.AppendLine($"-- {battleName} --");
+                        sb.AppendLine("RimWorldAccess.Combat.Log.BattleHeader".Translate(battleName));
                         currentBattleName = battleName;
                     }
 

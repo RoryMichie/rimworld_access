@@ -1,20 +1,15 @@
 using HarmonyLib;
+using UnityEngine;
 using Verse;
 using RimWorld;
+using RimWorldAccess.Shell;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patch on Designator.Deselected() to automatically clean up
-    /// accessibility state when the game truly deselects a designator.
-    ///
-    /// This fires when:
-    /// - User presses Escape to cancel
-    /// - User clicks elsewhere on the map
-    /// - Placement completes and the designator is done
-    ///
-    /// It does NOT reset state when switching between designators, because
-    /// DesignatorManagerPatch uses a flag to track when we're inside a Select() operation.
+    /// Cleans up accessibility state when the game truly deselects a designator (Escape, a click
+    /// elsewhere, or placement completing). Switching between designators is NOT a true deselect:
+    /// <see cref="DesignatorManagerPatch.IsInSelectOperation"/> distinguishes the two.
     /// </summary>
     [HarmonyPatch(typeof(Designator))]
     [HarmonyPatch("Deselected")]
@@ -23,34 +18,34 @@ namespace RimWorldAccess
         [HarmonyPostfix]
         public static void Postfix()
         {
-            // Skip cleanup if we're in the middle of a Select() operation
-            // (i.e., switching to a new designator, not truly deselecting)
+            // The harvest's restoring Deselect is not a true deselect (see MaterialMenuHarvest).
+            if (MaterialMenuHarvest.InFlight)
+                return;
+
             if (DesignatorManagerPatch.IsInSelectOperation)
             {
                 return;
             }
 
-            // Truly deselecting - clean up accessibility state
             if (ShapePlacementState.CurrentPhase != PlacementPhase.Inactive)
             {
-                Log.Message("[DesignatorDeselectedPatch] Cleaning up ShapePlacementState on true deselect");
+                ModLogger.Dev("[DesignatorDeselectedPatch] Cleaning up ShapePlacementState on true deselect");
                 ShapePlacementState.Reset();
             }
 
             if (ArchitectState.CurrentMode != ArchitectMode.Inactive)
             {
-                Log.Message("[DesignatorDeselectedPatch] Cleaning up ArchitectState on true deselect");
+                ModLogger.Dev("[DesignatorDeselectedPatch] Cleaning up ArchitectState on true deselect");
                 ArchitectState.Reset();
             }
 
-            // Clean up gizmo zone edit state
             if (GizmoZoneEditState.IsActive)
             {
-                Log.Message("[DesignatorDeselectedPatch] Cleaning up GizmoZoneEditState on true deselect");
+                ModLogger.Dev("[DesignatorDeselectedPatch] Cleaning up GizmoZoneEditState on true deselect");
                 GizmoZoneEditState.Reset();
             }
 
-            // Clean up area designator selected area to prevent stale selection
+            // Prevents a stale area selection outliving the designator.
             if (Designator_AreaAllowed.selectedArea != null)
             {
                 Designator_AreaAllowed.ClearSelectedArea();
@@ -59,101 +54,85 @@ namespace RimWorldAccess
     }
 
     /// <summary>
-    /// Harmony patch on DesignatorManager.Select() to intercept ALL placements
-    /// and route them through the accessible placement system.
-    ///
-    /// This is the SINGLE entry point for accessible placement mode. All placements
-    /// (whether from architect menu, gizmos, or other sources) flow through here.
-    ///
-    /// This patch provides:
-    /// - Screen reader announcements for what is being placed
-    /// - Keyboard navigation via ShapePlacementState
-    /// - Proper integration with the accessible architect system
+    /// The single entry point for accessible placement mode: every placement, from the architect
+    /// menu, a gizmo or anywhere else, flows through DesignatorManager.Select() and is routed
+    /// here into <see cref="ShapePlacementState"/>. A Select a mouse click drove is left entirely
+    /// to vanilla — see <see cref="MouseOriginatedSelect"/>.
     /// </summary>
     [HarmonyPatch(typeof(DesignatorManager))]
     [HarmonyPatch("Select")]
     public static class DesignatorManagerPatch
     {
-        /// <summary>
-        /// Flag indicating we're inside a Select() operation.
-        /// Used by DesignatorDeselectedPatch to distinguish between
-        /// switching designators vs truly deselecting.
-        /// </summary>
+        /// <summary>True inside a Select() operation, so DesignatorDeselectedPatch can tell a designator switch from a true deselect.</summary>
         public static bool IsInSelectOperation { get; private set; } = false;
 
-        /// <summary>
-        /// Prefix patch that sets the flag before Select() runs.
-        /// This lets DesignatorDeselectedPatch know that Deselected() is being
-        /// called as part of switching to a new designator, not a true deselect.
-        /// </summary>
         [HarmonyPrefix]
         public static void Prefix()
         {
             IsInSelectOperation = true;
         }
 
-        /// <summary>
-        /// Finalizer ensures the flag is cleared even if Select() throws an exception.
-        /// This prevents the flag from getting stuck in the true state.
-        /// </summary>
+        /// <summary>Clears the flag even if Select() throws, so it cannot stick true.</summary>
         [HarmonyFinalizer]
         public static void Finalizer()
         {
             IsInSelectOperation = false;
         }
 
-        /// <summary>
-        /// Postfix patch that intercepts designator selection and routes placement
-        /// designators through the accessible system.
-        /// </summary>
-        /// <param name="des">The designator being selected</param>
         [HarmonyPostfix]
         public static void Postfix(Designator des)
         {
-            // Clear the flag now that Select() is complete
             IsInSelectOperation = false;
 
-            // Skip if ShapePlacementState is already active
+            // A harvest's transient Select must not enter placement (see MaterialMenuHarvest).
+            if (MaterialMenuHarvest.InFlight)
+                return;
+
+            if (MouseOriginatedSelect())
+                return;
+
             if (ShapePlacementState.IsActive)
             {
-                return;
+                if (ShapePlacementState.ActiveDesignator == des)
+                    return;
+
+                // A different tool selected under live placement (an eyedropper's pick): placement
+                // restarts on it; the architect flow re-enters through its own mode so its tracked
+                // designator follows, and that nested Select lands back here with placement inactive.
+                ShapePlacementState.Reset();
+                if (ArchitectState.IsInPlacementMode)
+                {
+                    ArchitectState.EnterPlacementMode(des);
+                    return;
+                }
             }
 
-            // Handle Designator_Place (Build, Install, etc.)
             if (des is Designator_Place)
             {
                 RouteToAccessiblePlacement(des);
                 return;
             }
 
-            // Handle zone designators (ZoneAdd for expand, ZoneDelete for shrink)
-            // These support shape-based placement just like building designators
             if (ShapeHelper.IsZoneDesignator(des))
             {
                 RouteToAccessiblePlacement(des);
                 return;
             }
 
-            // Handle paint designators (Paint Floor / Paint Building, plus modded Designator_Paint).
-            // These are order-type designators for cell placement, but vanilla also pops a visual
-            // color-swatch grid the keyboard flow never triggers. Route to placement, then auto-open
-            // the accessible color picker so the user can pick a color before painting.
+            // Paint designators also pop a visual color-swatch grid the keyboard flow never
+            // triggers, so open the accessible color picker after entering placement.
             if (PaintColorHelper.IsPaintDesignator(des))
             {
-                // Hold the placement entry announcement so the color picker speaks first; the picker
-                // replays it after the user picks a color (or cancels).
+                // Hold the entry announcement so the picker speaks first; it replays afterwards.
                 ShapePlacementState.SuppressNextEntryAnnouncement = true;
                 RouteToAccessiblePlacement(des);
                 PaintColorHelper.OpenColorPicker((Designator_Paint)des);
                 return;
             }
 
-            // Handle the plan-add designator (architect "Plan" tool). Like paint, it is an
-            // order-type cell designator, but vanilla also pops a visual color-swatch grid the
-            // keyboard flow never triggers (and whose options carry no text label anyway). Route to
-            // placement, then auto-open the accessible color picker so the user can pick a plan
-            // color before drawing. Gated on the game's CanSelectColor flag so the Expand variant
-            // (which adopts an existing plan's color) is left to the generic routing below.
+            // The plan tool works like paint. Gated on the game's own CanSelectColor flag, so the
+            // Expand variant — which adopts an existing plan's color — falls to the generic
+            // routing below.
             if (PlanColorHelper.IsPlanColorDesignator(des))
             {
                 ShapePlacementState.SuppressNextEntryAnnouncement = true;
@@ -162,69 +141,86 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Handle order designators (Hunt, Haul, Tame, etc.)
             if (ShapeHelper.IsOrderDesignator(des))
             {
                 RouteToAccessiblePlacement(des);
                 return;
             }
 
-            // Handle cells designators (Mine, Cut Plants, etc.)
             if (ShapeHelper.IsCellsDesignator(des))
             {
                 RouteToAccessiblePlacement(des);
                 return;
             }
 
-            // Handle gravship landing placement designator
-            if (des.GetType().Name == "Designator_MoveGravship")
+            if (BuildingReflection.IsGravshipDesignator(des))
             {
                 RouteToAccessiblePlacement(des);
 
-                // Announce gravship footprint size
-                var markerField = AccessTools.Field(des.GetType(), "marker");
-                if (markerField != null)
+                var marker = BuildingReflection.GetGravshipMarker(des);
+                if (marker?.gravship != null)
                 {
-                    var marker = markerField.GetValue(des);
-                    if (marker != null)
-                    {
-                        var gravshipField = AccessTools.Field(marker.GetType(), "gravship");
-                        var gravship = gravshipField?.GetValue(marker);
-                        if (gravship != null)
-                        {
-                            var boundsField = AccessTools.Property(gravship.GetType(), "Bounds");
-                            if (boundsField != null)
-                            {
-                                var bounds = (CellRect)boundsField.GetValue(gravship);
-                                TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.GravshipLandingPrompt".Loc(bounds.Width, bounds.Height));
-                            }
-                        }
-                    }
+                    CellRect bounds = marker.gravship.Bounds;
+                    TolkHelper.Speak("RimWorldAccess.Building.ArchitectPlace.GravshipLandingPrompt".Loc(bounds.Width, bounds.Height));
                 }
                 return;
             }
+
+            // Everything the manager selects is a cell tool (ProcessInputEvents clicks cells into
+            // CanDesignateCell/DesignateSingleCell), so an unrecognized designator -- the
+            // eyedroppers carry no draw-style category -- still gets manual placement.
+            RouteToAccessiblePlacement(des);
         }
 
         /// <summary>
-        /// Routes a designator to the accessible placement system.
-        /// Always uses ShapePlacementState for consistent UX, even for single-cell buildings.
-        /// Works with both placement designators (Build, Install) and zone designators.
-        /// Area designators (Expand/Clear allowed area) prompt for area selection first.
+        /// True when this Select is a sighted player's mouse click and nothing else: the shell is
+        /// not running a keyboard action, and a live mouse event is driving the GUI pass. Purely
+        /// observational — the event is never Used.
+        ///
+        /// Must read rawType, not type: GUI.DoControl calls Use() before ButtonInvisible returns
+        /// true, so by the time ProcessInput runs, type is already Used while rawType still
+        /// carries the MouseUp. A vanilla gizmo hotkey is Used the same way but stays rawType
+        /// KeyDown, so it keeps the accessible route.
+        ///
+        /// Deliberately NOT "unmarked means mouse": vanilla also selects designators with no user
+        /// input at all (GravshipUtility's arrival select runs from a LongEventHandler callback),
+        /// and standing down there would drop the placement announcement.
         /// </summary>
-        /// <param name="designator">The designator to route</param>
+        private static bool MouseOriginatedSelect()
+        {
+            // Must precede any event inspection: shell claim handlers spoof Event.current here.
+            if (ShellKeyboardOrigin.Active)
+                return false;
+
+            // Our own surfaces execute an activation inside the row's mouse event, which would
+            // read as a sighted click under rawType.
+            if (WindowlessFloatMenuState.IsExecutingOption || GizmoNavigationState.IsExecutingGizmo)
+                return false;
+
+            Event ev = Event.current;
+            if (ev == null)
+                return false;
+
+            return ev.rawType == EventType.MouseDown
+                || ev.rawType == EventType.MouseUp
+                || ev.rawType == EventType.MouseDrag;
+        }
+
+        /// <summary>
+        /// Routes a designator into <see cref="ShapePlacementState"/>, even for single-cell
+        /// buildings. Area designators prompt for area selection first, unless one is already
+        /// selected.
+        /// </summary>
         private static void RouteToAccessiblePlacement(Designator designator)
         {
             if (ShapeHelper.IsAreaDesignator(designator))
             {
-                // If an area is already selected (e.g., from WindowlessAreaState),
-                // skip the selection menu and go directly to placement
                 if (Designator_AreaAllowed.selectedArea != null)
                 {
                     EnterPlacementWithDesignator(designator);
                     return;
                 }
 
-                // No area selected yet - show selection menu
                 AreaSelectionMenuState.Open(designator, (area) => {
                     Designator_AreaAllowed.selectedArea = area;
                     EnterPlacementWithDesignator(designator);
@@ -236,24 +232,19 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Enters the shape placement system with the given designator.
-        /// Determines the default shape based on RimWorld's "Remember Draw Styles" setting
-        /// and starts ShapePlacementState.
+        /// Enters shape placement, defaulting the shape from the game's own selected draw style
+        /// so RimWorld's "Remember Draw Styles" setting is honored.
         /// </summary>
-        /// <param name="designator">The designator to place with</param>
         private static void EnterPlacementWithDesignator(Designator designator)
         {
             var availableShapes = ShapeHelper.GetAvailableShapes(designator);
             ShapeType defaultShape = ShapeType.Manual;
 
-            // Read game's remembered/selected style (set by DesignatorManager.Select())
-            // This respects RimWorld's "Remember Draw Styles" setting automatically
             var designatorManager = Find.DesignatorManager;
             if (designatorManager?.SelectedStyle != null)
             {
                 ShapeType rememberedShape = ShapeHelper.DrawStyleDefToShapeType(designatorManager.SelectedStyle);
 
-                // Use remembered shape if available for this designator
                 if (availableShapes.Contains(rememberedShape))
                 {
                     defaultShape = rememberedShape;

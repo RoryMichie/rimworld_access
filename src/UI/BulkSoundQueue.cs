@@ -51,7 +51,7 @@ namespace RimWorldAccess
 
         /// <summary>
         /// Plays scheduled sounds when their time arrives.
-        /// Called every frame from UnifiedKeyboardPatch.
+        /// Called every frame from ShellDispatcherPatch.Prefix.
         /// Limited to one sound per frame to avoid audio overlap.
         /// </summary>
         public static void Update()

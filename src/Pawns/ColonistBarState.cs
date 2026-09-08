@@ -6,63 +6,89 @@ using RimWorld;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Provides page-based navigation of the colonist bar with keyboard shortcuts.
-    ///
-    /// The bar is organized into pages of 10:
-    /// - Alt+Left/Right: navigate linearly (crosses page boundaries)
-    /// - Alt+1-0: jump to position 1-10 on current page
-    /// - Alt+Up/Down: move between pages (colonist pages, then mech pages)
-    /// - Ctrl+Alt+Left/Right: reorder colonists using shift/insert
-    /// - Comma/Period: when on mech page, cycles mechs instead of colonists
+    /// Page-based keyboard navigation of the colonist bar. The bar is an ordered list of sections —
+    /// colonists, colony mechs, then other player-controlled units (see PlayerControllables for that
+    /// section's membership signal) — each paged in groups of 10. Crossing past the end of a section
+    /// moves into the next non-empty one; empty sections are never landed on or announced. Colonists
+    /// are the only reorderable section, and on any other section comma/period cycles within that
+    /// section instead of colonists.
     /// </summary>
     public static class ColonistBarState
     {
         public const int PageSize = 10;
 
-        /// <summary>
-        /// 0-indexed position into the current section's list (colonists or mechs).
-        /// </summary>
+        /// <summary>One section of the bar. GetPawns is a live supplier, never cached across frames.</summary>
+        private sealed class BarSection
+        {
+            public string Id;
+            public System.Func<List<Pawn>> GetPawns;
+            public bool Reorderable;
+            public string SectionNameKey;
+            public string PageKey;
+            public string NoneHereKey;
+            public string NoneAtPositionKey;
+        }
+
+        private static readonly List<BarSection> Sections = new List<BarSection>
+        {
+            new BarSection
+            {
+                Id = "colonists",
+                GetPawns = GetColonists,
+                Reorderable = true,
+                SectionNameKey = "RimWorldAccess.Pawns.Bar.SectionColonists",
+                PageKey = "RimWorldAccess.Pawns.Bar.Page",
+                NoneHereKey = "RimWorldAccess.Pawns.Bar.NoColonistsHere",
+                NoneAtPositionKey = "RimWorldAccess.Pawns.Bar.NoColonistAtPosition",
+            },
+            new BarSection
+            {
+                Id = "mechs",
+                GetPawns = GetMechs,
+                Reorderable = false,
+                SectionNameKey = "RimWorldAccess.Pawns.Bar.SectionMechs",
+                PageKey = "RimWorldAccess.Pawns.Bar.MechsPage",
+                NoneHereKey = "RimWorldAccess.Pawns.Bar.NoMechsHere",
+                NoneAtPositionKey = "RimWorldAccess.Pawns.Bar.NoMechAtPosition",
+            },
+            new BarSection
+            {
+                Id = "controllables",
+                GetPawns = GetControllables,
+                Reorderable = false,
+                SectionNameKey = "RimWorldAccess.Pawns.Bar.SectionControllables",
+                PageKey = "RimWorldAccess.Pawns.Bar.ControllablesPage",
+                NoneHereKey = "RimWorldAccess.Pawns.Bar.NoControllablesHere",
+                NoneAtPositionKey = "RimWorldAccess.Pawns.Bar.NoControllableAtPosition",
+            },
+        };
+
+        /// <summary>0-indexed position into the current section's list.</summary>
         private static int barPosition = 0;
 
-        /// <summary>
-        /// Whether we're currently viewing the mech section (after all colonist pages).
-        /// </summary>
-        private static bool onMechSection = false;
+        private static int sectionIndex = 0;
 
-        /// <summary>
-        /// The map ID we last navigated on. Used to detect map changes and reset.
-        /// </summary>
+        /// <summary>The map last navigated on; a change resets the cursor.</summary>
         private static int lastMapId = -1;
 
-        // ===== PUBLIC PROPERTIES =====
+        public static bool IsOnMechSection => Sections[sectionIndex].Id == "mechs";
 
-        /// <summary>
-        /// Whether the bar cursor is currently on the mechanoid section.
-        /// When true, comma/period should cycle mechs instead of colonists.
-        /// </summary>
-        public static bool IsOnMechSection => onMechSection;
+        /// <summary>True on mechs or other controllables, where comma/period cycles within the section.</summary>
+        public static bool IsOnNonColonistSection => Sections[sectionIndex].Id != "colonists";
 
-        /// <summary>
-        /// Current page number (0-indexed). Derived from bar position.
-        /// </summary>
+        /// <summary>The current section's "no pawns here" key, for callers that announce a cycling failure themselves.</summary>
+        public static string CurrentSectionNoneHereKey => Sections[sectionIndex].NoneHereKey;
+
+        /// <summary>Current page number, 0-indexed.</summary>
         public static int CurrentPage => barPosition / PageSize;
 
-        /// <summary>
-        /// Position within the current page (0-indexed, 0-9).
-        /// </summary>
+        /// <summary>Position within the current page, 0-9.</summary>
         public static int PositionInPage => barPosition % PageSize;
 
-        /// <summary>
-        /// Current 0-indexed bar position. Used by MultiSelectState for position announcements.
-        /// </summary>
+        /// <summary>Current 0-indexed bar position.</summary>
         public static int BarPosition => barPosition;
 
-        // ===== DATA SOURCES =====
-
-        /// <summary>
-        /// Gets colonists on the current map in bar display order.
-        /// Same source as PawnSelectionState uses for comma/period cycling.
-        /// </summary>
+        /// <summary>Colonists on the current map in bar display order, the same source comma/period cycling uses.</summary>
         private static List<Pawn> GetColonists()
         {
             if (Find.ColonistBar == null || Find.CurrentMap == null)
@@ -76,18 +102,14 @@ namespace RimWorldAccess
                 .ToList();
         }
 
-        /// <summary>
-        /// Gets colony mechs on the current map. Only available with Biotech DLC.
-        /// </summary>
+        /// <summary>Colony mechs on the current map; empty without Biotech.</summary>
         private static List<Pawn> GetMechs()
         {
             if (!ModsConfig.BiotechActive || Find.CurrentMap == null)
                 return new List<Pawn>();
 
-            // Mirrors vanilla PawnTable_Mechs.LabelSortFunction (overseer → control
-            // group → kind → label) so the bar and the Mechs menu agree. The final
-            // tiebreaker uses NaturalStringComparer so "Lifter 10" sorts after
-            // "Lifter 2" instead of between "Lifter 1" and "Lifter 2".
+            // Mirrors PawnTable_Mechs.LabelSortFunction so the bar and the Mechs menu agree; the
+            // NaturalStringComparer tiebreaker keeps "Lifter 10" after "Lifter 2".
             return Find.CurrentMap.mapPawns.SpawnedColonyMechs
                 .OrderBy(p => p.GetOverseer()?.thingIDNumber ?? int.MaxValue)
                 .ThenBy(p => p.GetMechControlGroup()?.Index ?? int.MaxValue)
@@ -97,16 +119,50 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets the list for the current section (colonists or mechs).
+        /// Player-controlled units on the current map that are neither colonists nor colony mechs.
+        /// Pawns already in GetColonists are excluded, guarding against a mod that injects its own
+        /// pawns into the vanilla colonist bar.
         /// </summary>
-        private static List<Pawn> GetCurrentList()
+        private static List<Pawn> GetControllables()
         {
-            return onMechSection ? GetMechs() : GetColonists();
+            Map map = Find.CurrentMap;
+            if (map == null)
+                return new List<Pawn>();
+
+            var colonists = GetColonists();
+            return PlayerControllables.OnMap(map)
+                .Where(p => !colonists.Contains(p))
+                .ToList();
         }
 
-        /// <summary>
-        /// Finds the entry group number for a pawn by looking it up in the colonist bar entries.
-        /// </summary>
+        private static List<Pawn> GetCurrentList()
+        {
+            return Sections[sectionIndex].GetPawns();
+        }
+
+        /// <summary>The next section after fromIndex with at least one pawn, or -1.</summary>
+        private static int NextNonEmptySection(int fromIndex)
+        {
+            for (int i = fromIndex + 1; i < Sections.Count; i++)
+            {
+                if (Sections[i].GetPawns().Count > 0)
+                    return i;
+            }
+            return -1;
+        }
+
+        /// <summary>The previous section before fromIndex with at least one pawn, or -1.</summary>
+        private static int PreviousNonEmptySection(int fromIndex)
+        {
+            for (int i = fromIndex - 1; i >= 0; i--)
+            {
+                if (Sections[i].GetPawns().Count > 0)
+                    return i;
+            }
+            return -1;
+        }
+
+        /// <summary>The pawn's colonist-bar entry group, or -1 when it has no entry.</summary>
         private static int GetGroupForPawn(Pawn pawn)
         {
             var entries = Find.ColonistBar.Entries;
@@ -118,10 +174,7 @@ namespace RimWorldAccess
             return -1;
         }
 
-        /// <summary>
-        /// Finds a pawn's index within its group's entries, counting the same way
-        /// ColonistBar.Reorder() does (all non-null pawns in the group).
-        /// </summary>
+        /// <summary>The pawn's index within its group, counted the way ColonistBar.Reorder counts (non-null pawns only).</summary>
         private static int GetEntryIndexForPawn(Pawn pawn, int group)
         {
             var entries = Find.ColonistBar.Entries;
@@ -139,10 +192,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Assigns sequential displayOrder values (0, 1, 2, ...) to all pawns in the group.
-        /// Reorder() breaks when multiple pawns share the same displayOrder value,
-        /// because it bumps ALL pawns at the target order, preventing the moved pawn
-        /// from actually passing them. Normalizing before each Reorder call fixes this.
+        /// Assigns sequential displayOrder values across the group. Required before every Reorder
+        /// call: duplicate displayOrder values make Reorder bump ALL pawns at the target order, so
+        /// the moved pawn never passes them.
         /// </summary>
         private static void NormalizeGroupDisplayOrders(int group)
         {
@@ -158,27 +210,19 @@ namespace RimWorldAccess
             }
         }
 
-        // ===== MAP CHANGE DETECTION =====
-
-        /// <summary>
-        /// Checks if the map has changed since last navigation, and resets if so.
-        /// Called at the start of every navigation action.
-        /// </summary>
+        /// <summary>Resets the cursor when the map changed. Called at the start of every navigation action.</summary>
         private static void CheckMapChange()
         {
             int currentMapId = Find.CurrentMap?.uniqueID ?? -1;
             if (currentMapId != lastMapId)
             {
                 barPosition = 0;
-                onMechSection = false;
+                sectionIndex = 0;
                 lastMapId = currentMapId;
             }
         }
 
-        /// <summary>
-        /// Clamps barPosition to valid range for the current list.
-        /// Handles colonist death/departure shrinking the list.
-        /// </summary>
+        /// <summary>Clamps barPosition into the current list, which shrinks when a colonist dies or leaves.</summary>
         private static void ClampPosition()
         {
             var list = GetCurrentList();
@@ -193,11 +237,7 @@ namespace RimWorldAccess
                 barPosition = 0;
         }
 
-        // ===== NAVIGATION =====
-
-        /// <summary>
-        /// Navigate right (Alt+Right). Moves to next pawn, crossing page boundaries.
-        /// </summary>
+        /// <summary>Moves to the next pawn, crossing page and section boundaries.</summary>
         public static void NavigateRight()
         {
             CheckMapChange();
@@ -217,26 +257,21 @@ namespace RimWorldAccess
             }
             else
             {
-                // At end of current section - try crossing to mech section
-                if (!onMechSection && GetMechs().Count > 0)
+                int nextSection = NextNonEmptySection(sectionIndex);
+                if (nextSection < 0)
                 {
-                    onMechSection = true;
-                    barPosition = 0;
-                    AnnounceSectionChange();
-                }
-                else
-                {
-                    SelectAndAnnounce();
+                    MenuHelper.PlayEdgeTone();
                     return;
                 }
+                sectionIndex = nextSection;
+                barPosition = 0;
+                AnnounceSectionChange();
             }
 
             SelectAndAnnounce();
         }
 
-        /// <summary>
-        /// Navigate left (Alt+Left). Moves to previous pawn, crossing page boundaries.
-        /// </summary>
+        /// <summary>Moves to the previous pawn, crossing page and section boundaries.</summary>
         public static void NavigateLeft()
         {
             CheckMapChange();
@@ -256,174 +291,112 @@ namespace RimWorldAccess
             }
             else
             {
-                // At start of current section - try crossing back to colonist section
-                if (onMechSection)
+                int prevSection = sectionIndex == 0 ? -1 : PreviousNonEmptySection(sectionIndex);
+                if (prevSection < 0)
                 {
-                    var colonists = GetColonists();
-                    if (colonists.Count > 0)
-                    {
-                        onMechSection = false;
-                        barPosition = colonists.Count - 1;
-                        AnnounceSectionChange();
-                    }
-                    else
-                    {
-                        TolkHelper.Speak("RimWorldAccess.Pawns.Bar.StartOfBar".Loc());
-                        return;
-                    }
-                }
-                else
-                {
-                    SelectAndAnnounce();
+                    MenuHelper.PlayEdgeTone();
                     return;
                 }
+                sectionIndex = prevSection;
+                barPosition = Sections[prevSection].GetPawns().Count - 1;
+                AnnounceSectionChange();
             }
 
             SelectAndAnnounce();
         }
 
         /// <summary>
-        /// Page down (Alt+Down). Jumps to next page of 10, preserving position within the page.
-        /// If on last colonist page, switches to mech section.
+        /// Jumps to the next page, preserving position within the page; on a section's last page it
+        /// switches to the next non-empty section.
         /// </summary>
         public static void PageDown()
         {
             CheckMapChange();
             int posInPage = PositionInPage;
 
-            if (!onMechSection)
+            var list = GetCurrentList();
+            if (list.Count == 0)
             {
-                var colonists = GetColonists();
-                if (colonists.Count == 0)
+                int emptySectionNext = NextNonEmptySection(sectionIndex);
+                if (emptySectionNext >= 0)
                 {
-                    // No colonists - try mechs
-                    var mechs = GetMechs();
-                    if (mechs.Count > 0)
-                    {
-                        onMechSection = true;
-                        barPosition = System.Math.Min(posInPage, mechs.Count - 1);
-                        AnnounceSectionChange();
-                        SelectAndAnnounce();
-                    }
-                    else
-                    {
-                        AnnounceEmpty();
-                    }
-                    return;
-                }
-
-                int targetPosition = barPosition + PageSize;
-                if (targetPosition >= colonists.Count)
-                    targetPosition = colonists.Count - 1;
-
-                if (targetPosition / PageSize == CurrentPage)
-                {
-                    // Couldn't move to a new page - try mechs
-                    var mechs = GetMechs();
-                    if (mechs.Count > 0)
-                    {
-                        onMechSection = true;
-                        barPosition = System.Math.Min(posInPage, mechs.Count - 1);
-                        AnnounceSectionChange();
-                        SelectAndAnnounce();
-                    }
-                    else
-                    {
-                        TolkHelper.Speak("RimWorldAccess.Pawns.Bar.LastPage".Loc());
-                    }
+                    sectionIndex = emptySectionNext;
+                    var newList = Sections[emptySectionNext].GetPawns();
+                    barPosition = System.Math.Min(posInPage, newList.Count - 1);
+                    AnnounceSectionChange();
+                    SelectAndAnnounce();
                 }
                 else
                 {
-                    barPosition = targetPosition;
-                    AnnouncePageChange();
+                    AnnounceEmpty();
+                }
+                return;
+            }
+
+            int targetPosition = barPosition + PageSize;
+            if (targetPosition >= list.Count)
+                targetPosition = list.Count - 1;
+
+            if (targetPosition / PageSize == CurrentPage)
+            {
+                // No new page inside this section; cross into the next non-empty one.
+                int nextSection = NextNonEmptySection(sectionIndex);
+                if (nextSection >= 0)
+                {
+                    sectionIndex = nextSection;
+                    var newList = Sections[nextSection].GetPawns();
+                    barPosition = System.Math.Min(posInPage, newList.Count - 1);
+                    AnnounceSectionChange();
                     SelectAndAnnounce();
+                }
+                else
+                {
+                    MenuHelper.PlayEdgeTone();
                 }
             }
             else
             {
-                // Already on mech section
-                var mechs = GetMechs();
-                if (mechs.Count == 0)
-                {
-                    TolkHelper.Speak("RimWorldAccess.Pawns.Bar.NoMechsHere".Loc());
-                    return;
-                }
-
-                int targetPosition = barPosition + PageSize;
-                if (targetPosition >= mechs.Count)
-                    targetPosition = mechs.Count - 1;
-
-                if (targetPosition / PageSize == CurrentPage)
-                {
-                    TolkHelper.Speak("RimWorldAccess.Pawns.Bar.LastPage".Loc());
-                }
-                else
-                {
-                    barPosition = targetPosition;
-                    AnnouncePageChange();
-                    SelectAndAnnounce();
-                }
+                barPosition = targetPosition;
+                AnnouncePageChange();
+                SelectAndAnnounce();
             }
         }
 
         /// <summary>
-        /// Page up (Alt+Up). Jumps to previous page of 10, preserving position within the page.
-        /// If on first mech page, switches back to colonist section.
+        /// Jumps to the previous page, preserving position within the page; on a section's first page
+        /// it switches back to the previous non-empty section.
         /// </summary>
         public static void PageUp()
         {
             CheckMapChange();
             int posInPage = PositionInPage;
 
-            if (onMechSection)
+            if (CurrentPage > 0)
             {
-                if (CurrentPage > 0)
-                {
-                    // Move to previous mech page, preserve position
-                    barPosition = (CurrentPage - 1) * PageSize + posInPage;
-                    AnnouncePageChange();
-                    SelectAndAnnounce();
-                }
-                else
-                {
-                    // On first mech page - switch back to colonists
-                    var colonists = GetColonists();
-                    if (colonists.Count > 0)
-                    {
-                        onMechSection = false;
-                        // Go to last colonist page, preserve position (clamped)
-                        int lastPageStart = ((colonists.Count - 1) / PageSize) * PageSize;
-                        barPosition = System.Math.Min(lastPageStart + posInPage, colonists.Count - 1);
-                        AnnounceSectionChange();
-                        SelectAndAnnounce();
-                    }
-                    else
-                    {
-                        TolkHelper.Speak("RimWorldAccess.Pawns.Bar.FirstPage".Loc());
-                    }
-                }
+                barPosition = (CurrentPage - 1) * PageSize + posInPage;
+                AnnouncePageChange();
+                SelectAndAnnounce();
+                return;
+            }
+
+            int prevSection = PreviousNonEmptySection(sectionIndex);
+            if (prevSection >= 0)
+            {
+                sectionIndex = prevSection;
+                var prevList = Sections[prevSection].GetPawns();
+                // Land on the previous section's last page, keeping the position within it.
+                int lastPageStart = ((prevList.Count - 1) / PageSize) * PageSize;
+                barPosition = System.Math.Min(lastPageStart + posInPage, prevList.Count - 1);
+                AnnounceSectionChange();
+                SelectAndAnnounce();
             }
             else
             {
-                // On colonist section
-                if (CurrentPage > 0)
-                {
-                    // Previous page, preserve position
-                    barPosition = (CurrentPage - 1) * PageSize + posInPage;
-                    AnnouncePageChange();
-                    SelectAndAnnounce();
-                }
-                else
-                {
-                    TolkHelper.Speak("RimWorldAccess.Pawns.Bar.FirstPage".Loc());
-                }
+                MenuHelper.PlayEdgeTone();
             }
         }
 
-        /// <summary>
-        /// Jump to a position on the current page (Alt+1 through Alt+0).
-        /// positionOnPage is 0-indexed (0 = first position, 9 = tenth position).
-        /// </summary>
+        /// <summary>Jumps to a 0-indexed position on the current page.</summary>
         public static void JumpToPosition(int positionOnPage)
         {
             CheckMapChange();
@@ -439,7 +412,7 @@ namespace RimWorldAccess
 
             if (targetIndex >= list.Count)
             {
-                TolkHelper.SpeakData(onMechSection ? "RimWorldAccess.Pawns.Bar.NoMechAtPosition".Translate((positionOnPage + 1).ToString()).ToString() : "RimWorldAccess.Pawns.Bar.NoColonistAtPosition".Translate((positionOnPage + 1).ToString()).ToString());
+                TolkHelper.SpeakData(Sections[sectionIndex].NoneAtPositionKey.Translate((positionOnPage + 1).ToString()).ToString());
                 return;
             }
 
@@ -447,17 +420,15 @@ namespace RimWorldAccess
             SelectAndAnnounce();
         }
 
-        // Double-tap tracking for Alt+number: a second press of the same position
-        // within the threshold forces a full camera jump, overriding multi-select focus mode.
+        // A second press of the same position within the threshold forces a full camera jump,
+        // overriding multi-select focus mode.
         private static int lastAltNumberPosition = -1;
         private static float lastAltNumberTime = -1f;
         private const float AltNumberDoubleTapThreshold = 0.5f;
 
         /// <summary>
-        /// Handle Alt+number press with double-tap support.
-        /// First press: current behavior (select + camera snap in normal mode, focus-only in multi-select).
-        /// Second press of the same position within 0.5s: full jump — move cursor to pawn,
-        /// snap camera, select pawn, and announce "Jumped to {pawn}" (distinct from single-press).
+        /// First press selects with a camera snap (focus-only in multi-select); a second press of the
+        /// same position within the threshold does the full cursor-and-camera jump.
         /// </summary>
         public static void HandleAltNumberPress(int positionOnPage)
         {
@@ -492,9 +463,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Full jump — acts like the cursor was moved to the pawn's tile: selects the pawn,
-        /// moves the map cursor there, snaps the camera, plays terrain audio, and announces
-        /// "Jumped to {pawn}. {tile info}". Mirrors BookmarkHelper.JumpToBookmark semantics.
+        /// Acts as if the cursor moved to the pawn's tile: selects it, moves the map cursor, snaps
+        /// the camera, plays terrain audio and announces the pawn with its tile info.
         /// </summary>
         private static void JumpCursorAndCameraToPosition(int positionOnPage)
         {
@@ -511,7 +481,7 @@ namespace RimWorldAccess
 
             if (targetIndex >= list.Count)
             {
-                TolkHelper.SpeakData(onMechSection ? "RimWorldAccess.Pawns.Bar.NoMechAtPosition".Translate((positionOnPage + 1).ToString()).ToString() : "RimWorldAccess.Pawns.Bar.NoColonistAtPosition".Translate((positionOnPage + 1).ToString()).ToString());
+                TolkHelper.SpeakData(Sections[sectionIndex].NoneAtPositionKey.Translate((positionOnPage + 1).ToString()).ToString());
                 return;
             }
 
@@ -520,9 +490,8 @@ namespace RimWorldAccess
             var map = Find.CurrentMap;
             var pos = pawn.Position;
 
-            // If the game's Targeter is active, calling Find.Selector.Select on a
-            // different pawn would deselect the caster and trigger vanilla
-            // Targeter.ConfirmStillValid → StopTargeting. Redirect to cursor instead.
+            // While the Targeter is active, selecting a different pawn would deselect the caster and
+            // trigger Targeter.ConfirmStillValid -> StopTargeting; redirect to a cursor jump instead.
             if (PawnSelectionState.TryRedirectForActiveTargeting(pawn))
                 return;
 
@@ -546,19 +515,14 @@ namespace RimWorldAccess
             MapNavigationState.LastAnnouncedInfo = tileInfo;
         }
 
-        // ===== REORDERING =====
-
-        /// <summary>
-        /// Move current colonist right (Ctrl+Alt+Right). Uses shift/insert reorder.
-        /// Not available for mechs.
-        /// </summary>
+        /// <summary>Shift/insert-reorders the current colonist one place right. Colonists section only.</summary>
         public static void MoveRight()
         {
             CheckMapChange();
 
-            if (onMechSection)
+            if (!Sections[sectionIndex].Reorderable)
             {
-                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.CannotReorderMechs".Loc());
+                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.CannotReorderSection".Loc());
                 return;
             }
 
@@ -580,7 +544,6 @@ namespace RimWorldAccess
             int group = GetGroupForPawn(pawnToMove);
             if (group < 0) return;
 
-            // Fix duplicate displayOrder values that break Reorder
             NormalizeGroupDisplayOrders(group);
             Find.ColonistBar.MarkColonistsDirty();
 
@@ -594,17 +557,14 @@ namespace RimWorldAccess
             AnnounceReorder(pawnToMove);
         }
 
-        /// <summary>
-        /// Move current colonist left (Ctrl+Alt+Left). Uses shift/insert reorder.
-        /// Not available for mechs.
-        /// </summary>
+        /// <summary>Shift/insert-reorders the current colonist one place left. Colonists section only.</summary>
         public static void MoveLeft()
         {
             CheckMapChange();
 
-            if (onMechSection)
+            if (!Sections[sectionIndex].Reorderable)
             {
-                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.CannotReorderMechs".Loc());
+                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.CannotReorderSection".Loc());
                 return;
             }
 
@@ -626,7 +586,6 @@ namespace RimWorldAccess
             int group = GetGroupForPawn(pawnToMove);
             if (group < 0) return;
 
-            // Fix duplicate displayOrder values that break Reorder
             NormalizeGroupDisplayOrders(group);
             Find.ColonistBar.MarkColonistsDirty();
 
@@ -641,17 +600,16 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Move current colonist down one page (Ctrl+Alt+Down). Moves to the position
-        /// directly below on the next page, or to the last position on the next page
-        /// if the direct-below slot doesn't exist. Not available for mechs.
+        /// Reorders the current colonist to the slot directly below on the next page, clamped to
+        /// that page's last position. Colonists section only.
         /// </summary>
         public static void MoveDown()
         {
             CheckMapChange();
 
-            if (onMechSection)
+            if (!Sections[sectionIndex].Reorderable)
             {
-                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.CannotReorderMechs".Loc());
+                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.CannotReorderSection".Loc());
                 return;
             }
 
@@ -661,7 +619,6 @@ namespace RimWorldAccess
 
             ClampPosition();
 
-            // Target: directly below on next page, clamped to last position
             int targetBarPosition = System.Math.Min(barPosition + PageSize, colonists.Count - 1);
 
             if (targetBarPosition / PageSize == barPosition / PageSize)
@@ -683,24 +640,23 @@ namespace RimWorldAccess
             int targetIndex = GetEntryIndexForPawn(targetPawn, group);
             if (fromIndex < 0 || targetIndex < 0) return;
 
-            // Moving forward: insert after target (same as MoveRight)
+            // Moving forward inserts after the target.
             Find.ColonistBar.Reorder(fromIndex, targetIndex + 1, group);
 
             AnnounceReorder(pawnToMove);
         }
 
         /// <summary>
-        /// Move current colonist up one page (Ctrl+Alt+Up). Moves to the position
-        /// directly above on the previous page, or to position 0 if the direct-above
-        /// slot doesn't exist. Not available for mechs.
+        /// Reorders the current colonist to the slot directly above on the previous page, clamped to
+        /// position 0. Colonists section only.
         /// </summary>
         public static void MoveUp()
         {
             CheckMapChange();
 
-            if (onMechSection)
+            if (!Sections[sectionIndex].Reorderable)
             {
-                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.CannotReorderMechs".Loc());
+                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.CannotReorderSection".Loc());
                 return;
             }
 
@@ -710,7 +666,6 @@ namespace RimWorldAccess
 
             ClampPosition();
 
-            // Target: directly above on previous page, clamped to first position
             int targetBarPosition = System.Math.Max(barPosition - PageSize, 0);
 
             if (targetBarPosition / PageSize == barPosition / PageSize)
@@ -732,17 +687,13 @@ namespace RimWorldAccess
             int targetIndex = GetEntryIndexForPawn(targetPawn, group);
             if (fromIndex < 0 || targetIndex < 0) return;
 
-            // Moving backward: insert before target (same as MoveLeft)
+            // Moving backward inserts before the target.
             Find.ColonistBar.Reorder(fromIndex, targetIndex, group);
 
             AnnounceReorder(pawnToMove);
         }
 
-        // ===== SYNC WITH COMMA/PERIOD =====
-
-        /// <summary>
-        /// Called after comma/period selects a pawn, to keep bar position in sync.
-        /// </summary>
+        /// <summary>Keeps the bar position in sync after an external selection, settling on the first section that lists the pawn.</summary>
         public static void SyncBarPosition(Pawn pawn)
         {
             if (pawn == null)
@@ -750,68 +701,49 @@ namespace RimWorldAccess
 
             CheckMapChange();
 
-            // Check colonists first
-            var colonists = GetColonists();
-            int idx = colonists.IndexOf(pawn);
-            if (idx >= 0)
+            for (int i = 0; i < Sections.Count; i++)
             {
-                barPosition = idx;
-                onMechSection = false;
-                return;
-            }
-
-            // Check mechs
-            if (pawn.IsColonyMech)
-            {
-                var mechs = GetMechs();
-                idx = mechs.IndexOf(pawn);
+                var pawns = Sections[i].GetPawns();
+                int idx = pawns.IndexOf(pawn);
                 if (idx >= 0)
                 {
                     barPosition = idx;
-                    onMechSection = true;
+                    sectionIndex = i;
+                    return;
                 }
             }
         }
 
-        // ===== MECH CYCLING (for comma/period when on mech page) =====
-
-        /// <summary>
-        /// Select next mech (period key when on mech section).
-        /// Returns the selected mech, or null if none.
-        /// </summary>
-        public static Pawn SelectNextMech()
+        /// <summary>The next pawn in the current section, wrapping; null when the section is empty.</summary>
+        public static Pawn SelectNextInSection()
         {
             CheckMapChange();
-            var mechs = GetMechs();
-            if (mechs.Count == 0)
+            var list = GetCurrentList();
+            if (list.Count == 0)
                 return null;
 
             ClampPosition();
-            barPosition = (barPosition + 1) % mechs.Count;
-            return mechs[barPosition];
+            if (barPosition == list.Count - 1 && list.Count > 1)
+                MenuHelper.PlayWrapTone();
+            barPosition = (barPosition + 1) % list.Count;
+            return list[barPosition];
         }
 
-        /// <summary>
-        /// Select previous mech (comma key when on mech section).
-        /// Returns the selected mech, or null if none.
-        /// </summary>
-        public static Pawn SelectPreviousMech()
+        /// <summary>The previous pawn in the current section, wrapping; null when the section is empty.</summary>
+        public static Pawn SelectPreviousInSection()
         {
             CheckMapChange();
-            var mechs = GetMechs();
-            if (mechs.Count == 0)
+            var list = GetCurrentList();
+            if (list.Count == 0)
                 return null;
 
             ClampPosition();
-            barPosition = (barPosition - 1 + mechs.Count) % mechs.Count;
-            return mechs[barPosition];
+            if (barPosition == 0 && list.Count > 1)
+                MenuHelper.PlayWrapTone();
+            barPosition = (barPosition - 1 + list.Count) % list.Count;
+            return list[barPosition];
         }
 
-        // ===== SELECTION AND ANNOUNCEMENTS =====
-
-        /// <summary>
-        /// Selects the pawn at the current bar position in-game and announces.
-        /// </summary>
         private static void SelectAndAnnounce()
         {
             var list = GetCurrentList();
@@ -828,17 +760,13 @@ namespace RimWorldAccess
             AnnouncePawn(pawn, list.Count);
         }
 
-        /// <summary>
-        /// Selects a pawn in-game: clears selection, selects pawn, jumps camera, enables pawn follow.
-        /// Same behavior as comma/period selection in ThingSelectionUtilityPatch.
-        /// </summary>
+        /// <summary>Clears the selection, selects the pawn, jumps the camera and enables pawn follow.</summary>
         private static void SelectPawnInGame(Pawn pawn)
         {
             if (pawn == null)
                 return;
 
-            // If the game's Targeter is active, redirect to cursor jump so the targeting
-            // session stays alive (see PawnSelectionState.TryRedirectForActiveTargeting).
+            // Redirect to a cursor jump while targeting, so the targeting session stays alive.
             if (PawnSelectionState.TryRedirectForActiveTargeting(pawn))
                 return;
 
@@ -856,22 +784,26 @@ namespace RimWorldAccess
             MapNavigationState.CurrentCameraMode = CameraFollowMode.Pawn;
             GizmoNavigationState.PawnJustSelected = true;
 
-            // Keep PawnSelectionState in sync
             PawnSelectionState.SyncFromBarNavigation(pawn);
         }
 
         /// <summary>
-        /// Announces the current pawn. Format: "{Name} selected - {task}"
-        /// Appends position if AnnouncePosition setting is enabled.
+        /// One bar entry's spoken line: who it is, where it is, what it is doing. Shared with the
+        /// pointer-hover reader so a hovered and a focused entry read alike; the position fragment
+        /// belongs to the keyboard cursor and stays with the caller. A dead colonist answers with the
+        /// corpse's label, since vanilla resolves the same entry to the corpse and a corpse has no
+        /// job to report.
         /// </summary>
-        private static void AnnouncePawn(Pawn pawn, int totalInSection)
+        internal static string ComposeEntryLine(Thing entry)
         {
+            Pawn pawn = entry as Pawn;
+            if (pawn == null || pawn.Dead)
+                return entry != null ? entry.LabelCap : "";
+
             string task = pawn.GetJobReport();
             if (string.IsNullOrEmpty(task))
                 task = "RimWorldAccess.Pawns.Bar.Idle".Translate();
 
-            // Build the middle context (location and/or cover) shown between the
-            // pawn name and its task.
             var contextParts = new List<string>();
             if (pawn.Spawned && pawn.Map != null)
             {
@@ -887,10 +819,15 @@ namespace RimWorldAccess
                     contextParts.Add(coverInfo);
             }
 
-            string announcement = contextParts.Count > 0
+            return contextParts.Count > 0
                 ? "RimWorldAccess.Pawns.Bar.PawnTaskWithCover".Translate(pawn.LabelShort, contextParts.ToCommaList(useAnd: false), task).ToString()
                 : "RimWorldAccess.Pawns.Bar.PawnTask".Translate(pawn.LabelShort, task).ToString();
+        }
 
+        /// <summary>Announces the current pawn, appending its position when that setting is on.</summary>
+        private static void AnnouncePawn(Pawn pawn, int totalInSection)
+        {
+            string announcement = ComposeEntryLine(pawn);
             string positionPart = MenuHelper.FormatPosition(barPosition, totalInSection);
             if (!string.IsNullOrEmpty(positionPart))
                 announcement = "RimWorldAccess.Pawns.Bar.WithPosition".Translate(announcement, positionPart).ToString();
@@ -898,43 +835,27 @@ namespace RimWorldAccess
             TolkHelper.SpeakData(announcement);
         }
 
-        /// <summary>
-        /// Announces page change (e.g., "Page 2" or "Mechs page 1").
-        /// </summary>
         private static void AnnouncePageChange()
         {
             string pageNum = (CurrentPage + 1).ToString();
-            TolkHelper.SpeakData(onMechSection
-                ? "RimWorldAccess.Pawns.Bar.MechsPage".Translate(pageNum).ToString()
-                : "RimWorldAccess.Pawns.Bar.Page".Translate(pageNum).ToString());
+            TolkHelper.SpeakData(Sections[sectionIndex].PageKey.Translate(pageNum).ToString());
         }
 
-        /// <summary>
-        /// Announces section change (switching between colonists and mechs).
-        /// </summary>
         private static void AnnounceSectionChange()
         {
-            if (onMechSection)
-                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.SectionMechs".Loc());
-            else
-                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.SectionColonists".Loc());
+            TolkHelper.Speak(Sections[sectionIndex].SectionNameKey.Loc());
         }
 
-        /// <summary>
-        /// Announces reorder result.
-        /// </summary>
+        /// <summary>Announces where the moved pawn landed, with its new neighbours, and follows it.</summary>
         private static void AnnounceReorder(Pawn pawn)
         {
-            // Re-fetch list after reorder to get fresh positions
             var colonists = GetColonists();
             int newIndex = colonists.IndexOf(pawn);
             if (newIndex < 0)
                 return;
 
-            // Follow the moved pawn
             barPosition = newIndex;
 
-            // Build neighbor context
             string context;
             if (newIndex == 0 && colonists.Count == 1)
                 context = "RimWorldAccess.Pawns.Bar.OnlyColonist".Translate().ToString();
@@ -948,56 +869,43 @@ namespace RimWorldAccess
             TolkHelper.SpeakData("RimWorldAccess.Pawns.Bar.ReorderResult".Translate(pawn.LabelShort, (newIndex + 1).ToString(), context).ToString());
         }
 
-        /// <summary>
-        /// Announces that the current section is empty.
-        /// </summary>
         private static void AnnounceEmpty()
         {
-            if (onMechSection)
-                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.NoMechsHere".Loc());
-            else
-                TolkHelper.Speak("RimWorldAccess.Pawns.Bar.NoColonistsHere".Loc());
+            TolkHelper.Speak(Sections[sectionIndex].NoneHereKey.Loc());
         }
 
-        // ===== FOCUS-ONLY NAVIGATION (for multi-select mode) =====
-
-        /// <summary>
-        /// Gets colonists on the current map in bar display order (public accessor for MultiSelectState).
-        /// </summary>
         public static List<Pawn> GetColonistsPublic()
         {
             return GetColonists();
         }
 
-        /// <summary>
-        /// Returns a monotonic bar index for a pawn that is comparable across
-        /// the colonist and mech sections (colonists come first, then mechs).
-        /// Returns -1 if the pawn is not on the current map's bar.
-        /// </summary>
+        public static List<Pawn> GetCurrentSectionPawns()
+        {
+            return GetCurrentList();
+        }
+
+        /// <summary>A bar index comparable across every section, or -1 when the pawn is not on this map's bar.</summary>
         public static int GetGlobalBarIndex(Pawn pawn)
         {
             if (pawn == null)
                 return -1;
 
-            var colonists = GetColonists();
-            int colIdx = colonists.IndexOf(pawn);
-            if (colIdx >= 0)
-                return colIdx;
-
-            if (pawn.IsColonyMech)
+            int offset = 0;
+            foreach (var section in Sections)
             {
-                var mechs = GetMechs();
-                int mechIdx = mechs.IndexOf(pawn);
-                if (mechIdx >= 0)
-                    return colonists.Count + mechIdx;
+                var pawns = section.GetPawns();
+                int idx = pawns.IndexOf(pawn);
+                if (idx >= 0)
+                    return offset + idx;
+                offset += pawns.Count;
             }
 
             return -1;
         }
 
         /// <summary>
-        /// Focuses the colonist/mech bar on whatever pawn is standing under the map cursor.
-        /// Announces "Not on colonist bar" if the cursor is not over a bar-eligible pawn.
+        /// Focuses the bar on the pawn under the map cursor, searching every section so this works on
+        /// vehicles too; announces "not on bar" when the cursor is over no bar-eligible pawn.
         /// </summary>
         public static void FocusPawnByCursor()
         {
@@ -1026,11 +934,9 @@ namespace RimWorldAccess
             }
 
             CheckMapChange();
-            var colonists = GetColonists();
-            var mechs = GetMechs();
-            bool inColonists = colonists.Contains(pawn);
-            bool inMechs = !inColonists && mechs.Contains(pawn);
-            if (!inColonists && !inMechs)
+
+            bool onBar = Sections.Any(section => section.GetPawns().Contains(pawn));
+            if (!onBar)
             {
                 TolkHelper.Speak("RimWorldAccess.Pawns.Bar.NotOnBar".Loc());
                 return;
@@ -1038,12 +944,10 @@ namespace RimWorldAccess
 
             SelectPawnInGame(pawn);
             SyncBarPosition(pawn);
-            AnnouncePawn(pawn, (onMechSection ? mechs : colonists).Count);
+            AnnouncePawn(pawn, GetCurrentList().Count);
         }
 
-        /// <summary>
-        /// Returns the pawn at the current bar position without selecting it.
-        /// </summary>
+        /// <summary>The pawn at the current bar position, without selecting it.</summary>
         public static Pawn GetPawnAtCurrentPosition()
         {
             CheckMapChange();
@@ -1054,11 +958,7 @@ namespace RimWorldAccess
             return list[barPosition];
         }
 
-        /// <summary>
-        /// Moves the bar cursor right and returns the pawn at the new position.
-        /// Does NOT select the pawn in-game or move the camera.
-        /// Used for multi-select focus navigation and contiguous selection.
-        /// </summary>
+        /// <summary>Moves the cursor right and returns the pawn there; never selects it or moves the camera.</summary>
         public static Pawn NavigateFocusRight()
         {
             CheckMapChange();
@@ -1078,18 +978,15 @@ namespace RimWorldAccess
             }
             else
             {
-                // At end of current section - try crossing to mech section
-                if (!onMechSection && GetMechs().Count > 0)
+                int nextSection = NextNonEmptySection(sectionIndex);
+                if (nextSection < 0)
                 {
-                    onMechSection = true;
-                    barPosition = 0;
-                    AnnounceSectionChange();
+                    MenuHelper.PlayEdgeTone();
+                    return null;
                 }
-                else
-                {
-                    // Already at end, return current pawn
-                    return list[barPosition];
-                }
+                sectionIndex = nextSection;
+                barPosition = 0;
+                AnnounceSectionChange();
             }
 
             list = GetCurrentList();
@@ -1097,11 +994,7 @@ namespace RimWorldAccess
             return list.Count > 0 ? list[barPosition] : null;
         }
 
-        /// <summary>
-        /// Moves the bar cursor left and returns the pawn at the new position.
-        /// Does NOT select the pawn in-game or move the camera.
-        /// Used for multi-select focus navigation and contiguous selection.
-        /// </summary>
+        /// <summary>Moves the cursor left and returns the pawn there; never selects it or moves the camera.</summary>
         public static Pawn NavigateFocusLeft()
         {
             CheckMapChange();
@@ -1121,26 +1014,15 @@ namespace RimWorldAccess
             }
             else
             {
-                // At start of current section - try crossing back to colonist section
-                if (onMechSection)
+                int prevSection = sectionIndex == 0 ? -1 : PreviousNonEmptySection(sectionIndex);
+                if (prevSection < 0)
                 {
-                    var colonists = GetColonists();
-                    if (colonists.Count > 0)
-                    {
-                        onMechSection = false;
-                        barPosition = colonists.Count - 1;
-                        AnnounceSectionChange();
-                    }
-                    else
-                    {
-                        return list.Count > 0 ? list[0] : null;
-                    }
+                    MenuHelper.PlayEdgeTone();
+                    return null;
                 }
-                else
-                {
-                    // Already at start, return current pawn
-                    return list[barPosition];
-                }
+                sectionIndex = prevSection;
+                barPosition = Sections[prevSection].GetPawns().Count - 1;
+                AnnounceSectionChange();
             }
 
             list = GetCurrentList();
@@ -1148,10 +1030,7 @@ namespace RimWorldAccess
             return list.Count > 0 ? list[barPosition] : null;
         }
 
-        /// <summary>
-        /// Jump to a position on the current page without selecting (focus-only for multi-select).
-        /// Returns the pawn at the target position, or null if invalid.
-        /// </summary>
+        /// <summary>Moves the cursor to a position on the current page without selecting; null when out of range.</summary>
         public static Pawn JumpFocusToPosition(int positionOnPage)
         {
             CheckMapChange();
@@ -1162,7 +1041,7 @@ namespace RimWorldAccess
             int targetIndex = CurrentPage * PageSize + positionOnPage;
             if (targetIndex >= list.Count)
             {
-                TolkHelper.SpeakData(onMechSection ? "RimWorldAccess.Pawns.Bar.NoMechAtPosition".Translate((positionOnPage + 1).ToString()).ToString() : "RimWorldAccess.Pawns.Bar.NoColonistAtPosition".Translate((positionOnPage + 1).ToString()).ToString());
+                TolkHelper.SpeakData(Sections[sectionIndex].NoneAtPositionKey.Translate((positionOnPage + 1).ToString()).ToString());
                 return null;
             }
 
@@ -1170,117 +1049,71 @@ namespace RimWorldAccess
             return list[barPosition];
         }
 
-        /// <summary>
-        /// Page down without selecting (focus-only for multi-select).
-        /// Returns the pawn at the new position, or null.
-        /// </summary>
+        /// <summary>Pages down without selecting; returns the pawn at the new position, or null.</summary>
         public static Pawn PageFocusDown()
         {
             CheckMapChange();
             int posInPage = PositionInPage;
 
-            if (!onMechSection)
-            {
-                var colonists = GetColonists();
-                if (colonists.Count == 0)
-                {
-                    var mechs = GetMechs();
-                    if (mechs.Count > 0)
-                    {
-                        onMechSection = true;
-                        barPosition = System.Math.Min(posInPage, mechs.Count - 1);
-                        AnnounceSectionChange();
-                        return GetMechs().Count > 0 ? GetMechs()[barPosition] : null;
-                    }
-                    return null;
-                }
-
-                int targetPosition = barPosition + PageSize;
-                if (targetPosition >= colonists.Count)
-                    targetPosition = colonists.Count - 1;
-
-                if (targetPosition / PageSize == CurrentPage)
-                {
-                    // Same page — try mechs
-                    var mechs = GetMechs();
-                    if (mechs.Count > 0)
-                    {
-                        onMechSection = true;
-                        barPosition = System.Math.Min(posInPage, mechs.Count - 1);
-                        AnnounceSectionChange();
-                        return GetMechs().Count > 0 ? GetMechs()[barPosition] : null;
-                    }
-                    return null;
-                }
-
-                barPosition = targetPosition;
-                AnnouncePageChange();
-            }
-            else
-            {
-                var mechs = GetMechs();
-                if (mechs.Count == 0)
-                    return null;
-
-                int targetPosition = barPosition + PageSize;
-                if (targetPosition >= mechs.Count)
-                    targetPosition = mechs.Count - 1;
-
-                if (targetPosition / PageSize == CurrentPage)
-                    return null; // Already on last mech page
-
-                barPosition = targetPosition;
-                AnnouncePageChange();
-            }
-
             var list = GetCurrentList();
+            if (list.Count == 0)
+            {
+                int nextSection = NextNonEmptySection(sectionIndex);
+                if (nextSection < 0)
+                    return null;
+
+                sectionIndex = nextSection;
+                var newList = Sections[nextSection].GetPawns();
+                barPosition = System.Math.Min(posInPage, newList.Count - 1);
+                AnnounceSectionChange();
+                return newList.Count > 0 ? newList[barPosition] : null;
+            }
+
+            int targetPosition = barPosition + PageSize;
+            if (targetPosition >= list.Count)
+                targetPosition = list.Count - 1;
+
+            if (targetPosition / PageSize == CurrentPage)
+            {
+                int nextSection = NextNonEmptySection(sectionIndex);
+                if (nextSection < 0)
+                    return null;
+
+                sectionIndex = nextSection;
+                var newList = Sections[nextSection].GetPawns();
+                barPosition = System.Math.Min(posInPage, newList.Count - 1);
+                AnnounceSectionChange();
+                return newList.Count > 0 ? newList[barPosition] : null;
+            }
+
+            barPosition = targetPosition;
+            AnnouncePageChange();
+
+            list = GetCurrentList();
             ClampPosition();
             return list.Count > 0 ? list[barPosition] : null;
         }
 
-        /// <summary>
-        /// Page up without selecting (focus-only for multi-select).
-        /// Returns the pawn at the new position, or null.
-        /// </summary>
+        /// <summary>Pages up without selecting; returns the pawn at the new position, or null.</summary>
         public static Pawn PageFocusUp()
         {
             CheckMapChange();
             int posInPage = PositionInPage;
 
-            if (onMechSection)
+            if (CurrentPage > 0)
             {
-                if (CurrentPage > 0)
-                {
-                    barPosition = (CurrentPage - 1) * PageSize + posInPage;
-                    AnnouncePageChange();
-                }
-                else
-                {
-                    // First mech page — go back to colonists
-                    var colonists = GetColonists();
-                    if (colonists.Count > 0)
-                    {
-                        onMechSection = false;
-                        barPosition = colonists.Count - 1;
-                        AnnounceSectionChange();
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
+                barPosition = (CurrentPage - 1) * PageSize + posInPage;
+                AnnouncePageChange();
             }
             else
             {
-                if (CurrentPage > 0)
-                {
-                    barPosition = (CurrentPage - 1) * PageSize + posInPage;
-                    AnnouncePageChange();
-                }
-                else
-                {
-                    return null; // Already on first page
-                }
+                int prevSection = PreviousNonEmptySection(sectionIndex);
+                if (prevSection < 0)
+                    return null;
+
+                sectionIndex = prevSection;
+                barPosition = Sections[prevSection].GetPawns().Count - 1;
+                AnnounceSectionChange();
             }
 
             var list = GetCurrentList();
@@ -1288,15 +1121,10 @@ namespace RimWorldAccess
             return list.Count > 0 ? list[barPosition] : null;
         }
 
-        // ===== RESET =====
-
-        /// <summary>
-        /// Resets bar state (e.g., when loading a new game).
-        /// </summary>
         public static void Reset()
         {
             barPosition = 0;
-            onMechSection = false;
+            sectionIndex = 0;
             lastMapId = -1;
         }
     }

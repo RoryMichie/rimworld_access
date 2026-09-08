@@ -17,6 +17,7 @@
   <!-- Combat log (Alt+B). -->
   <RimWorldAccess.Combat.Log.NoBattleLog>Журнал бою недоступний</RimWorldAccess.Combat.Log.NoBattleLog>
   <RimWorldAccess.Combat.Log.Header>Журнал бою: {0}</RimWorldAccess.Combat.Log.Header>
+  <RimWorldAccess.Combat.Log.BattleHeader>Бій: {0}.</RimWorldAccess.Combat.Log.BattleHeader>
   <RimWorldAccess.Combat.Log.NoEntries>Записів бою не знайдено.</RimWorldAccess.Combat.Log.NoEntries>
   <RimWorldAccess.Combat.Log.ShowingLastN>Показано останні 10 із {0} записів.</RimWorldAccess.Combat.Log.ShowingLastN>
   <RimWorldAccess.Combat.Log.Total>Усього: {0} записів.</RimWorldAccess.Combat.Log.Total>

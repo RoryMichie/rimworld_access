@@ -1,179 +1,39 @@
-using HarmonyLib;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
 using Verse;
 using Verse.Sound;
 using RimWorld;
+using RimWorldAccess.Shell;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patch to add Tab key for opening the accessible architect menu.
-    /// Handles category selection (treeview), tool selection, and material selection.
+    /// The architect tree's activation callbacks: designator selection
+    /// routing (zone / material-needing build / plain designator), the
+    /// material-selection float menu, and the tree-open entry point.
+    ///
+    /// No longer a Harmony patch: this class used to
+    /// own ALL architect-tree keyboard input via a Priority.High UIRootOnGUI
+    /// prefix (the Tab open/close/cancel opener, tree-navigation dispatch,
+    /// ']' right-click options, Alt+I info card, and Escape). That input
+    /// routing is now driven by the shell — <see cref="ArchitectTreeState"/>'s
+    /// own router methods for tree navigation (called from
+    /// <c>ArchitectTreeScope</c>), the Tab opener as the ambient
+    /// <c>map.architect.toggle</c> claim on <c>MapScope</c> (see
+    /// <c>MapScope.Architect.Game.cs</c>), and the per-frame stale-tree
+    /// cleanup (world-view force-close) relocated into
+    /// <c>ArchitectTreeScopeMirror.Reconcile</c>. What remains here is pure
+    /// domain logic with no Harmony attributes: the designator-activation
+    /// callbacks or picker helpers other input paths still need to call.
+    /// <see cref="OpenArchitectTreeMenu"/>, <see cref="OpenDesignatorRightClickOptions"/>,
+    /// and <see cref="OpenDesignatorInfoCard"/> are <c>internal</c> for that reason;
+    /// everything else is only ever called from within this class.
     /// </summary>
-    [HarmonyPatch(typeof(UIRoot))]
-    [HarmonyPatch("UIRootOnGUI")]
     public static class ArchitectMenuPatch
     {
-        private static float lastArchitectKeyTime = 0f;
-        private const float ArchitectKeyCooldown = 0.3f;
-
-        /// <summary>
-        /// Prefix patch to handle keyboard input for architect tree menu and Tab key.
-        /// </summary>
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.High)]
-        public static void Prefix()
-        {
-            // Handle architect tree menu keyboard input first
-            if (ArchitectTreeState.IsActive && !InfoCardState.IsActive)
-            {
-                // Clean up stale architect state when on the world map
-                // (user may have opened architect then switched to world view without closing it)
-                if (WorldNavigationState.IsActive)
-                {
-                    ArchitectTreeState.Close();
-                    ArchitectState.Reset();
-                    // Fall through to normal handling
-                }
-                else
-                {
-                    if (Event.current.type == EventType.KeyDown)
-                    {
-                        HandleArchitectTreeInput();
-                    }
-                    return;
-                }
-            }
-
-            // If any accessibility menu is active, don't intercept - let UnifiedKeyboardPatch handle it
-            if (KeyboardHelper.IsAnyAccessibilityMenuActive())
-                return;
-
-            // Only process keyboard events
-            if (Event.current.type != EventType.KeyDown)
-                return;
-
-            KeyCode key = Event.current.keyCode;
-
-            // Only process Tab key for opening the architect menu
-            if (key != KeyCode.Tab)
-                return;
-
-            // Cooldown to prevent accidental double-presses
-            if (Time.time - lastArchitectKeyTime < ArchitectKeyCooldown)
-                return;
-
-            lastArchitectKeyTime = Time.time;
-
-            // Only process during normal gameplay with a valid map
-            if (Find.CurrentMap == null || !MapNavigationState.IsInitialized)
-                return;
-
-            // Never open architect menu while on the world map
-            if (WorldNavigationState.IsActive)
-                return;
-
-            // Don't process if any dialog or window that prevents camera motion is open
-            if (Find.WindowStack != null && Find.WindowStack.WindowsPreventCameraMotion)
-                return;
-
-            // Don't process if already in zone creation mode
-            if (ZoneCreationState.IsInCreationMode)
-                return;
-
-            // Don't process if windowless orders menu is active
-            if (WindowlessFloatMenuState.IsActive)
-                return;
-
-            // Don't process if schedule window is active
-            if (WindowlessScheduleState.IsActive)
-                return;
-
-            // If already in architect mode (but in placement), cancel back to menu
-            if (ArchitectState.IsInPlacementMode)
-            {
-                ArchitectState.Cancel();
-                Event.current.Use();
-                return;
-            }
-
-            // If architect mode is active (in category/tool selection), close it
-            if (ArchitectState.IsActive)
-            {
-                ArchitectState.Reset();
-                TolkHelper.Speak("RimWorldAccess.Building.Architect.MenuClosed".Loc());
-                Event.current.Use();
-                return;
-            }
-
-            // Open the architect tree menu
-            OpenArchitectTreeMenu();
-
-            // Consume the event
-            Event.current.Use();
-        }
-
-        /// <summary>
-        /// Handles keyboard input when the architect tree menu is active.
-        /// Delegates standard tree navigation to TreeNavigationHelper via ArchitectTreeState.HandleInput,
-        /// and handles architect-specific keys (Right Bracket, Escape close) here.
-        /// </summary>
-        private static void HandleArchitectTreeInput()
-        {
-            // Architect tree typeahead is dispatched at priority -1.5 in
-            // UnifiedKeyboardPatch via TypeaheadDispatcher (registered in
-            // TypeaheadConsumerRegistry). Nothing to forward here.
-
-            // Don't handle input if a float menu (like right-click options) is open
-            if (WindowlessFloatMenuState.IsActive)
-                return;
-
-            KeyCode key = Event.current.keyCode;
-            key = KeyboardHelper.RemapCharacterToKeyCode(key);
-
-            // Handle Right Bracket - open right-click options for selected designator
-            // (architect-specific, not part of standard tree navigation)
-            if (key == KeyCode.RightBracket)
-            {
-                OpenDesignatorRightClickOptions();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Alt+I - open info card for selected designator's PlacingDef
-            // (architect-specific: needs Designator_Build awareness, not generic tree LinkedDef)
-            if (key == KeyCode.I && KeyboardHelper.IsAltHeld)
-            {
-                OpenDesignatorInfoCard();
-                Event.current.Use();
-                return;
-            }
-
-            // Delegate standard tree navigation to TreeNavigationHelper
-            if (ArchitectTreeState.HandleInput(Event.current))
-            {
-                Event.current.Use();
-                return;
-            }
-
-            // HandleInput only returns false for KeyCode.Escape (with no active search) and
-            // for KeyCode.None character events (which must flow to UnifiedKeyboardPatch's
-            // TypeaheadDispatcher). Escape is handled here; the None case is left unconsumed.
-            if (key == KeyCode.Escape)
-            {
-                ArchitectTreeState.Close();
-                ArchitectState.Reset(); // Also reset ArchitectState so Tab works again
-                TolkHelper.Speak("RimWorldAccess.Building.Architect.MenuClosed".Loc());
-                Event.current.Use();
-            }
-        }
-
         /// <summary>
         /// Opens the architect tree menu with categories and tools.
         /// </summary>
-        private static void OpenArchitectTreeMenu()
+        internal static void OpenArchitectTreeMenu()
         {
             // Enter category selection mode in ArchitectState
             ArchitectState.EnterCategorySelection();
@@ -181,42 +41,35 @@ namespace RimWorldAccess
             // Open the tree menu with callback for when a designator is selected
             ArchitectTreeState.Open(OnDesignatorSelected);
 
-            Log.Message("Opened architect tree menu");
+            // The real architect panel is this tree's visual host; MainTabWindowLink
+            // owns the pairing from here on, closing one when the other goes. Gated on the
+            // tree actually staying open: Open() closes itself again when the colony has no
+            // categories to build from, and a panel with no tree behind it would linger.
+            if (ArchitectTreeState.IsActive)
+            {
+                MainTabWindowLink.EnsureTabOpen(MainTabWindowLink.Architect);
+            }
+
+            ModLogger.Dev("Opened architect tree menu");
         }
 
         /// <summary>
         /// Opens the right-click options for the currently selected designator.
         /// </summary>
-        private static void OpenDesignatorRightClickOptions()
+        internal static void OpenDesignatorRightClickOptions()
         {
             Designator designator = ArchitectTreeState.GetSelectedDesignator();
-            if (designator == null)
-            {
-                TolkHelper.Speak("RimWorldAccess.Building.Architect.NoDesignatorSelected".Loc());
-                return;
-            }
+            DesignatorOptionsOpener.Open(designator);
 
-            // Get right-click options from the designator
-            List<FloatMenuOption> options = designator.RightClickFloatMenuOptions?.ToList();
-
-            if (options == null || options.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.Building.Architect.NoAdditionalOptions".Loc());
-                return;
-            }
-
-            // Announce and open the options menu
-            TolkHelper.Speak("RimWorldAccess.Building.Architect.OptionsFor".Loc(designator.LabelCap));
-            WindowlessFloatMenuState.Open(options, false);
-
-            Log.Message($"Opened right-click options for designator: {designator.LabelCap}");
+            if (designator != null)
+                ModLogger.Dev($"Opened right-click options for designator: {designator.LabelCap}");
         }
 
         /// <summary>
         /// Opens the info card for the currently selected designator's building/terrain def.
         /// Only available for Designator_Build items; non-build designators show a message.
         /// </summary>
-        private static void OpenDesignatorInfoCard()
+        internal static void OpenDesignatorInfoCard()
         {
             Designator designator = ArchitectTreeState.GetSelectedDesignator();
             if (designator == null)
@@ -250,7 +103,7 @@ namespace RimWorldAccess
                 if (ArchitectHelper.RequiresMaterialSelection(buildable))
                 {
                     // Show material selection menu
-                    ShowMaterialMenu(buildable, designator);
+                    ShowMaterialMenu(buildable, buildDesignator);
                     return;
                 }
             }
@@ -262,38 +115,57 @@ namespace RimWorldAccess
         /// <summary>
         /// Shows the material selection menu for a buildable.
         /// </summary>
-        private static void ShowMaterialMenu(BuildableDef buildable, Designator originalDesignator)
+        private static void ShowMaterialMenu(BuildableDef buildable, Designator_Build originalDesignator)
         {
-            // Create material options
-            List<FloatMenuOption> options = ArchitectHelper.CreateMaterialOptions(
-                buildable,
-                (material) => OnMaterialSelected(buildable, material)
-            );
+            MaterialHarvestOutcome outcome = MaterialMenuHarvest.TryBuildOptions(
+                originalDesignator,
+                (material, vanillaAction) => ArchitectState.EnterPlacementMode(originalDesignator, material, vanillaAction),
+                out List<FloatMenuOption> options,
+                out System.Action vanillaOnClose);
 
-            if (options.Count == 0)
+            if (outcome == MaterialHarvestOutcome.Menu)
+            {
+                ArchitectState.EnterMaterialSelection(buildable, originalDesignator);
+                WindowlessFloatMenuState.Open(options, false, playOpenSound: false,
+                    onClose: _ => vanillaOnClose?.Invoke());
+                ModLogger.Dev($"Opened harvested material menu for: {buildable.defName}");
+                return;
+            }
+
+            if (outcome == MaterialHarvestOutcome.NoMenu)
+            {
+                // Vanilla already messaged "NoStuffsToBuildWith" (spoken by the message
+                // patch) or the tutor gate refused; just unwind our state.
+                ArchitectState.Reset();
+                return;
+            }
+
+            // Fallback: the legacy hand-copied list (no map, or a mod's ProcessInput threw).
+            List<FloatMenuOption> legacy = ArchitectHelper.CreateMaterialOptions(
+                buildable,
+                (material) => OnMaterialSelected(originalDesignator, material));
+
+            if (legacy.Count == 0)
             {
                 TolkHelper.Speak("RimWorldAccess.Building.Architect.NoMaterialsAvailable".Loc(buildable.label));
                 ArchitectState.Reset();
                 return;
             }
 
-            // Enter material selection mode
             ArchitectState.EnterMaterialSelection(buildable, originalDesignator);
-
-            // Open the windowless menu
-            WindowlessFloatMenuState.Open(options, false);
-
-            Log.Message($"Opened material menu for: {buildable.defName}");
+            WindowlessFloatMenuState.Open(legacy, false);
+            ModLogger.Dev($"Opened fallback material menu for: {buildable.defName}");
         }
 
         /// <summary>
         /// Called when a material is selected.
-        /// Creates the build designator and enters placement mode.
+        /// Sets the material on the original designator and enters placement mode.
         /// </summary>
-        private static void OnMaterialSelected(BuildableDef buildable, ThingDef material)
+        private static void OnMaterialSelected(Designator_Build designator, ThingDef material)
         {
-            // Create a build designator with the selected material
-            Designator_Build designator = ArchitectHelper.CreateBuildDesignator(buildable, material);
+            designator.SetStuffDef(material);
+            // mirrors the stuff float menu in Designator_Build.ProcessInput; SetStuffDef alone leaves the label in pre-material form
+            BuildingReflection.SetWriteStuff(designator, true);
 
             // Enter placement mode
             ArchitectState.EnterPlacementMode(designator, material);
@@ -316,7 +188,7 @@ namespace RimWorldAccess
         {
             ArchitectState.EnterPlacementMode(designator);
             string zoneName = designator.Label ?? "zone";
-            Log.Message($"Entered zone placement for {zoneName}");
+            ModLogger.Dev($"Entered zone placement for {zoneName}");
         }
     }
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using HarmonyLib;
 using RimWorld;
@@ -12,94 +11,114 @@ using Verse.Sound;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Windowless overlay for editing one of the typed precept lists (roles, rituals, buildings,
-    /// relics, weapons, venerated animals, preferred xenotypes, apparel). Opened from the builder
-    /// hub.
-    ///
-    /// Presents the current precepts of the type as a tree (each expandable to read details), plus
-    /// an "Add" node at the top. Enter on "Add" invokes vanilla's IdeoUIUtility.AddPrecept via
-    /// reflection — its FloatMenu (including any nested grouping menus) is redirected to the
-    /// accessible WindowlessFloatMenuState while this state is active. Delete removes the focused
-    /// precept.
-    ///
-    /// Keys:
-    ///   Up/Down/Home/End/Left/Right — tree navigation
-    ///   Page Up/Down — jump between detail sections (e.g. a role's Abilities / Requirements)
-    ///   Enter — Add (on the Add node) / re-announce (on a precept)
-    ///   ] — edit the focused precept (rename, leader title, name lock, or vanilla inline edits
-    ///       such as a weapon's swap-noble-and-despised), where the precept type supports it
-    ///   Delete — remove the focused precept
-    ///   Space — re-announce
-    ///   A-Z / 0-9 — typeahead
-    ///   Escape — close, return to hub
+    /// Mutation and data logic for one typed precept list (roles, rituals, buildings, relics,
+    /// weapons, venerated animals, preferred xenotypes, apparel), opened from the custom-creation
+    /// hub, the in-game reform dialog and the Archonexus reform screen. Presentation and keyboard
+    /// routing live in <see cref="RimWorldAccess.Shell.IdeoTypedPreceptScreenScope"/>; this class
+    /// owns <see cref="BuildTree"/>, the per-kind predicates, the Add-precept reflection call into
+    /// <c>IdeoUIUtility.AddPrecept</c> (redirected by <see cref="DialogInterceptionPatch"/>), the
+    /// edit-actions menu built from vanilla's own precept-box options plus Regenerate, the shared
+    /// post-edit housekeeping mirroring Dialog_EditPrecept.ApplyChanges, and vanilla's name-rule
+    /// spec that validates the dialog scope's text sessions.
     /// </summary>
     public static class IdeoTypedPreceptState
     {
         public static bool IsActive { get; private set; }
 
-        private static Ideo ideo;
-        private static IdeoBuilderHelper.SectionKind kind;
-        private static TreeNavigationHelper treeNav = new TreeNavigationHelper("IdeoTypedPrecept");
-        private static bool configured;
+        /// <summary>The ideo currently being edited. Null while inactive.</summary>
+        public static Ideo Ideo { get; private set; }
+
+        /// <summary>Which typed list this instance is editing. Only meaningful while <see cref="IsActive"/>.</summary>
+        public static IdeoBuilderHelper.SectionKind Kind { get; private set; }
+
+        /// <summary>
+        /// The mod-added precept class this instance is editing, null for every vanilla section.
+        /// While set it decides both filters on its own and <see cref="Kind"/> carries no meaning.
+        /// </summary>
+        public static System.Type PreceptClass { get; private set; }
+
+        /// <summary>The title derived for <see cref="PreceptClass"/>, carried in from the hub so naming this screen sweeps no defs.</summary>
+        private static string preceptClassLabel;
+
+        /// <summary>This screen's section title, from whichever of the two halves above applies.</summary>
+        public static string SectionLabel
+        {
+            get
+            {
+                return PreceptClass != null
+                    ? preceptClassLabel
+                    : IdeoBuilderHelper.GetLocalizedSectionLabel(Kind);
+            }
+        }
 
         private static readonly System.Reflection.MethodInfo AddPreceptMethod =
             AccessTools.Method(typeof(IdeoUIUtility), "AddPrecept");
 
-        public static void Open(Ideo targetIdeo, IdeoBuilderHelper.SectionKind sectionKind)
+        // Scenario.playerFaction and ScenPart_PlayerFaction.factionDef are both internal, so the
+        // faction argument vanilla's own Regenerate option passes needs reflection.
+        private static readonly System.Reflection.FieldInfo ScenarioPlayerFactionField =
+            AccessTools.Field(typeof(Scenario), "playerFaction");
+        private static readonly System.Reflection.FieldInfo ScenPartFactionDefField =
+            AccessTools.Field(typeof(ScenPart_PlayerFaction), "factionDef");
+
+        /// <summary>The scenario's player FactionDef, or null when it has no player-faction scen part; Regenerate accepts null, which is what vanilla passes once a World exists.</summary>
+        private static FactionDef PlayerScenarioFactionDef()
+        {
+            Scenario scenario = Find.Scenario;
+            if (scenario == null || ScenarioPlayerFactionField == null || ScenPartFactionDefField == null)
+            {
+                return null;
+            }
+            object scenPart = ScenarioPlayerFactionField.GetValue(scenario);
+            return scenPart != null ? (FactionDef)ScenPartFactionDefField.GetValue(scenPart) : null;
+        }
+
+        public static void Open(Ideo targetIdeo, IdeoBuilderHelper.SectionKind sectionKind,
+            System.Type preceptClass = null, string preceptClassSectionLabel = null)
         {
             if (targetIdeo == null) return;
-            ideo = targetIdeo;
-            kind = sectionKind;
+            Ideo = targetIdeo;
+            Kind = sectionKind;
+            PreceptClass = preceptClass;
+            preceptClassLabel = preceptClassSectionLabel;
             IsActive = true;
-            EnsureConfigured();
-            RebuildTree();
-            AnnounceOpening();
         }
 
         public static void Close()
         {
             IsActive = false;
-            ideo = null;
-            treeNav.Reset();
-        }
-
-        private static void EnsureConfigured()
-        {
-            if (configured) return;
-            configured = true;
-            treeNav.AnnounceChildCounts = false;
-            treeNav.FormatItemAnnouncement = FormatItem;
-            treeNav.FormatStateChangeAnnouncement = FormatStateChange;
-            treeNav.FormatSearchAnnouncement = FormatSearch;
-            treeNav.OnActivate = HandleActivate;
-            treeNav.OnDelete = HandleDelete;
-            // Page Up/Down jump between a precept's detail-section headers (e.g. a role's
-            // Abilities / Has-role-in-rituals / Requirements / Effects sections).
-            treeNav.IsSectionBoundary = item => item.IsSectionHeader;
+            Ideo = null;
+            PreceptClass = null;
+            preceptClassLabel = null;
         }
 
         #region Predicate / filter per kind
 
-        private static Func<Precept, bool> CurrentPreceptPredicate(IdeoBuilderHelper.SectionKind k)
+        private static Func<Precept, bool> CurrentPreceptPredicate(IdeoBuilderHelper.SectionKind k, System.Type preceptClass)
         {
+            if (preceptClass != null) return p => preceptClass.IsInstanceOfType(p) && p.def.visible;
             switch (k)
             {
-                case IdeoBuilderHelper.SectionKind.Roles: return p => p is Precept_Role;
-                // Exact type + visible, matching vanilla's rituals filter — excludes hidden rituals
-                // and Precept_Ritual subclasses like Precept_GravshipLaunch that shouldn't appear.
+                // MUTATION-C: mirrors IdeoUIUtility.DoPreceptsInt's own row-gathering loop
+                // (decompiled RimWorld/IdeoUIUtility.cs:1436) — vanilla filters every precept
+                // category's rows by "showAll || def.visible" (showAll is a DEV-only debug
+                // checkbox, defaulting off and out of scope here), applied uniformly across all
+                // eight typed-precept categories, not just Rituals.
+                case IdeoBuilderHelper.SectionKind.Roles: return p => p is Precept_Role && p.def.visible;
                 case IdeoBuilderHelper.SectionKind.Rituals: return p => p.def.preceptClass == typeof(Precept_Ritual) && p.def.visible;
-                case IdeoBuilderHelper.SectionKind.Buildings: return p => p is Precept_Building || p is Precept_RitualSeat;
-                case IdeoBuilderHelper.SectionKind.Relics: return p => p is Precept_Relic;
-                case IdeoBuilderHelper.SectionKind.Weapons: return p => p is Precept_Weapon;
-                case IdeoBuilderHelper.SectionKind.VeneratedAnimals: return p => p is Precept_Animal;
-                case IdeoBuilderHelper.SectionKind.PreferredXenotypes: return p => p is Precept_Xenotype;
-                case IdeoBuilderHelper.SectionKind.Apparel: return p => p is Precept_Apparel;
+                case IdeoBuilderHelper.SectionKind.Buildings: return p => (p is Precept_Building || p is Precept_RitualSeat) && p.def.visible;
+                case IdeoBuilderHelper.SectionKind.Relics: return p => p is Precept_Relic && p.def.visible;
+                case IdeoBuilderHelper.SectionKind.Weapons: return p => p is Precept_Weapon && p.def.visible;
+                case IdeoBuilderHelper.SectionKind.VeneratedAnimals: return p => p is Precept_Animal && p.def.visible;
+                case IdeoBuilderHelper.SectionKind.PreferredXenotypes: return p => p is Precept_Xenotype && p.def.visible;
+                case IdeoBuilderHelper.SectionKind.Apparel: return p => p is Precept_Apparel && p.def.visible;
                 default: return p => false;
             }
         }
 
-        private static Func<PreceptDef, bool> AddFilter(IdeoBuilderHelper.SectionKind k)
+        private static Func<PreceptDef, bool> AddFilter(IdeoBuilderHelper.SectionKind k, System.Type preceptClass)
         {
+            if (preceptClass != null) return p => p.preceptClass == preceptClass;
             switch (k)
             {
                 case IdeoBuilderHelper.SectionKind.Roles: return p => typeof(Precept_Role).IsAssignableFrom(p.preceptClass);
@@ -114,148 +133,90 @@ namespace RimWorldAccess
             }
         }
 
-        #endregion
-
-        #region Tree
-
-        public static void RebuildTree()
+        /// <summary>The ideo's current precepts of this instance's Kind, in ideo order — the scope's row source.</summary>
+        public static List<Precept> CurrentPrecepts()
         {
-            if (ideo == null) return;
-
-            // Remember the focused precept so an edit / swap / refresh keeps the cursor on it
-            // rather than snapping back to the "Add" row at the top.
-            Precept focused = null;
-            if (treeNav.RootItem != null)
-            {
-                var sel = treeNav.SelectedItem;
-                focused = (sel?.Data as Precept) ?? (sel?.Parent?.Data as Precept);
-            }
-
-            var root = new InspectionTreeItem
-            {
-                Label = "Root",
-                IndentLevel = -1,
-                IsExpandable = true,
-                IsExpanded = true,
-                Type = InspectionTreeItem.ItemType.Category,
-            };
-
-            // "Add" action node at the top.
-            string typeLabel = IdeoBuilderHelper.GetLocalizedSectionLabel(kind);
-            root.Children.Add(new InspectionTreeItem
-            {
-                Label = "Add".Translate().ToString() + " " + typeLabel,
-                IndentLevel = 0,
-                IsExpandable = false,
-                Type = InspectionTreeItem.ItemType.Item,
-                Data = "ADD",
-                Parent = root,
-            });
-
-            // Current precepts of this type. Each is an expandable node: collapsed reads its full
-            // details inline; expanded reads the short subject label and exposes the details as
-            // child lines (same pattern as the meme picker).
-            var pred = CurrentPreceptPredicate(kind);
-            var current = ideo.PreceptsListForReading.Where(pred).ToList();
-            foreach (var precept in current)
-            {
-                string shortLabel = IdeoBuilderHelper.PreceptLabel(precept);
-                var detailLines = BuildPreceptDetailLines(precept);
-
-                var node = new InspectionTreeItem
-                {
-                    ExpandedLabel = shortLabel,
-                    Label = detailLines.Count > 0
-                        ? shortLabel + ". " + string.Join(". ", detailLines.Select(d => d.Text))
-                        : shortLabel,
-                    IndentLevel = 0,
-                    IsExpandable = true,
-                    IsExpanded = false,
-                    Type = InspectionTreeItem.ItemType.SubCategory,
-                    Data = precept,
-                    LinkedDef = IdeologyHelper_GetPreceptDef(precept),
-                    Parent = root,
-                };
-                foreach (var line in detailLines)
-                {
-                    node.Children.Add(new InspectionTreeItem
-                    {
-                        Label = line.Text,
-                        IsSectionHeader = line.IsHeader,
-                        IndentLevel = 1,
-                        IsExpandable = false,
-                        Type = InspectionTreeItem.ItemType.DetailText,
-                        Parent = node,
-                    });
-                }
-                root.Children.Add(node);
-            }
-
-            treeNav.Initialize(root);
-
-            // Restore the cursor onto the previously-focused precept after the rebuild.
-            if (focused != null)
-            {
-                var items = treeNav.VisibleItems;
-                for (int i = 0; i < items.Count; i++)
-                {
-                    if (ReferenceEquals(items[i].Data, focused))
-                    {
-                        treeNav.SetSelectedIndex(i);
-                        break;
-                    }
-                }
-            }
+            return Ideo.PreceptsListForReading.Where(CurrentPreceptPredicate(Kind, PreceptClass)).ToList();
         }
 
-        private static Def IdeologyHelper_GetPreceptDef(Precept precept)
+        /// <summary>
+        /// The one Def a precept carries that vanilla actually gives an info card, for Alt+I; null
+        /// where none exists. ThingDef and XenotypeDef are both plainly carded by vanilla, so
+        /// Precept_ThingDef's ThingDef, Precept_Apparel's apparelDef and Precept_Xenotype's xenotype
+        /// qualify. Its <c>customXenotype</c> sibling does not — that is data, not a Def.
+        /// Precept_Weapon and Precept_Ritual carry no single citable Def, so their rows correctly
+        /// yield no Alt+I target.
+        /// </summary>
+        public static Def LinkedDefFor(Precept precept)
         {
-            // Surface a ThingDef/XenotypeDef etc. for Alt+I info card where available.
             if (precept is Precept_ThingDef ptd && ptd.ThingDef != null) return ptd.ThingDef;
+            if (precept is Precept_Xenotype px && px.xenotype != null) return px.xenotype;
+            if (precept is Precept_Apparel pa && pa.apparelDef != null) return pa.apparelDef;
             return null;
         }
 
-        /// <summary>One detail line plus whether it is a section heading (for Page Up/Down).</summary>
-        private struct DetailLine
+        #endregion
+
+        #region Detail lines (for the scope's expandable detail rows)
+
+        /// <summary>
+        /// One detail line, whether it heads a section, and the section it belongs to. SectionTitle
+        /// is null before the first header, on header lines themselves, and on lines vanilla renders
+        /// outside every section's colour (see <see cref="IsHintLine"/>).
+        /// </summary>
+        public struct DetailLine
         {
             public readonly string Text;
             public readonly bool IsHeader;
-            public DetailLine(string text, bool isHeader) { Text = text; IsHeader = isHeader; }
+            public readonly string SectionTitle;
+            public DetailLine(string text, bool isHeader, string sectionTitle)
+            {
+                Text = text;
+                IsHeader = isHeader;
+                SectionTitle = sectionTitle;
+            }
         }
 
-        // The opening tag vanilla wraps section titles in (ColorizeDescTitle uses
-        // ColoredText.TipSectionTitleColor). Built via the same Colorize extension so it matches
-        // exactly without hardcoding the hex; used to detect headings in the raw GetTip() text.
-        private static readonly string SectionTitlePrefix = BuildSectionTitlePrefix();
+        // The opening tags vanilla wraps section titles and its trailing gray hint line in, built
+        // through the same Colorize extension so neither hardcodes a hex, and matched against the raw
+        // GetTip() text before CleanGameText strips the markup. No Precept_*.GetTip override other
+        // than the hint colorizes a line gray, so this is a generic colour signal, not a special case.
+        private static readonly string SectionTitlePrefix = BuildColorPrefix(ColoredText.TipSectionTitleColor);
+        private static readonly string HintLinePrefix = BuildColorPrefix(Color.gray);
 
-        private static string BuildSectionTitlePrefix()
+        private static string BuildColorPrefix(Color color)
         {
             try
             {
-                string sample = "x".Colorize(ColoredText.TipSectionTitleColor); // <color=#...>x</color>
+                string sample = "x".Colorize(color);
                 int gt = sample.IndexOf('>');
                 return gt > 0 ? sample.Substring(0, gt + 1) : null;
             }
             catch { return null; }
         }
 
-        private static bool IsSectionTitleLine(string rawLine)
+        private static bool HasColorPrefix(string rawLine, string prefix)
         {
-            if (string.IsNullOrEmpty(SectionTitlePrefix) || string.IsNullOrEmpty(rawLine)) return false;
-            return rawLine.TrimStart().StartsWith(SectionTitlePrefix, StringComparison.Ordinal);
+            if (string.IsNullOrEmpty(prefix) || string.IsNullOrEmpty(rawLine)) return false;
+            return rawLine.TrimStart().StartsWith(prefix, StringComparison.Ordinal);
         }
 
+        private static bool IsSectionTitleLine(string rawLine) => HasColorPrefix(rawLine, SectionTitlePrefix);
+
         /// <summary>
-        /// Builds the detail lines for a precept from vanilla's own tooltip (GetTip), cleaned of
-        /// markup and unresolved grammar tokens, flagging section-title lines so Page Up/Down can
-        /// jump between them. For precepts that grant abilities (roles, ritual roles), each ability's
-        /// description is injected inline with its tip bullet — vanilla's tip lists ability NAMES only
-        /// ("- Leader speech"), so without this they read as bare names. Reuses the read-only Ideology
-        /// viewer's own `EnhanceWithAbilityDescriptions` so the editor and viewer present abilities
-        /// identically (one "- Leader speech. {what it does}" line per ability, not a separate
-        /// disconnected list).
+        /// Vanilla's gray trailing hint: textually the last line after every section's body, but not
+        /// part of the section preceding it, so it must not inherit that section's title.
         /// </summary>
-        private static List<DetailLine> BuildPreceptDetailLines(Precept precept)
+        private static bool IsHintLine(string rawLine) => HasColorPrefix(rawLine, HintLinePrefix);
+
+        /// <summary>
+        /// The detail lines for a precept, taken from vanilla's own GetTip, cleaned of markup and
+        /// unresolved grammar tokens, with section-title lines flagged and every other line stamped
+        /// with its section so the scope can announce a section on crossing into it and Page Up/Down
+        /// between sections. For precepts granting abilities, each ability's description is injected
+        /// inline through <c>EnhanceWithAbilityDescriptions</c>, since vanilla's tip lists names only.
+        /// </summary>
+        public static List<DetailLine> BuildPreceptDetailLines(Precept precept)
         {
             var lines = new List<DetailLine>();
 
@@ -265,12 +226,29 @@ namespace RimWorldAccess
 
             if (!string.IsNullOrEmpty(tip))
             {
+                string currentSection = null;
                 foreach (var raw in tip.Split('\n'))
                 {
                     bool isHeader = IsSectionTitleLine(raw);
+                    bool isHint = IsHintLine(raw);
                     string line = IdeoBuilderHelper.CleanGameText(raw);
-                    if (!string.IsNullOrEmpty(line))
-                        lines.Add(new DetailLine(line, isHeader));
+                    if (string.IsNullOrEmpty(line)) continue;
+
+                    if (isHint)
+                    {
+                        // Closes out any section context: vanilla renders this line outside them all.
+                        lines.Add(new DetailLine(line, false, null));
+                        currentSection = null;
+                    }
+                    else if (isHeader)
+                    {
+                        currentSection = line;
+                        lines.Add(new DetailLine(line, true, null));
+                    }
+                    else
+                    {
+                        lines.Add(new DetailLine(line, false, currentSection));
+                    }
                 }
             }
 
@@ -279,86 +257,99 @@ namespace RimWorldAccess
 
         #endregion
 
-        #region Formatters / activation / delete
+        #region Tree building
 
-        private static string FormatItem(InspectionTreeItem item)
+        /// <summary>
+        /// One node per current precept at indent 0, each holding a read-only row per non-header
+        /// detail line, stamped with <see cref="InspectionTreeItem.SectionTitle"/>. Header lines are
+        /// NOT emitted as nodes — they exist only to stamp that title on the rows below, so an
+        /// expanded precept does not read its section titles as extra counted rows. The "Add" row is
+        /// not a node either; the scope carries it as a prefix row so it never masquerades as a tree
+        /// level. Labels carry no live state: the scope folds the detail set into Extras while
+        /// collapsed, and the child rows speak it when expanded.
+        /// </summary>
+        public static InspectionTreeItem BuildTree()
         {
-            // Detail lines read as just their text — no position/level chatter.
-            if (item.Type == InspectionTreeItem.ItemType.DetailText)
-                return item.Label;
-
-            var sb = new StringBuilder();
-            // Smart label: expanded precept reads its short subject label (details are now child
-            // nodes); collapsed reads the full inline details.
-            sb.Append(item.IsExpandable && item.IsExpanded && !string.IsNullOrEmpty(item.ExpandedLabel)
-                ? item.ExpandedLabel : item.Label);
-            if (item.IsExpandable)
-                sb.Append(item.IsExpanded ? ", " + (string)"RimWorldAccess.Tree.StateExpanded".Translate() : ", " + (string)"RimWorldAccess.Tree.StateCollapsed".Translate());
-
-            var (pos, total) = treeNav.GetSiblingPosition(item);
-            string position = MenuHelper.FormatPosition(pos - 1, total);
-            if (!string.IsNullOrEmpty(position))
-                sb.Append(". ").Append(position);
-
-            string levelSuffix = MenuHelper.GetLevelSuffix("IdeoTypedPrecept", item.IndentLevel);
-            if (!string.IsNullOrEmpty(levelSuffix))
-                sb.Append(levelSuffix);
-
-            return sb.ToString();
-        }
-
-        private static string FormatStateChange(InspectionTreeItem item)
-        {
-            string state = (item.IsExpanded ? "RimWorldAccess.Tree.StateExpanded" : "RimWorldAccess.Tree.StateCollapsed").Translate().ToString().CapitalizeFirst();
-            string label = !string.IsNullOrEmpty(item.ExpandedLabel) ? item.ExpandedLabel : item.Label;
-            return state + ". " + label;
-        }
-
-        private static string FormatSearch(InspectionTreeItem item, TypeaheadSearchHelper t)
-        {
-            string label = !string.IsNullOrEmpty(item.ExpandedLabel) ? item.ExpandedLabel : item.Label;
-            return label + t.BuildSearchContextSuffix();
-        }
-
-        private static bool HandleActivate(InspectionTreeItem item)
-        {
-            if (item?.Data is string s && s == "ADD")
+            var root = new InspectionTreeItem
             {
-                InvokeAddPrecept();
-                return true;
+                Label = "Root",
+                IndentLevel = -1,
+                IsExpandable = true,
+                IsExpanded = true,
+                Type = InspectionTreeItem.ItemType.Category,
+            };
+            if (Ideo == null) return root;
+
+            foreach (var precept in CurrentPrecepts())
+            {
+                var detailLines = BuildPreceptDetailLines(precept);
+                // Headers emit no row, so expandability must count only the children that will
+                // exist; an all-header tip would otherwise claim to expand into nothing.
+                bool hasRealRows = detailLines.Any(l => !l.IsHeader);
+                var node = new InspectionTreeItem
+                {
+                    Label = IdeoBuilderHelper.PreceptLabel(precept),
+                    IndentLevel = 0,
+                    IsExpandable = hasRealRows,
+                    IsExpanded = false,
+                    Type = InspectionTreeItem.ItemType.SubCategory,
+                    Data = precept,
+                    // Not precept.def: vanilla gives no card for a PreceptDef itself.
+                    LinkedDef = LinkedDefFor(precept),
+                    Parent = root,
+                };
+                foreach (var line in detailLines)
+                {
+                    if (line.IsHeader) continue;
+                    node.Children.Add(new InspectionTreeItem
+                    {
+                        Label = line.Text,
+                        SectionTitle = line.SectionTitle,
+                        IndentLevel = 1,
+                        IsExpandable = false,
+                        Type = InspectionTreeItem.ItemType.DetailText,
+                        Parent = node,
+                    });
+                }
+                root.Children.Add(node);
             }
-            return false; // precept nodes fall through to expand/collapse
+
+            return root;
         }
 
-        private static bool HandleDelete(InspectionTreeItem item)
+        #endregion
+
+        #region Delete
+
+        /// <summary>
+        /// Removes the precept behind vanilla's own removal guard: some precepts cannot be removed
+        /// in the UI, and one required by a meme cannot be removed at all. Speaks the outcome and
+        /// returns true only on a real removal, so the scope knows to move its cursor off the row.
+        /// </summary>
+        public static bool TryDeletePrecept(Precept precept)
         {
-            // Allow deleting from a detail-line child too, by resolving up to its precept node.
-            var precept = (item?.Data as Precept) ?? (item?.Parent?.Data as Precept);
             if (precept == null) return false;
 
-            // Mirror vanilla's removal guard (Precept.DrawPreceptBox): some precepts can't be
-            // removed in the UI, and a precept required by a meme can't be removed at all.
             if (!precept.def.canRemoveInUI || precept.def.issue.HasDefaultPrecept)
             {
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
                 TolkHelper.SpeakData((string)"CannotRemove".Translate() + ": " + IdeoBuilderHelper.PreceptLabel(precept), SpeechPriority.High);
-                return true;
+                return false;
             }
-            var requiringMeme = ideo.GetMemeThatRequiresPrecept(precept.def);
+            var requiringMeme = Ideo.GetMemeThatRequiresPrecept(precept.def);
             if (requiringMeme != null)
             {
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
                 TolkHelper.SpeakData((string)"CannotRemove".Translate() + ": " + (string)"RequiredByMeme".Translate(requiringMeme.label), SpeechPriority.High);
-                return true;
+                return false;
             }
 
             string removedName = IdeoBuilderHelper.PreceptLabel(precept);
-            ideo.RemovePrecept(precept);
-            ideo.anyPreceptEdited = true;
-            ideo.RegenerateDescription();
+            Ideo.RemovePrecept(precept);
+            Ideo.anyPreceptEdited = true;
+            Ideo.RegenerateDescription();
             SoundDefOf.Tick_Low.PlayOneShotOnCamera();
             TolkHelper.SpeakData($"{removedName}, {(string)"RimWorldAccess.Ideology.Builder.Status.Removed".Translate()}");
-            RebuildTree();
             return true;
         }
 
@@ -366,7 +357,7 @@ namespace RimWorldAccess
 
         #region Add precept (reflection into vanilla)
 
-        private static void InvokeAddPrecept()
+        public static void InvokeAddPrecept()
         {
             if (AddPreceptMethod == null)
             {
@@ -375,13 +366,18 @@ namespace RimWorldAccess
             }
             try
             {
-                bool group = kind == IdeoBuilderHelper.SectionKind.Precepts; // typed lists are ungrouped
-                AddPreceptMethod.Invoke(null, new object[]
+                bool group = PreceptClass == null && Kind == IdeoBuilderHelper.SectionKind.Precepts;
+                // Vanilla adds a FloatMenu to the WindowStack, which DialogInterceptionPatch converts
+                // to a WindowlessFloatMenuState. Mods transpile that construction — one swaps in its
+                // own searchable Window past 30 options, which reaches the keyboard only under the
+                // guard.
+                RimWorldAccess.Shell.ScopeDelegateGuard.Run(delegate
                 {
-                    ideo, IdeoEditMode.GameStart, AddFilter(kind), group
+                    AddPreceptMethod.Invoke(null, new object[]
+                    {
+                        Ideo, IdeoEditMode.GameStart, AddFilter(Kind, PreceptClass), group
+                    });
                 });
-                // Vanilla builds a FloatMenu and adds it to the WindowStack; our interception
-                // (IdeoTypedPreceptFloatMenuRedirect) converts it to a WindowlessFloatMenuState.
             }
             catch (Exception ex)
             {
@@ -389,476 +385,126 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>Called by the float-menu redirect after the player picks an option, so the
-        /// tree reflects the newly added precept.</summary>
-        public static void NotifyPreceptAdded()
+        // Frame on which an edit last ran its silent housekeeping or armed a dialog about to open.
+        // Frame-scoped so a stale flag can never suppress a later genuine return.
+        private static int suppressReturnReannounceFrame = -1;
+
+        /// <summary>
+        /// Arms the suppression window from an entry about to open a window of its own in the same
+        /// frame the edit menu pops back, whose dialog is the only voice that should follow.
+        /// </summary>
+        public static void SuppressNextReturnReannounce()
         {
-            if (!IsActive) return;
-            ideo.RegenerateDescription();
-            RebuildTree();
-            treeNav.ReannounceCurrentItem();
+            suppressReturnReannounceFrame = Time.frameCount;
+        }
+
+        /// <summary>
+        /// Whether the scope's OnFocus should re-announce the current row when a sub-picker pops back
+        /// to it. False when an edit that just ran, or a dialog about to open, already claimed this
+        /// frame's voice; true for a genuine return with nothing else said.
+        /// </summary>
+        public static bool ShouldReannounceOnReturn()
+        {
+            bool suppress = suppressReturnReannounceFrame >= 0
+                && Time.frameCount - suppressReturnReannounceFrame <= 1;
+            suppressReturnReannounceFrame = -1;
+            return !suppress;
         }
 
         #endregion
 
         #region Edit precept (] context menu)
 
-        private static readonly TextInputController editController = new TextInputController();
-
-        // Vanilla precept-name rules (Dialog_EditPrecept): letters/digits/space/'/-, max 32 chars.
+        // Vanilla's precept-name rules: letters, digits, space, apostrophe, hyphen; max 32 chars.
         private static readonly Regex ValidPreceptNameRegex = new Regex("^[\\p{L}0-9 '\\-]*$");
         private const int MaxPreceptNameLength = 32;
 
-        private static TextFieldSpec PreceptNameSpec(string labelKey) =>
+        public static TextFieldSpec PreceptNameSpec(string labelKey) =>
             new TextFieldSpec(labelKey, maxLength: MaxPreceptNameLength, minLength: 1, allowedChars: ValidPreceptNameRegex);
 
         /// <summary>
-        /// Opens an edit-actions context menu for the focused precept. Roles, relics, buildings and
-        /// rituals — which vanilla edits through the inaccessible Dialog_EditPrecept — get an
-        /// accessible rename, a name-lock toggle, and (for the leader role) male/female leader-title
-        /// fields. Weapons, apparel and ritual seats surface vanilla's own inline EditFloatMenuOptions
-        /// (swap noble/despised, set gender/type, replace building) directly, since those mutate the
-        /// precept without a dialog. Animals and xenotypes have no vanilla edit options.
+        /// The edit-actions menu for the focused precept, built option for option out of vanilla's
+        /// own precept-box options plus Regenerate. Roles, relics, buildings and rituals yield one
+        /// "Edit..." opening the real <c>Dialog_EditPrecept</c>; weapons, apparel and ritual seats
+        /// yield inline edits that mutate the precept without a dialog; animals and xenotypes yield
+        /// none. Removal is not here — it is the scope's Delete key behind the same vanilla guards.
+        ///
+        /// An inline edit never closes the menu, since vanilla's precept editor is one dialog whose
+        /// fields cannot dismiss it. Each such entry ends by calling <paramref name="reopenAt"/> with
+        /// its index and chosen label, and that re-opened landing is the action's one utterance. The
+        /// label rides back because the inline family's ENTRY SET changes with the value chosen —
+        /// vanilla omits the option matching the current state — so the index alone cannot be
+        /// trusted. The "Edit..." entry instead arms <see cref="SuppressNextReturnReannounce"/>, so
+        /// the dialog it opens is what speaks next.
         /// </summary>
-        private static void OpenEditMenu()
-        {
-            var item = treeNav.SelectedItem;
-            var precept = (item?.Data as Precept) ?? (item?.Parent?.Data as Precept);
-            if (precept == null)
-            {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                return;
-            }
-
-            var options = BuildEditOptions(precept);
-            if (options.Count == 0)
-            {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                TolkHelper.Speak("RimWorldAccess.Ideology.Builder.NoEditOptions".Loc());
-                return;
-            }
-
-            TolkHelper.SpeakData((string)"Edit".Translate() + " " + IdeoBuilderHelper.PreceptLabel(precept));
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        private static List<FloatMenuOption> BuildEditOptions(Precept precept)
+        public static List<FloatMenuOption> BuildEditOptions(Precept precept, Action<int, string> reopenAt)
         {
             var options = new List<FloatMenuOption>();
 
-            // Each type mirrors the controls vanilla's Dialog_EditPrecept shows for it, surfaced as
-            // accessible float-menu actions applied live.
-            switch (precept)
+            // Each option is wrapped, never replaced, so it keeps every field vanilla set.
+            var vanilla = precept.EditFloatMenuOptions();
+            if (vanilla != null)
             {
-                case Precept_Role role:
-                    if (role.def.leaderRole)
+                bool inline = HasInlineEditOptions(precept);
+                foreach (var opt in vanilla)
+                {
+                    int entryIndex = options.Count;
+                    Action vanillaAction = opt.action;
+                    string chosenLabel = opt.Label;
+                    if (vanillaAction != null)
                     {
-                        // Leader role: edit the ideo's leader title per gender, not a precept name.
-                        options.Add(new FloatMenuOption(
-                            "LeaderTitle".Translate() + " (" + Gender.Male.GetLabel() + ")",
-                            () => BeginLeaderTitleEdit(role, female: false)));
-                        options.Add(new FloatMenuOption(
-                            "LeaderTitle".Translate() + " (" + Gender.Female.GetLabel() + ")",
-                            () => BeginLeaderTitleEdit(role, female: true)));
+                        opt.action = inline
+                            ? (Action)(() => { vanillaAction(); reopenAt(entryIndex, chosenLabel); })
+                            : (Action)(() => { SuppressNextReturnReannounce(); vanillaAction(); });
                     }
-                    else
-                    {
-                        AddNameAndLockOptions(role, options);
-                    }
-                    if (role.ApparelRequirements != null)
-                        options.Add(new FloatMenuOption("EditApparelRequirement".Translate(),
-                            () => OpenApparelRequirementsMenu(role)));
-                    break;
-
-                case Precept_Relic relic:
-                    AddNameAndLockOptions(relic, options);
-                    if (relic.ThingDef != null && relic.ThingDef.MadeFromStuff)
-                        options.Add(new FloatMenuOption("ChooseStuffForRelic".Translate() + "...",
-                            () => OpenRelicStuffMenu(relic)));
-                    break;
-
-                case Precept_Building building:
-                    AddNameAndLockOptions(building, options);
-                    var styles = StylesForBuilding(building);
-                    if (styles.Count > 1)
-                        options.Add(new FloatMenuOption("Appearance".Translate() + "...",
-                            () => OpenBuildingStyleMenu(building, styles)));
-                    break;
-
-                case Precept_Ritual ritual:
-                    AddNameAndLockOptions(ritual, options);
-                    AddRitualEditOptions(ritual, options);
-                    break;
+                    options.Add(opt);
+                }
             }
 
-            // Inline vanilla edits that mutate the precept directly (weapon swap, apparel gender/
-            // type, ritual-seat replacement).
-            if (HasInlineEditOptions(precept))
+            // Rides vanilla's Regenerate behind its own CanRegenerate twin, with the same faction
+            // argument vanilla passes: null once a World exists, the scenario's faction in worldgen.
+            if (precept.CanRegenerate)
             {
-                var vanilla = precept.EditFloatMenuOptions();
-                if (vanilla != null)
-                    foreach (var opt in vanilla)
-                        options.Add(opt);
+                int regenerateIndex = options.Count;
+                options.Add(new FloatMenuOption("Regenerate".Translate().CapitalizeFirst(), () =>
+                {
+                    precept.Regenerate(Ideo, Find.World == null ? PlayerScenarioFactionDef() : null);
+                    AfterPreceptEditSilent();
+                    // The one entry whose label cannot state what changed, so the regenerated
+                    // precept's new label rides in as the re-opened menu's heading.
+                    reopenAt(regenerateIndex, IdeoBuilderHelper.PreceptLabel(precept));
+                }));
             }
 
             return options;
-        }
-
-        private static void AddNameAndLockOptions(Precept precept, List<FloatMenuOption> options)
-        {
-            options.Add(new FloatMenuOption("EditName".Translate(), () => BeginRename(precept)));
-            options.Add(new FloatMenuOption(NameLockText(precept), () => ToggleNameLock(precept)));
         }
 
         // Types whose EditFloatMenuOptions mutate the precept inline (no dialog).
         private static bool HasInlineEditOptions(Precept p) =>
             p is Precept_Weapon || p is Precept_Apparel || p is Precept_RitualSeat;
 
-        private static void BeginRename(Precept precept)
-        {
-            editController.Begin(precept.Label, PreceptNameSpec("Name"),
-                text => { precept.SetName(text.Trim()); AfterPreceptEdit(precept); });
-        }
-
-        private static void BeginLeaderTitleEdit(Precept_Role role, bool female)
-        {
-            string current = female
-                ? (string.IsNullOrEmpty(ideo.leaderTitleFemale) ? role.Label : ideo.leaderTitleFemale)
-                : (string.IsNullOrEmpty(ideo.leaderTitleMale) ? role.Label : ideo.leaderTitleMale);
-            editController.Begin(current, PreceptNameSpec("LeaderTitle"),
-                text =>
-                {
-                    string title = text.Trim();
-                    if (female)
-                    {
-                        ideo.leaderTitleFemale = title;
-                    }
-                    else
-                    {
-                        role.SetName(title);            // vanilla sets the precept name to the male title
-                        ideo.leaderTitleMale = title;
-                    }
-                    AfterPreceptEdit(role);
-                });
-        }
-
-        private static void ToggleNameLock(Precept precept)
-        {
-            precept.nameLocked = !precept.nameLocked;
-            (precept.nameLocked ? SoundDefOf.Checkbox_TurnedOn : SoundDefOf.Checkbox_TurnedOff).PlayOneShotOnCamera();
-            TolkHelper.SpeakData(NameLockText(precept), SpeechPriority.High);
-        }
-
-        private static string NameLockText(Precept precept) =>
-            (precept.nameLocked ? "LockInOn" : "LockInOff")
-                .Translate("PreceptName".Translate(), "PreceptNameLower".Translate());
-
-        #region Relic stuff
-
-        private static void OpenRelicStuffMenu(Precept_Relic relic)
-        {
-            var options = new List<FloatMenuOption>();
-            foreach (var stuff in GenStuff.AllowedStuffsFor(relic.ThingDef))
-            {
-                var captured = stuff;
-                string label = stuff.LabelCap;
-                if (stuff == relic.stuff) label += ", current";
-                options.Add(new FloatMenuOption(label, () => { relic.stuff = captured; AfterPreceptEdit(relic); }));
-            }
-            if (options.Count == 0)
-                options.Add(new FloatMenuOption("NoneLower".Translate(), null));
-            TolkHelper.Speak("RelicStuff".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        #endregion
-
-        #region Building style
-
-        // Mirrors Dialog_EditPrecept.StylesForBuilding: every (style, category) pair the building's
-        // ThingDef can take under this ideoligion.
-        private static List<StyleCategoryPair> StylesForBuilding(Precept_Building building)
-        {
-            var thingDef = building.ThingDef;
-            if (thingDef != null && thingDef.canEditAnyStyle)
-                return Precept_ThingDef.AllPossibleStylesForBuilding(thingDef);
-
-            var result = new List<StyleCategoryPair>();
-            if (thingDef == null) return result;
-            foreach (var cat in ideo.thingStyleCategories)
-                foreach (var tds in cat.category.thingDefStyles)
-                    if (tds.ThingDef == thingDef)
-                        result.Add(new StyleCategoryPair { category = cat.category, styleDef = tds.StyleDef });
-            return result;
-        }
-
-        private static void OpenBuildingStyleMenu(Precept_Building building, List<StyleCategoryPair> styles)
-        {
-            var current = ideo.GetStyleAndCategoryFor(building.ThingDef);
-            var options = new List<FloatMenuOption>();
-            foreach (var pair in styles)
-            {
-                var captured = pair;
-                string label = pair.category != null ? pair.category.LabelCap.ToString() : "Default".Translate().ToString();
-                if (current != null && current.styleDef == pair.styleDef) label += ", current";
-                options.Add(new FloatMenuOption(label, () =>
-                {
-                    ideo.style.SetStyleForThingDef(building.ThingDef, captured);
-                    AfterPreceptEdit(building);
-                }));
-            }
-            TolkHelper.Speak("Appearance".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        #endregion
-
-        #region Ritual timing / reward
-
-        private static void AddRitualEditOptions(Precept_Ritual ritual, List<FloatMenuOption> options)
-        {
-            // Starting condition: anytime vs a fixed date (only when the ritual supports both).
-            if (ritual.canBeAnytime && ritual.sourcePattern != null && !ritual.sourcePattern.alwaysStartAnytime)
-                options.Add(new FloatMenuOption(
-                    "StartingCondition".Translate() + ": " +
-                        (ritual.isAnytime ? "StartingCondition_Anytime" : "StartingCondition_Date").Translate(),
-                    () => OpenStartingConditionMenu(ritual)));
-
-            // Date — only meaningful when the ritual fires on a date rather than anytime.
-            var dateTrigger = ritual.obligationTriggers.OfType<RitualObligationTrigger_Date>().FirstOrDefault();
-            if (dateTrigger != null && !ritual.isAnytime)
-                options.Add(new FloatMenuOption("Date".Translate() + ": " + dateTrigger.DateString,
-                    () => OpenQuadrumMenu(ritual, dateTrigger)));
-
-            // Attached reward.
-            if (ritual.SupportsAttachableOutcomeEffect)
-                options.Add(new FloatMenuOption(
-                    "RitualAttachedReward".Translate() + ": " +
-                        (ritual.attachableOutcomeEffect != null
-                            ? ritual.attachableOutcomeEffect.LabelCap.ToString()
-                            : "None".Translate().ToString()),
-                    () => OpenRewardMenu(ritual)));
-        }
-
-        private static void OpenStartingConditionMenu(Precept_Ritual ritual)
-        {
-            var options = new List<FloatMenuOption>
-            {
-                StartingConditionOption(ritual, anytime: true),
-                StartingConditionOption(ritual, anytime: false),
-            };
-            TolkHelper.Speak("StartingCondition".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        private static FloatMenuOption StartingConditionOption(Precept_Ritual ritual, bool anytime)
-        {
-            string label = (anytime ? "StartingCondition_Anytime" : "StartingCondition_Date").Translate();
-            if (ritual.isAnytime == anytime) label += ", current";
-            return new FloatMenuOption(label, () => { ritual.isAnytime = anytime; AfterPreceptEdit(ritual); });
-        }
-
-        private static void OpenQuadrumMenu(Precept_Ritual ritual, RitualObligationTrigger_Date dateTrigger)
-        {
-            int currentDay = GenDate.DayOfQuadrum((long)dateTrigger.triggerDaysSinceStartOfYear * 60000, 0f);
-            var options = new List<FloatMenuOption>();
-            foreach (var q in QuadrumUtility.QuadrumsInChronologicalOrder)
-            {
-                var quadrum = q;
-                options.Add(new FloatMenuOption(q.Label(), () => OpenDayMenu(ritual, dateTrigger, quadrum, currentDay)));
-            }
-            TolkHelper.Speak("Date".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        private static void OpenDayMenu(Precept_Ritual ritual, RitualObligationTrigger_Date dateTrigger, Quadrum quadrum, int currentDay)
-        {
-            var options = new List<FloatMenuOption>();
-            for (int i = 0; i < 15; i++)
-            {
-                int day = i;
-                string label = Find.ActiveLanguageWorker.OrdinalNumber(day + 1);
-                if (day == currentDay) label += ", current";
-                options.Add(new FloatMenuOption(label, () =>
-                {
-                    dateTrigger.triggerDaysSinceStartOfYear = (int)quadrum * 15 + day;
-                    AfterPreceptEdit(ritual);
-                }));
-            }
-            TolkHelper.SpeakData(quadrum.Label());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        private static void OpenRewardMenu(Precept_Ritual ritual)
-        {
-            var options = new List<FloatMenuOption>();
-
-            string noneLabel = "None".Translate();
-            if (ritual.attachableOutcomeEffect == null) noneLabel += ", current";
-            options.Add(new FloatMenuOption(noneLabel, () => { ritual.attachableOutcomeEffect = null; AfterPreceptEdit(ritual); }));
-
-            foreach (var eff in DefDatabase<RitualAttachableOutcomeEffectDef>.AllDefs)
-            {
-                var captured = eff;
-                var report = eff.CanAttachToRitual(ritual);
-                string label = eff.LabelCap;
-                if (eff == ritual.attachableOutcomeEffect) label += ", current";
-                if (!report.Accepted)
-                {
-                    label += " (" + report.Reason + ")";
-                    options.Add(new FloatMenuOption(label, null));
-                }
-                else
-                {
-                    options.Add(new FloatMenuOption(label, () => { ritual.attachableOutcomeEffect = captured; AfterPreceptEdit(ritual); }));
-                }
-            }
-            TolkHelper.Speak("RitualAttachedReward".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        #endregion
-
-        #region Role apparel requirements
-
-        private static void OpenApparelRequirementsMenu(Precept_Role role)
-        {
-            var current = role.ApparelRequirements ?? new List<PreceptApparelRequirement>();
-            var options = new List<FloatMenuOption>();
-
-            // Add — blocked entirely if a meme forbids role apparel requirements (matches vanilla).
-            var preventingMeme = ideo.memes.FirstOrDefault(m => m.preventApparelRequirements);
-            if (preventingMeme != null)
-                options.Add(new FloatMenuOption(
-                    "CannotNotAddRoleApparelDueToMeme".Translate(preventingMeme.LabelCap.Named("MEME")), null));
-            else
-                options.Add(new FloatMenuOption("Add".Translate().CapitalizeFirst() + "...",
-                    () => OpenAddApparelRequirementMenu(role)));
-
-            // Existing requirements — selecting one removes it.
-            foreach (var req in current)
-            {
-                var captured = req;
-                string apparel = string.Join(", ", captured.requirement.AllRequiredApparel().Select(a => a.LabelCap.ToString()));
-                options.Add(new FloatMenuOption("Remove".Translate() + ": " + apparel, () =>
-                {
-                    var list = role.ApparelRequirements;
-                    list.Remove(captured);
-                    role.ApparelRequirements = list; // re-assign to clear the role's cached tip
-                    AfterPreceptEdit(role);
-                }));
-            }
-
-            TolkHelper.Speak("EditApparelRequirement".Loc());
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
-        private static void OpenAddApparelRequirementMenu(Precept_Role role)
-        {
-            var current = role.ApparelRequirements ?? new List<PreceptApparelRequirement>();
-            var options = new List<FloatMenuOption>();
-
-            foreach (var possible in Precept_Role.AllPossibleRequirements(ideo, role.def, desperate: true))
-            {
-                var captured = possible;
-                var apparelList = possible.requirement.AllRequiredApparel().ToList();
-                if (apparelList.Count == 0) continue;
-
-                string label = string.Join(", ", apparelList.Select(a => a.LabelCap.ToString()));
-                bool canAdd = possible.CanAddRequirement(role, current, out string reason);
-                if (!canAdd && !string.IsNullOrEmpty(reason))
-                    label += " (" + reason + ")";
-
-                options.Add(new FloatMenuOption(label, canAdd ? (System.Action)(() =>
-                {
-                    var list = role.ApparelRequirements ?? new List<PreceptApparelRequirement>();
-                    list.Add(captured);
-                    role.ApparelRequirements = list;
-                    AfterPreceptEdit(role);
-                }) : null));
-            }
-
-            if (options.Count == 0)
-                options.Add(new FloatMenuOption("NoneLower".Translate(), null));
-            WindowlessFloatMenuState.Open(options, colonistOrders: false);
-        }
-
         #endregion
 
         /// <summary>
-        /// Shared post-edit refresh, mirroring Dialog_EditPrecept.ApplyChanges: clear every
-        /// precept's cached tip, regenerate the description, rebuild the tree (keeping the cursor on
-        /// this precept), and announce the new value.
+        /// Post-edit refresh for every edit reached from the edit menu, mirroring
+        /// Dialog_EditPrecept.ApplyChanges. Silent: the menu re-opens on the edited entry whose label
+        /// carries the new value, so this arms the return-re-announce off and leaves that landing as
+        /// the action's single utterance.
         /// </summary>
-        private static void AfterPreceptEdit(Precept precept)
+        public static void AfterPreceptEditSilent()
         {
-            foreach (var p in ideo.PreceptsListForReading)
+            ApplyPreceptEditHousekeeping();
+            suppressReturnReannounceFrame = Time.frameCount;
+        }
+
+        /// <summary>The non-speaking half of <see cref="AfterPreceptEditSilent"/>.</summary>
+        private static void ApplyPreceptEditHousekeeping()
+        {
+            foreach (var p in Ideo.PreceptsListForReading)
                 p.ClearTipCache();
-            ideo.anyPreceptEdited = true;
-            ideo.RegenerateDescription();
+            Ideo.anyPreceptEdited = true;
+            Ideo.RegenerateDescription();
             SoundDefOf.Tick_High.PlayOneShotOnCamera();
-            RebuildTree();
-            TolkHelper.SpeakData(IdeoBuilderHelper.PreceptLabel(precept), SpeechPriority.High);
         }
-
-        #endregion
-
-        #region Input
-
-        public static bool HandleInput(Event ev)
-        {
-            if (ev.type != EventType.KeyDown) return false;
-
-            KeyCode key = ev.keyCode;
-            bool ctrl = ev.control;
-            bool alt = KeyboardHelper.IsAltHeld;
-
-            if (key == KeyCode.Escape && !alt && !ctrl)
-            {
-                if (treeNav.HasActiveSearch)
-                {
-                    treeNav.Typeahead.ClearSearchAndAnnounce();
-                    treeNav.ReannounceCurrentItem();
-                    return true;
-                }
-                Close();
-                SoundDefOf.TabClose.PlayOneShotOnCamera();
-                TolkHelper.Speak("CustomizeIdeoligion".Loc());
-                return true;
-            }
-
-            // ] — edit-actions context menu for the focused precept (mirrors the hub's ] idiom).
-            if (key == KeyCode.RightBracket && !alt && !ctrl)
-            {
-                OpenEditMenu();
-                return true;
-            }
-
-            return treeNav.HandleInput(ev);
-        }
-
-        #endregion
-
-        #region Announcement
-
-        private static void AnnounceOpening()
-        {
-            var sb = new StringBuilder();
-            sb.Append(IdeoBuilderHelper.GetLocalizedSectionLabel(kind));
-
-            var pred = CurrentPreceptPredicate(kind);
-            int count = ideo.PreceptsListForReading.Count(pred);
-            sb.Append(". ").Append(count);
-
-            if (treeNav.Count > 0)
-            {
-                var first = treeNav.VisibleItems[0];
-                sb.Append(". ").Append(first.Label);
-            }
-
-            TolkHelper.SpeakData(sb.ToString(), SpeechPriority.High);
-        }
-
-        #endregion
     }
 }

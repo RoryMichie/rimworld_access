@@ -65,6 +65,115 @@ namespace RimWorldAccess
         public bool CountOnlyHighestAttack { get; set; } = false;
         public bool CountOnlyPassionSkills { get; set; } = false;
 
+        // ===== CRITERIA REGISTRY =====
+        // See PawnFilterCriteria.cs for the descriptor shapes. Skills/Traits stay bespoke below
+        // (they're per-element collections, not single scalar values); every other criterion is
+        // registered exactly once here and consumed by Reset/HasActiveFilters/
+        // GetActiveFilterCount/Evaluate/Clone/CopyFrom below, by PawnFilterHelper's menu assembly,
+        // and by PawnFilterState's Adjust/JumpToExtreme dispatch.
+        private static readonly List<PawnFilterCriterion> criteriaList = BuildCriteria();
+        private static readonly Dictionary<FilterItemType, PawnFilterCriterion> criteriaByType =
+            criteriaList.ToDictionary(c => c.ItemType);
+
+        public static IReadOnlyList<PawnFilterCriterion> Criteria => criteriaList;
+
+        public static PawnFilterCriterion FindCriterion(FilterItemType itemType) =>
+            criteriaByType.TryGetValue(itemType, out var criterion) ? criterion : null;
+
+        private static List<PawnFilterCriterion> BuildCriteria()
+        {
+            var list = new List<PawnFilterCriterion>();
+
+            RangeFilterCriterion.Register(list, FilterSection.Skills,
+                FilterItemType.PassionMin, FilterItemType.PassionMax,
+                f => f.PassionMin, (f, v) => f.PassionMin = v, PawnFilterHelper.FormatPassionMinLabel,
+                f => f.PassionMax, (f, v) => f.PassionMax = v, PawnFilterHelper.FormatPassionMaxLabel,
+                floor: 0, ceiling: 12, shiftStep: 3,
+                evaluatePawn: (f, p) => f.CheckPassionRange(p), skippedForBaby: true);
+
+            RangeFilterCriterion.Register(list, FilterSection.Skills,
+                FilterItemType.SkillPointsMin, FilterItemType.SkillPointsMax,
+                f => f.SkillPointsMin, (f, v) => f.SkillPointsMin = v, PawnFilterHelper.FormatSkillPointsMinLabel,
+                f => f.SkillPointsMax, (f, v) => f.SkillPointsMax = v, PawnFilterHelper.FormatSkillPointsMaxLabel,
+                floor: 0, ceiling: 240, shiftStep: 10,
+                evaluatePawn: (f, p) => f.CheckSkillPoints(p), skippedForBaby: true);
+
+            list.Add(new SettingFilterCriterion(
+                FilterItemType.CountOnlyHighestAttack, FilterSection.Skills,
+                adjust: null, jumpToExtreme: null,
+                format: PawnFilterHelper.FormatCountOnlyHighestAttackLabel,
+                isActiveFn: f => f.CountOnlyHighestAttack,
+                resetFn: f => f.CountOnlyHighestAttack = false,
+                copyFromFn: (target, source) => target.CountOnlyHighestAttack = source.CountOnlyHighestAttack));
+
+            list.Add(new SettingFilterCriterion(
+                FilterItemType.CountOnlyPassionSkills, FilterSection.Skills,
+                adjust: null, jumpToExtreme: null,
+                format: PawnFilterHelper.FormatCountOnlyPassionSkillsLabel,
+                isActiveFn: f => f.CountOnlyPassionSkills,
+                resetFn: f => f.CountOnlyPassionSkills = false,
+                copyFromFn: (target, source) => target.CountOnlyPassionSkills = source.CountOnlyPassionSkills));
+
+            RangeFilterCriterion.Register(list, FilterSection.Demographics,
+                FilterItemType.AgeMin, FilterItemType.AgeMax,
+                f => f.AgeMin, (f, v) => f.AgeMin = v, PawnFilterHelper.FormatAgeMinLabel,
+                f => f.AgeMax, (f, v) => f.AgeMax = v, PawnFilterHelper.FormatAgeMaxLabel,
+                floor: 0, ceiling: 120, shiftStep: 5,
+                evaluatePawn: (f, p) => f.CheckAge(p), skippedForBaby: false);
+
+            list.Add(new SettingFilterCriterion(
+                FilterItemType.Gender, FilterSection.Demographics,
+                adjust: (f, dir) => PawnFilterHelper.CycleGender(f, dir), jumpToExtreme: null,
+                format: PawnFilterHelper.FormatGenderLabel,
+                isActiveFn: f => f.Gender.HasValue,
+                resetFn: f => f.Gender = null,
+                copyFromFn: (target, source) => target.Gender = source.Gender,
+                evaluatePawn: (f, p) => f.CheckGender(p)));
+
+            list.Add(new SettingFilterCriterion(
+                FilterItemType.Health, FilterSection.Conditions,
+                adjust: (f, dir) => PawnFilterHelper.CycleHealth(f, dir), jumpToExtreme: null,
+                format: PawnFilterHelper.FormatHealthLabel,
+                isActiveFn: f => f.Health != HealthFilterMode.AllowAll,
+                resetFn: f => f.Health = HealthFilterMode.AllowAll,
+                copyFromFn: (target, source) => target.Health = source.Health,
+                evaluatePawn: (f, p) => f.CheckHealth(p)));
+
+            list.Add(new SettingFilterCriterion(
+                FilterItemType.Work, FilterSection.Conditions,
+                adjust: (f, dir) => PawnFilterHelper.CycleWork(f, dir), jumpToExtreme: null,
+                format: PawnFilterHelper.FormatWorkLabel,
+                isActiveFn: f => f.Work != WorkFilterMode.AllowAll,
+                resetFn: f => f.Work = WorkFilterMode.AllowAll,
+                copyFromFn: (target, source) => target.Work = source.Work,
+                evaluatePawn: (f, p) => f.CheckWork(p)));
+
+            list.Add(new SettingFilterCriterion(
+                FilterItemType.RerollLimit, FilterSection.Settings,
+                adjust: (f, dir) => PawnFilterHelper.AdjustRerollLimit(f, dir),
+                jumpToExtreme: (f, isMax) => f.RerollLimit = isMax ? 50000 : 100,
+                format: PawnFilterHelper.FormatRerollLimitLabel,
+                isActiveFn: f => false, // a reroll setting, not a pawn filter — never counted as active
+                resetFn: f => f.RerollLimit = 500,
+                copyFromFn: (target, source) => target.RerollLimit = source.RerollLimit));
+
+            list.Add(new SettingFilterCriterion(
+                FilterItemType.RequiredTraitsInPool, FilterSection.Traits,
+                adjust: (f, dir) => PawnFilterHelper.AdjustRequiredTraitsInPool(f, dir),
+                jumpToExtreme: (f, isMax) =>
+                {
+                    int optionalCount = f.Traits.Count(t => t.Mode == TraitFilterMode.Optional);
+                    f.RequiredTraitsInPool = isMax ? Math.Min(3, optionalCount) : 0;
+                },
+                format: PawnFilterHelper.FormatRequiredTraitsInPoolLabel,
+                isActiveFn: f => f.RequiredTraitsInPool > 0,
+                resetFn: f => f.RequiredTraitsInPool = 0,
+                copyFromFn: (target, source) => target.RequiredTraitsInPool = source.RequiredTraitsInPool,
+                visibleWhen: f => f.Traits.Any(t => t.Mode == TraitFilterMode.Optional)));
+
+            return list;
+        }
+
         public void InitializeSkills()
         {
             Skills.Clear();
@@ -88,43 +197,19 @@ namespace RimWorldAccess
                 skill.MinPassion = Passion.None;
             }
             Traits.Clear();
-            PassionMin = 0;
-            PassionMax = 12;
-            SkillPointsMin = 0;
-            SkillPointsMax = 240;
-            AgeMin = 0;
-            AgeMax = 120;
-            Gender = null;
-            Health = HealthFilterMode.AllowAll;
-            Work = WorkFilterMode.AllowAll;
-            RerollLimit = 500;
-            RequiredTraitsInPool = 0;
-            CountOnlyHighestAttack = false;
-            CountOnlyPassionSkills = false;
+            foreach (var criterion in Criteria)
+                criterion.Reset(this);
         }
 
         public bool HasActiveFilters()
         {
             if (Skills.Any(s => s.IsActive))
                 return true;
-            if (PassionMin > 0 || PassionMax < 12)
-                return true;
-            if (SkillPointsMin > 0 || SkillPointsMax < 240)
-                return true;
-            if (CountOnlyHighestAttack || CountOnlyPassionSkills)
-                return true;
             if (Traits.Count > 0)
                 return true;
-            if (RequiredTraitsInPool > 0)
-                return true;
-            if (AgeMin > 0 || AgeMax < 120)
-                return true;
-            if (Gender.HasValue)
-                return true;
-            if (Health != HealthFilterMode.AllowAll)
-                return true;
-            if (Work != WorkFilterMode.AllowAll)
-                return true;
+            foreach (var criterion in Criteria)
+                if (criterion.IsActive(this))
+                    return true;
             return false;
         }
 
@@ -132,16 +217,10 @@ namespace RimWorldAccess
         {
             int count = 0;
             count += Skills.Count(s => s.IsActive);
-            if (PassionMin > 0 || PassionMax < 12) count++;
-            if (SkillPointsMin > 0 || SkillPointsMax < 240) count++;
-            if (CountOnlyHighestAttack) count++;
-            if (CountOnlyPassionSkills) count++;
             count += Traits.Count;
-            if (RequiredTraitsInPool > 0) count++;
-            if (AgeMin > 0 || AgeMax < 120) count++;
-            if (Gender.HasValue) count++;
-            if (Health != HealthFilterMode.AllowAll) count++;
-            if (Work != WorkFilterMode.AllowAll) count++;
+            foreach (var criterion in Criteria)
+                if (criterion.IsActive(this))
+                    count++;
             return count;
         }
 
@@ -155,15 +234,19 @@ namespace RimWorldAccess
             if (!isBaby)
             {
                 if (!CheckSkills(pawn)) return false;
-                if (!CheckPassionRange(pawn)) return false;
-                if (!CheckSkillPoints(pawn)) return false;
+                foreach (var criterion in Criteria)
+                {
+                    if (criterion.SkippedForBaby && criterion.EvaluatePawn != null && !criterion.EvaluatePawn(this, pawn))
+                        return false;
+                }
                 if (!CheckTraits(pawn)) return false;
             }
 
-            if (!CheckAge(pawn)) return false;
-            if (!CheckGender(pawn)) return false;
-            if (!CheckHealth(pawn)) return false;
-            if (!CheckWork(pawn)) return false;
+            foreach (var criterion in Criteria)
+            {
+                if (!criterion.SkippedForBaby && criterion.EvaluatePawn != null && !criterion.EvaluatePawn(this, pawn))
+                    return false;
+            }
 
             return true;
         }
@@ -362,22 +445,9 @@ namespace RimWorldAccess
 
         public PawnFilter Clone()
         {
-            var clone = new PawnFilter
-            {
-                AgeMin = AgeMin,
-                AgeMax = AgeMax,
-                PassionMin = PassionMin,
-                PassionMax = PassionMax,
-                SkillPointsMin = SkillPointsMin,
-                SkillPointsMax = SkillPointsMax,
-                Gender = Gender,
-                Health = Health,
-                Work = Work,
-                RerollLimit = RerollLimit,
-                RequiredTraitsInPool = RequiredTraitsInPool,
-                CountOnlyHighestAttack = CountOnlyHighestAttack,
-                CountOnlyPassionSkills = CountOnlyPassionSkills
-            };
+            var clone = new PawnFilter();
+            foreach (var criterion in Criteria)
+                criterion.CopyFrom(clone, this);
 
             foreach (var skill in Skills)
             {
@@ -404,19 +474,8 @@ namespace RimWorldAccess
 
         public void CopyFrom(PawnFilter source)
         {
-            AgeMin = source.AgeMin;
-            AgeMax = source.AgeMax;
-            PassionMin = source.PassionMin;
-            PassionMax = source.PassionMax;
-            SkillPointsMin = source.SkillPointsMin;
-            SkillPointsMax = source.SkillPointsMax;
-            Gender = source.Gender;
-            Health = source.Health;
-            Work = source.Work;
-            RerollLimit = source.RerollLimit;
-            RequiredTraitsInPool = source.RequiredTraitsInPool;
-            CountOnlyHighestAttack = source.CountOnlyHighestAttack;
-            CountOnlyPassionSkills = source.CountOnlyPassionSkills;
+            foreach (var criterion in Criteria)
+                criterion.CopyFrom(this, source);
 
             Skills.Clear();
             foreach (var skill in source.Skills)

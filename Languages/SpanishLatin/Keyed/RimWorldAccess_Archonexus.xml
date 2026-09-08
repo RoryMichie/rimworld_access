@@ -41,16 +41,16 @@
        NoColonistsNeedConverting: spoken when "Assign colonists" is triggered but
          all colonists already follow the chosen ideoligion.
        ErrorConfirming: spoken on exception during the "Next" commit. -->
-  <RimWorldAccess.Archonexus.Reform.OpenInstructions>Arriba y Abajo para explorar, búsqueda por escritura para buscar, Tab para ver todos los detalles, Enter para hacer principal, Alt S para confirmar.</RimWorldAccess.Archonexus.Reform.OpenInstructions>
   <RimWorldAccess.Archonexus.Reform.CannotCancel>No puedes cancelar la reforma de la ideoligión. Presiona Alt S para confirmar y continuar.</RimWorldAccess.Archonexus.Reform.CannotCancel>
-  <RimWorldAccess.Archonexus.Reform.NoIdeoDetailsHere>Aquí no hay detalles de ideoligión. Muévete primero a una ideoligión.</RimWorldAccess.Archonexus.Reform.NoIdeoDetailsHere>
   <RimWorldAccess.Archonexus.Reform.AlreadyPrimary>{0} ya es la ideoligión principal.</RimWorldAccess.Archonexus.Reform.AlreadyPrimary>
   <RimWorldAccess.Archonexus.Reform.SetAsPrimary>{0} establecida como ideoligión principal.</RimWorldAccess.Archonexus.Reform.SetAsPrimary>
+  <RimWorldAccess.Archonexus.Reform.CurrentPrimaryFragment>Principal actual</RimWorldAccess.Archonexus.Reform.CurrentPrimaryFragment>
   <RimWorldAccess.Archonexus.Reform.NoColonistsNeedConverting>Ningún colono necesita conversión.</RimWorldAccess.Archonexus.Reform.NoColonistsNeedConverting>
   <RimWorldAccess.Archonexus.Reform.ErrorConfirming>Error al confirmar la ideoligión</RimWorldAccess.Archonexus.Reform.ErrorConfirming>
+  <RimWorldAccess.Archonexus.Reform.ListRegion>Ideoligiones</RimWorldAccess.Archonexus.Reform.ListRegion>
+  <RimWorldAccess.Archonexus.Reform.DetailsRegion>Detalles</RimWorldAccess.Archonexus.Reform.DetailsRegion>
   <!-- PressTabToEdit: appended to an item announcement when the focused ideoligion
        is the editable custom one and the player just returned from a sub-screen. -->
-  <RimWorldAccess.Archonexus.Reform.PressTabToEdit>Presiona Tab para editar esta ideoligión.</RimWorldAccess.Archonexus.Reform.PressTabToEdit>
 
   <!-- Screen 4 sub-dialog — assign colonists (ArchonexusConvertColonistsState).
        OpenInstructions: appended after the vanilla dialog title, description,
@@ -58,9 +58,15 @@
        SpaceOrEnterToConvert: the keyboard hint in the opening announcement. -->
   <RimWorldAccess.Archonexus.Convert.OpenInstructions>Espacio o Enter para convertir, Escape al terminar.</RimWorldAccess.Archonexus.Convert.OpenInstructions>
 
-  <!-- Convert-colonists checkbox toggle announcements. {0} = ideoligion name. -->
-  <RimWorldAccess.Archonexus.Convert.Selected>Seleccionado</RimWorldAccess.Archonexus.Convert.Selected>
-  <RimWorldAccess.Archonexus.Convert.NotSelected>No seleccionado</RimWorldAccess.Archonexus.Convert.NotSelected>
-  <RimWorldAccess.Archonexus.Convert.NotSelectedCurrently>No seleccionado. Actualmente {0}</RimWorldAccess.Archonexus.Convert.NotSelectedCurrently>
+  <!-- Convert-colonists checkbox: Selected/NotSelected retired (Task 8 packet F) — the
+       checked/unchecked state now rides the composer's own Checkbox state word.
+       CurrentlyFollowing is the one piece NotSelectedCurrently carried that the state
+       word alone cannot: which ideoligion an unconverted colonist keeps. {0} = ideoligion name. -->
+  <RimWorldAccess.Archonexus.Convert.CurrentlyFollowing>Actualmente {0}</RimWorldAccess.Archonexus.Convert.CurrentlyFollowing>
+
+  <!-- Colony-selection section header: how many things are selected out of the
+       section's maximum ({0} = selected count, {1} = maximum). Not a cursor
+       position, so it does not reuse Menu.Position. -->
+  <RimWorldAccess.Archonexus.Colony.CountOfMax>{0} de {1}</RimWorldAccess.Archonexus.Colony.CountOfMax>
 
 </LanguageData>

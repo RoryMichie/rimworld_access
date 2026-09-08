@@ -1,7 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
@@ -39,6 +38,10 @@ namespace RimWorldAccess
         {
             try
             {
+                // Shared teardown with the chargen page: the
+                // wanderer flow can open the filter editor / presets /
+                // reroll too, and their flags must not leak into Playing.
+                StartingPawnPatch.CloseOverlayStates();
                 StartingPawnState.Close();
                 WandererPatch.SetInstance(null);
             }
@@ -65,6 +68,10 @@ namespace RimWorldAccess
 
                 StartingPawnState.CheckPendingRenameRebuild();
 
+                // Keep a live name-edit session's buffer mirrored (see
+                // StartingPawnScreenScope.OnHostDrawPass's remarks).
+                Shell.StartingPawnScreenScope.Active?.OnHostDrawPass();
+
                 int pawnIdx = StartingPawnState.GetSelectedPawnIndex();
                 AccessTools.Field(typeof(Dialog_ChooseNewWanderers), "curPawnIndex")
                     .SetValue(__instance, pawnIdx);
@@ -76,37 +83,23 @@ namespace RimWorldAccess
         }
     }
 
-    /// <summary>
-    /// Block Escape from closing the wanderer dialog when our state is active.
-    /// RimWorld's Window.OnCancelKeyPressed runs independently of our keyboard handler.
-    /// </summary>
-    [HarmonyPatch(typeof(Window), "OnCancelKeyPressed")]
-    public static class WandererCancelBlockPatch
-    {
-        [HarmonyPrefix]
-        public static bool Prefix(Window __instance)
-        {
-            if (__instance is Dialog_ChooseNewWanderers && StartingPawnState.IsActive)
-                return false;
-            return true;
-        }
-    }
-
-    /// <summary>
-    /// Block Enter from closing the wanderer dialog when our state is active.
-    /// Window's default OnAcceptKeyPressed closes the dialog — we handle Enter ourselves.
-    /// </summary>
-    [HarmonyPatch(typeof(Window), "OnAcceptKeyPressed")]
-    public static class WandererAcceptBlockPatch
-    {
-        [HarmonyPrefix]
-        public static bool Prefix(Window __instance)
-        {
-            if (__instance is Dialog_ChooseNewWanderers && StartingPawnState.IsActive)
-                return false;
-            return true;
-        }
-    }
+    // RETIRED: WandererCancelBlockPatch and
+    // WandererAcceptBlockPatch, the Window.OnCancelKeyPressed /
+    // OnAcceptKeyPressed prefixes. Gates verbatim (identical shape):
+    //   if (__instance is Dialog_ChooseNewWanderers && StartingPawnState.IsActive)
+    //       return false;
+    // The dialog is a REAL window with Window-default closeOnCancel/
+    // closeOnAccept (it declares neither override — decompiled-verified), so
+    // vanilla's Escape/Enter would close it under the accessibility state.
+    // StartingPawnScope now owns both keys structurally (the I3
+    // anomaly-dialog precedent): OwnsCancel/OwnsAccept are TRUE, so the
+    // consolidated Window router twins (WindowKeyRouter.Game.cs) suppress
+    // this dialog's own handlers whenever the scope is Top — which covers
+    // every frame the retired unconditional gate did, because the scope
+    // stays Top under all WINDOWLESS overlays (their scopes' Escape/Enter
+    // claims stamp Cancel/AcceptConsumed, which the twins also honor), and
+    // under REAL windows the topmost window received the cancel/accept
+    // instead of this dialog in both worlds.
 
     public static class WandererPatch
     {
@@ -130,6 +123,10 @@ namespace RimWorldAccess
 
             try
             {
+                // MUTATION-C: mirrors Dialog_ChooseNewWanderers.DoWindowContents'
+                // Confirm-button branch verbatim (IncidentParms fire, letter
+                // removal, gameEnding=false, newWanderersCreatedTick stamp); no
+                // gated vehicle exists, vanilla's own button writes the fields.
                 var parms = new IncidentParms();
                 parms.target = Find.AnyPlayerHomeMap;
                 parms.forced = true;
@@ -168,6 +165,11 @@ namespace RimWorldAccess
                 if (defaultRequestProperty == null)
                     defaultRequestProperty = AccessTools.Property(typeof(Dialog_ChooseNewWanderers), "DefaultStartingPawnRequest");
 
+                // MUTATION-C: mirrors Dialog_ChooseNewWanderers.DrawPawnList's
+                // "+" button branch (startingPawnCount++, AddNewPawn,
+                // generationIndex++); the SetGenerationRequest call is a
+                // harmless superset — StartingPawnUtility.EnsureGenerationRequestInRangeOf
+                // would default it identically if omitted.
                 Find.GameInitData.startingPawnCount++;
 
                 int genIdx = (int)generationIndexField.GetValue(instance);
@@ -183,6 +185,12 @@ namespace RimWorldAccess
             }
         }
 
+        // MUTATION-C: mirrors Dialog_ChooseNewWanderers.DoPawnRow's delete
+        // branch (startingPawnCount--, remove pawn); vanilla also clamps its
+        // own curPawnIndex field here, but that field is synced every frame
+        // from StartingPawnState's tree selection (WandererDoWindowContentsPatch),
+        // and StartingPawnState.RemoveWandererPawn clamps treeNav.SelectedIndex
+        // itself after calling this — same clamp, different owner.
         public static void RemovePawn(int pawnIndex)
         {
             var pawns = Find.GameInitData.startingAndOptionalPawns;

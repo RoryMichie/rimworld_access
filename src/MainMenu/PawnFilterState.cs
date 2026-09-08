@@ -1,22 +1,59 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
-using UnityEngine;
-using Verse;
 using Verse.Sound;
 
 namespace RimWorldAccess
 {
+    /// <summary>
+    /// What the scope must say after an activated filter row: the state mutates, the
+    /// scope announces (the S1 StartingPawnState split).
+    /// </summary>
+    public enum FilterRowOutcome
+    {
+        /// <summary>Nothing to say here — a picker or prompt opened, or the row refused and the reject cue already played.</summary>
+        Silent,
+
+        /// <summary>The row's own value changed; the scope speaks the new state.</summary>
+        RowChanged,
+
+        /// <summary>Every row was rebuilt from a wholesale change; the scope returns to the first row and reads it.</summary>
+        ListRebuilt,
+    }
+
+    /// <summary>
+    /// Data and mutation vehicles for the pawn filter editor: skills, traits, demographics,
+    /// conditions, settings, and action rows, all built by <see cref="PawnFilterHelper.BuildMenuItems"/>
+    /// into <see cref="FilterMenuItem"/>s whose <c>Label</c> is ALREADY a fully composed,
+    /// whole-phrase-translated string (e.g. "Age, minimum: 18") — every criterion's
+    /// Format() fuses name and value into one phrase.
+    ///
+    /// Shares the S1 <see cref="StartingPawnState"/> shape: lifecycle, data, mutation.
+    /// The row cursor, the typeahead, the section-jump
+    /// arithmetic and every focus announcement now live on
+    /// <see cref="RimWorldAccess.Shell.PawnFilterScope"/>, a real
+    /// <see cref="RimWorldAccess.Shell.ScreenScope"/>. The helper's section-header items are
+    /// not rows here either: <see cref="RowSections"/> carries each row's section name, which
+    /// the scope speaks as a landing prefix and pages between with PageUp/PageDown.
+    /// </summary>
     public static class PawnFilterState
     {
-        private static bool isActive = false;
+        private static bool isActive;
         private static PawnFilter workingCopy;
-        private static List<FilterMenuItem> menuItems = new List<FilterMenuItem>();
-        private static int selectedIndex = 0;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
+        private static readonly List<FilterMenuItem> rows = new List<FilterMenuItem>();
+        private static readonly List<string> rowSections = new List<string>();
+        private static bool cursorHome;
 
         public static bool IsActive => isActive;
+
+        /// <summary>The editor's navigable rows, in draw order; section headers are not among them.</summary>
+        public static IReadOnlyList<FilterMenuItem> Rows => rows;
+
+        /// <summary>The section each row in <see cref="Rows"/> belongs to, by the same index.</summary>
+        public static IReadOnlyList<string> RowSections => rowSections;
+
+        /// <summary>How many criteria the working copy currently filters on (the open announcement's count).</summary>
+        public static int ActiveFilterCount => workingCopy == null ? 0 : workingCopy.GetActiveFilterCount();
 
         public static void Open()
         {
@@ -29,19 +66,10 @@ namespace RimWorldAccess
             // Create working copy for save/discard behavior
             workingCopy = PawnFilterData.ActiveFilter.Clone();
             isActive = true;
-            selectedIndex = 0;
-            typeahead.ClearSearch();
-
-            RebuildMenu();
-
-            // Skip past first section header
-            if (menuItems.Count > 1 && menuItems[0].IsSectionHeader)
-                selectedIndex = 1;
-
-            int filterCount = workingCopy.GetActiveFilterCount();
-            string countPart = filterCount > 0 ? "RimWorldAccess.PawnFilter.ActiveFiltersCountSuffix".Translate(filterCount).ToString() : "";
-            TolkHelper.Speak("RimWorldAccess.PawnFilter.Editor".Loc(countPart));
-            AnnounceCurrentItem();
+            RebuildRows();
+            cursorHome = true;
+            // The opening announcement is the scope's own job (PawnFilterScope's
+            // ComposeOpenAnnouncement) — see this class's remarks.
         }
 
         public static void Close(bool save)
@@ -61,478 +89,111 @@ namespace RimWorldAccess
 
             isActive = false;
             workingCopy = null;
-            menuItems.Clear();
-            selectedIndex = 0;
-            typeahead.ClearSearch();
+            rows.Clear();
+            rowSections.Clear();
+            cursorHome = false;
         }
 
-        private static void RebuildMenu()
+        public static void SaveAndClose() => Close(save: true);
+
+        /// <summary>
+        /// True once per change that must send the cursor back to the first row — the
+        /// editor opening, Clear all, a loaded preset. Consumed by the scope's focus pass,
+        /// which is also where a preset loaded through the (asynchronous) picker callback
+        /// lands.
+        /// </summary>
+        public static bool ConsumeCursorHome()
         {
-            menuItems = PawnFilterHelper.BuildMenuItems(workingCopy);
-
-            if (selectedIndex >= menuItems.Count)
-                selectedIndex = menuItems.Count - 1;
-            if (selectedIndex < 0)
-                selectedIndex = 0;
-
-            // Skip section header if we landed on one
-            if (selectedIndex < menuItems.Count && menuItems[selectedIndex].IsSectionHeader)
-                SkipToNextNonHeader(1);
+            bool pending = cursorHome;
+            cursorHome = false;
+            return pending;
         }
 
-        public static bool HandleInput(KeyCode key, Event currentEvent)
+        private static void RebuildRows()
         {
-            if (!isActive || menuItems.Count == 0) return false;
-
-            bool shift = currentEvent.shift;
-            bool alt = currentEvent.alt;
-
-            // Alt+S: Save and close
-            if (alt && key == KeyCode.S)
+            rows.Clear();
+            rowSections.Clear();
+            string section = "";
+            foreach (FilterMenuItem item in PawnFilterHelper.BuildMenuItems(workingCopy))
             {
-                Close(save: true);
-                return true;
-            }
-
-            // Escape: Discard and close
-            if (key == KeyCode.Escape)
-            {
-                if (typeahead.HasActiveSearch)
+                if (item.IsSectionHeader)
                 {
-                    typeahead.ClearSearchAndAnnounce();
-                    AnnounceCurrentItem();
+                    section = item.Label;
+                    continue;
                 }
-                else
-                {
-                    Close(save: true);
-                }
-                return true;
-            }
-
-            // Up/Down: Navigate (skip section headers)
-            if (key == KeyCode.UpArrow)
-            {
-                typeahead.ClearSearch();
-                NavigateUp();
-                return true;
-            }
-            if (key == KeyCode.DownArrow)
-            {
-                typeahead.ClearSearch();
-                NavigateDown();
-                return true;
-            }
-
-            // Page Up/Down: Jump between section headers
-            if (key == KeyCode.PageUp)
-            {
-                typeahead.ClearSearch();
-                JumpToSection(-1);
-                return true;
-            }
-            if (key == KeyCode.PageDown)
-            {
-                typeahead.ClearSearch();
-                JumpToSection(1);
-                return true;
-            }
-
-            // Left/Right: Adjust values
-            if (key == KeyCode.LeftArrow)
-            {
-                typeahead.ClearSearch();
-                AdjustValue(-1, shift);
-                return true;
-            }
-            if (key == KeyCode.RightArrow)
-            {
-                typeahead.ClearSearch();
-                AdjustValue(1, shift);
-                return true;
-            }
-
-            // Enter/Space: Activate (cycle passion, open picker, etc.)
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter || key == KeyCode.Space)
-            {
-                typeahead.ClearSearch();
-                ActivateItem();
-                return true;
-            }
-
-            // Delete: Remove trait
-            if (key == KeyCode.Delete)
-            {
-                typeahead.ClearSearch();
-                DeleteCurrentTrait();
-                return true;
-            }
-
-            // Shift+Home/End: Jump slider to min/max
-            // Home/End without Shift: Navigate to first/last item
-            if (key == KeyCode.Home)
-            {
-                // During an active search, Home goes to the first match and keeps the search.
-                if (!shift && typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    selectedIndex = MapNonHeaderIndexToFull(typeahead.GetFirstMatch());
-                    AnnounceWithSearch();
-                    return true;
-                }
-                typeahead.ClearSearch();
-                if (shift)
-                {
-                    JumpToExtreme(isMax: false);
-                }
-                else
-                {
-                    selectedIndex = 0;
-                    SkipToNextNonHeader(1);
-                    AnnounceCurrentItem();
-                }
-                return true;
-            }
-            if (key == KeyCode.End)
-            {
-                if (!shift && typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    selectedIndex = MapNonHeaderIndexToFull(typeahead.GetLastMatch());
-                    AnnounceWithSearch();
-                    return true;
-                }
-                typeahead.ClearSearch();
-                if (shift)
-                {
-                    JumpToExtreme(isMax: true);
-                }
-                else
-                {
-                    selectedIndex = menuItems.Count - 1;
-                    SkipToNextNonHeader(-1);
-                    AnnounceCurrentItem();
-                }
-                return true;
-            }
-
-            // Backspace: Remove search character
-            if (key == KeyCode.Backspace)
-            {
-                if (typeahead.HasActiveSearch)
-                {
-                    var labels = menuItems.Where(i => !i.IsSectionHeader).Select(i => i.Label).ToList();
-                    if (typeahead.ProcessBackspace(labels, out int newIndex))
-                    {
-                        if (newIndex >= 0)
-                            selectedIndex = MapNonHeaderIndexToFull(newIndex);
-                        AnnounceWithSearch();
-                    }
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public static bool HandleCharacterInput(char c)
-        {
-            if (!isActive || menuItems.Count == 0) return false;
-
-            if (char.IsLetterOrDigit(c))
-            {
-                HandleTypeahead(c);
-                return true;
-            }
-
-            return false;
-        }
-
-        // ===== NAVIGATION =====
-
-        private static void NavigateUp()
-        {
-            // While searching, step the matches. The typeahead searches non-header items only,
-            // so its indices live in "non-header space" — map the current selection into that
-            // space, step, and map back to a full menuItems index.
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                int prevNonHeader = typeahead.GetPreviousMatch(FullToNonHeaderIndex(selectedIndex));
-                selectedIndex = MapNonHeaderIndexToFull(prevNonHeader);
-                AnnounceWithSearch();
-                return;
-            }
-
-            int prev = selectedIndex - 1;
-            if (prev < 0) prev = menuItems.Count - 1;
-
-            // Skip section headers
-            while (prev >= 0 && menuItems[prev].IsSectionHeader)
-            {
-                prev--;
-                if (prev < 0) prev = menuItems.Count - 1;
-            }
-
-            selectedIndex = prev;
-            AnnounceCurrentItem();
-        }
-
-        private static void NavigateDown()
-        {
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                int nextNonHeader = typeahead.GetNextMatch(FullToNonHeaderIndex(selectedIndex));
-                selectedIndex = MapNonHeaderIndexToFull(nextNonHeader);
-                AnnounceWithSearch();
-                return;
-            }
-
-            int next = selectedIndex + 1;
-            if (next >= menuItems.Count) next = 0;
-
-            // Skip section headers
-            while (next < menuItems.Count && menuItems[next].IsSectionHeader)
-            {
-                next++;
-                if (next >= menuItems.Count) next = 0;
-            }
-
-            selectedIndex = next;
-            AnnounceCurrentItem();
-        }
-
-        private static void JumpToSection(int direction)
-        {
-            // Find section headers
-            var headerIndices = new List<int>();
-            for (int i = 0; i < menuItems.Count; i++)
-            {
-                if (menuItems[i].IsSectionHeader)
-                    headerIndices.Add(i);
-            }
-
-            if (headerIndices.Count == 0) return;
-
-            // Find current section
-            int currentSection = -1;
-            for (int i = headerIndices.Count - 1; i >= 0; i--)
-            {
-                if (headerIndices[i] <= selectedIndex)
-                {
-                    currentSection = i;
-                    break;
-                }
-            }
-
-            // Jump to target section
-            int targetSection = currentSection + direction;
-            if (targetSection < 0) targetSection = headerIndices.Count - 1;
-            if (targetSection >= headerIndices.Count) targetSection = 0;
-
-            // Land on first item after the header
-            int targetIndex = headerIndices[targetSection] + 1;
-            if (targetIndex >= menuItems.Count)
-                targetIndex = headerIndices[targetSection]; // no items after header
-
-            selectedIndex = targetIndex;
-
-            // Announce section name then current item
-            string sectionName = menuItems[headerIndices[targetSection]].Label;
-            TolkHelper.SpeakData(sectionName);
-            AnnounceCurrentItem();
-        }
-
-        private static void SkipToNextNonHeader(int direction)
-        {
-            int safety = menuItems.Count;
-            while (safety-- > 0 && selectedIndex >= 0 && selectedIndex < menuItems.Count
-                && menuItems[selectedIndex].IsSectionHeader)
-            {
-                selectedIndex += direction;
-                if (selectedIndex >= menuItems.Count) selectedIndex = 0;
-                if (selectedIndex < 0) selectedIndex = menuItems.Count - 1;
+                rows.Add(item);
+                rowSections.Add(section);
             }
         }
 
         // ===== VALUE ADJUSTMENT =====
 
-        private static void AdjustValue(int direction, bool shift)
+        /// <summary>Left/Right on a row (Shift scales the step); false when the row has no value to adjust.</summary>
+        public static bool AdjustValue(int row, int direction, bool shift)
         {
-            if (selectedIndex < 0 || selectedIndex >= menuItems.Count) return;
-            var item = menuItems[selectedIndex];
+            if (row < 0 || row >= rows.Count) return false;
+            var item = rows[row];
 
-            switch (item.ItemType)
+            // Skill items adjust a per-skill value, not a filter-level one — stays special-cased
+            // (there's exactly one FilterItemType.Skill case regardless of skill count, so it
+            // never had the "one case per criterion" problem the registry below exists to retire).
+            if (item.ItemType == FilterItemType.Skill)
             {
-                case FilterItemType.Skill:
-                    PawnFilterHelper.AdjustSkillLevel(item.SkillFilter, direction * (shift ? 5 : 1));
-                    item.Label = PawnFilterHelper.FormatSkillLabel(item.SkillFilter);
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.PassionMin:
-                    PawnFilterHelper.AdjustPassion(workingCopy, isMin: true, direction * (shift ? 3 : 1));
-                    item.Label = PawnFilterHelper.FormatPassionMinLabel(workingCopy);
-                    UpdateItemLabel(FilterItemType.PassionMax, PawnFilterHelper.FormatPassionMaxLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.PassionMax:
-                    PawnFilterHelper.AdjustPassion(workingCopy, isMin: false, direction * (shift ? 3 : 1));
-                    item.Label = PawnFilterHelper.FormatPassionMaxLabel(workingCopy);
-                    UpdateItemLabel(FilterItemType.PassionMin, PawnFilterHelper.FormatPassionMinLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.SkillPointsMin:
-                    PawnFilterHelper.AdjustSkillPoints(workingCopy, isMin: true, direction * (shift ? 10 : 1));
-                    item.Label = PawnFilterHelper.FormatSkillPointsMinLabel(workingCopy);
-                    UpdateItemLabel(FilterItemType.SkillPointsMax, PawnFilterHelper.FormatSkillPointsMaxLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.SkillPointsMax:
-                    PawnFilterHelper.AdjustSkillPoints(workingCopy, isMin: false, direction * (shift ? 10 : 1));
-                    item.Label = PawnFilterHelper.FormatSkillPointsMaxLabel(workingCopy);
-                    UpdateItemLabel(FilterItemType.SkillPointsMin, PawnFilterHelper.FormatSkillPointsMinLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.AgeMin:
-                    PawnFilterHelper.AdjustAge(workingCopy, isMin: true, direction * (shift ? 5 : 1));
-                    item.Label = PawnFilterHelper.FormatAgeMinLabel(workingCopy);
-                    // Also update max label in case it was clamped
-                    UpdateItemLabel(FilterItemType.AgeMax, PawnFilterHelper.FormatAgeMaxLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.AgeMax:
-                    PawnFilterHelper.AdjustAge(workingCopy, isMin: false, direction * (shift ? 5 : 1));
-                    item.Label = PawnFilterHelper.FormatAgeMaxLabel(workingCopy);
-                    // Also update min label in case it was clamped
-                    UpdateItemLabel(FilterItemType.AgeMin, PawnFilterHelper.FormatAgeMinLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.Gender:
-                    PawnFilterHelper.CycleGender(workingCopy, direction);
-                    item.Label = PawnFilterHelper.FormatGenderLabel(workingCopy);
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.Health:
-                    PawnFilterHelper.CycleHealth(workingCopy, direction);
-                    item.Label = PawnFilterHelper.FormatHealthLabel(workingCopy);
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.Work:
-                    PawnFilterHelper.CycleWork(workingCopy, direction);
-                    item.Label = PawnFilterHelper.FormatWorkLabel(workingCopy);
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.RerollLimit:
-                    PawnFilterHelper.AdjustRerollLimit(workingCopy, direction);
-                    item.Label = PawnFilterHelper.FormatRerollLimitLabel(workingCopy);
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.RequiredTraitsInPool:
-                    PawnFilterHelper.AdjustRequiredTraitsInPool(workingCopy, direction);
-                    item.Label = PawnFilterHelper.FormatRequiredTraitsInPoolLabel(workingCopy);
-                    AnnounceCurrentItem();
-                    break;
-
-                default:
-                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    break;
+                PawnFilterHelper.AdjustSkillLevel(item.SkillFilter, direction * (shift ? 5 : 1));
+                item.Label = PawnFilterHelper.FormatSkillLabel(item.SkillFilter);
+                return true;
             }
+
+            var criterion = PawnFilter.FindCriterion(item.ItemType);
+            if (criterion == null || !criterion.SupportsAdjust)
+            {
+                SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                return false;
+            }
+
+            criterion.Adjust(workingCopy, direction, shift);
+            item.Label = criterion.Format(workingCopy);
+            RefreshLinkedLabel(criterion);
+            return true;
         }
 
-        private static void JumpToExtreme(bool isMax)
+        /// <summary>Shift+Home/Shift+End on a row: its slider to minimum/maximum.</summary>
+        public static bool JumpToExtreme(int row, bool isMax)
         {
-            if (selectedIndex < 0 || selectedIndex >= menuItems.Count) return;
-            var item = menuItems[selectedIndex];
+            if (row < 0 || row >= rows.Count) return false;
+            var item = rows[row];
 
-            switch (item.ItemType)
+            if (item.ItemType == FilterItemType.Skill)
             {
-                case FilterItemType.Skill:
-                    item.SkillFilter.MinLevel = isMax ? 20 : 0;
-                    item.Label = PawnFilterHelper.FormatSkillLabel(item.SkillFilter);
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.PassionMin:
-                    workingCopy.PassionMin = isMax ? 12 : 0;
-                    if (workingCopy.PassionMin > workingCopy.PassionMax) workingCopy.PassionMax = workingCopy.PassionMin;
-                    item.Label = PawnFilterHelper.FormatPassionMinLabel(workingCopy);
-                    UpdateItemLabel(FilterItemType.PassionMax, PawnFilterHelper.FormatPassionMaxLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.PassionMax:
-                    workingCopy.PassionMax = isMax ? 12 : 0;
-                    if (workingCopy.PassionMax < workingCopy.PassionMin) workingCopy.PassionMin = workingCopy.PassionMax;
-                    item.Label = PawnFilterHelper.FormatPassionMaxLabel(workingCopy);
-                    UpdateItemLabel(FilterItemType.PassionMin, PawnFilterHelper.FormatPassionMinLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.SkillPointsMin:
-                    workingCopy.SkillPointsMin = isMax ? 240 : 0;
-                    if (workingCopy.SkillPointsMin > workingCopy.SkillPointsMax) workingCopy.SkillPointsMax = workingCopy.SkillPointsMin;
-                    item.Label = PawnFilterHelper.FormatSkillPointsMinLabel(workingCopy);
-                    UpdateItemLabel(FilterItemType.SkillPointsMax, PawnFilterHelper.FormatSkillPointsMaxLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.SkillPointsMax:
-                    workingCopy.SkillPointsMax = isMax ? 240 : 0;
-                    if (workingCopy.SkillPointsMax < workingCopy.SkillPointsMin) workingCopy.SkillPointsMin = workingCopy.SkillPointsMax;
-                    item.Label = PawnFilterHelper.FormatSkillPointsMaxLabel(workingCopy);
-                    UpdateItemLabel(FilterItemType.SkillPointsMin, PawnFilterHelper.FormatSkillPointsMinLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.AgeMin:
-                    workingCopy.AgeMin = isMax ? 120 : 0;
-                    if (workingCopy.AgeMin > workingCopy.AgeMax) workingCopy.AgeMax = workingCopy.AgeMin;
-                    item.Label = PawnFilterHelper.FormatAgeMinLabel(workingCopy);
-                    UpdateItemLabel(FilterItemType.AgeMax, PawnFilterHelper.FormatAgeMaxLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.AgeMax:
-                    workingCopy.AgeMax = isMax ? 120 : 0;
-                    if (workingCopy.AgeMax < workingCopy.AgeMin) workingCopy.AgeMin = workingCopy.AgeMax;
-                    item.Label = PawnFilterHelper.FormatAgeMaxLabel(workingCopy);
-                    UpdateItemLabel(FilterItemType.AgeMin, PawnFilterHelper.FormatAgeMinLabel(workingCopy));
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.RerollLimit:
-                    workingCopy.RerollLimit = isMax ? 50000 : 100;
-                    item.Label = PawnFilterHelper.FormatRerollLimitLabel(workingCopy);
-                    AnnounceCurrentItem();
-                    break;
-
-                case FilterItemType.RequiredTraitsInPool:
-                    int optionalCount = workingCopy.Traits.Count(t => t.Mode == TraitFilterMode.Optional);
-                    workingCopy.RequiredTraitsInPool = isMax ? Math.Min(3, optionalCount) : 0;
-                    item.Label = PawnFilterHelper.FormatRequiredTraitsInPoolLabel(workingCopy);
-                    AnnounceCurrentItem();
-                    break;
-
-                default:
-                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    break;
+                item.SkillFilter.MinLevel = isMax ? 20 : 0;
+                item.Label = PawnFilterHelper.FormatSkillLabel(item.SkillFilter);
+                return true;
             }
+
+            var criterion = PawnFilter.FindCriterion(item.ItemType);
+            if (criterion == null || !criterion.SupportsJumpToExtreme)
+            {
+                SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                return false;
+            }
+
+            criterion.JumpToExtreme(workingCopy, isMax);
+            item.Label = criterion.Format(workingCopy);
+            RefreshLinkedLabel(criterion);
+            return true;
         }
 
-        private static void UpdateItemLabel(FilterItemType type, string newLabel)
+        /// <summary>Re-formats the row a just-adjusted criterion is paired with (a min/max twin).</summary>
+        private static void RefreshLinkedLabel(PawnFilterCriterion criterion)
         {
-            for (int i = 0; i < menuItems.Count; i++)
+            if (!criterion.LinkedItemType.HasValue)
+                return;
+            var linked = PawnFilter.FindCriterion(criterion.LinkedItemType.Value);
+            for (int i = 0; i < rows.Count; i++)
             {
-                if (menuItems[i].ItemType == type)
+                if (rows[i].ItemType == criterion.LinkedItemType.Value)
                 {
-                    menuItems[i].Label = newLabel;
+                    rows[i].Label = linked.Format(workingCopy);
                     break;
                 }
             }
@@ -540,122 +201,112 @@ namespace RimWorldAccess
 
         // ===== ACTIVATION =====
 
-        private static void ActivateItem()
+        /// <summary>Enter on a row: the vanilla-equivalent mutation, or the flow the row opens.</summary>
+        public static FilterRowOutcome Activate(int row)
         {
-            if (selectedIndex < 0 || selectedIndex >= menuItems.Count) return;
-            var item = menuItems[selectedIndex];
+            if (row < 0 || row >= rows.Count) return FilterRowOutcome.Silent;
+            var item = rows[row];
 
             switch (item.ItemType)
             {
                 case FilterItemType.Skill:
                     PawnFilterHelper.CyclePassion(item.SkillFilter);
                     item.Label = PawnFilterHelper.FormatSkillLabel(item.SkillFilter);
-                    AnnounceCurrentItem();
-                    break;
+                    return FilterRowOutcome.RowChanged;
 
                 case FilterItemType.AddRequiredTrait:
-                    OpenTraitPicker(TraitFilterMode.Required);
-                    break;
+                    return OpenTraitPicker(TraitFilterMode.Required);
 
                 case FilterItemType.AddExcludedTrait:
-                    OpenTraitPicker(TraitFilterMode.Excluded);
-                    break;
+                    return OpenTraitPicker(TraitFilterMode.Excluded);
 
                 case FilterItemType.AddOptionalTrait:
-                    OpenTraitPicker(TraitFilterMode.Optional);
-                    break;
+                    return OpenTraitPicker(TraitFilterMode.Optional);
 
                 case FilterItemType.CountOnlyHighestAttack:
                     workingCopy.CountOnlyHighestAttack = !workingCopy.CountOnlyHighestAttack;
                     item.Label = PawnFilterHelper.FormatCountOnlyHighestAttackLabel(workingCopy);
-                    AnnounceCurrentItem();
-                    break;
+                    return FilterRowOutcome.RowChanged;
 
                 case FilterItemType.CountOnlyPassionSkills:
                     workingCopy.CountOnlyPassionSkills = !workingCopy.CountOnlyPassionSkills;
                     item.Label = PawnFilterHelper.FormatCountOnlyPassionSkillsLabel(workingCopy);
-                    AnnounceCurrentItem();
-                    break;
+                    return FilterRowOutcome.RowChanged;
 
                 case FilterItemType.SavePreset:
                     PawnFilterPresetSaveState.Open(workingCopy);
-                    break;
+                    return FilterRowOutcome.Silent;
 
                 case FilterItemType.LoadPreset:
-                    PawnFilterPresetLoadState.Open(loadedFilter =>
-                    {
-                        if (loadedFilter != null)
-                        {
-                            workingCopy.CopyFrom(loadedFilter);
-                            workingCopy.InitializeSkills();
-                            // Re-copy skill filters from loaded data
-                            foreach (var loadedSkill in loadedFilter.Skills)
-                            {
-                                var matchingSkill = workingCopy.Skills.FirstOrDefault(
-                                    s => s.Skill == loadedSkill.Skill);
-                                if (matchingSkill != null)
-                                {
-                                    matchingSkill.MinLevel = loadedSkill.MinLevel;
-                                    matchingSkill.MinPassion = loadedSkill.MinPassion;
-                                }
-                            }
-                            RebuildMenu();
-                            selectedIndex = 0;
-                            SkipToNextNonHeader(1);
-                            int filterCount = workingCopy.GetActiveFilterCount();
-                            TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetLoaded".Loc(filterCount));
-                            AnnounceCurrentItem();
-                        }
-                    });
-                    break;
+                    PawnFilterPresetLoadState.Open(ApplyLoadedPreset);
+                    return FilterRowOutcome.Silent;
 
                 case FilterItemType.ClearAll:
                     workingCopy.Reset();
                     workingCopy.InitializeSkills();
-                    RebuildMenu();
-                    // Jump to first non-header
-                    selectedIndex = 0;
-                    SkipToNextNonHeader(1);
+                    RebuildRows();
                     TolkHelper.Speak("ClearAll".Loc());
-                    AnnounceCurrentItem();
-                    break;
+                    return FilterRowOutcome.ListRebuilt;
 
                 default:
                     // For items that use Left/Right, Enter/Space does nothing special
                     SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    break;
+                    return FilterRowOutcome.Silent;
             }
         }
 
-        private static void OpenTraitPicker(TraitFilterMode mode)
+        private static void ApplyLoadedPreset(PawnFilter loadedFilter)
+        {
+            if (loadedFilter == null)
+                return;
+            workingCopy.CopyFrom(loadedFilter);
+            workingCopy.InitializeSkills();
+            // Re-copy skill filters from loaded data
+            foreach (var loadedSkill in loadedFilter.Skills)
+            {
+                var matchingSkill = workingCopy.Skills.FirstOrDefault(
+                    s => s.Skill == loadedSkill.Skill);
+                if (matchingSkill != null)
+                {
+                    matchingSkill.MinLevel = loadedSkill.MinLevel;
+                    matchingSkill.MinPassion = loadedSkill.MinPassion;
+                }
+            }
+            RebuildRows();
+            cursorHome = true;
+            TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetLoaded".Loc(workingCopy.GetActiveFilterCount()));
+        }
+
+        private static FilterRowOutcome OpenTraitPicker(TraitFilterMode mode)
         {
             var options = PawnFilterHelper.BuildTraitPickerOptions(workingCopy, mode, () =>
             {
                 string modeLabel = PawnFilterHelper.GetTraitModeLabel(mode);
                 var lastTrait = workingCopy.Traits.Last();
                 TolkHelper.Speak("RimWorldAccess.PawnFilter.TraitAdded".Loc(modeLabel, lastTrait.Label));
-                RebuildMenu();
-                AnnounceCurrentItem();
+                RebuildRows();
             });
 
             if (options.Count == 0)
             {
                 TolkHelper.Speak("RimWorldAccess.PawnFilter.NoAvailableTraits".Loc());
-                return;
+                return FilterRowOutcome.Silent;
             }
 
             WindowlessFloatMenuState.Open(options, colonistOrders: false);
+            return FilterRowOutcome.Silent;
         }
 
-        private static void DeleteCurrentTrait()
+        /// <summary>Delete on a row: removes that trait entry; false when the row is not one.</summary>
+        public static bool DeleteTrait(int row)
         {
-            if (selectedIndex < 0 || selectedIndex >= menuItems.Count) return;
-            var item = menuItems[selectedIndex];
+            if (row < 0 || row >= rows.Count) return false;
+            var item = rows[row];
 
             if (item.ItemType != FilterItemType.TraitEntry || item.TraitFilter == null)
             {
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                return;
+                return false;
             }
 
             string modeLabel = PawnFilterHelper.GetTraitModeLabel(item.TraitFilter.Mode);
@@ -663,92 +314,8 @@ namespace RimWorldAccess
             workingCopy.Traits.Remove(item.TraitFilter);
             TolkHelper.Speak("RimWorldAccess.PawnFilter.TraitRemoved".Loc(modeLabel, traitLabel));
 
-            RebuildMenu();
-            AnnounceCurrentItem();
-        }
-
-        // ===== TYPEAHEAD =====
-
-        private static void HandleTypeahead(char c)
-        {
-            // Build labels for non-header items only
-            var labels = menuItems.Where(i => !i.IsSectionHeader).Select(i => i.Label).ToList();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                    selectedIndex = MapNonHeaderIndexToFull(newIndex);
-                AnnounceWithSearch();
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
-        }
-
-        private static int MapNonHeaderIndexToFull(int nonHeaderIndex)
-        {
-            int count = 0;
-            for (int i = 0; i < menuItems.Count; i++)
-            {
-                if (!menuItems[i].IsSectionHeader)
-                {
-                    if (count == nonHeaderIndex)
-                        return i;
-                    count++;
-                }
-            }
-            return 0;
-        }
-
-        /// <summary>
-        /// Inverse of <see cref="MapNonHeaderIndexToFull"/>: given a full menuItems index
-        /// (which should point at a non-header item), returns its position among the
-        /// non-header items — the index space the typeahead matches live in.
-        /// </summary>
-        private static int FullToNonHeaderIndex(int fullIndex)
-        {
-            int count = 0;
-            for (int i = 0; i < menuItems.Count && i < fullIndex; i++)
-            {
-                if (!menuItems[i].IsSectionHeader)
-                    count++;
-            }
-            return count;
-        }
-
-        // ===== ANNOUNCEMENTS =====
-
-        private static void AnnounceCurrentItem()
-        {
-            if (selectedIndex < 0 || selectedIndex >= menuItems.Count) return;
-            var item = menuItems[selectedIndex];
-
-            // Count non-header items for position
-            int position = 0;
-            int total = 0;
-            for (int i = 0; i < menuItems.Count; i++)
-            {
-                if (!menuItems[i].IsSectionHeader)
-                {
-                    total++;
-                    if (i < selectedIndex) position++;
-                    if (i == selectedIndex) position++;
-                }
-            }
-
-            string positionPart = MenuHelper.FormatPosition(position - 1, total);
-            string announcement = item.Label;
-            if (!string.IsNullOrEmpty(positionPart))
-                announcement += "RimWorldAccess.StartingPawn.PositionParenSuffix".Translate(positionPart);
-
-            TolkHelper.SpeakData(announcement);
-        }
-
-        private static void AnnounceWithSearch()
-        {
-            if (!typeahead.HasActiveSearch) { AnnounceCurrentItem(); return; }
-            var item = menuItems[selectedIndex];
-            TolkHelper.SpeakData(typeahead.BuildItemAnnouncement(item.Label));
+            RebuildRows();
+            return true;
         }
     }
 }

@@ -8,8 +8,6 @@ I recorded a walkthrough of my first accessible game. It covers the early colony
 
 [Watch the RimWorld Access tutorial](https://www.youtube.com/watch?v=p1ldzcUre4k)
 
-<!-- TODO(Aaron): swap this link to the playlist once more parts are uploaded -->
-
 ## The RimWorld wiki
 
 [rimworldwiki.com](https://rimworldwiki.com) is the authoritative reference for game mechanics. It covers everything: temperature and food spoilage, what each trait does, the mood system, the health system, how raids scale. It is large and actively maintained. RimWorld Access mirrors vanilla RimWorld closely, so the learning resources written for the wider community work for you too.

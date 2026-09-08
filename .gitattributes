@@ -1,0 +1,22 @@
+# Normalize text line endings on commit; check out native per platform.
+* text=auto
+
+# Shell and Python scripts must stay LF, even on Windows checkouts.
+*.sh   text eol=lf
+*.py   text eol=lf
+
+# Windows batch files stay CRLF.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Binary assets: no line-ending munging, no diffing.
+*.dll    binary
+*.pdb    binary
+*.dylib  binary
+*.so     binary
+*.png    binary
+*.jpg    binary
+*.ico    binary
+*.wav    binary
+*.ogg    binary
+*.tar    binary

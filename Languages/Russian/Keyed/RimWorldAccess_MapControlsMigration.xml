@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Building.Door.DetailedStatusRowLabel>Подробное состояние</RimWorldAccess.Building.Door.DetailedStatusRowLabel>
+  <RimWorldAccess.Building.Forbid.CheckboxLabel>Запрещено</RimWorldAccess.Building.Forbid.CheckboxLabel>
+  <RimWorldAccess.Building.Forbid.DetailedStatusRowLabel>Подробное состояние</RimWorldAccess.Building.Forbid.DetailedStatusRowLabel>
+  <RimWorldAccess.Building.PlantSelect.NoneSelected>Не выбрано</RimWorldAccess.Building.PlantSelect.NoneSelected>
+  <RimWorldAccess.Building.Refuel.AutoRefuelCheckboxLabel>Автозаправка</RimWorldAccess.Building.Refuel.AutoRefuelCheckboxLabel>
+  <RimWorldAccess.Building.AreaMgr.AreasRegionName>Области</RimWorldAccess.Building.AreaMgr.AreasRegionName>
+  <RimWorldAccess.Building.AreaMgr.AreaCellCount>{0} ({1_numCase ? клетка : клетки : клеток})</RimWorldAccess.Building.AreaMgr.AreaCellCount>
+</LanguageData>

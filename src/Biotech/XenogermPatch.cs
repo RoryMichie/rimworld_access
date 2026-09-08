@@ -8,6 +8,10 @@ namespace RimWorldAccess
     /// <summary>
     /// Harmony patches for Dialog_CreateXenogerm to enable keyboard accessibility.
     /// Activates XenogermState when the dialog opens and cleans up when it closes.
+    /// Despite the class name, <see cref="Window_PostClose_Patch"/> and
+    /// <see cref="Window_OnCancelKeyPressed_Patch"/> are the shared close/cancel home for
+    /// BOTH Dialog_CreateXenogerm and Dialog_CreateXenotype (they derive from the same
+    /// GeneCreationDialogBase) -- kept here together rather than split.
     /// </summary>
     public static class XenogermPatch
     {

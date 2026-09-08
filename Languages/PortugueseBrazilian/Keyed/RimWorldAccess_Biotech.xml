@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Biotech module strings (src/Biotech/). Ten files contribute:
+      - GeneInspectionPatch.cs    (Harmony patch, no user-facing text)
+      - GeneInspectionState.cs    (baby/embryo/genepack/xenogerm gene tree)
+      - GeneTreeBuilder.cs        (gene-tree node labels, biostats summary)
+      - GrowthMomentPatch.cs      (Harmony patch, no user-facing text)
+      - GrowthMomentState.cs      (child growth moment dialog: info/passions/traits)
+      - MechControlGroupState.cs  (mechanitor control group settings/members)
+      - XenogermPatch.cs          (Harmony patch, no user-facing text)
+      - XenogermState.cs          (Dialog_CreateXenogerm tabbed tree)
+      - XenotypeEditorPatch.cs    (Harmony patch, no user-facing text)
+      - XenotypeEditorState.cs    (Dialog_CreateXenotype tabbed tree)
+
+    Shared vocabulary (edge announcements, info-card unavailable, typeahead
+    feedback, tree expansion state, level suffix) is sourced from
+    RimWorldAccess_Common.xml. Gene names, xenotype labels, category labels,
+    and all biostat terms (Complexity, Metabolism, Archites) come from the
+    game's own vanilla translation keys via .Translate(), so they are NOT
+    duplicated here.
+
+    Placeholders follow string.Format ({0}, {1}, ...). One/Many variants exist
+    where English needs singular/plural agreement (e.g. "1 gene" vs "N genes").
+    Other languages can collapse or further split these using their own XML.
+  -->
+
+  <!-- ============================================================
+       Gene tree builder (GeneTreeBuilder.cs).
+       Used to label gene-tree nodes built by both GeneInspectionState
+       and XenogermState/XenotypeEditorState.
+       ============================================================ -->
+
+  <!-- Skin shade descriptions from perceptual luminance. -->
+  <RimWorldAccess.Biotech.Color.SkinVeryLight>muito claro</RimWorldAccess.Biotech.Color.SkinVeryLight>
+  <RimWorldAccess.Biotech.Color.SkinLight>claro</RimWorldAccess.Biotech.Color.SkinLight>
+  <RimWorldAccess.Biotech.Color.SkinFair>claro médio</RimWorldAccess.Biotech.Color.SkinFair>
+  <RimWorldAccess.Biotech.Color.SkinMedium>médio</RimWorldAccess.Biotech.Color.SkinMedium>
+  <RimWorldAccess.Biotech.Color.SkinTan>moreno claro</RimWorldAccess.Biotech.Color.SkinTan>
+  <RimWorldAccess.Biotech.Color.SkinBrown>moreno</RimWorldAccess.Biotech.Color.SkinBrown>
+  <RimWorldAccess.Biotech.Color.SkinDarkBrown>moreno escuro</RimWorldAccess.Biotech.Color.SkinDarkBrown>
+
+  <!-- Gene tree root labels.
+       {0} = xenotype label, {1} = gene count (with unit suffix). -->
+  <RimWorldAccess.Biotech.Gene.RootBabyGenes>Genes do bebê</RimWorldAccess.Biotech.Gene.RootBabyGenes>
+  <RimWorldAccess.Biotech.Gene.RootBabyGenesWithXenotype>Genes do bebê: {0}</RimWorldAccess.Biotech.Gene.RootBabyGenesWithXenotype>
+  <RimWorldAccess.Biotech.Gene.RootBabyGenesNone>Genes do bebê: Nenhum</RimWorldAccess.Biotech.Gene.RootBabyGenesNone>
+  <RimWorldAccess.Biotech.Gene.RootEmbryoGenes>Genes do embrião {0}</RimWorldAccess.Biotech.Gene.RootEmbryoGenes>
+  <RimWorldAccess.Biotech.Gene.RootEmbryoGenesWithXenotype>Genes do embrião: {0} {1}</RimWorldAccess.Biotech.Gene.RootEmbryoGenesWithXenotype>
+  <RimWorldAccess.Biotech.Gene.RootXenogermGenes>Genes do xenogerminador: {0} {1}</RimWorldAccess.Biotech.Gene.RootXenogermGenes>
+  <RimWorldAccess.Biotech.Gene.RootGenepackGenes>Genes do pacote de genes {0}</RimWorldAccess.Biotech.Gene.RootGenepackGenes>
+  <RimWorldAccess.Biotech.Gene.RootGenepackWithXenotype>Pacote de genes: {0} {1}</RimWorldAccess.Biotech.Gene.RootGenepackWithXenotype>
+  <RimWorldAccess.Biotech.Gene.RootGenes>Genes {0}</RimWorldAccess.Biotech.Gene.RootGenes>
+  <RimWorldAccess.Biotech.Gene.RootGenesWithXenotype>Genes: {0} {1}</RimWorldAccess.Biotech.Gene.RootGenesWithXenotype>
+  <RimWorldAccess.Biotech.Gene.RootAdultGenes>Genes: {0} {1}</RimWorldAccess.Biotech.Gene.RootAdultGenes>
+
+  <!-- Gene count suffix (appended to root labels).
+       One: "(1 gene)"; Many: "(N genes)". -->
+  <RimWorldAccess.Biotech.Gene.CountSuffixOne>(1 gene)</RimWorldAccess.Biotech.Gene.CountSuffixOne>
+  <RimWorldAccess.Biotech.Gene.CountSuffixMany>({0} genes)</RimWorldAccess.Biotech.Gene.CountSuffixMany>
+
+  <!-- Gene node and status markers. -->
+  <RimWorldAccess.Biotech.Gene.StatusInactive>[inativo]</RimWorldAccess.Biotech.Gene.StatusInactive>
+  <RimWorldAccess.Biotech.Gene.CosmeticNoEffects>Gene cosmético sem efeitos de jogabilidade</RimWorldAccess.Biotech.Gene.CosmeticNoEffects>
+  <RimWorldAccess.Biotech.Gene.NoDetails>Nenhum detalhe adicional disponível</RimWorldAccess.Biotech.Gene.NoDetails>
+
+  <!-- Biostats summary label for gene tree (composed with vanilla
+       Complexity/Metabolism/ArchitesRequired keys and signed values). -->
+  <RimWorldAccess.Biotech.Gene.TotalBiostats>Estatísticas totais: {0}</RimWorldAccess.Biotech.Gene.TotalBiostats>
+  <RimWorldAccess.Biotech.Gene.BiostatComplexityValue>Complexidade {0}</RimWorldAccess.Biotech.Gene.BiostatComplexityValue>
+  <RimWorldAccess.Biotech.Gene.BiostatMetabolismValue>Eficiência metabólica {0}</RimWorldAccess.Biotech.Gene.BiostatMetabolismValue>
+  <RimWorldAccess.Biotech.Gene.BiostatArchitesValue>Cápsulas arquita {0}</RimWorldAccess.Biotech.Gene.BiostatArchitesValue>
+  <RimWorldAccess.Biotech.Gene.BiostatComplexityWithDesc>Complexidade: {0}. {1}</RimWorldAccess.Biotech.Gene.BiostatComplexityWithDesc>
+  <RimWorldAccess.Biotech.Gene.BiostatMetabolismWithDesc>Eficiência metabólica: {0}. {1}</RimWorldAccess.Biotech.Gene.BiostatMetabolismWithDesc>
+  <RimWorldAccess.Biotech.Gene.BiostatArchitesWithDesc>Cápsulas arquita: {0}. {1}</RimWorldAccess.Biotech.Gene.BiostatArchitesWithDesc>
+
+  <!-- ============================================================
+       Gene inspection (GeneInspectionState.cs).
+       ITab_GenesPregnancy / ITab_Genes keyboard overlay.
+       ============================================================ -->
+
+  <RimWorldAccess.Biotech.GeneInspection.NoPregnancy>Nenhuma gravidez encontrada.</RimWorldAccess.Biotech.GeneInspection.NoPregnancy>
+  <RimWorldAccess.Biotech.GeneInspection.Closed>Inspeção de genes fechada.</RimWorldAccess.Biotech.GeneInspection.Closed>
+  <RimWorldAccess.Biotech.GeneInspection.FirstGene>Primeiro gene: {0}</RimWorldAccess.Biotech.GeneInspection.FirstGene>
+  <RimWorldAccess.Biotech.GeneInspection.NavHint>Use Seta para Cima e Seta para Baixo para navegar, Seta para a Direita para expandir, Seta para a Esquerda para retrair. Page Up e Page Down saltam entre os genes.</RimWorldAccess.Biotech.GeneInspection.NavHint>
+  <RimWorldAccess.Biotech.GeneInspection.AlreadyExpanded>Já expandido.</RimWorldAccess.Biotech.GeneInspection.AlreadyExpanded>
+  <RimWorldAccess.Biotech.GeneInspection.NoAction>Nenhuma ação disponível para este item.</RimWorldAccess.Biotech.GeneInspection.NoAction>
+
+  <!-- ============================================================
+       Growth moment (GrowthMomentState.cs).
+       Dialog_GrowthMomentChoices keyboard overlay: Info / Passions / Traits.
+       ============================================================ -->
+
+  <!-- Tab names. -->
+  <RimWorldAccess.Biotech.GrowthMoment.TabInfo>Info</RimWorldAccess.Biotech.GrowthMoment.TabInfo>
+  <RimWorldAccess.Biotech.GrowthMoment.TabPassions>Paixões</RimWorldAccess.Biotech.GrowthMoment.TabPassions>
+  <RimWorldAccess.Biotech.GrowthMoment.TabTraits>Traços</RimWorldAccess.Biotech.GrowthMoment.TabTraits>
+  <RimWorldAccess.Biotech.GrowthMoment.TabUnknown>Desconhecido</RimWorldAccess.Biotech.GrowthMoment.TabUnknown>
+
+  <!-- Tab announcements. {0} = count for passions, {1} = total. -->
+  <RimWorldAccess.Biotech.GrowthMoment.ChooseOne>Escolha 1</RimWorldAccess.Biotech.GrowthMoment.ChooseOne>
+  <RimWorldAccess.Biotech.GrowthMoment.ChooseNOfM>Escolha {0} de {1}</RimWorldAccess.Biotech.GrowthMoment.ChooseNOfM>
+
+  <!-- Info tab. {0} = growth tier number, {1} = old name, {2} = new name,
+       {3} = passions list, {4} = trait label. -->
+  <RimWorldAccess.Biotech.GrowthMoment.GrowthTier>Nível de crescimento: {0}</RimWorldAccess.Biotech.GrowthMoment.GrowthTier>
+  <RimWorldAccess.Biotech.GrowthMoment.NicknameChanged>Apelido alterado de {0} para {1}</RimWorldAccess.Biotech.GrowthMoment.NicknameChanged>
+  <RimWorldAccess.Biotech.GrowthMoment.ChosenPassions>Paixões escolhidas: {0}</RimWorldAccess.Biotech.GrowthMoment.ChosenPassions>
+  <RimWorldAccess.Biotech.GrowthMoment.ChosenTrait>Traço escolhido: {0}</RimWorldAccess.Biotech.GrowthMoment.ChosenTrait>
+  <RimWorldAccess.Biotech.GrowthMoment.NoTraitChosen>Nenhum traço</RimWorldAccess.Biotech.GrowthMoment.NoTraitChosen>
+
+  <!-- Passion tab item/action announcements. {0} = skill label,
+       {1} = current passion, {2} = new passion, {3} = count, {4} = total.
+       The focus announcement itself (label, role, selected state, transition
+       detail, position) now renders through AnnouncementComposer.ComposeFocus
+       (element-uniformity campaign, task 8 packet B); see
+       GrowthMomentState.AnnouncePassionItem/PassionTransitionDetail below;
+       PassionSelectedStatus/NotSelectedStatus/PassionTransition are retired
+       (superseded by the shared shell vocabulary's own selected/not-selected
+       words and the composer's Label/Extras fields). -->
+  <!-- {0} = current passion, {1} = new passion. -->
+  <RimWorldAccess.Biotech.GrowthMoment.PassionTransitionDetail>{0} para {1}</RimWorldAccess.Biotech.GrowthMoment.PassionTransitionDetail>
+  <RimWorldAccess.Biotech.GrowthMoment.PassionSelectedFeedback>{0} selecionado. {1} de {2} paixões escolhidas</RimWorldAccess.Biotech.GrowthMoment.PassionSelectedFeedback>
+  <RimWorldAccess.Biotech.GrowthMoment.PassionDeselectedFeedback>{0} desmarcado. {1} de {2} paixões escolhidas</RimWorldAccess.Biotech.GrowthMoment.PassionDeselectedFeedback>
+  <RimWorldAccess.Biotech.GrowthMoment.PassionLimitReached>Já selecionou {0} de {0} paixões. Desmarque uma primeiro</RimWorldAccess.Biotech.GrowthMoment.PassionLimitReached>
+
+  <!-- Passion name enum display. -->
+  <RimWorldAccess.Biotech.GrowthMoment.PassionNone>Nenhum interesse</RimWorldAccess.Biotech.GrowthMoment.PassionNone>
+  <RimWorldAccess.Biotech.GrowthMoment.PassionMinor>Interessado</RimWorldAccess.Biotech.GrowthMoment.PassionMinor>
+  <RimWorldAccess.Biotech.GrowthMoment.PassionMajor>Altamente interessado</RimWorldAccess.Biotech.GrowthMoment.PassionMajor>
+
+  <!-- Trait tab announcements. The focus announcement (label, RadioButton role,
+       selected state, description) now renders through
+       AnnouncementComposer.ComposeFocus (element-uniformity campaign, task 8
+       packet B); TraitWithDesc/TraitWithoutDesc are retired (superseded by
+       the composer's own Label/Extras fields and the shared shell vocabulary's
+       selected/not-selected words); this also covers the Aspirations tab's
+       identically-shaped rows. -->
+  <RimWorldAccess.Biotech.GrowthMoment.TraitSelected>{0} selecionado</RimWorldAccess.Biotech.GrowthMoment.TraitSelected>
+  <RimWorldAccess.Biotech.GrowthMoment.NoTraitSelected>Nenhum traço selecionado</RimWorldAccess.Biotech.GrowthMoment.NoTraitSelected>
+
+  <!-- Archive view announcement. -->
+  <RimWorldAccess.Biotech.GrowthMoment.ArchiveReadOnly>Visualização de arquivo, somente leitura</RimWorldAccess.Biotech.GrowthMoment.ArchiveReadOnly>
+
+  <!-- Opening announcement and navigation hints.
+       {0} = tab count, {1} = passion count, {2} = passion total. -->
+  <RimWorldAccess.Biotech.GrowthMoment.TabCount>{0} abas</RimWorldAccess.Biotech.GrowthMoment.TabCount>
+  <RimWorldAccess.Biotech.GrowthMoment.PressEnterToConfirm>Pressione Enter para confirmar</RimWorldAccess.Biotech.GrowthMoment.PressEnterToConfirm>
+  <RimWorldAccess.Biotech.GrowthMoment.ChoosePassionsAndTrait>Escolha {0} de {1} paixões e 1 traço. {2}. Alt+S para confirmar</RimWorldAccess.Biotech.GrowthMoment.ChoosePassionsAndTrait>
+  <RimWorldAccess.Biotech.GrowthMoment.ChooseTraitOnly>Escolha 1 traço. {0}. Alt+S para confirmar</RimWorldAccess.Biotech.GrowthMoment.ChooseTraitOnly>
+
+  <!-- Confirm / postpone. {0} = pawn short label. -->
+  <RimWorldAccess.Biotech.GrowthMoment.Confirmed>Escolhas de crescimento confirmadas para {0}</RimWorldAccess.Biotech.GrowthMoment.Confirmed>
+  <RimWorldAccess.Biotech.GrowthMoment.Postponed>Momento de crescimento adiado</RimWorldAccess.Biotech.GrowthMoment.Postponed>
+  <RimWorldAccess.Biotech.GrowthMoment.PawnFallback>personagem</RimWorldAccess.Biotech.GrowthMoment.PawnFallback>
+
+  <!-- ============================================================
+       Mechanitor control group (MechControlGroupState.cs).
+       Two-page overlay: Settings (work mode, recharge range, select all)
+       and Members (individual mech list).
+       ============================================================ -->
+
+  <!-- Page labels and open/close announcements. -->
+  <RimWorldAccess.Biotech.Mech.Settings>Configurações</RimWorldAccess.Biotech.Mech.Settings>
+  <RimWorldAccess.Biotech.Mech.Members>Membros</RimWorldAccess.Biotech.Mech.Members>
+  <RimWorldAccess.Biotech.Mech.GroupSettingsHeader>Configurações de {0}</RimWorldAccess.Biotech.Mech.GroupSettingsHeader>
+  <RimWorldAccess.Biotech.Mech.GroupClosed>Grupo de controle fechado</RimWorldAccess.Biotech.Mech.GroupClosed>
+
+  <!-- Work mode menu. {0} = work mode label. -->
+  <RimWorldAccess.Biotech.Mech.NoWorkModes>Nenhum modo de trabalho disponível</RimWorldAccess.Biotech.Mech.NoWorkModes>
+  <RimWorldAccess.Biotech.Mech.WorkModeSet>Modo de trabalho definido como {0}</RimWorldAccess.Biotech.Mech.WorkModeSet>
+
+  <!-- Recharge range editor. {0} = min%, {1} = max%, {2} = current label. -->
+  <RimWorldAccess.Biotech.Mech.RangeSaved>Intervalo de recarga salvo: {0} a {1}</RimWorldAccess.Biotech.Mech.RangeSaved>
+  <RimWorldAccess.Biotech.Mech.RangeCancelled>Edição do intervalo de recarga cancelada</RimWorldAccess.Biotech.Mech.RangeCancelled>
+  <RimWorldAccess.Biotech.Mech.RangeReset>Redefinido para o padrão: {0} a {1}</RimWorldAccess.Biotech.Mech.RangeReset>
+  <RimWorldAccess.Biotech.Mech.RangeMinimum>Mínimo</RimWorldAccess.Biotech.Mech.RangeMinimum>
+  <RimWorldAccess.Biotech.Mech.RangeMaximum>Máximo</RimWorldAccess.Biotech.Mech.RangeMaximum>
+  <!-- RangeSelection retired (element-uniformity campaign, packet D): the focused bound is
+       now composed by AnnouncementComposer from the bound name, its value, its 1-of-2
+       position and the working range, so the hand-built sentence has no caller left. -->
+
+
+  <!-- Select-all and reassignment. -->
+  <RimWorldAccess.Biotech.Mech.NoMechsInGroup>Nenhum mecanoide neste grupo</RimWorldAccess.Biotech.Mech.NoMechsInGroup>
+  <RimWorldAccess.Biotech.Mech.SelectedMechOne>{0} mecanoide selecionado</RimWorldAccess.Biotech.Mech.SelectedMechOne>
+  <RimWorldAccess.Biotech.Mech.SelectedMechMany>{0} mecanoides selecionados</RimWorldAccess.Biotech.Mech.SelectedMechMany>
+  <RimWorldAccess.Biotech.Mech.NoOtherGroups>Nenhum outro grupo de controle disponível</RimWorldAccess.Biotech.Mech.NoOtherGroups>
+  <RimWorldAccess.Biotech.Mech.AssignedToGroup>{0} atribuído a {1} {2}</RimWorldAccess.Biotech.Mech.AssignedToGroup>
+
+  <!-- Mech labels and uncontrolled marker. {0} = energy percent, {1} = the energy need's label. -->
+  <RimWorldAccess.Biotech.Mech.MechEnergy>{0} {1}</RimWorldAccess.Biotech.Mech.MechEnergy>
+  <RimWorldAccess.Biotech.Mech.Uncontrolled>não controlado</RimWorldAccess.Biotech.Mech.Uncontrolled>
+
+  <!-- Gizmo label fallback and merged-group suffixes. -->
+  <RimWorldAccess.Biotech.Mech.GizmoLabelFallback>Grupos de controle do mecanizador</RimWorldAccess.Biotech.Mech.GizmoLabelFallback>
+  <RimWorldAccess.Biotech.Mech.MechCountOne>{0} mecanoide</RimWorldAccess.Biotech.Mech.MechCountOne>
+  <RimWorldAccess.Biotech.Mech.MechCountMany>{0} mecanoides</RimWorldAccess.Biotech.Mech.MechCountMany>
+  <RimWorldAccess.Biotech.Mech.AverageEnergy>Média de {0}: {1}</RimWorldAccess.Biotech.Mech.AverageEnergy>
+
+  <!-- ============================================================
+       Xenogerm creation (XenogermState.cs).
+       Dialog_CreateXenogerm tabbed tree: Library / Selected / Controls.
+       ============================================================ -->
+
+  <!-- Tab announcements. {0} = label, {1} = count. -->
+
+  <!-- Opening announcement. {0} = header, {1} = complexity label,
+       {2} = max complexity value, {3} = tab announcement. -->
+
+  <!-- Rename feedback. {0} = new name. -->
+  <RimWorldAccess.Biotech.Xenogerm.RenameCancelled>Renomeação cancelada.</RimWorldAccess.Biotech.Xenogerm.RenameCancelled>
+  <RimWorldAccess.Biotech.Xenogerm.Renamed>Renomeado para {0}. Nome trancado.</RimWorldAccess.Biotech.Xenogerm.Renamed>
+
+  <!-- Toggle feedback. {0} = pack label, {1} = biostats summary. -->
+  <RimWorldAccess.Biotech.Xenogerm.PackAdded>Adicionado: {0}. {1}</RimWorldAccess.Biotech.Xenogerm.PackAdded>
+  <RimWorldAccess.Biotech.Xenogerm.PackRemoved>Removido: {0}. {1}</RimWorldAccess.Biotech.Xenogerm.PackRemoved>
+
+  <!-- Template operations. {0} = template name, {1} = matched pack count,
+       {2} = missing genes list, {3} = biostats summary. -->
+  <RimWorldAccess.Biotech.Xenogerm.NoSavedTemplates>Nenhum modelo salvo.</RimWorldAccess.Biotech.Xenogerm.NoSavedTemplates>
+  <RimWorldAccess.Biotech.Xenogerm.TemplateLabel>{0}: {1}</RimWorldAccess.Biotech.Xenogerm.TemplateLabel>
+  <RimWorldAccess.Biotech.Xenogerm.TemplateLoaded>Modelo carregado: {0}. {1} pacotes de genes correspondidos.</RimWorldAccess.Biotech.Xenogerm.TemplateLoaded>
+  <RimWorldAccess.Biotech.Xenogerm.TemplateMissingGenes> Genes ausentes: {0}.</RimWorldAccess.Biotech.Xenogerm.TemplateMissingGenes>
+
+  <!-- Genepack formatting. {0} = gene list, {1} = complexity label+value,
+       {2} = metabolism label+value, {3} = archites label+value (optional). -->
+  <RimWorldAccess.Biotech.Xenogerm.PackUnpowered>sem energia</RimWorldAccess.Biotech.Xenogerm.PackUnpowered>
+
+  <!-- Biostats formatting. {0} = complexity label, {1} = gcx, {2} = maxGCX,
+       {3} = metabolism label, {4} = met value, {5} = archites label, {6} = arc. -->
+  <RimWorldAccess.Biotech.Xenogerm.BiostatsOfMax>{0} {1} de {2} máximo</RimWorldAccess.Biotech.Xenogerm.BiostatsOfMax>
+  <RimWorldAccess.Biotech.Xenogerm.BiostatsNoMax>{0} {1}</RimWorldAccess.Biotech.Xenogerm.BiostatsNoMax>
+
+  <!-- Name display fields. {0} = label, {1} = value. -->
+
+  <!-- ============================================================
+       Xenotype editor (XenotypeEditorState.cs).
+       Dialog_CreateXenotype tabbed tree: Selected / Library / Controls.
+       ============================================================ -->
+
+  <!-- Tab announcements. {0} = label, {1} = count. -->
+
+  <!-- Opening announcement. {0} = header, {1} = tab summary. -->
+
+  <!-- Gene selection / library / rename feedback. -->
+  <RimWorldAccess.Biotech.XenotypeEditor.GeneAdded>Adicionado: {0}. {1}</RimWorldAccess.Biotech.XenotypeEditor.GeneAdded>
+  <RimWorldAccess.Biotech.XenotypeEditor.GeneRemoved>Removido: {0}. {1}</RimWorldAccess.Biotech.XenotypeEditor.GeneRemoved>
+  <RimWorldAccess.Biotech.XenotypeEditor.Uncategorized>Sem categoria</RimWorldAccess.Biotech.XenotypeEditor.Uncategorized>
+  <RimWorldAccess.Biotech.XenotypeEditor.RenameCancelled>Renomeação cancelada.</RimWorldAccess.Biotech.XenotypeEditor.RenameCancelled>
+  <RimWorldAccess.Biotech.XenotypeEditor.Renamed>Renomeado para {0}. Nome trancado.</RimWorldAccess.Biotech.XenotypeEditor.Renamed>
+
+  <!-- Save/apply validation (the accept gates themselves speak vanilla's
+       own rejection messages via the dialog's CanAccept). -->
+  <RimWorldAccess.Biotech.XenotypeEditor.NoCustom>Nenhum xenótipo personalizado salvo.</RimWorldAccess.Biotech.XenotypeEditor.NoCustom>
+  <RimWorldAccess.Biotech.XenotypeEditor.FailedToLoad>Falha ao carregar xenótipo.</RimWorldAccess.Biotech.XenotypeEditor.FailedToLoad>
+  <RimWorldAccess.Biotech.XenotypeEditor.NoPremade>Nenhum xenótipo pré-fabricado disponível.</RimWorldAccess.Biotech.XenotypeEditor.NoPremade>
+
+  <!-- Load feedback. {0} = name, {1} = gene count, {2} = biostats summary. -->
+  <RimWorldAccess.Biotech.XenotypeEditor.LoadedSummaryOne>Carregado {0}. 1 gene. {1}</RimWorldAccess.Biotech.XenotypeEditor.LoadedSummaryOne>
+  <RimWorldAccess.Biotech.XenotypeEditor.LoadedSummaryMany>Carregado {0}. {1} genes. {2}</RimWorldAccess.Biotech.XenotypeEditor.LoadedSummaryMany>
+
+  <!-- Controls formatting. {0} = label, {1} = value. -->
+  <RimWorldAccess.Biotech.XenotypeEditor.NameWithValue>{0}: {1}</RimWorldAccess.Biotech.XenotypeEditor.NameWithValue>
+
+  <!-- Gene conflict status, mirroring Dialog_CreateXenotype's own gene tooltip.
+       {0} = the gene that applies / the genes chosen between. -->
+  <RimWorldAccess.Biotech.XenotypeEditor.GeneSuppressedBy>suprimido por {0}</RimWorldAccess.Biotech.XenotypeEditor.GeneSuppressedBy>
+  <RimWorldAccess.Biotech.XenotypeEditor.GeneRandomlyChosen>um destes genes será ativo aleatoriamente: {0}</RimWorldAccess.Biotech.XenotypeEditor.GeneRandomlyChosen>
+  <RimWorldAccess.Biotech.XenotypeEditor.YesValue>Sim</RimWorldAccess.Biotech.XenotypeEditor.YesValue>
+  <RimWorldAccess.Biotech.XenotypeEditor.NoValue>Não</RimWorldAccess.Biotech.XenotypeEditor.NoValue>
+
+  <!-- Ignore-restrictions toggle-off: archite genes removed. {0} = count. -->
+  <RimWorldAccess.Biotech.XenotypeEditor.AchiteRemovedOne>. 1 gene arquita removido.</RimWorldAccess.Biotech.XenotypeEditor.AchiteRemovedOne>
+  <RimWorldAccess.Biotech.XenotypeEditor.AchiteRemovedMany>. {0} genes arquita removidos.</RimWorldAccess.Biotech.XenotypeEditor.AchiteRemovedMany>
+
+  <!-- Controls tab fallback announcement. -->
+
+  <!-- Dialog_SelectXenotypeIcon (XenotypeIconScope.Game.cs, task 6 slice B). Everything
+       else this screen speaks reuses vanilla's own keys (SelectIcon, Accept, CloseButton). -->
+  <RimWorldAccess.Biotech.XenotypeIcon.IconsRegion>Ícones</RimWorldAccess.Biotech.XenotypeIcon.IconsRegion>
+
+  <RimWorldAccess.Biotech.GeneDialogs.NameSuggestions>Sugestões de nomes</RimWorldAccess.Biotech.GeneDialogs.NameSuggestions>
+</LanguageData>

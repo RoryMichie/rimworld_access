@@ -17,9 +17,10 @@
   <!-- Combat log (Alt+B). -->
   <RimWorldAccess.Combat.Log.NoBattleLog>Журнал боя недоступен</RimWorldAccess.Combat.Log.NoBattleLog>
   <RimWorldAccess.Combat.Log.Header>Журнал боя: {0}</RimWorldAccess.Combat.Log.Header>
+  <RimWorldAccess.Combat.Log.BattleHeader>Бой: {0}.</RimWorldAccess.Combat.Log.BattleHeader>
   <RimWorldAccess.Combat.Log.NoEntries>Записи о бое не найдены.</RimWorldAccess.Combat.Log.NoEntries>
-  <RimWorldAccess.Combat.Log.ShowingLastN>Показаны последние 10 из {0} {0_numCase ? записи : записей : записей}.</RimWorldAccess.Combat.Log.ShowingLastN>
-  <RimWorldAccess.Combat.Log.Total>Всего: {0} {0_numCase ? запись : записи : записей}.</RimWorldAccess.Combat.Log.Total>
+  <RimWorldAccess.Combat.Log.ShowingLastN>Показаны последние 10 из {0_numCase ? записи : записей : записей}.</RimWorldAccess.Combat.Log.ShowingLastN>
+  <RimWorldAccess.Combat.Log.Total>Всего: {0_numCase ? запись : записи : записей}.</RimWorldAccess.Combat.Log.Total>
 
   <!-- Shell impacts (mortars, artillery). {0} = shell source label,
        {1} = target label (Hit only), last two = impact cell x, z. -->

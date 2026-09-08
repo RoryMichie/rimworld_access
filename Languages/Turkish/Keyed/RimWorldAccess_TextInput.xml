@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.TextInput.LabelDefault>alan</RimWorldAccess.TextInput.LabelDefault>
+  <RimWorldAccess.TextInput.LabelFaction>fraksiyon adı</RimWorldAccess.TextInput.LabelFaction>
+  <RimWorldAccess.TextInput.LabelSettlement>yerleşim adı</RimWorldAccess.TextInput.LabelSettlement>
+  <RimWorldAccess.TextInput.LabelZone>bölge adı</RimWorldAccess.TextInput.LabelZone>
+  <RimWorldAccess.TextInput.LabelPlan>plan adı</RimWorldAccess.TextInput.LabelPlan>
+  <RimWorldAccess.TextInput.LabelStorage>depo adı</RimWorldAccess.TextInput.LabelStorage>
+  <RimWorldAccess.TextInput.LabelPen>ağıl adı</RimWorldAccess.TextInput.LabelPen>
+  <RimWorldAccess.TextInput.LabelScenarioTitle>senaryo başlığı</RimWorldAccess.TextInput.LabelScenarioTitle>
+  <RimWorldAccess.TextInput.LabelScenarioSummary>senaryo özeti</RimWorldAccess.TextInput.LabelScenarioSummary>
+  <RimWorldAccess.TextInput.LabelScenarioDescription>senaryo açıklaması</RimWorldAccess.TextInput.LabelScenarioDescription>
+  <RimWorldAccess.TextInput.LabelFilename>dosya adı</RimWorldAccess.TextInput.LabelFilename>
+  <RimWorldAccess.TextInput.LabelXenotype>zenotip adı</RimWorldAccess.TextInput.LabelXenotype>
+  <RimWorldAccess.TextInput.LabelXenogerm>zenogerm adı</RimWorldAccess.TextInput.LabelXenogerm>
+  <RimWorldAccess.TextInput.LabelWorldSeed>tohum</RimWorldAccess.TextInput.LabelWorldSeed>
+
+  <RimWorldAccess.TextInput.EditingField>{0} düzenleniyor: {1}. Yeni değeri yaz, onaylamak için Enter'a, iptal etmek için Escape'e bas.</RimWorldAccess.TextInput.EditingField>
+  <RimWorldAccess.TextInput.EditingMultiLineField>Çok satırlı alan düzenleniyor, {0}: {1}. Yaz; yeni satır için Shift+Enter'a, satırlar arasında gezinmek için Yukarı/Aşağı ok tuşlarına, onaylamak için Enter'a, iptal etmek için Escape'e bas.</RimWorldAccess.TextInput.EditingMultiLineField>
+  <RimWorldAccess.TextInput.BrowsingField>{0} görüntüleniyor, salt okunur: {1}.</RimWorldAccess.TextInput.BrowsingField>
+  <RimWorldAccess.TextInput.ReadOnlyField>Bu metin salt okunur</RimWorldAccess.TextInput.ReadOnlyField>
+  <RimWorldAccess.TextInput.Empty>boş</RimWorldAccess.TextInput.Empty>
+  <RimWorldAccess.TextInput.Deleted>Silindi: {0}</RimWorldAccess.TextInput.Deleted>
+  <RimWorldAccess.TextInput.FieldSet>{0}: {1} olarak ayarlandı</RimWorldAccess.TextInput.FieldSet>
+  <RimWorldAccess.TextInput.FieldUnchanged>{0} değişmedi</RimWorldAccess.TextInput.FieldUnchanged>
+  <RimWorldAccess.TextInput.NewLine>Yeni satır</RimWorldAccess.TextInput.NewLine>
+  <RimWorldAccess.TextInput.BlankLine>boş satır</RimWorldAccess.TextInput.BlankLine>
+
+  <RimWorldAccess.TextInput.Copied>Kopyalandı</RimWorldAccess.TextInput.Copied>
+  <RimWorldAccess.TextInput.Cut>Kesildi</RimWorldAccess.TextInput.Cut>
+  <RimWorldAccess.TextInput.SelectedAll>Tümü seçildi: {0}</RimWorldAccess.TextInput.SelectedAll>
+  <RimWorldAccess.TextInput.SelectedAllLong>Tümü seçildi, {0} karakter</RimWorldAccess.TextInput.SelectedAllLong>
+  <RimWorldAccess.TextInput.ClipboardEmpty>Pano boş</RimWorldAccess.TextInput.ClipboardEmpty>
+  <RimWorldAccess.TextInput.PastedShort>Yapıştırıldı: {0}</RimWorldAccess.TextInput.PastedShort>
+  <RimWorldAccess.TextInput.PastedWords>{0} kelime yapıştırıldı</RimWorldAccess.TextInput.PastedWords>
+  <RimWorldAccess.TextInput.PastedLines>{0} satır, {1} kelime yapıştırıldı</RimWorldAccess.TextInput.PastedLines>
+
+  <RimWorldAccess.TextInput.RejectedEmpty>Boş değer kabul edilemez</RimWorldAccess.TextInput.RejectedEmpty>
+  <RimWorldAccess.TextInput.RejectedTooLong>Yapıştırılamaz, en çok {0} karakter sınırını aşıyor</RimWorldAccess.TextInput.RejectedTooLong>
+  <RimWorldAccess.TextInput.RejectedTooShort>Yapıştırılamaz, en az {0} karakter gerekli</RimWorldAccess.TextInput.RejectedTooShort>
+  <RimWorldAccess.TextInput.RejectedDisallowed>Yapıştırılamaz, izin verilmeyen karakterler içeriyor: {0}</RimWorldAccess.TextInput.RejectedDisallowed>
+  <RimWorldAccess.TextInput.RejectedSpecial>Yapıştırılamaz, yasaklı gramer karakterleri içeriyor</RimWorldAccess.TextInput.RejectedSpecial>
+  <RimWorldAccess.TextInput.RejectedFilename>Yapıştırılamaz, dosya adlarında izin verilmeyen karakterler içeriyor</RimWorldAccess.TextInput.RejectedFilename>
+  <RimWorldAccess.TextInput.RejectedCustom>Değer kabul edilemez: {0}</RimWorldAccess.TextInput.RejectedCustom>
+</LanguageData>

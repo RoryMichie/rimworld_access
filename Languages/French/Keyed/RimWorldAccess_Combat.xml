@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Combat module strings (src/Combat/). Three files contribute:
+      - CombatLogState.cs  (Alt+B combat log viewer)
+      - ShellImpactPatch.cs  (mortar/artillery impact announcements)
+      - TargetingPatch.cs  (Enter-to-target, range/LOS feedback, multi-select)
+
+    The multi-select keys (Combat.MultiSelect.*) exist as whole phrases per
+    semantic case so translators can reorder subject/verb/object freely. C#
+    picks which key to use based on succeeded/unchanged pawn counts. Singular
+    and plural subject forms are separate keys because English needs subject-
+    verb agreement ("Only Bob attacks" vs "Only Bob and Alice attack"); other
+    languages can collapse or split these further in their own XML.
+  -->
+
+  <!-- Combat log (Alt+B). -->
+  <RimWorldAccess.Combat.Log.NoBattleLog>Aucun journal de combat disponible</RimWorldAccess.Combat.Log.NoBattleLog>
+  <RimWorldAccess.Combat.Log.Header>Journal de combat de {0}</RimWorldAccess.Combat.Log.Header>
+  <RimWorldAccess.Combat.Log.BattleHeader>Bataille : {0}.</RimWorldAccess.Combat.Log.BattleHeader>
+  <RimWorldAccess.Combat.Log.NoEntries>Aucune entrée de combat trouvée.</RimWorldAccess.Combat.Log.NoEntries>
+  <RimWorldAccess.Combat.Log.ShowingLastN>Affichage des 10 dernières entrées sur {0}.</RimWorldAccess.Combat.Log.ShowingLastN>
+  <RimWorldAccess.Combat.Log.Total>Total : {0} entrées.</RimWorldAccess.Combat.Log.Total>
+
+  <!-- Shell impacts (mortars, artillery). {0} = shell source label,
+       {1} = target label (Hit only), last two = impact cell x, z. -->
+  <RimWorldAccess.Combat.Shell.SourceDefault>Obus</RimWorldAccess.Combat.Shell.SourceDefault>
+  <RimWorldAccess.Combat.Shell.SourceOurs>Notre obus</RimWorldAccess.Combat.Shell.SourceOurs>
+  <RimWorldAccess.Combat.Shell.SourceEnemy>Obus ennemi</RimWorldAccess.Combat.Shell.SourceEnemy>
+  <RimWorldAccess.Combat.Shell.Hit>{0} a touché {1} à {2}, {3}</RimWorldAccess.Combat.Shell.Hit>
+  <RimWorldAccess.Combat.Shell.Landed>{0} est tombé à {1}, {2}</RimWorldAccess.Combat.Shell.Landed>
+
+  <!-- Generic target and location fallbacks. Used when target.HasThing is
+       false and a labeled placeholder is needed for sentence composition. -->
+  <RimWorldAccess.Combat.Target.GenericTargetLabel>cible</RimWorldAccess.Combat.Target.GenericTargetLabel>
+  <RimWorldAccess.Combat.Target.GenericLocationLabel>emplacement</RimWorldAccess.Combat.Target.GenericLocationLabel>
+
+  <!-- Range/distance feedback during targeting. -->
+  <RimWorldAccess.Combat.Target.NoRangeInfo>Aucune information de portée disponible</RimWorldAccess.Combat.Target.NoRangeInfo>
+  <RimWorldAccess.Combat.Target.DistanceInRange>Distance : {0} cases, EN PORTÉE</RimWorldAccess.Combat.Target.DistanceInRange>
+  <RimWorldAccess.Combat.Target.DistanceOutOfRange>Distance : {0} cases, HORS DE PORTÉE (max {1})</RimWorldAccess.Combat.Target.DistanceOutOfRange>
+  <RimWorldAccess.Combat.Target.OutOfRange>Hors de portée. Distance : {0}, portée maximale : {1}</RimWorldAccess.Combat.Target.OutOfRange>
+
+  <!-- Target validation and errors. -->
+  <RimWorldAccess.Combat.Target.InvalidPosition>Position de cible invalide</RimWorldAccess.Combat.Target.InvalidPosition>
+  <RimWorldAccess.Combat.Target.InvalidTarget>Cible invalide</RimWorldAccess.Combat.Target.InvalidTarget>
+  <RimWorldAccess.Combat.Target.NotValidTarget>{0} n'est pas une cible valide</RimWorldAccess.Combat.Target.NotValidTarget>
+  <RimWorldAccess.Combat.Target.NoValidAtCursorWithDesc>Aucune cible valide au curseur. {0}</RimWorldAccess.Combat.Target.NoValidAtCursorWithDesc>
+  <RimWorldAccess.Combat.Target.NoActionAvailable>Aucune action de ciblage disponible</RimWorldAccess.Combat.Target.NoActionAvailable>
+  <RimWorldAccess.Combat.Target.ErrorUsing>Erreur d'utilisation sur la cible : {0}</RimWorldAccess.Combat.Target.ErrorUsing>
+
+  <!-- Targeting success announcements (single-select path). -->
+  <RimWorldAccess.Combat.Target.Targeting>Ciblage : {0}</RimWorldAccess.Combat.Target.Targeting>
+  <RimWorldAccess.Combat.Target.TargetingLocation>Ciblage d'un emplacement</RimWorldAccess.Combat.Target.TargetingLocation>
+  <RimWorldAccess.Combat.Target.Selected>Cible sélectionnée : {0}</RimWorldAccess.Combat.Target.Selected>
+
+  <!-- Second-phase (destination) selection, e.g. Skip ability. -->
+  <RimWorldAccess.Combat.Target.SelectDestination>Sélectionnez maintenant une destination</RimWorldAccess.Combat.Target.SelectDestination>
+  <RimWorldAccess.Combat.Target.SelectDestinationInRange>Sélectionnez maintenant une destination dans un rayon de {0} cases</RimWorldAccess.Combat.Target.SelectDestinationInRange>
+
+  <!-- Ranged shot report: press 1 over a target with a drafted shooter
+       selected. The contributing-factor breakdown is RimWorld's own localized
+       ShotReport.GetTextReadout() text; we only supply the headline that
+       replaces vanilla's awkward "Shot by X:" line, and the cannot-hit line.
+       Headline: {0} = target label, {1} = total hit-chance percent.
+       HeadlineGeneric is the fallback for miss-radius weapons (e.g. grenades)
+       whose readout does not lead with a single hit-chance figure. -->
+  <RimWorldAccess.Combat.ShotReport.Headline>{0}, {1} de chance de toucher</RimWorldAccess.Combat.ShotReport.Headline>
+  <RimWorldAccess.Combat.ShotReport.HeadlineGeneric>{0}</RimWorldAccess.Combat.ShotReport.HeadlineGeneric>
+  <RimWorldAccess.Combat.ShotReport.CannotHit>{0}: impossible de toucher</RimWorldAccess.Combat.ShotReport.CannotHit>
+
+  <!-- Multi-select attack feedback. Whole-phrase keys per semantic case so
+       word order and subject-verb agreement can be localized naturally.
+         Everyone:  all selected pawns accepted the order.
+         NoOne:     none of the selected pawns accepted the order.
+         Only:      some accepted, fewer accepted than rejected.
+         Except:    some rejected, fewer rejected than accepted.
+       English uses singular "attacks" for the Everyone and EveryoneExcept
+       forms because "everyone" takes singular agreement. Only has split
+       singular/plural forms because its subject is the name list itself.
+       Translators can collapse or further split these as their grammar requires.
+       {0} = everyone-label from vanilla key (Except) or name-list (Only),
+       {1} = name-list of the exception / attack target,
+       {2} = attack target (Except key only). -->
+  <RimWorldAccess.Combat.MultiSelect.EveryoneAttacks>{0} attaque {1}</RimWorldAccess.Combat.MultiSelect.EveryoneAttacks>
+  <RimWorldAccess.Combat.MultiSelect.NoOneCouldAttack>Personne n'a pu attaquer {0}</RimWorldAccess.Combat.MultiSelect.NoOneCouldAttack>
+  <RimWorldAccess.Combat.MultiSelect.EveryoneExceptAttacks>{0}, sauf {1}, attaque {2}</RimWorldAccess.Combat.MultiSelect.EveryoneExceptAttacks>
+  <RimWorldAccess.Combat.MultiSelect.OnlyOneAttacks>Seulement {0} attaque {1}</RimWorldAccess.Combat.MultiSelect.OnlyOneAttacks>
+  <RimWorldAccess.Combat.MultiSelect.OnlyManyAttack>Seulement {0} attaquent {1}</RimWorldAccess.Combat.MultiSelect.OnlyManyAttack>
+</LanguageData>

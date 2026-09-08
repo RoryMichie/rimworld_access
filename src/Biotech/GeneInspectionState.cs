@@ -1,16 +1,26 @@
 using System;
 using System.Linq;
 using RimWorld;
-using UnityEngine;
 using Verse;
 using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages keyboard navigation state for baby gene inspection (ITab_GenesPregnancy).
-    /// Provides tree-based navigation through genes and their details.
-    /// Uses TreeNavigationHelper for standard treeview keyboard navigation.
+    /// Lifecycle and identity for baby gene inspection (ITab_GenesPregnancy / ITab_Genes):
+    /// which pawn or gene-set holder is being inspected, the tree DATA built for it, and the
+    /// opening/closing announcements. This is a facade — a data-and-lifecycle surface the
+    /// Harmony patch drives — not a navigator.
+    ///
+    /// <b>What moved.</b> The retired <c>TreeNavigationHelper</c>
+    /// instance, its five format callbacks, the thirteen router forwarders the focus scope
+    /// used to call, the typeahead accessor, and the Page Up/Down gene scan all now live in
+    /// <see cref="RimWorldAccess.Shell.GeneInspectionScope"/>, which rides
+    /// <c>TreeModel</c> and the shared announcement composer directly. This class keeps
+    /// <see cref="IsActive"/>, <see cref="Open"/>, <see cref="OpenForGeneSetHolder"/>,
+    /// <see cref="Close"/> and <see cref="CloseInspection"/> — every member
+    /// <c>GeneInspectionPatch</c> and the scope's own Escape claim call — and hands each
+    /// freshly built root to the scope through <c>OpenTree</c>.
     /// </summary>
     public static class GeneInspectionState
     {
@@ -20,20 +30,8 @@ namespace RimWorldAccess
         private static HediffWithParents currentPregnancy = null;
         private static GeneSetHolderBase currentHolder = null;
 
-        private static TreeNavigationHelper treeNav = new TreeNavigationHelper("GeneInspection");
-        public static TypeaheadSearchHelper Typeahead => treeNav.Typeahead;
-
-        static GeneInspectionState()
-        {
-            treeNav.FormatItemAnnouncement = FormatItemAnnouncement;
-            treeNav.FormatSearchAnnouncement = FormatSearchAnnouncement;
-            treeNav.OnActivate = HandleActivate;
-            treeNav.OnBeforeExpand = item =>
-            {
-                if (item.OnActivate != null && item.Children.Count == 0)
-                    item.OnActivate();
-            };
-        }
+        /// <summary>The tree handed to the scope, kept so a scope pushed later can adopt it.</summary>
+        private static InspectionTreeItem treeRoot = null;
 
         /// <summary>
         /// Opens the gene inspection accessibility state for a pregnant pawn.
@@ -67,10 +65,10 @@ namespace RimWorldAccess
 
                 // Build the tree
                 var rootItem = GeneTreeBuilder.BuildTree(pregnancy.geneSet, motherName, fatherName);
-                treeNav.Initialize(rootItem);
+                PresentTree(rootItem);
 
                 SoundDefOf.TabOpen.PlayOneShotOnCamera();
-                AnnounceOpening();
+                AnnounceOpening(rootItem);
             }
             catch (Exception ex)
             {
@@ -132,10 +130,10 @@ namespace RimWorldAccess
                         ? "RimWorldAccess.Biotech.Gene.RootGenesWithXenotype".Translate(xenotype, countStr).ToString()
                         : "RimWorldAccess.Biotech.Gene.RootGenes".Translate(countStr).ToString();
 
-                treeNav.Initialize(rootItem);
+                PresentTree(rootItem);
 
                 SoundDefOf.TabOpen.PlayOneShotOnCamera();
-                AnnounceOpening();
+                AnnounceOpening(rootItem);
             }
             catch (Exception ex)
             {
@@ -153,106 +151,8 @@ namespace RimWorldAccess
             currentPawn = null;
             currentPregnancy = null;
             currentHolder = null;
-            treeNav.Reset();
-        }
-
-        /// <summary>
-        /// Jumps to the next gene header (Page Down).
-        /// </summary>
-        public static void JumpToNextGene()
-        {
-            if (!IsActive || treeNav.Count == 0)
-                return;
-
-            treeNav.Typeahead.ClearSearch();
-            var visibleItems = treeNav.VisibleItems;
-            int selectedIndex = treeNav.SelectedIndex;
-
-            // Search forward from current position for next gene (Item type with GeneDef data)
-            for (int i = selectedIndex + 1; i < visibleItems.Count; i++)
-            {
-                var item = visibleItems[i];
-                if (item.Type == InspectionTreeItem.ItemType.Item && item.Data is GeneDef)
-                {
-                    treeNav.SetSelectedIndex(i);
-                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                    treeNav.ReannounceCurrentItem();
-                    return;
-                }
-                // Also stop at SubCategory (like "Biostats Summary")
-                if (item.Type == InspectionTreeItem.ItemType.SubCategory)
-                {
-                    treeNav.SetSelectedIndex(i);
-                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                    treeNav.ReannounceCurrentItem();
-                    return;
-                }
-            }
-
-            // Wrap to beginning (if enabled)
-            if (RimWorldAccessMod_Settings.Settings?.WrapNavigation == true)
-            {
-                for (int i = 0; i <= selectedIndex; i++)
-                {
-                    var item = visibleItems[i];
-                    if ((item.Type == InspectionTreeItem.ItemType.Item && item.Data is GeneDef) ||
-                        item.Type == InspectionTreeItem.ItemType.SubCategory)
-                    {
-                        treeNav.SetSelectedIndex(i);
-                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                        treeNav.ReannounceCurrentItem();
-                        return;
-                    }
-                }
-            }
-
-            SoundDefOf.ClickReject.PlayOneShotOnCamera();
-        }
-
-        /// <summary>
-        /// Jumps to the previous gene header (Page Up).
-        /// </summary>
-        public static void JumpToPreviousGene()
-        {
-            if (!IsActive || treeNav.Count == 0)
-                return;
-
-            treeNav.Typeahead.ClearSearch();
-            var visibleItems = treeNav.VisibleItems;
-            int selectedIndex = treeNav.SelectedIndex;
-
-            // Search backward from current position
-            for (int i = selectedIndex - 1; i >= 0; i--)
-            {
-                var item = visibleItems[i];
-                if ((item.Type == InspectionTreeItem.ItemType.Item && item.Data is GeneDef) ||
-                    item.Type == InspectionTreeItem.ItemType.SubCategory)
-                {
-                    treeNav.SetSelectedIndex(i);
-                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                    treeNav.ReannounceCurrentItem();
-                    return;
-                }
-            }
-
-            // Wrap to end (if enabled)
-            if (RimWorldAccessMod_Settings.Settings?.WrapNavigation == true)
-            {
-                for (int i = visibleItems.Count - 1; i >= selectedIndex; i--)
-                {
-                    var item = visibleItems[i];
-                    if ((item.Type == InspectionTreeItem.ItemType.Item && item.Data is GeneDef) ||
-                        item.Type == InspectionTreeItem.ItemType.SubCategory)
-                    {
-                        treeNav.SetSelectedIndex(i);
-                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                        treeNav.ReannounceCurrentItem();
-                        return;
-                    }
-                }
-            }
-
-            SoundDefOf.ClickReject.PlayOneShotOnCamera();
+            treeRoot = null;
+            Shell.GeneInspectionScope.Live?.ClearTree();
         }
 
         /// <summary>
@@ -279,87 +179,38 @@ namespace RimWorldAccess
             TolkHelper.Speak("RimWorldAccess.Biotech.GeneInspection.Closed".Loc());
         }
 
-        /// <summary>
-        /// Handles keyboard input for gene inspection.
-        /// Returns true if input was handled.
-        /// Called from UnifiedKeyboardPatch which handles Event.current.Use().
-        /// </summary>
-        public static bool HandleInput(Event ev)
-        {
-            if (!IsActive || ev.type != EventType.KeyDown)
-                return false;
-
-            KeyCode key = ev.keyCode;
-
-            // Escape - always close (don't delegate to treeNav which only clears search)
-            if (key == KeyCode.Escape)
-            {
-                if (treeNav.HasActiveSearch)
-                {
-                    treeNav.Typeahead.ClearSearchAndAnnounce();
-                    treeNav.ReannounceCurrentItem();
-                    return true;
-                }
-                CloseInspection();
-                return true;
-            }
-
-            // Page Down - jump to next gene (custom behavior, not in TreeNavigationHelper)
-            if (key == KeyCode.PageDown)
-            {
-                JumpToNextGene();
-                return true;
-            }
-
-            // Page Up - jump to previous gene (custom behavior, not in TreeNavigationHelper)
-            if (key == KeyCode.PageUp)
-            {
-                JumpToPreviousGene();
-                return true;
-            }
-
-            // Left arrow - intercept to handle GeneDef label restoration on collapse
-            if (key == KeyCode.LeftArrow)
-            {
-                HandleLeftArrow();
-                return true;
-            }
-
-            // Delegate all other input to TreeNavigationHelper
-            return treeNav.HandleInput(ev);
-        }
-
         #region Private Methods
 
         /// <summary>
-        /// Handles left arrow with GeneDef label restoration on collapse.
-        /// When collapsing a GeneDef node, restores the rich label from Description.
+        /// Hands a freshly built tree to the scope. <c>GeneInspectionScopeMirror</c> creates
+        /// its scope during the first OnGUI pass, long before a player can open a genes tab,
+        /// so the instance effectively always exists here; <see cref="NotifyScopeAttached"/>
+        /// covers the theoretical open-before-first-reconcile ordering.
         /// </summary>
-        private static void HandleLeftArrow()
+        private static void PresentTree(InspectionTreeItem root)
         {
-            var item = treeNav.SelectedItem;
-            if (item == null)
-                return;
+            treeRoot = root;
+            Shell.GeneInspectionScope.Live?.OpenTree(root);
+        }
 
-            // If this is an expanded GeneDef node, restore the rich label before collapsing
-            if (item.IsExpandable && item.IsExpanded && item.Data is GeneDef && !string.IsNullOrEmpty(item.Description))
+        /// <summary>Called from the scope's OnPush: adopt the current tree if it has not already.</summary>
+        internal static void NotifyScopeAttached(Shell.GeneInspectionScope scope)
+        {
+            if (IsActive && treeRoot != null)
             {
-                item.Label = item.Description;
+                scope.EnsureTree(treeRoot);
             }
-
-            // Delegate to TreeNavigationHelper for the actual collapse/drill-up
-            treeNav.CollapseOrDrillUp();
         }
 
         /// <summary>
         /// Announces the opening of the gene inspection.
         /// </summary>
-        private static void AnnounceOpening()
+        private static void AnnounceOpening(InspectionTreeItem root)
         {
-            if (treeNav.RootItem == null)
+            if (root == null)
                 return;
 
-            string rootLabel = treeNav.RootItem.Label.StripTags();
+            string rootLabel = root.Label.StripTags();
 
             // Build opening announcement with first item
             var sb = new System.Text.StringBuilder();
@@ -367,11 +218,11 @@ namespace RimWorldAccess
             sb.Append(". ");
 
             // Announce the first item
-            if (treeNav.Count > 0)
+            var firstItem = Shell.GeneInspectionScope.Live?.FirstVisibleItem;
+            if (firstItem != null)
             {
-                var firstItem = treeNav.VisibleItems[0];
                 string firstLabel = firstItem.Label.StripTags();
-                string state = TreeNavigationHelper.GetExpansionStateWord(firstItem);
+                string state = ExpansionStateWord(firstItem);
                 sb.Append("RimWorldAccess.Biotech.GeneInspection.FirstGene".Translate(firstLabel));
                 if (!string.IsNullOrEmpty(state))
                     sb.Append($" {state}");
@@ -382,95 +233,18 @@ namespace RimWorldAccess
             TolkHelper.SpeakData(sb.ToString());
         }
 
-        #endregion
-
-        #region Announcement Formatters
-
         /// <summary>
-        /// Formats item announcement matching the original GeneInspectionState format:
-        /// "{label stripped}{space+expanded/collapsed}.{levelSuffix} {position}."
+        /// The bare branch-state word for the opening line. Reads the shared tree vocabulary
+        /// keys directly so this one sentence cannot drift from the row announcements the
+        /// composer speaks from its own copy of the same words.
         /// </summary>
-        private static string FormatItemAnnouncement(InspectionTreeItem item)
+        private static string ExpansionStateWord(InspectionTreeItem item)
         {
-            try
-            {
-                // Strip XML tags from label
-                string label = item.Label.StripTags().TrimEnd('.', '!', '?');
-
-                // Build state indicator (only for expandable items)
-                string stateIndicator = TreeNavigationHelper.FormatExpansionSpaceSuffix(item);
-
-                // Get sibling position
-                var (position, total) = treeNav.GetSiblingPosition(item);
-
-                // Build level suffix if level changed (skipLevelOne: false for gene inspection)
-                string levelSuffix = MenuHelper.GetLevelSuffix("GeneInspection", item.IndentLevel, skipLevelOne: false);
-
-                // Build full announcement (respects AnnouncePosition setting)
-                string positionPart = MenuHelper.FormatPosition(position - 1, total);
-                string announcement = string.IsNullOrEmpty(positionPart)
-                    ? $"{label}{stateIndicator}.{levelSuffix}"
-                    : $"{label}{stateIndicator}.{levelSuffix} {positionPart}.";
-
-                return announcement;
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"[GeneInspectionState] Error formatting announcement: {ex.Message}");
-                return item.Label.StripTags();
-            }
-        }
-
-        /// <summary>
-        /// Formats search announcement matching the original GeneInspectionState format:
-        /// "{label stripped}{space+expanded/collapsed}, {N} of {M} matches for '{search}'"
-        /// </summary>
-        private static string FormatSearchAnnouncement(InspectionTreeItem item, TypeaheadSearchHelper typeahead)
-        {
-            string label = item.Label.StripTags();
-
-            string stateIndicator = TreeNavigationHelper.FormatExpansionSpaceSuffix(item);
-
-            return typeahead.BuildItemAnnouncement($"{label}{stateIndicator}");
-        }
-
-        #endregion
-
-        #region Custom Actions
-
-        /// <summary>
-        /// Handles Enter key activation. For expandable items that are already expanded,
-        /// shows a reject message. For collapsed expandable items, expands them.
-        /// For GeneDef leaf items (shouldn't normally occur), opens InfoCard.
-        /// </summary>
-        private static bool HandleActivate(InspectionTreeItem item)
-        {
-            // Handle expandable items
-            if (item.IsExpandable)
-            {
-                if (item.IsExpanded)
-                {
-                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    TolkHelper.Speak("RimWorldAccess.Biotech.GeneInspection.AlreadyExpanded".Loc());
-                    return true;
-                }
-                // Collapsed: let treeNav expand it via ExpandOrDrillDown
-                treeNav.ExpandOrDrillDown();
-                return true;
-            }
-
-            // For gene items, open InfoCard
-            if (item.Data is GeneDef gene)
-            {
-                Find.WindowStack.Add(new Dialog_InfoCard(gene));
-                SoundDefOf.Click.PlayOneShotOnCamera();
-                return true;
-            }
-
-            // Otherwise, nothing to do
-            SoundDefOf.ClickReject.PlayOneShotOnCamera();
-            TolkHelper.Speak("RimWorldAccess.Biotech.GeneInspection.NoAction".Loc());
-            return true;
+            if (!item.IsExpandable)
+                return "";
+            return (item.IsExpanded
+                ? "RimWorldAccess.Tree.StateExpanded"
+                : "RimWorldAccess.Tree.StateCollapsed").Translate().ToString();
         }
 
         #endregion

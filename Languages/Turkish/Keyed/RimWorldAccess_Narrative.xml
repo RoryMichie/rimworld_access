@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Narrative Feed (speech mods campaign, src/Narrative/NarrativeFeed.Game.cs).
+    Grammar keys compose one spoken line of ambient dialogue/narration; the
+    caller picks the variant based on which of speaker/recipient resolved.
+    {0}/{1}/{2} are already-resolved passthrough strings (pawn LabelShort,
+    line text) via .Translate(args), not authored prose fragments.
+  -->
+  <RimWorldAccess.Narrative.LineTo>{0} - {1}: {2}</RimWorldAccess.Narrative.LineTo>
+  <RimWorldAccess.Narrative.Line>{0}: {1}</RimWorldAccess.Narrative.Line>
+  <RimWorldAccess.Narrative.System>{0}</RimWorldAccess.Narrative.System>
+
+  <!--
+    The stable-read rule's shared marker (speech mods campaign S15, src/Narrative/AsyncTextStability.Game.cs).
+    Spoken INSTEAD OF any in-flight streamed/generated text while an extension mod's async
+    rewrite is still running, never a fragment of the real text. See Literature's book/art
+    inspection-tree children (S15) and S16 Quests for riders.
+  -->
+  <RimWorldAccess.Narrative.StillBeingWritten>Hâlâ yazılıyor.</RimWorldAccess.Narrative.StillBeingWritten>
+
+  <!-- Settings (Main Menu > Options > RimWorld Access), src/Shell/Screens/OptionsRwaCategory.Game.cs. -->
+  <RimWorldAccess.Narrative.Settings.AnnouncePawnDialogue.Label>Üretilen karakter diyaloglarını duyur</RimWorldAccess.Narrative.Settings.AnnouncePawnDialogue.Label>
+  <RimWorldAccess.Narrative.Settings.AnnouncePawnDialogue.Desc>RimTalk gibi hikâye modlarının yazdığı diyalog satırlarını okur.</RimWorldAccess.Narrative.Settings.AnnouncePawnDialogue.Desc>
+  <RimWorldAccess.Narrative.Settings.AnnounceVanillaInteractionBubbles.Label>Standart etkileşim balonlarını seslendir</RimWorldAccess.Narrative.Settings.AnnounceVanillaInteractionBubbles.Label>
+  <RimWorldAccess.Narrative.Settings.AnnounceVanillaInteractionBubbles.Desc>Oyunun kendi sosyal sohbet satırlarını okur. Jaxe'in Interaction Bubbles modunu gerektirir.</RimWorldAccess.Narrative.Settings.AnnounceVanillaInteractionBubbles.Desc>
+  <RimWorldAccess.Narrative.Settings.TtsAnnounceAnyway.Label>RimTalk TTS onu seslendirirken bile diyaloğu seslendir</RimWorldAccess.Narrative.Settings.TtsAnnounceAnyway.Label>
+  <RimWorldAccess.Narrative.Settings.TtsAnnounceAnyway.Desc>Kapalıyken, RimTalk'ın TTS eklentisi bir satırı sesli okurken ekran okuyucu sessiz kalır; Diyalog günlüğü bunu yine de kaydeder.</RimWorldAccess.Narrative.Settings.TtsAnnounceAnyway.Desc>
+
+  <!--
+    Dialogue Log screen (speech mods campaign S4, src/Narrative/DialogueLogScope.Game.cs).
+    Opened from the F12 extras menu whenever Bubbles or RimTalk is active. {0}/{1} below are
+    already-resolved passthrough strings (elapsed-time text, the composed LineTo/Line/System
+    grammar), not authored prose fragments.
+  -->
+  <RimWorldAccess.Narrative.DialogueLog.Title>Diyalog günlüğü</RimWorldAccess.Narrative.DialogueLog.Title>
+  <RimWorldAccess.Narrative.DialogueLog.Opened>Diyalog günlüğü açıldı. {0} satır.</RimWorldAccess.Narrative.DialogueLog.Opened>
+  <RimWorldAccess.Narrative.DialogueLog.OpenedOne>Diyalog günlüğü açıldı. 1 satır.</RimWorldAccess.Narrative.DialogueLog.OpenedOne>
+  <RimWorldAccess.Narrative.DialogueLog.LinesRegion>Satırlar</RimWorldAccess.Narrative.DialogueLog.LinesRegion>
+  <RimWorldAccess.Narrative.DialogueLog.Empty>Henüz diyalog kaydedilmedi.</RimWorldAccess.Narrative.DialogueLog.Empty>
+  <RimWorldAccess.Narrative.DialogueLog.LineWithTimeAgo>{0} önce. {1}</RimWorldAccess.Narrative.DialogueLog.LineWithTimeAgo>
+  <RimWorldAccess.Narrative.DialogueLog.NewConversation>Yeni konuşma.</RimWorldAccess.Narrative.DialogueLog.NewConversation>
+  <RimWorldAccess.Narrative.DialogueLog.JumpToSpeaker>Konuşmacıya git</RimWorldAccess.Narrative.DialogueLog.JumpToSpeaker>
+  <RimWorldAccess.Narrative.DialogueLog.JumpDisabledReason>Konuşmacı bulunamıyor.</RimWorldAccess.Narrative.DialogueLog.JumpDisabledReason>
+  <RimWorldAccess.Narrative.DialogueLog.ToggleOverlayOn>Sohbet katmanını aç</RimWorldAccess.Narrative.DialogueLog.ToggleOverlayOn>
+  <RimWorldAccess.Narrative.DialogueLog.ToggleOverlayOff>Sohbet katmanını kapat</RimWorldAccess.Narrative.DialogueLog.ToggleOverlayOff>
+  <RimWorldAccess.Narrative.DialogueLog.OverlayTurnedOn>Sohbet katmanı açıldı.</RimWorldAccess.Narrative.DialogueLog.OverlayTurnedOn>
+  <RimWorldAccess.Narrative.DialogueLog.OverlayTurnedOff>Sohbet katmanı kapatıldı.</RimWorldAccess.Narrative.DialogueLog.OverlayTurnedOff>
+  <RimWorldAccess.Narrative.DialogueLog.OpenSettings>RimTalk ayarlarını aç</RimWorldAccess.Narrative.DialogueLog.OpenSettings>
+  <RimWorldAccess.Narrative.DialogueLog.OpenDebugWindow>RimTalk hata ayıklama penceresini aç</RimWorldAccess.Narrative.DialogueLog.OpenDebugWindow>
+  <RimWorldAccess.Narrative.DialogueLog.OpenBubblesSettings>Bubbles ayarlarını aç</RimWorldAccess.Narrative.DialogueLog.OpenBubblesSettings>
+  <RimWorldAccess.Narrative.DialogueLog.ActionFailed>Bu şu an yapılamadı.</RimWorldAccess.Narrative.DialogueLog.ActionFailed>
+
+  <!-- RimTalk TTS addon overlay-adjacent controls (speech mods campaign S11), src/Compat/RimTalkTtsOverlayCompat.Game.cs. -->
+  <RimWorldAccess.Narrative.DialogueLog.TtsToggleOn>Metinden sese dönüştürmeyi aç</RimWorldAccess.Narrative.DialogueLog.TtsToggleOn>
+  <RimWorldAccess.Narrative.DialogueLog.TtsToggleOff>Metinden sese dönüştürmeyi kapat</RimWorldAccess.Narrative.DialogueLog.TtsToggleOff>
+  <RimWorldAccess.Narrative.DialogueLog.TtsTurnedOn>Metinden sese dönüştürme açıldı.</RimWorldAccess.Narrative.DialogueLog.TtsTurnedOn>
+  <RimWorldAccess.Narrative.DialogueLog.TtsTurnedOff>Metinden sese dönüştürme kapatıldı.</RimWorldAccess.Narrative.DialogueLog.TtsTurnedOff>
+  <RimWorldAccess.Narrative.DialogueLog.TtsResetAudio>TTS sesini temizle</RimWorldAccess.Narrative.DialogueLog.TtsResetAudio>
+  <RimWorldAccess.Narrative.DialogueLog.TtsResetComplete>Çalınmayı veya oluşturulmayı bekleyen tüm ses temizlendi.</RimWorldAccess.Narrative.DialogueLog.TtsResetComplete>
+  <RimWorldAccess.Narrative.DialogueLog.TtsGenerateDialogue>Diyalog oluştur</RimWorldAccess.Narrative.DialogueLog.TtsGenerateDialogue>
+  <RimWorldAccess.Narrative.DialogueLog.TtsGenerateStarted>Diyalog oluşturma başladı.</RimWorldAccess.Narrative.DialogueLog.TtsGenerateStarted>
+  <RimWorldAccess.Narrative.DialogueLog.TtsIgnoreAll>Mevcut diyalogları yoksay</RimWorldAccess.Narrative.DialogueLog.TtsIgnoreAll>
+  <RimWorldAccess.Narrative.DialogueLog.TtsIgnoreComplete>Tüm mevcut diyaloglar yoksayıldı.</RimWorldAccess.Narrative.DialogueLog.TtsIgnoreComplete>
+  <RimWorldAccess.Narrative.DialogueLog.TtsDisplayNext>Sıradaki diyaloğu göster</RimWorldAccess.Narrative.DialogueLog.TtsDisplayNext>
+  <RimWorldAccess.Narrative.DialogueLog.TtsDisplayStarted>Sıradaki diyalog gösteriliyor.</RimWorldAccess.Narrative.DialogueLog.TtsDisplayStarted>
+</LanguageData>

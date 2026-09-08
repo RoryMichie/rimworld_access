@@ -1,376 +1,187 @@
 using HarmonyLib;
 using RimWorld;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using Verse;
-using Verse.Profile;
 
 namespace RimWorldAccess
 {
+    /// <summary>
+    /// Main-menu (Entry) keyboard access. Captures the option lists vanilla's own
+    /// DoMainMenuControls constructs — via <see cref="OptionListingCapturePatch"/> on
+    /// OptionListingUtility.DrawOptionListing, its only two call sites being the menu's
+    /// two columns (decompiled RimWorld/MainMenuDrawer.cs:265 and :306) — instead of
+    /// re-deriving them line-by-line, so a new DLC button, a reordered item, or another
+    /// mod's injected option is inherited automatically.
+    ///
+    /// Deliberate transforms applied to the captured lists:
+    /// - The Tutorial option (identified by its vanilla InitLearnToPlay delegate, never
+    ///   by label) gets an accessibility notice instead — the tutorial is a documented
+    ///   keyboard-hostile deviation.
+    /// - ListableOption_WebLink entries constructed with a url and no action get the
+    ///   OpenURL fallback their own DrawOption applies on click (decompiled
+    ///   Verse/ListableOption_WebLink.cs, null-action branch), so Enter works on them.
+    /// - The mod's What's New and Website items are prepended to the links column.
+    ///
+    /// The Playing pause-menu tab is PauseMenuScope's; this patch owns Entry only.
+    /// </summary>
     [HarmonyPatch(typeof(MainMenuDrawer), "DoMainMenuControls")]
     public static class MainMenuAccessibilityPatch
     {
-        private static bool initialized = false;
         private static bool announcedMainMenu = false;
         private static ProgramState lastAnnouncedState = ProgramState.Entry;
-        private static List<ListableOption> cachedColumn0 = new List<ListableOption>();
-        private static List<ListableOption> cachedColumn1 = new List<ListableOption>();
+
+        private static List<ListableOption> capturedColumn0;
+        private static List<ListableOption> capturedColumn1;
+        private static Rect capturedRect0;
+        private static Rect capturedRect1;
+
+        // Vanilla's Tutorial option is built as `new ListableOption(label, InitLearnToPlay)`
+        // (decompiled RimWorld/MainMenuDrawer.cs:138, method at :465) — the delegate is the
+        // stable identity signal for it across languages.
+        private static readonly MethodInfo InitLearnToPlayMethod =
+            AccessTools.Method(typeof(MainMenuDrawer), "InitLearnToPlay");
+
+        internal static bool Capturing { get; private set; }
+        private static int captureCallIndex;
+        private static int lastPostfixFrame = int.MinValue;
 
         [HarmonyPrefix]
-        public static void Prefix(Rect rect, bool anyMapFiles)
+        public static void Prefix()
         {
-            // Rebuild menu structure manually (since we can't intercept the original lists)
-            cachedColumn0.Clear();
-            cachedColumn1.Clear();
+            if (Current.ProgramState != ProgramState.Entry)
+                return;
 
-            // Build column 0 - main menu options
-            if (Current.ProgramState == ProgramState.Entry)
+            Capturing = true;
+            captureCallIndex = 0;
+            capturedColumn0 = null;
+            capturedColumn1 = null;
+        }
+
+        /// <summary>
+        /// Called by <see cref="OptionListingCapturePatch"/> for each DrawOptionListing
+        /// call while capturing. Vanilla draws the main column first, the links column
+        /// second (MainMenuDrawer.cs:265, :306); further calls (another mod drawing its
+        /// own listing mid-menu) are ignored rather than misfiled.
+        /// </summary>
+        internal static void RecordListing(Rect rect, List<ListableOption> options)
+        {
+            if (captureCallIndex == 0)
             {
-                string tutorialLabel = ("Tutorial".CanTranslate() ? "Tutorial".Translate() : "LearnToPlay".Translate());
-                cachedColumn0.Add(new ListableOption(tutorialLabel, delegate {
-                    // Display accessibility message instead of launching tutorial
-                    Find.WindowStack.Add(new Dialog_MessageBox(
-                        "RimWorldAccess.MainMenu.TutorialNotAccessible".Translate(),
-                        null, // buttonAText (OK button, default)
-                        null, // buttonAAction (close on OK, default)
-                        null, // buttonBText (no second button)
-                        null, // buttonBAction
-                        null, // title
-                        false, // destructive
-                        null, // acceptAction
-                        null  // cancelAction
-                    ));
-                }));
-
-                cachedColumn0.Add(new ListableOption("NewColony".Translate(), delegate {
-                    Find.WindowStack.Add(new Page_SelectScenario());
-                }));
-
-                if (Prefs.DevMode)
-                {
-                    cachedColumn0.Add(new ListableOption("DevQuickTest".Translate(), delegate {
-                        LongEventHandler.QueueLongEvent(delegate {
-                            Root_Play.SetupForQuickTestPlay();
-                            PageUtility.InitGameStart();
-                        }, "GeneratingMap", doAsynchronously: true, GameAndMapInitExceptionHandlers.ErrorWhileGeneratingMap);
-                    }));
-                }
+                capturedRect0 = rect;
+                capturedColumn0 = options;
             }
-
-            if (Current.ProgramState == ProgramState.Playing && !GameDataSaveLoader.SavingIsTemporarilyDisabled && !Current.Game.Info.permadeathMode)
+            else if (captureCallIndex == 1)
             {
-                cachedColumn0.Add(new ListableOption("Save".Translate(), delegate {
-                    var method = AccessTools.Method(typeof(MainMenuDrawer), "CloseMainTab");
-                    method.Invoke(null, null);
-                    Find.WindowStack.Add(new Dialog_SaveFileList_Save());
-                }));
+                capturedRect1 = rect;
+                capturedColumn1 = options;
             }
-
-            if (anyMapFiles && (Current.ProgramState != ProgramState.Playing || !Current.Game.Info.permadeathMode))
-            {
-                cachedColumn0.Add(new ListableOption("LoadGame".Translate(), delegate {
-                    var method = AccessTools.Method(typeof(MainMenuDrawer), "CloseMainTab");
-                    method.Invoke(null, null);
-                    WindowlessSaveMenuState.Open(SaveLoadMode.Load);
-                }));
-            }
-
-            if (Current.ProgramState == ProgramState.Playing)
-            {
-                cachedColumn0.Add(new ListableOption("ReviewScenario".Translate(), delegate {
-                    Find.WindowStack.Add(new Dialog_MessageBox(Find.Scenario.GetFullInformationText(), null, null, null, null, Find.Scenario.name) {
-                        layer = WindowLayer.Super
-                    });
-                }));
-            }
-
-            cachedColumn0.Add(new ListableOption("Options".Translate(), delegate {
-                var method = AccessTools.Method(typeof(MainMenuDrawer), "CloseMainTab");
-                method.Invoke(null, null);
-                WindowlessOptionsMenuState.Open();
-            }, "MenuButton-Options"));
-
-            if (Current.ProgramState == ProgramState.Entry)
-            {
-                cachedColumn0.Add(new ListableOption("Mods".Translate(), delegate {
-                    Find.WindowStack.Add(new Page_ModsConfig());
-                }));
-
-                if (Prefs.DevMode && LanguageDatabase.activeLanguage == LanguageDatabase.defaultLanguage && LanguageDatabase.activeLanguage.anyError)
-                {
-                    cachedColumn0.Add(new ListableOption("SaveTranslationReport".Translate(), LanguageReportGenerator.SaveTranslationReport));
-                }
-
-                cachedColumn0.Add(new ListableOption("Credits".Translate(), delegate {
-                    Find.WindowStack.Add(new Screen_Credits());
-                }));
-            }
-
-            if (Current.ProgramState == ProgramState.Playing)
-            {
-                if (Current.Game.Info.permadeathMode && !GameDataSaveLoader.SavingIsTemporarilyDisabled)
-                {
-                    cachedColumn0.Add(new ListableOption("SaveAndQuitToMainMenu".Translate(), delegate {
-                        LongEventHandler.QueueLongEvent(delegate {
-                            GameDataSaveLoader.SaveGame(Current.Game.Info.permadeathModeUniqueName);
-                            MemoryUtility.ClearAllMapsAndWorld();
-                        }, "Entry", "SavingLongEvent", doAsynchronously: false, null, showExtraUIInfo: false);
-                    }));
-
-                    cachedColumn0.Add(new ListableOption("SaveAndQuitToOS".Translate(), delegate {
-                        LongEventHandler.QueueLongEvent(delegate {
-                            GameDataSaveLoader.SaveGame(Current.Game.Info.permadeathModeUniqueName);
-                            LongEventHandler.ExecuteWhenFinished(Root.Shutdown);
-                        }, "SavingLongEvent", doAsynchronously: false, null, showExtraUIInfo: false);
-                    }));
-                }
-                else
-                {
-                    cachedColumn0.Add(new ListableOption("QuitToMainMenu".Translate(), delegate {
-                        if (GameDataSaveLoader.CurrentGameStateIsValuable)
-                        {
-                            Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation("ConfirmQuit".Translate(), GenScene.GoToMainMenu, destructive: true, null, WindowLayer.Super));
-                        }
-                        else
-                        {
-                            GenScene.GoToMainMenu();
-                        }
-                    }));
-
-                    cachedColumn0.Add(new ListableOption("QuitToOS".Translate(), delegate {
-                        if (GameDataSaveLoader.CurrentGameStateIsValuable)
-                        {
-                            Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation("ConfirmQuit".Translate(), Root.Shutdown, destructive: true, null, WindowLayer.Super));
-                        }
-                        else
-                        {
-                            Root.Shutdown();
-                        }
-                    }));
-                }
-            }
-            else
-            {
-                cachedColumn0.Add(new ListableOption("QuitToOS".Translate(), Root.Shutdown));
-            }
-
-            // Build column 1 - web links (these open URLs, so we keep them simpler)
-            cachedColumn1.Add(new ListableOption("FictionPrimer".Translate(), delegate { Application.OpenURL("https://rimworldgame.com/backstory"); }));
-            cachedColumn1.Add(new ListableOption("LudeonBlog".Translate(), delegate { Application.OpenURL("https://ludeon.com/blog"); }));
-            cachedColumn1.Add(new ListableOption("Subreddit".Translate(), delegate { Application.OpenURL("https://www.reddit.com/r/RimWorld/"); }));
-            cachedColumn1.Add(new ListableOption("OfficialWiki".Translate(), delegate { Application.OpenURL("https://rimworldwiki.com"); }));
-            cachedColumn1.Add(new ListableOption("TynansX".Translate(), delegate { Application.OpenURL("https://x.com/TynanSylvester"); }));
-            cachedColumn1.Add(new ListableOption("TynansDesignBook".Translate(), delegate { Application.OpenURL("https://tynansylvester.com/book"); }));
-            cachedColumn1.Add(new ListableOption("HelpTranslate".Translate(), delegate { Application.OpenURL("https://rimworldgame.com/helptranslate"); }));
-            cachedColumn1.Add(new ListableOption("BuySoundtrack".Translate(), delegate {
-                // Soundtrack submenu
-                List<FloatMenuOption> options = new List<FloatMenuOption>
-                {
-                    new FloatMenuOption("BuySoundtrack_Classic".Translate(), delegate { Application.OpenURL("https://store.steampowered.com/app/990430/RimWorld_Soundtrack/"); }),
-                    new FloatMenuOption("BuySoundtrack_Royalty".Translate(), delegate { Application.OpenURL("https://store.steampowered.com/app/1244270/RimWorld__Royalty_Soundtrack/"); }),
-                    new FloatMenuOption("BuySoundtrack_Anomaly".Translate(), delegate { Application.OpenURL("https://store.steampowered.com/app/2914900/RimWorld__Anomaly_Soundtrack/"); }),
-                    new FloatMenuOption("BuySoundtrack_Odyssey".Translate(), delegate { Application.OpenURL("https://store.steampowered.com/app/3689230/RimWorld__Odyssey_Soundtrack/"); })
-                };
-                WindowlessFloatMenuState.Open(options, false);
-            }));
+            captureCallIndex++;
         }
 
         [HarmonyPostfix]
         public static void Postfix(Rect rect, bool anyMapFiles)
         {
+            if (Current.ProgramState != ProgramState.Entry)
+                return;
+
+            Capturing = false;
+
             // Mark main menu as active for the layout-aware typeahead dispatcher.
             // DoMainMenuControls runs every frame the main menu is visible, so
             // MenuNavigationState.IsActive (frame-recency check) stays true while drawn.
             MenuNavigationState.MarkRendered();
 
-            // Returning to the main menu tears down the world, but the in-game
-            // world map's navigation/scanner state isn't reset by its usual hook
-            // (WorldInterface.HandleLowPriorityInput stops running). Clear it here,
-            // otherwise its keyboard handlers (e.g. Enter at priority 0.5 in
-            // UnifiedKeyboardPatch) keep consuming input meant for the main menu,
-            // leaving the user unable to activate any option. DoMainMenuControls
-            // also runs in-game (Playing) for the Escape overlay, so this is gated
-            // on Entry and the InGame context to avoid disrupting a live world map.
-            if (Current.ProgramState == ProgramState.Entry &&
-                WorldNavigationState.IsActive &&
-                WorldNavigationState.Context == WorldNavContext.InGame)
+            // The full ordered checklist of static per-screen resets lives in
+            // StateResetRegistry.OnReturnToMainMenu — see that file for the manifest.
+            // Edge-triggered: the checklist clears SESSION leftovers (its entries close
+            // any state active at Entry), so it must fire once on ARRIVAL at the menu,
+            // not every frame — a per-frame run instantly closes legitimate menu-opened
+            // overlays (the BuySoundtrack windowless float menu). Arrival = this postfix
+            // did not run last frame (startup, quit-to-menu, or any surface that stops
+            // the menu drawing).
+            int frame = Time.frameCount;
+            if (frame - lastPostfixFrame > 1)
+                StateResetRegistry.RunOnReturnToMainMenu();
+            lastPostfixFrame = frame;
+
+            if (capturedColumn0 == null || capturedColumn1 == null)
+                return;
+
+            List<ListableOption> column0 = TransformMainColumn(capturedColumn0);
+            List<ListableOption> column1 = TransformLinksColumn(capturedColumn1);
+
+            // Cursor persistence across Entry arrivals is deliberate
+            // (remember-my-place): the scope's ScreenModel is a singleton
+            // that survives OnPush/OnPop, so — unlike the retired
+            // once-ever Reset() call this replaced — no explicit reset is
+            // needed even on the very first launch; a fresh ListModel
+            // already starts at index 0.
+            MenuNavigationState.Initialize(column0, column1);
+
+            // Announce main menu when first appearing or when returning from a game
+            if (!announcedMainMenu || lastAnnouncedState != ProgramState.Entry)
             {
-                WorldNavigationState.Close();
-                WorldScannerState.Reset();
+                announcedMainMenu = true;
+                lastAnnouncedState = ProgramState.Entry;
+                TolkHelper.Speak("GameOverMainMenu".Loc(), SpeechPriority.Normal);
+
+                // Surface the "What's New" message here (once per launch) if the mod updated
+                // since the player last ran it, so it never interrupts a game.
+                WhatsNewState.NotifyMainMenuReached();
             }
 
-            // Initialize menu navigation state with our rebuilt lists
-            if (cachedColumn0.Count > 0 && cachedColumn1.Count > 0)
-            {
-                if (!initialized)
-                {
-                    MenuNavigationState.Initialize(cachedColumn0, cachedColumn1);
-                    MenuNavigationState.Reset();
-                    initialized = true;
-                }
-                else
-                {
-                    MenuNavigationState.Initialize(cachedColumn0, cachedColumn1);
-                }
-
-                // Announce main menu when first appearing or when returning from a game
-                if (Current.ProgramState == ProgramState.Entry && (!announcedMainMenu || lastAnnouncedState != ProgramState.Entry))
-                {
-                    announcedMainMenu = true;
-                    lastAnnouncedState = ProgramState.Entry;
-                    TolkHelper.Speak("GameOverMainMenu".Loc(), SpeechPriority.Normal);
-                }
-                else if (Current.ProgramState == ProgramState.Playing)
-                {
-                    // Reset announcement flag when in-game so it triggers again on return
-                    announcedMainMenu = false;
-                    lastAnnouncedState = ProgramState.Playing;
-                }
-            }
-
-            // Handle keyboard input
-            HandleKeyboardInput();
-
-            // Draw highlight on selected item
             DrawSelectionHighlight(rect);
         }
 
-        private static void HandleKeyboardInput()
+        private static List<ListableOption> TransformMainColumn(List<ListableOption> source)
         {
-            if (Event.current.type != EventType.KeyDown)
-                return;
-
-            KeyCode key = Event.current.keyCode;
-            var typeahead = MenuNavigationState.Typeahead;
-
-            // Handle Home - jump to first
-            if (key == KeyCode.Home)
+            var result = new List<ListableOption>(source.Count);
+            foreach (ListableOption option in source)
             {
-                MenuNavigationState.JumpToFirst();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle End - jump to last
-            if (key == KeyCode.End)
-            {
-                MenuNavigationState.JumpToLast();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Escape - clear search first, then close
-            if (key == KeyCode.Escape)
-            {
-                if (typeahead.HasActiveSearch)
+                if (option?.action != null && option.action.Method == InitLearnToPlayMethod)
                 {
-                    typeahead.ClearSearchAndAnnounce();
-                    MenuNavigationState.AnnounceWithSearch();
-                    Event.current.Use();
-                    return;
-                }
-                // Default escape handling (if any) - let it pass through
-                return;
-            }
-
-            // Handle Backspace for search
-            if (key == KeyCode.Backspace && typeahead.HasActiveSearch)
-            {
-                var labels = MenuNavigationState.GetCurrentColumnLabels();
-                if (typeahead.ProcessBackspace(labels, out int newIndex))
-                {
-                    if (newIndex >= 0) MenuNavigationState.SetSelectedIndex(newIndex);
-                    MenuNavigationState.AnnounceWithSearch();
-                }
-                Event.current.Use();
-                return;
-            }
-
-            // Handle * key - consume to prevent passthrough (reserved for future)
-            // Use KeyCode instead of Event.current.character (which is empty in Unity IMGUI)
-            if (key == KeyCode.KeypadMultiply || (Event.current.shift && key == KeyCode.Alpha8))
-            {
-                Event.current.Use();
-                return;
-            }
-
-            // Handle typeahead characters
-            bool isLetter = key >= KeyCode.A && key <= KeyCode.Z;
-            bool isNumber = key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9;
-
-            if (isLetter || isNumber)
-            {
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Up/Down arrows with typeahead support (only navigate matches when there ARE matches)
-            if (key == KeyCode.UpArrow)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    // Navigate through matches only when there ARE matches
-                    int prev = typeahead.GetPreviousMatch(MenuNavigationState.SelectedIndex);
-                    if (prev >= 0)
+                    // Documented keyboard-hostile-vanilla deviation: the tutorial's
+                    // forced-mouse lessons cannot be completed by keyboard, so explain
+                    // instead of trapping the player in it.
+                    result.Add(new ListableOption(option.label, delegate
                     {
-                        MenuNavigationState.SetSelectedIndex(prev);
-                        MenuNavigationState.AnnounceWithSearch();
-                    }
+                        Find.WindowStack.Add(new Dialog_MessageBox(
+                            "RimWorldAccess.MainMenu.TutorialNotAccessible".Translate()));
+                    }));
+                    continue;
                 }
-                else
-                {
-                    // Navigate normally (either no search active, OR search with no matches)
-                    MenuNavigationState.MoveUp();
-                }
-                Event.current.Use();
-                return;
+                result.Add(option);
             }
-
-            if (key == KeyCode.DownArrow)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    // Navigate through matches only when there ARE matches
-                    int next = typeahead.GetNextMatch(MenuNavigationState.SelectedIndex);
-                    if (next >= 0)
-                    {
-                        MenuNavigationState.SetSelectedIndex(next);
-                        MenuNavigationState.AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    // Navigate normally (either no search active, OR search with no matches)
-                    MenuNavigationState.MoveDown();
-                }
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Left/Right arrows - switch column (clears search)
-            if (key == KeyCode.LeftArrow || key == KeyCode.RightArrow)
-            {
-                MenuNavigationState.SwitchColumn();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Enter - execute selected item
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                ExecuteSelectedMenuItem();
-                Event.current.Use();
-                return;
-            }
+            return result;
         }
 
-        private static void ExecuteSelectedMenuItem()
+        private static List<ListableOption> TransformLinksColumn(List<ListableOption> source)
         {
-            ListableOption selected = MenuNavigationState.GetCurrentSelection();
-            if (selected != null && selected.action != null)
+            var result = new List<ListableOption>(source.Count + 2)
             {
-                selected.action();
+                new ListableOption("RimWorldAccess.WhatsNew.MenuItem.WhatsNew".Translate(),
+                    delegate { WhatsNewState.Open(); }),
+                new ListableOption("RimWorldAccess.WhatsNew.MenuItem.Website".Translate(),
+                    delegate { Application.OpenURL("https://rimworldaccess.com"); })
+            };
+
+            foreach (ListableOption option in source)
+            {
+                // Mirrors ListableOption_WebLink.DrawOption's own click fallback
+                // (action null -> Application.OpenURL(url)) so keyboard activation
+                // through MenuNavigationState.ActivateSelected behaves identically.
+                if (option is ListableOption_WebLink webLink
+                    && webLink.action == null
+                    && !webLink.url.NullOrEmpty())
+                {
+                    string url = webLink.url;
+                    webLink.action = delegate { Application.OpenURL(url); };
+                }
+                result.Add(option);
             }
+            return result;
         }
 
         private static void DrawSelectionHighlight(Rect menuRect)
@@ -378,33 +189,54 @@ namespace RimWorldAccess
             int column = MenuNavigationState.CurrentColumn;
             int selectedIndex = MenuNavigationState.SelectedIndex;
 
-            List<ListableOption> currentList = (column == 0) ? cachedColumn0 : cachedColumn1;
-
-            if (selectedIndex < 0 || selectedIndex >= currentList.Count)
+            List<ListableOption> currentList = MenuNavigationState.CurrentColumnOptions;
+            if (currentList == null || selectedIndex < 0 || selectedIndex >= currentList.Count)
                 return;
 
-            // Calculate vertical position
+            Rect columnRect = (column == 0) ? capturedRect0 : capturedRect1;
+
+            // Mirror the layout math of OptionListingUtility.DrawOptionListing (7f spacing)
+            // and ListableOption.DrawOption / ListableOption_WebLink.DrawOption
+            // (max(minHeight, CalcHeight)) so the highlight lands on the real row.
+            Text.Font = GameFont.Small;
             float yOffset = 0f;
             for (int i = 0; i < selectedIndex; i++)
             {
-                yOffset += currentList[i].minHeight + 7f;
+                yOffset += OptionHeight(currentList[i], columnRect.width) + 7f;
             }
+            float height = OptionHeight(currentList[selectedIndex], columnRect.width);
 
-            // Calculate column offset
-            float xOffset = (column == 0) ? 0f : (170f + 17f);
-            float width = (column == 0) ? 170f : 145f;
-            float height = currentList[selectedIndex].minHeight;
-
-            // Create highlight rect relative to menu rect
             Rect highlightRect = new Rect(
-                menuRect.x + xOffset,
-                menuRect.y + yOffset + 17f,
-                width,
-                height
-            );
+                menuRect.x + columnRect.x,
+                menuRect.y + columnRect.y + yOffset + 17f,
+                columnRect.width,
+                height);
 
-            // Draw highlight
             Widgets.DrawHighlight(highlightRect);
+        }
+
+        private static float OptionHeight(ListableOption option, float columnWidth)
+        {
+            float labelWidth = option is ListableOption_WebLink webLink && webLink.image != null
+                ? columnWidth - 24f - 3f
+                : columnWidth;
+            return Mathf.Max(option.minHeight, Text.CalcHeight(option.label, labelWidth));
+        }
+    }
+
+    /// <summary>
+    /// Capture tap for <see cref="MainMenuAccessibilityPatch"/>: records the exact
+    /// (rect, list) pairs vanilla's DoMainMenuControls passes to its two
+    /// OptionListingUtility.DrawOptionListing calls. Read-only — never alters drawing.
+    /// </summary>
+    [HarmonyPatch(typeof(OptionListingUtility), nameof(OptionListingUtility.DrawOptionListing))]
+    public static class OptionListingCapturePatch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(Rect rect, List<ListableOption> optList)
+        {
+            if (MainMenuAccessibilityPatch.Capturing)
+                MainMenuAccessibilityPatch.RecordListing(rect, optList);
         }
     }
 }

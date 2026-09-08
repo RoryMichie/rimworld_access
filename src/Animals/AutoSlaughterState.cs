@@ -1,16 +1,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
-using UnityEngine;
 using Verse;
 using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// State class for keyboard navigation of the Dialog_AutoSlaughter.
-    /// Provides row/column navigation with value adjustment, numeric input,
-    /// and vanilla-matching animal counting logic.
+    /// Data, mutation and lifecycle for <see cref="Dialog_AutoSlaughter"/>: the per-species config
+    /// list and cached counts, the column value-space, the numeric-entry sub-mode, and the
+    /// vanilla-vehicle mutation methods. Navigation, typeahead and announcement composition live on
+    /// <see cref="RimWorldAccess.Shell.AutoSlaughterScope"/>.
+    /// The row/column cursor stays here as plain data the scope writes via <see cref="SetCursor"/>
+    /// before calling any mutation method, so each mutation body reads the cell the player is on.
     /// </summary>
     public static class AutoSlaughterState
     {
@@ -27,7 +29,7 @@ namespace RimWorldAccess
             public int bonded;
         }
 
-        private enum Column
+        internal enum Column
         {
             MaxTotal = 0,
             MaxMales = 1,
@@ -38,8 +40,9 @@ namespace RimWorldAccess
             AllowBonded = 6
         }
 
-        // Column-name keys; resolved via Translate() at call sites so the user
-        // hears the localized header for the current language.
+        internal const int ColumnCount = 7;
+
+        // Column-name keys, resolved via Translate() at the call sites.
         private static readonly string[] ColumnNameKeys = new[]
         {
             "RimWorldAccess.Animals.AutoSlaughter.Column.MaxTotal",
@@ -51,7 +54,7 @@ namespace RimWorldAccess
             "RimWorldAccess.Animals.AutoSlaughter.Column.AllowBonded"
         };
 
-        private static string ColumnName(int index) => ColumnNameKeys[index].Translate().ToString();
+        internal static string ColumnName(int index) => ColumnNameKeys[index].Translate().ToString();
 
         #endregion
 
@@ -64,14 +67,29 @@ namespace RimWorldAccess
         private static Dictionary<ThingDef, AnimalCounts> cachedCounts = new Dictionary<ThingDef, AnimalCounts>();
         private static int currentRowIndex = 0;
         private static int currentColumnIndex = 0;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
 
         private static bool isNumericInputMode = false;
         private static string numericBuffer = "";
 
-        public static TypeaheadSearchHelper Typeahead => typeahead;
         public static int CurrentRowIndex => currentRowIndex;
+        internal static int CurrentColumnIndex => currentColumnIndex;
         public static bool IsNumericInputMode => isNumericInputMode;
+
+        /// <summary>Row count the scope's content-region contract reads.</summary>
+        internal static int ConfigCount => configs.Count;
+
+        /// <summary>One row's config, by data-row index (0-based).</summary>
+        internal static AutoSlaughterConfig GetConfig(int index) => configs[index];
+
+        /// <summary>
+        /// Called right before any mutation or mode-entry method, so their own cursor reads resolve
+        /// to the cell the player is on. Bookkeeping only — never a game-state write.
+        /// </summary>
+        internal static void SetCursor(int row, int column)
+        {
+            currentRowIndex = row;
+            currentColumnIndex = column;
+        }
 
         #endregion
 
@@ -92,26 +110,22 @@ namespace RimWorldAccess
 
             currentRowIndex = 0;
             currentColumnIndex = 0;
-            typeahead.ClearSearch();
             isNumericInputMode = false;
             numericBuffer = "";
             IsActive = true;
 
-            SoundDefOf.TabOpen.PlayOneShotOnCamera();
-            TolkHelper.Speak("RimWorldAccess.Animals.AutoSlaughter.Menu.OpeningTitle".Loc(configs.Count));
-            AnnounceCurrentCell(includeAnimalName: true);
         }
 
         public static void Close()
         {
-            // Build slaughter summary before clearing state
             string slaughterSummary = BuildSlaughterSummary();
 
             IsActive = false;
             currentDialog = null;
             configs.Clear();
             cachedCounts.Clear();
-            typeahead.ClearSearch();
+            currentRowIndex = 0;
+            currentColumnIndex = 0;
             isNumericInputMode = false;
             numericBuffer = "";
 
@@ -121,10 +135,7 @@ namespace RimWorldAccess
                 TolkHelper.Speak("RimWorldAccess.Animals.AutoSlaughter.Menu.Closed".Loc());
         }
 
-        /// <summary>
-        /// Builds a summary of all animals marked for slaughter across all species.
-        /// Called when closing the dialog to give the user a final overview.
-        /// </summary>
+        /// <summary>A closing overview of every animal marked for slaughter, across all species.</summary>
         private static string BuildSlaughterSummary()
         {
             var manager = Find.CurrentMap?.autoSlaughterManager;
@@ -133,7 +144,6 @@ namespace RimWorldAccess
             var slaughterList = manager.AnimalsToSlaughter;
             if (slaughterList == null || slaughterList.Count == 0) return null;
 
-            // Group by animal type
             var groups = slaughterList
                 .GroupBy(p => p.def)
                 .OrderByDescending(g => g.Count())
@@ -155,13 +165,12 @@ namespace RimWorldAccess
 
             var manager = Find.CurrentMap.autoSlaughterManager;
 
-            // Compute counts for all configs
             foreach (var config in manager.configs)
             {
                 cachedCounts[config.animal] = ComputeCounts(config);
             }
 
-            // Sort by count descending, then by label (matching vanilla's sorting)
+            // Vanilla's own sort: count descending, then label.
             configs = manager.configs
                 .OrderByDescending(c => cachedCounts.TryGetValue(c.animal, out var counts) ? counts.total : 0)
                 .ThenBy(c => c.animal.label)
@@ -169,9 +178,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Computes animal counts matching vanilla's Dialog_AutoSlaughter.CountPlayerAnimals logic exactly.
-        /// Bonded animals excluded from category counts when allowSlaughterBonded is false.
-        /// Pregnant females excluded from female count and total when allowSlaughterPregnant is false.
+        /// Vanilla's own CountPlayerAnimals logic: bonded animals leave the category counts when
+        /// allowSlaughterBonded is false, pregnant females likewise when allowSlaughterPregnant is.
         /// </summary>
         private static AnimalCounts ComputeCounts(AutoSlaughterConfig config)
         {
@@ -187,8 +195,8 @@ namespace RimWorldAccess
                 if (!AutoSlaughterManager.CanEverAutoSlaughter(pawn))
                     continue;
 
-                // Bonded animals are always counted in bonded tally,
-                // but skip all category counts when bonded slaughter is disabled
+                // Bonded animals always join the bonded tally, but skip the category counts when
+                // bonded slaughter is disabled.
                 if (pawn.relations != null && pawn.relations.GetDirectRelationsCount(PawnRelationDefOf.Bond) > 0)
                 {
                     counts.bonded++;
@@ -196,7 +204,6 @@ namespace RimWorldAccess
                         continue;
                 }
 
-                // Gender and age categorization
                 if (pawn.gender == Gender.Male)
                 {
                     if (pawn.ageTracker?.CurLifeStage?.reproductive == true)
@@ -208,7 +215,7 @@ namespace RimWorldAccess
                 {
                     if (pawn.ageTracker?.CurLifeStage?.reproductive == true)
                     {
-                        // Pregnancy check uses Visible (not just HasHediff) to match vanilla
+                        // Visible, not merely HasHediff, to match vanilla.
                         Hediff pregnancyHediff = pawn.health?.hediffSet?.GetFirstHediffOfDef(HediffDefOf.Pregnant);
                         if (pregnancyHediff != null && pregnancyHediff.Visible)
                         {
@@ -234,10 +241,7 @@ namespace RimWorldAccess
             return counts;
         }
 
-        /// <summary>
-        /// Refreshes cached counts for all configs without re-sorting.
-        /// Called after checkbox toggles since counts depend on allow flags.
-        /// </summary>
+        /// <summary>Refreshes cached counts without re-sorting, for after a toggle changes an allow flag.</summary>
         private static void RefreshAllCounts()
         {
             cachedCounts.Clear();
@@ -273,6 +277,14 @@ namespace RimWorldAccess
             }
         }
 
+        // MUTATION-C: mirrors Dialog_AutoSlaughter.DoMaxColumn's direct writes to
+        // AutoSlaughterConfig's maxTotal/maxMales/maxMalesYoung/maxFemales/
+        // maxFemalesYoung fields (vanilla's WidgetRow.TextFieldNumeric and its
+        // infinity/close-X buttons write these bare fields inline; AutoSlaughterConfig
+        // exposes no gated setter). Callers reproduce vanilla's own value space: any
+        // int clamped to >= 0 via Mathf.Max(0, val), or -1 for "unlimited" (vanilla's
+        // close-X button sets val = -1; its infinity button sets val = the current
+        // count when leaving -1).
         private static void SetLimitForColumn(AutoSlaughterConfig config, Column column, int value)
         {
             switch (column)
@@ -298,63 +310,9 @@ namespace RimWorldAccess
             }
         }
 
-        private static bool IsNumericColumn(Column column)
+        internal static bool IsNumericColumn(Column column)
         {
             return column != Column.AllowPregnant && column != Column.AllowBonded;
-        }
-
-        #endregion
-
-        #region Navigation
-
-        public static void SelectNextRow()
-        {
-            if (configs.Count == 0) return;
-
-            currentRowIndex = (currentRowIndex + 1) % configs.Count;
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrentCell(includeAnimalName: true, includeColumnName: false);
-        }
-
-        public static void SelectPreviousRow()
-        {
-            if (configs.Count == 0) return;
-
-            currentRowIndex = (currentRowIndex - 1 + configs.Count) % configs.Count;
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrentCell(includeAnimalName: true, includeColumnName: false);
-        }
-
-        public static void SelectNextColumn()
-        {
-            currentColumnIndex = (currentColumnIndex + 1) % ColumnNameKeys.Length;
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrentCell(includeAnimalName: false);
-        }
-
-        public static void SelectPreviousColumn()
-        {
-            currentColumnIndex = (currentColumnIndex - 1 + ColumnNameKeys.Length) % ColumnNameKeys.Length;
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrentCell(includeAnimalName: false);
-        }
-
-        public static void JumpToFirst()
-        {
-            if (configs.Count == 0) return;
-
-            currentRowIndex = 0;
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrentCell(includeAnimalName: true, includeColumnName: false);
-        }
-
-        public static void JumpToLast()
-        {
-            if (configs.Count == 0) return;
-
-            currentRowIndex = configs.Count - 1;
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrentCell(includeAnimalName: true, includeColumnName: false);
         }
 
         #endregion
@@ -362,11 +320,10 @@ namespace RimWorldAccess
         #region Value Adjustment
 
         /// <summary>
-        /// Adjusts the current column's limit by the specified delta.
-        /// Unlimited-to-limit transition defaults to current count (matching vanilla).
-        /// Single decrement from 0 goes to unlimited; multi-step decrements clamp at 0.
+        /// Adjusts the current column's limit. Leaving unlimited starts from the current count, as
+        /// vanilla does; a single decrement from 0 returns to unlimited, multi-step decrements clamp.
         /// </summary>
-        private static void AdjustValue(int delta)
+        public static void AdjustValue(int delta)
         {
             if (configs.Count == 0) return;
 
@@ -383,10 +340,7 @@ namespace RimWorldAccess
 
             if (currentLimit == -1)
             {
-                // Unlimited: start from current count and apply delta
-                // + → current count + 1 (allow one more than you have)
-                // - → current count - 1 (slaughter one)
-                // Shift+Down → current count - 10, etc.
+                // Leaving unlimited: start from the current count and apply the delta.
                 var counts = GetCounts(config);
                 int currentCount = GetCountForColumn(counts, column);
                 int newLimit = currentCount + delta;
@@ -399,12 +353,11 @@ namespace RimWorldAccess
 
                 if (delta == -1 && currentLimit == 0)
                 {
-                    // Single decrement from 0 → unlimited
                     newLimit = -1;
                 }
                 else if (newLimit < 0)
                 {
-                    // Multi-step decrement clamps at 0 (don't accidentally wrap to unlimited)
+                    // Multi-step decrements clamp at 0 rather than wrapping to unlimited.
                     newLimit = 0;
                 }
 
@@ -413,10 +366,13 @@ namespace RimWorldAccess
 
             Find.CurrentMap?.autoSlaughterManager?.Notify_ConfigChanged();
             SoundDefOf.DragSlider.PlayOneShotOnCamera();
-            AnnounceCurrentCell(includeAnimalName: false);
         }
 
-        private static void ToggleBoolean()
+        // MUTATION-C: mirrors Dialog_AutoSlaughter.DoAnimalRow's direct writes to
+        // AutoSlaughterConfig's allowSlaughterPregnant/allowSlaughterBonded fields
+        // (vanilla's Widgets.Checkbox(ref config.allowSlaughterPregnant/Bonded, ...)
+        // toggles these bare bools inline; AutoSlaughterConfig exposes no gated setter).
+        public static void ToggleBoolean()
         {
             if (configs.Count == 0) return;
 
@@ -445,10 +401,9 @@ namespace RimWorldAccess
 
             Find.CurrentMap?.autoSlaughterManager?.Notify_ConfigChanged();
             RefreshAllCounts();
-            AnnounceCurrentCell(includeAnimalName: false);
         }
 
-        private static void SetToUnlimited()
+        public static void SetToUnlimited()
         {
             if (configs.Count == 0) return;
 
@@ -462,10 +417,9 @@ namespace RimWorldAccess
 
             Find.CurrentMap?.autoSlaughterManager?.Notify_ConfigChanged();
             SoundDefOf.Checkbox_TurnedOff.PlayOneShotOnCamera();
-            AnnounceCurrentCell(includeAnimalName: false);
         }
 
-        private static void SetToZero()
+        public static void SetToZero()
         {
             if (configs.Count == 0) return;
 
@@ -479,17 +433,13 @@ namespace RimWorldAccess
 
             Find.CurrentMap?.autoSlaughterManager?.Notify_ConfigChanged();
             SoundDefOf.DragSlider.PlayOneShotOnCamera();
-            AnnounceCurrentCell(includeAnimalName: false);
         }
 
         #endregion
 
         #region Slaughter Warning
 
-        /// <summary>
-        /// Queries the game's actual slaughter computation to get the total animals
-        /// of this type marked for slaughter across all limit interactions.
-        /// </summary>
+        /// <summary>The game's own slaughter computation for this species, across every limit.</summary>
         private static int GetTotalMarkedForSlaughter(AutoSlaughterConfig config)
         {
             var manager = Find.CurrentMap?.autoSlaughterManager;
@@ -499,33 +449,10 @@ namespace RimWorldAccess
 
         #endregion
 
-        #region Announcements
+        #region Cell Presentation
 
-        private static void AnnounceCurrentCell(bool includeAnimalName, bool includeColumnName = true)
-        {
-            if (configs.Count == 0) return;
-
-            var config = configs[currentRowIndex];
-            var column = (Column)currentColumnIndex;
-            string columnName = ColumnName(currentColumnIndex);
-
-            string value = GetColumnValueString(config, column);
-            string position = MenuHelper.FormatPosition(currentRowIndex, configs.Count);
-
-            string announcement;
-            if (includeAnimalName && includeColumnName)
-                announcement = "RimWorldAccess.Animals.AutoSlaughter.Cell.WithName".Translate(config.animal.LabelCap, columnName, value, position).ToString();
-            else if (includeAnimalName)
-                announcement = "RimWorldAccess.Animals.AutoSlaughter.Cell.NameWithoutColumn".Translate(config.animal.LabelCap, value, position).ToString();
-            else if (includeColumnName)
-                announcement = "RimWorldAccess.Animals.AutoSlaughter.Cell.WithoutName".Translate(columnName, value).ToString();
-            else
-                announcement = "RimWorldAccess.Animals.AutoSlaughter.Cell.ValueOnly".Translate(value, position).ToString();
-
-            TolkHelper.SpeakData(announcement);
-        }
-
-        private static string GetColumnValueString(AutoSlaughterConfig config, Column column)
+        /// <summary>The formatted value for one config's column — the scope's ContentCellText source of truth.</summary>
+        internal static string GetColumnValueString(AutoSlaughterConfig config, Column column)
         {
             var counts = GetCounts(config);
 
@@ -575,14 +502,13 @@ namespace RimWorldAccess
 
         #region Numeric Input Mode
 
-        private static void EnterNumericMode()
+        internal static void EnterNumericMode()
         {
             if (configs.Count == 0) return;
             var column = (Column)currentColumnIndex;
 
             if (!IsNumericColumn(column))
             {
-                // Boolean column: toggle instead
                 ToggleBoolean();
                 return;
             }
@@ -592,7 +518,7 @@ namespace RimWorldAccess
             TolkHelper.Speak("RimWorldAccess.Animals.AutoSlaughter.Numeric.Prompt".Loc());
         }
 
-        private static void HandleNumericDigit(char digit)
+        public static void HandleNumericDigit(char digit)
         {
             if (!isNumericInputMode) return;
 
@@ -600,7 +526,7 @@ namespace RimWorldAccess
             TolkHelper.SpeakData(numericBuffer, SpeechPriority.Low);
         }
 
-        private static void HandleNumericBackspace()
+        internal static void HandleNumericBackspace()
         {
             if (!isNumericInputMode || numericBuffer.Length == 0) return;
 
@@ -611,7 +537,8 @@ namespace RimWorldAccess
                 TolkHelper.Speak("RimWorldAccess.Animals.AutoSlaughter.Numeric.Empty".Loc(), SpeechPriority.Low);
         }
 
-        private static void ConfirmNumericInput()
+        /// <summary>Confirms the typed buffer; mode exit and re-announcement are the scope's job.</summary>
+        internal static void ConfirmNumericInput()
         {
             if (!isNumericInputMode) return;
 
@@ -630,338 +557,84 @@ namespace RimWorldAccess
 
             isNumericInputMode = false;
             numericBuffer = "";
-            AnnounceCurrentCell(includeAnimalName: false);
         }
 
-        private static void CancelNumericInput()
+        internal static void CancelNumericInput()
         {
             isNumericInputMode = false;
             numericBuffer = "";
             TolkHelper.Speak("RimWorldAccess.Animals.AutoSlaughter.Numeric.Cancelled".Loc());
         }
 
-        #endregion
-
-        #region Typeahead Search
-
-        public static List<string> GetItemLabels()
+        /// <summary>
+        /// Typing "-" to start an unlimited value. Reached through the scope's CharSink on the
+        /// literal character, not a keycode claim, since it only means anything mid-buffer; no-ops
+        /// once the buffer already holds digits.
+        /// </summary>
+        internal static void HandleNumericMinusSign()
         {
-            return configs.Select(c => c.animal.LabelCap.ToString()).ToList();
-        }
-
-        public static void SetCurrentRowIndex(int index)
-        {
-            if (index >= 0 && index < configs.Count)
-            {
-                currentRowIndex = index;
-            }
-        }
-
-        public static void HandleTypeahead(char c)
-        {
-            // During numeric input the digit's KeyCode event is buffered by the state's own input
-            // handler; swallow the twin character event here so it doesn't trigger a stray search.
-            if (isNumericInputMode) return;
-            var labels = GetItemLabels();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    currentRowIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
-        }
-
-        public static void HandleBackspace()
-        {
-            if (!typeahead.HasActiveSearch) return;
-
-            var labels = GetItemLabels();
-            if (typeahead.ProcessBackspace(labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                    currentRowIndex = newIndex;
-                AnnounceWithSearch();
-            }
-        }
-
-        public static void AnnounceWithSearch()
-        {
-            if (configs.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.Animals.AutoSlaughter.Menu.NoAnimalsShort".Loc());
-                return;
-            }
-
-            var config = configs[currentRowIndex];
-            var column = (Column)currentColumnIndex;
-            string columnName = ColumnName(currentColumnIndex);
-            string value = GetColumnValueString(config, column);
-            string position = MenuHelper.FormatPosition(currentRowIndex, configs.Count);
-
-            string announcement = "RimWorldAccess.Animals.AutoSlaughter.Cell.WithName".Translate(config.animal.LabelCap, columnName, value, position).ToString();
-
-            if (typeahead.HasActiveSearch)
-            {
-                announcement += typeahead.BuildSearchContextSuffix();
-            }
-
-            TolkHelper.SpeakData(announcement);
+            if (!isNumericInputMode || numericBuffer.Length != 0) return;
+            numericBuffer = "-";
+            TolkHelper.Speak("RimWorldAccess.Animals.AutoSlaughter.Numeric.Minus".Loc(), SpeechPriority.Low);
         }
 
         #endregion
 
-        #region Input Handling
+        #region Close Paths
 
         /// <summary>
-        /// Handles keyboard input for the auto-slaughter dialog.
-        /// Returns true if input was handled, false otherwise.
+        /// Closes ONLY the auto-slaughter dialog, leaving the Animals menu open. Unlike
+        /// <see cref="CloseEverything"/> it never calls AnimalsMenuState.Close, and its summary uses
+        /// the return phrasing rather than the Escape path's closed-with-summary wording.
         /// </summary>
-        public static bool HandleInput(Event evt)
+        public static void ReturnToAnimalsMenu()
         {
-            if (!IsActive || evt.type != EventType.KeyDown) return false;
+            string slaughterSummary = BuildSlaughterSummary();
+            Dialog_AutoSlaughter dialog = currentDialog;
 
-            KeyCode key = evt.keyCode;
-            bool shift = evt.shift;
-            bool ctrl = evt.control;
+            // Clear state before removing the dialog, or PostClose calls Close() again.
+            IsActive = false;
+            currentDialog = null;
+            configs.Clear();
+            cachedCounts.Clear();
+            currentRowIndex = 0;
+            currentColumnIndex = 0;
+            isNumericInputMode = false;
+            numericBuffer = "";
 
-            // Numeric input mode captures all relevant keys
-            if (isNumericInputMode)
-            {
-                if (key == KeyCode.Escape)
-                {
-                    CancelNumericInput();
-                    return true;
-                }
-                if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-                {
-                    ConfirmNumericInput();
-                    return true;
-                }
-                if (key == KeyCode.Backspace)
-                {
-                    HandleNumericBackspace();
-                    return true;
-                }
-                // Minus key: allow typing negative sign for -1 (unlimited)
-                if ((key == KeyCode.Minus || key == KeyCode.KeypadMinus) && numericBuffer.Length == 0)
-                {
-                    numericBuffer = "-";
-                    TolkHelper.Speak("RimWorldAccess.Animals.AutoSlaughter.Numeric.Minus".Loc(), SpeechPriority.Low);
-                    return true;
-                }
-                if (key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9)
-                {
-                    HandleNumericDigit((char)('0' + (key - KeyCode.Alpha0)));
-                    return true;
-                }
-                if (key >= KeyCode.Keypad0 && key <= KeyCode.Keypad9)
-                {
-                    HandleNumericDigit((char)('0' + (key - KeyCode.Keypad0)));
-                    return true;
-                }
-                // Consume all other keys in numeric mode
-                return true;
-            }
+            if (dialog != null)
+                Find.WindowStack.TryRemove(dialog);
 
-            // Escape: clear search first, then close everything (auto-slaughter + animals menu)
-            if (key == KeyCode.Escape)
-            {
-                if (typeahead.HasActiveSearch)
-                {
-                    typeahead.ClearSearchAndAnnounce();
-                }
-                else
-                {
-                    string slaughterSummary = BuildSlaughterSummary();
-                    var dialog = currentDialog;
+            if (!string.IsNullOrEmpty(slaughterSummary))
+                TolkHelper.SpeakData(slaughterSummary);
+            else
+                TolkHelper.Speak("RimWorldAccess.Animals.Menu.ReturnTitle".Loc());
+        }
 
-                    // Clear state BEFORE removing dialog to prevent PostClose from calling Close() again
-                    IsActive = false;
-                    currentDialog = null;
-                    configs.Clear();
-                    cachedCounts.Clear();
-                    typeahead.ClearSearch();
-                    isNumericInputMode = false;
-                    numericBuffer = "";
+        /// <summary>Escape's base-case close: the dialog and the parent Animals menu together.</summary>
+        internal static void CloseEverything()
+        {
+            string slaughterSummary = BuildSlaughterSummary();
+            Dialog_AutoSlaughter dialog = currentDialog;
 
-                    if (dialog != null)
-                        Find.WindowStack.TryRemove(dialog, doCloseSound: false);
+            // Clear state before removing the dialog, or PostClose calls Close() again.
+            IsActive = false;
+            currentDialog = null;
+            configs.Clear();
+            cachedCounts.Clear();
+            currentRowIndex = 0;
+            currentColumnIndex = 0;
+            isNumericInputMode = false;
+            numericBuffer = "";
 
-                    // Close animals menu entirely
-                    bool hasSlaughter = !string.IsNullOrEmpty(slaughterSummary);
-                    AnimalsMenuState.Close(silent: hasSlaughter);
+            if (dialog != null)
+                Find.WindowStack.TryRemove(dialog);
 
-                    // If slaughtering, announce with summary
-                    if (hasSlaughter)
-                        TolkHelper.Speak("RimWorldAccess.Animals.Menu.ClosedWithSummary".Loc(slaughterSummary));
-                }
-                return true;
-            }
+            bool hasSlaughter = !string.IsNullOrEmpty(slaughterSummary);
+            AnimalsMenuState.Close(silent: hasSlaughter);
 
-            // Enter: confirm typeahead search if active, otherwise numeric mode
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                if (typeahead.HasActiveSearch)
-                {
-                    typeahead.ClearSearch();
-                    AnnounceCurrentCell(includeAnimalName: true);
-                    return true;
-                }
-                EnterNumericMode();
-                return true;
-            }
-
-            // Backspace: search backspace
-            if (key == KeyCode.Backspace)
-            {
-                HandleBackspace();
-                return true;
-            }
-
-            // Home/End with modifier variants
-            if (key == KeyCode.Home)
-            {
-                if (shift && !ctrl)
-                    SetToZero();
-                else
-                    JumpToFirst();
-                return true;
-            }
-            if (key == KeyCode.End)
-            {
-                if (shift && !ctrl)
-                    SetToUnlimited();
-                else
-                    JumpToLast();
-                return true;
-            }
-
-            // Arrow keys: navigation and modifier-based quantity adjustment
-            if (key == KeyCode.DownArrow)
-            {
-                if (shift && !ctrl)
-                {
-                    AdjustValue(-10);
-                }
-                else if (ctrl && !shift)
-                {
-                    AdjustValue(-100);
-                }
-                else if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    int newIndex = typeahead.GetNextMatch(currentRowIndex);
-                    if (newIndex >= 0)
-                    {
-                        currentRowIndex = newIndex;
-                        AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    SelectNextRow();
-                }
-                return true;
-            }
-            if (key == KeyCode.UpArrow)
-            {
-                if (shift && !ctrl)
-                {
-                    AdjustValue(10);
-                }
-                else if (ctrl && !shift)
-                {
-                    AdjustValue(100);
-                }
-                else if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    int newIndex = typeahead.GetPreviousMatch(currentRowIndex);
-                    if (newIndex >= 0)
-                    {
-                        currentRowIndex = newIndex;
-                        AnnounceWithSearch();
-                    }
-                }
-                else
-                {
-                    SelectPreviousRow();
-                }
-                return true;
-            }
-            if (key == KeyCode.RightArrow)
-            {
-                SelectNextColumn();
-                return true;
-            }
-            if (key == KeyCode.LeftArrow)
-            {
-                SelectPreviousColumn();
-                return true;
-            }
-
-            // +/- for single-step value adjustment
-            if (key == KeyCode.Plus || key == KeyCode.KeypadPlus || key == KeyCode.Equals)
-            {
-                AdjustValue(1);
-                return true;
-            }
-            if (key == KeyCode.Minus || key == KeyCode.KeypadMinus)
-            {
-                AdjustValue(-1);
-                return true;
-            }
-
-            // Space: toggle boolean columns
-            if (key == KeyCode.Space)
-            {
-                var column = (Column)currentColumnIndex;
-                if (column == Column.AllowPregnant || column == Column.AllowBonded)
-                {
-                    ToggleBoolean();
-                    return true;
-                }
-            }
-
-            // Tab/Shift+Tab: close auto-slaughter, return to animals menu
-            if (key == KeyCode.Tab)
-            {
-                string slaughterSummary = BuildSlaughterSummary();
-                var dialog = currentDialog;
-
-                // Clear state BEFORE removing dialog to prevent PostClose from calling Close() again
-                IsActive = false;
-                currentDialog = null;
-                configs.Clear();
-                cachedCounts.Clear();
-                typeahead.ClearSearch();
-                isNumericInputMode = false;
-                numericBuffer = "";
-
-                if (dialog != null)
-                    Find.WindowStack.TryRemove(dialog, doCloseSound: false);
-
-                // Announce slaughter summary if any, otherwise just the menu name
-                if (!string.IsNullOrEmpty(slaughterSummary))
-                    TolkHelper.SpeakData(slaughterSummary);
-                else
-                    TolkHelper.Speak("RimWorldAccess.Animals.Menu.ReturnTitle".Loc());
-
-                return true;
-            }
-
-            // Typeahead: letter keys only
-            bool isLetter = key >= KeyCode.A && key <= KeyCode.Z;
-            if (isLetter && !KeyboardHelper.IsAltHeld)
-            {
-                return true;
-            }
-
-            return false;
+            if (hasSlaughter)
+                TolkHelper.Speak("RimWorldAccess.Animals.Menu.ClosedWithSummary".Loc(slaughterSummary));
         }
 
         #endregion

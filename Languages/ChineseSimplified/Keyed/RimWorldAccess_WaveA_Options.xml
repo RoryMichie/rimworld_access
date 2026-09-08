@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Wave A, package A3 (OptionsScope, src/Shell/Screens/OptionsScope.Game.cs).
+    Every other announcement in the real Dialog_Options rail/pane reuses
+    existing vanilla or RimWorldAccess.Core.Settings./UI.Options. keys; this
+    is the one genuinely new string the package needs.
+  -->
+
+  <RimWorldAccess.Options.RawRowAction>{0}: {1}</RimWorldAccess.Options.RawRowAction>
+</LanguageData>

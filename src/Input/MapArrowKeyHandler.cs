@@ -6,26 +6,16 @@ using RimWorld;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Handles arrow key input for local colony map navigation in OnGUI context.
-    /// This enables OS key repeat support, unlike the Update() context which only fires once.
-    /// Called from UnifiedKeyboardPatch at Priority 10.5.
+    /// Arrow key handling for local colony map navigation, driven from AmbientScopes'
+    /// ambient arrow claims. Runs in OnGUI so OS key repeat works, unlike Update().
     /// </summary>
     public static class MapArrowKeyHandler
     {
-        /// <summary>
-        /// Handles an arrow key press for map navigation.
-        /// Returns true if the key was handled and should be consumed.
-        /// </summary>
-        /// <param name="key">The arrow key pressed (Up, Down, Left, Right)</param>
-        /// <param name="ctrlHeld">True if Ctrl modifier is held (from Event.current.control)</param>
-        /// <param name="shiftHeld">True if Shift modifier is held (from Event.current.shift)</param>
-        /// <returns>True if the key was handled, false otherwise</returns>
+        /// <summary>Returns true if the key was handled and should be consumed.</summary>
         public static bool HandleArrowKey(KeyCode key, bool ctrlHeld, bool shiftHeld)
         {
-            // Handle Shift+arrow for jump mode adjustments.
-            // Shift+Up/Down cycles jump modes; Shift+Left/Right adjusts preset distance.
-            // These adjustments must NEVER move the cursor or camera — the user is only
-            // configuring the jump, not performing it.
+            // Shift+arrow configures the jump rather than performing it, so these branches
+            // must never move the cursor or camera.
             if (shiftHeld)
             {
                 if (key == KeyCode.UpArrow)
@@ -40,8 +30,6 @@ namespace RimWorldAccess
                 }
                 else if (key == KeyCode.LeftArrow || key == KeyCode.RightArrow)
                 {
-                    // Preset distance adjustment applies only in PresetDistance mode;
-                    // in other modes we still consume the key so the cursor stays put.
                     if (MapNavigationState.CurrentJumpMode == JumpMode.PresetDistance)
                     {
                         int step = ctrlHeld ? 10 : 1;
@@ -50,30 +38,34 @@ namespace RimWorldAccess
                         else
                             MapNavigationState.IncreasePresetDistance(step);
                     }
+                    else
+                    {
+                        // A scanning mode has no distance to adjust, so re-state it, not silence.
+                        MapNavigationState.AnnounceJumpMode();
+                    }
                     return true;
                 }
             }
 
-            // Determine movement direction
             IntVec3 moveOffset = IntVec3.Zero;
             bool keyPressed = false;
 
             switch (key)
             {
                 case KeyCode.UpArrow:
-                    moveOffset = IntVec3.North; // North is positive Z
+                    moveOffset = IntVec3.North;
                     keyPressed = true;
                     break;
                 case KeyCode.DownArrow:
-                    moveOffset = IntVec3.South; // South is negative Z
+                    moveOffset = IntVec3.South;
                     keyPressed = true;
                     break;
                 case KeyCode.LeftArrow:
-                    moveOffset = IntVec3.West; // West is negative X
+                    moveOffset = IntVec3.West;
                     keyPressed = true;
                     break;
                 case KeyCode.RightArrow:
-                    moveOffset = IntVec3.East; // East is positive X
+                    moveOffset = IntVec3.East;
                     keyPressed = true;
                     break;
             }
@@ -81,25 +73,13 @@ namespace RimWorldAccess
             if (!keyPressed)
                 return false;
 
-            // Move the cursor position - either jump or normal movement
             bool isJump = ctrlHeld;
             bool positionChanged;
+            string jumpPrefix = null;
 
             if (isJump)
             {
-                // Use appropriate jump method based on current jump mode
-                switch (MapNavigationState.CurrentJumpMode)
-                {
-                    case JumpMode.PresetDistance:
-                        positionChanged = MapNavigationState.JumpPresetDistance(moveOffset, Find.CurrentMap);
-                        break;
-                    case JumpMode.AdjacentToWall:
-                        positionChanged = MapNavigationState.JumpToAdjacentToWall(moveOffset, Find.CurrentMap);
-                        break;
-                    default:
-                        positionChanged = MapNavigationState.MoveCursor(moveOffset, Find.CurrentMap);
-                        break;
-                }
+                positionChanged = MapNavigationState.Jump(moveOffset, Find.CurrentMap, out jumpPrefix);
             }
             else
             {
@@ -108,7 +88,7 @@ namespace RimWorldAccess
 
             if (positionChanged)
             {
-                HandlePositionChanged(isJump);
+                HandlePositionChanged(jumpPrefix);
             }
             else
             {
@@ -118,131 +98,115 @@ namespace RimWorldAccess
             return true;
         }
 
-        /// <summary>
-        /// Handles post-movement updates when cursor position changed.
-        /// Updates previews, camera, audio, and announcements.
-        /// </summary>
-        private static void HandlePositionChanged(bool isJump)
+        /// <summary>Previews, camera, audio and announcement for a cursor that moved.</summary>
+        private static void HandlePositionChanged(string prefix)
         {
-            // Clear the "pawn just selected" flag since user is now navigating the map
+            // Navigating the map ends the just-selected-a-pawn context.
             GizmoNavigationState.PawnJustSelected = false;
 
-            // Get the new cursor position
             IntVec3 newPosition = MapNavigationState.CurrentCursorPosition;
 
-            // Update rectangle preview if in zone creation mode with a start corner
-            if (ZoneCreationState.IsInCreationMode && ZoneCreationState.HasRectangleStart)
-            {
-                ZoneCreationState.UpdatePreview(newPosition);
-            }
-
-            // Update rectangle preview if in area painting mode with a start corner
-            if (AreaPaintingState.IsActive && AreaPaintingState.HasRectangleStart)
-            {
-                AreaPaintingState.UpdatePreview(newPosition);
-            }
-
-            // Move camera to center on new cursor position
             Find.CameraDriver.JumpToCurrentMapLoc(newPosition);
 
-            // Switch to Cursor mode - camera follows cursor, blocks pawn following
+            // Cursor mode makes the camera follow the cursor and blocks pawn following.
             MapNavigationState.CurrentCameraMode = CameraFollowMode.Cursor;
 
-            // Play audio feedback for the cell (wall sound over walls, else terrain)
             TerrainAudioHelper.PlayCellAudio(newPosition, Find.CurrentMap, 0.5f);
 
-            // Announce the position with all contextual info
-            AnnouncePosition(newPosition, Find.CurrentMap);
+            // A wall attachment turns itself to face the wall it landed next to, and that is a
+            // change to what gets built, so it is spoken ahead of the cell it happened on.
+            AttachmentFacingPatch.SpeakTurnAtCursor();
+
+            AnnouncePosition(newPosition, Find.CurrentMap, prefix);
         }
 
         /// <summary>
-        /// Announces the tile at the given position with all contextual prefixes.
-        /// Used by both arrow key movement and Go To coordinate input.
-        /// This includes deep ore info, "in area", shape dimensions, etc.
+        /// Speaks the tile at a position with every contextual prefix (deep ore, "in area",
+        /// shape dimensions). Shared by arrow movement and Go To coordinate input.
         /// </summary>
         public static void AnnouncePosition(IntVec3 position, Map map, string prefix = null)
         {
-            // Update shape preview if in shape placement mode
-            if (ShapePlacementState.ShouldUpdatePreviewOnMove())
-            {
-                ShapePlacementState.UpdatePreview(position);
-            }
-
-            // Get base tile info
-            string tileInfo = TileInfoHelper.GetTileSummary(position, map);
-
-            // Add context prefixes based on current mode
-            tileInfo = AddContextPrefix(tileInfo, position);
-
-            // Optional lead-in (e.g. a scanner "Jumped N tiles dir to center" cue), so the move
-            // delta and the tile description are spoken together. A prefixed announcement always
-            // speaks — it is a deliberate jump, not incidental movement — and the spam-dedup
-            // still tracks the plain tile info so subsequent arrow steps dedup normally.
-            string toSpeak = string.IsNullOrEmpty(prefix)
-                ? tileInfo
-                : (string.IsNullOrEmpty(tileInfo) ? prefix : $"{prefix}. {tileInfo}");
+            string tileInfo;
+            string toSpeak = ComposePositionAnnouncement(position, map, prefix, allowStateWrites: true, tileInfo: out tileInfo);
 
             if (!string.IsNullOrEmpty(prefix) || toSpeak != MapNavigationState.LastAnnouncedInfo)
             {
-                TolkHelper.SpeakData(toSpeak);
+                // Placement help is harvested from vanilla's draw pass, which runs after this
+                // key, so a pending pass takes over the tile description and speaks it after the
+                // help — the help is the part a placing player is listening for.
+                if (!PlacementHelpSpeech.TryHoldTileAnnouncement(toSpeak))
+                {
+                    TolkHelper.SpeakData(toSpeak);
+                }
                 MapNavigationState.LastAnnouncedInfo = tileInfo;
             }
         }
 
         /// <summary>
-        /// Handles when cursor is at map boundary and cannot move further.
+        /// Builds the utterance for a cell without speaking it. With
+        /// <paramref name="allowStateWrites"/> false the build is side-effect free, so a
+        /// read-only reader (the mouse hover cursor) can describe a cell the keyboard cursor
+        /// is not standing on without disturbing placement previews or dedup state.
         /// </summary>
+        internal static string ComposePositionAnnouncement(IntVec3 position, Map map, string prefix, bool allowStateWrites)
+        {
+            string tileInfo;
+            return ComposePositionAnnouncement(position, map, prefix, allowStateWrites, out tileInfo);
+        }
+
+        /// <param name="tileInfo">The description without the lead-in, which is what the
+        /// spam-dedup tracks.</param>
+        private static string ComposePositionAnnouncement(IntVec3 position, Map map, string prefix, bool allowStateWrites, out string tileInfo)
+        {
+            // A shape that grew leads the utterance with its new extent, so the size and the
+            // cell the shape now ends on arrive together rather than as two racing utterances.
+            string shapeExtent = null;
+            if (allowStateWrites && ShapePlacementState.ShouldUpdatePreviewOnMove())
+            {
+                shapeExtent = ShapePlacementState.UpdatePreview(position);
+            }
+
+            tileInfo = TileInfoHelper.GetTileSummary(position, map);
+
+            tileInfo = AddContextPrefix(tileInfo, position, allowStateWrites);
+
+            if (!string.IsNullOrEmpty(shapeExtent))
+            {
+                prefix = string.IsNullOrEmpty(prefix) ? shapeExtent : $"{prefix}. {shapeExtent}";
+            }
+
+            // A prefixed announcement always speaks: it marks a deliberate jump, not incidental
+            // movement. The dedup still tracks the plain tile info so arrow steps dedup normally.
+            return string.IsNullOrEmpty(prefix)
+                ? tileInfo
+                : (string.IsNullOrEmpty(tileInfo) ? prefix : $"{prefix}. {tileInfo}");
+        }
+
+        /// <summary>Announces that the cursor cannot move further.</summary>
         private static void HandleBoundaryReached(bool isJump)
         {
-            // Skip for AdjacentToWall jump mode as it handles its own announcements
-            if (isJump && MapNavigationState.CurrentJumpMode == JumpMode.AdjacentToWall)
+            // Every jump mode names its own reason for staying put.
+            if (isJump)
                 return;
 
             TolkHelper.Speak("RimWorldAccess.Input.Map.Boundary".Loc());
         }
 
-        /// <summary>
-        /// Adds appropriate context prefix to tile info based on current mode.
-        /// </summary>
-        private static string AddContextPrefix(string tileInfo, IntVec3 position)
+        /// <summary>Prefixes tile info with whatever the active mode adds to a cell.</summary>
+        private static string AddContextPrefix(string tileInfo, IntVec3 position, bool allowStateWrites)
         {
-            // Jump targeting mode - announce per-tile jump validity
             if (JumpTargetingState.IsActive)
             {
                 return JumpTargetingState.GetJumpValidityPrefix(position) + tileInfo;
             }
 
-            // Seed planting mode - announce per-tile plantability (Gauranlen seeds, etc.)
             if (PlantTargetingState.IsActive)
             {
                 return PlantTargetingState.GetPlantValidityPrefix(position) + tileInfo;
             }
 
-            // Zone creation mode - single tile selection
-            if (ZoneCreationState.IsInCreationMode &&
-                ZoneCreationState.SelectionMode == ZoneSelectionMode.SingleTile &&
-                ZoneCreationState.IsCellSelected(position))
-            {
-                return "RimWorldAccess.Input.Map.PrefixSelected".Translate(tileInfo);
-            }
-
-            // Area painting mode - preview or staged cells
-            if (AreaPaintingState.IsActive)
-            {
-                if (AreaPaintingState.IsInPreviewMode && AreaPaintingState.PreviewCells.Contains(position))
-                {
-                    return "RimWorldAccess.Input.Map.PrefixPreview".Translate(tileInfo);
-                }
-                else if (AreaPaintingState.StagedCells.Contains(position))
-                {
-                    return "RimWorldAccess.Input.Map.PrefixSelected".Translate(tileInfo);
-                }
-            }
-
-            // Architect placement mode - shape preview or selected cells
             if (ArchitectState.IsInPlacementMode)
             {
-                // Check for deep ore info when placing a deep drill
                 if (TileInfoHelper.ShouldShowDeepOreForCurrentDesignator())
                 {
                     string deepOreInfo = TileInfoHelper.GetDeepOreInfo(position, Find.CurrentMap);
@@ -254,9 +218,8 @@ namespace RimWorldAccess
 
                 if (ShapePlacementState.IsActive && ShapePlacementState.PreviewCells.Contains(position))
                 {
-                    // Only label endpoints, not intermediate tiles
-                    // For second point, only announce if it's been confirmed (Previewing phase),
-                    // not while still being selected (SettingSecondCorner phase)
+                    // Only endpoints are labelled, and the second one only once confirmed
+                    // (Previewing), not while it is still being dragged (SettingSecondCorner).
                     if (ShapePlacementState.FirstPoint.HasValue && position == ShapePlacementState.FirstPoint.Value)
                     {
                         return "RimWorldAccess.Input.Map.PrefixFirstPoint".Translate(tileInfo);
@@ -266,7 +229,6 @@ namespace RimWorldAccess
                     {
                         return "RimWorldAccess.Input.Map.PrefixSecondPoint".Translate(tileInfo);
                     }
-                    // No prefix for intermediate tiles in preview
                 }
                 else if (ArchitectState.SelectedCells.Contains(position))
                 {
@@ -274,15 +236,13 @@ namespace RimWorldAccess
                 }
             }
 
-            // Shelf linking mode - selected storage
             if (ShelfLinkingState.IsActive && ShelfLinkingState.IsStorageSelectedAt(position))
             {
                 return "RimWorldAccess.Input.Map.PrefixSelected".Translate(tileInfo);
             }
 
-            // Area designator - show area membership when navigating
-            // This helps users understand which cells are already in the area during expand/shrink
-            // Works for both Allowed Areas and Built-in Areas (Snow/Sand, Roof, Home)
+            // Area membership tells the player which cells are already in the area while
+            // expanding or shrinking it, for both allowed and built-in areas.
             if (ShapePlacementState.IsActive)
             {
                 Designator activeDesignator = ShapePlacementState.ActiveDesignator;
@@ -292,12 +252,10 @@ namespace RimWorldAccess
 
                     if (ShapeHelper.IsAreaDesignator(activeDesignator))
                     {
-                        // Allowed areas - get from static selectedArea
                         targetArea = Designator_AreaAllowed.selectedArea;
                     }
                     else if (ShapeHelper.IsBuiltInAreaDesignator(activeDesignator))
                     {
-                        // Built-in areas - get from map's AreaManager
                         targetArea = ShapeHelper.GetBuiltInAreaForDesignator(activeDesignator, Find.CurrentMap);
                     }
 
@@ -318,8 +276,12 @@ namespace RimWorldAccess
                 }
             }
 
-            // Substructure overlay - check engine's overlay toggle and announce disconnected tiles
-            SubstructureOverlayState.CheckOverlayState();
+            // The refresh only builds or drops the scanner's temporary category; the prefix
+            // below reads the engine directly, so a read-only caller keeps it without refreshing.
+            if (allowStateWrites)
+            {
+                SubstructureOverlayState.CheckOverlayState();
+            }
             if (SubstructureOverlayState.IsOverlayActive(Find.CurrentMap))
             {
                 if (SubstructureOverlayState.IsDisconnectedAt(position, Find.CurrentMap))

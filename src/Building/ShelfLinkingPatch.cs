@@ -50,6 +50,13 @@ namespace RimWorldAccess
             // Filter original gizmos: hide game's storage linking gizmos and capture tooltip
             string gameLinkTooltip = "";
 
+            // Vanilla builds "Link settings" and "Select all linked" as plain Command_Action
+            // instances with no dedicated subclass (StorageGroupUtility.StorageGroupMemberGizmos),
+            // so there's no type to check against. Compare labels against the same translation
+            // keys vanilla used, computed once, to stay correct in every language.
+            string linkSettingsLabel = "LinkStorageSettings".Translate();
+            string selectAllLinkedLabel = "SelectAllLinked".Translate();
+
             foreach (var gizmo in result)
             {
                 // Hide "Select <itemname>" gizmos - not useful for screen reader users
@@ -58,11 +65,10 @@ namespace RimWorldAccess
 
                 if (gizmo is Command cmd)
                 {
-                    string label = cmd.Label?.ToLower() ?? cmd.defaultLabel?.ToLower() ?? "";
+                    string label = cmd.Label ?? cmd.defaultLabel ?? "";
 
                     // Hide "Link settings" - we replace it with accessible alternatives
-                    // Note: Label is "Link settings" NOT "Link storage settings"
-                    if (label == "link settings")
+                    if (label == linkSettingsLabel)
                     {
                         // Capture description for our gizmos, strip any color tags
                         gameLinkTooltip = (cmd.Desc ?? cmd.defaultDesc ?? "").StripTags();
@@ -70,7 +76,7 @@ namespace RimWorldAccess
                     }
 
                     // Hide "Select all linked" - doesn't do anything the mod supports (mouse-based multi-select)
-                    if (label.Contains("select all linked"))
+                    if (label == selectAllLinkedLabel)
                         continue;
 
                     // Keep "Unlink storage settings" visible - it's useful for unlinking shelves!

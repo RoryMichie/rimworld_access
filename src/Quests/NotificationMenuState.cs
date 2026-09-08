@@ -5,50 +5,43 @@ using System.Reflection;
 using Verse;
 using RimWorld;
 using RimWorld.Planet;
-using UnityEngine;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages the windowless notification menu state for viewing messages, letters, and alerts.
-    /// Two-level navigation: Press L to open, Up/Down to navigate list (title only),
-    /// Enter to open detail view, then Up/Down through header, content lines, and buttons.
-    /// Left/Right navigates between buttons when in buttons section. Enter activates button.
+    /// The notification (messages/letters/alerts) data model and domain actions. Navigation,
+    /// typeahead, detail-view position and every announcement live on
+    /// <see cref="RimWorldAccess.Shell.NotificationScope"/>; this class owns the collection, the
+    /// letter/alert button extraction, and the public surface external callers depend on
+    /// (<see cref="IsActive"/>, <see cref="Open"/>, <see cref="Close"/>). Reflection into vanilla's
+    /// private members resolves through the shared <see cref="VanillaAccess"/> cache.
     /// </summary>
     public static class NotificationMenuState
     {
         private static bool isActive = false;
         private static List<NotificationItem> notifications = null;
-        private static int currentIndex = 0;
-        private static TwoLevelMenuHelper detailHelper = null;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
+        private static int openGeneration = 0;
 
-        /// <summary>
-        /// Gets whether the notification menu is currently active.
-        /// </summary>
         public static bool IsActive => isActive;
 
+        /// <summary>The live letter/message/alert model; <see cref="RimWorldAccess.Shell.NotificationScope"/> owns the cursor into it.</summary>
+        internal static List<NotificationItem> Notifications => notifications;
+
         /// <summary>
-        /// Gets whether we are in detail view (viewing a specific letter's content).
+        /// Bumped once per genuine <see cref="Open"/> call, never by <see cref="Refresh"/>, so
+        /// <see cref="RimWorldAccess.Shell.NotificationScope.OnPush"/> can tell a fresh open apart
+        /// from a pop/re-push caused by an info card opened over an active session.
         /// </summary>
-        public static bool IsInDetailView => detailHelper?.IsInDetailView ?? false;
+        internal static int OpenGeneration => openGeneration;
 
         /// <summary>
-        /// Gets whether we are currently in the buttons section of detail view.
-        /// </summary>
-        public static bool IsInButtonsSection => detailHelper?.IsInButtonsSection ?? false;
-
-        public static TypeaheadSearchHelper Typeahead => typeahead;
-        public static int CurrentIndex => currentIndex;
-
-        /// <summary>
-        /// Opens the notification menu and collects all messages, letters, and alerts.
+        /// Collects all messages, letters and alerts, refusing (with an announcement) when there are
+        /// none. Cursor reset and the opening announcement belong to the scope's <c>OnFocus</c>.
         /// </summary>
         public static void Open()
         {
             if (!GuardHelper.RequireMap()) return;
 
-            // Collect all notifications
             notifications = CollectNotifications();
 
             if (notifications.Count == 0)
@@ -58,264 +51,38 @@ namespace RimWorldAccess
             }
 
             isActive = true;
-            currentIndex = 0;
-            typeahead.ClearSearch();
-
-            // Initialize the detail helper
-            detailHelper = new TwoLevelMenuHelper(
-                getContentLineCount: () => notifications != null && currentIndex >= 0 && currentIndex < notifications.Count
-                    ? notifications[currentIndex].ExplanationLines.Length
-                    : 0,
-                populateButtons: PopulateButtonsForCurrentItem,
-                getHeaderAnnouncement: () => notifications != null && currentIndex >= 0 && currentIndex < notifications.Count
-                    ? "RimWorldAccess.Notifications.List.HeaderInDetail".Translate(
-                        GetTypeLabel(notifications[currentIndex].Type),
-                        notifications[currentIndex].Label).ToString()
-                    : "",
-                getContentLineAnnouncement: (idx) => {
-                    if (notifications == null || currentIndex < 0 || currentIndex >= notifications.Count)
-                        return "";
-                    var lines = notifications[currentIndex].ExplanationLines;
-                    return idx >= 0 && idx < lines.Length ? lines[idx] : "";
-                },
-                endOfItemMessage: "RimWorldAccess.Notifications.Detail.EndOfLetter".Translate(),
-                startOfItemMessage: "RimWorldAccess.Notifications.Detail.StartOfLetter".Translate()
-            );
-            detailHelper.RefreshButtons();
-
-            // Announce the first notification (list view - title only)
-            AnnounceCurrentSelection();
+            openGeneration++;
         }
 
         /// <summary>
-        /// Closes the notification menu.
+        /// Closes silently: callers speak their OWN message afterward (a jump, a button action that
+        /// emptied the list), so this must never announce on its own.
         /// </summary>
         public static void Close()
         {
             isActive = false;
             notifications = null;
-            currentIndex = 0;
-            typeahead.ClearSearch();
-            detailHelper?.Reset();
         }
 
-        /// <summary>
-        /// Moves selection to the next item. In list view, moves to next notification.
-        /// In detail view, moves down through header, content lines, then buttons.
-        /// </summary>
-        public static void SelectNext()
+        /// <summary>Re-collects the live model after a mutation (delete, button action).</summary>
+        internal static void Refresh()
         {
-            if (notifications == null || notifications.Count == 0)
-                return;
-
-            if (detailHelper.IsInDetailView)
-            {
-                // In detail view, navigate down through header, lines, buttons
-                detailHelper.SelectNextDetailPosition();
-            }
-            else
-            {
-                // In list view, navigate to next notification
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                    currentIndex = typeahead.GetNextMatch(currentIndex);
-                else
-                    currentIndex = MenuHelper.SelectNext(currentIndex, notifications.Count);
-                detailHelper.ResetDetailPosition();
-                detailHelper.RefreshButtons();
-                AnnounceCurrentSelection();
-            }
+            notifications = CollectNotifications();
         }
 
-        /// <summary>
-        /// Moves selection to the previous item. In list view, moves to previous notification.
-        /// In detail view, moves up through buttons, content lines, then header.
-        /// </summary>
-        public static void SelectPrevious()
-        {
-            if (notifications == null || notifications.Count == 0)
-                return;
-
-            if (detailHelper.IsInDetailView)
-            {
-                // In detail view, navigate up through buttons, lines, header
-                detailHelper.SelectPreviousDetailPosition();
-            }
-            else
-            {
-                // In list view, navigate to previous notification
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                    currentIndex = typeahead.GetPreviousMatch(currentIndex);
-                else
-                    currentIndex = MenuHelper.SelectPrevious(currentIndex, notifications.Count);
-                detailHelper.ResetDetailPosition();
-                detailHelper.RefreshButtons();
-                AnnounceCurrentSelection();
-            }
-        }
-
-        /// <summary>
-        /// Navigates to the next button (Right arrow). Only works in buttons section of detail view.
-        /// </summary>
-        public static void SelectNextButton()
-        {
-            detailHelper.SelectNextButton();
-        }
-
-        /// <summary>
-        /// Navigates to the previous button (Left arrow). Only works in buttons section of detail view.
-        /// </summary>
-        public static void SelectPreviousButton()
-        {
-            detailHelper.SelectPreviousButton();
-        }
-
-        /// <summary>
-        /// Activates the currently selected button (Enter key). Only works in buttons section of detail view.
-        /// </summary>
-        public static void ActivateCurrentButton()
-        {
-            if (!detailHelper.ActivateCurrentButton())
-                return;
-
-            ButtonInfo button = detailHelper.GetCurrentButton();
-            if (button == null) return;
-
-            string buttonLabel = button.Label;
-
-            // Execute the button action
-            try
-            {
-                button.Action?.Invoke();
-
-                // CRITICAL: Check if the action closed our state (e.g., opened another dialog
-                // like Dialog_NamePawn which closes NotificationMenuState in its Open())
-                if (!isActive)
-                {
-                    // State was closed by the action - don't do any post-action processing
-                    return;
-                }
-
-                // After executing action, refresh notifications (button may have removed the letter)
-                notifications = CollectNotifications();
-
-                if (notifications.Count == 0)
-                {
-                    Close();
-                    TolkHelper.Speak("RimWorldAccess.Notifications.Action.ActivatedNoneRemaining".Loc(buttonLabel));
-                    return;
-                }
-
-                // Adjust current index if needed
-                if (currentIndex >= notifications.Count)
-                {
-                    currentIndex = notifications.Count - 1;
-                }
-
-                // Check if the action was a jump (common case)
-                if (buttonLabel.ToLower().Contains("jump") || buttonLabel.ToLower().Contains("location"))
-                {
-                    // For jump actions, close the menu after jumping
-                    Close();
-                    MapNavigationState.SpeakJumpedTo("RimWorldAccess.Notifications.Target.LocationFallback".Translate());
-                }
-                else
-                {
-                    // For other actions, go back to list view and announce
-                    detailHelper.GoBackToList();
-                    detailHelper.RefreshButtons();
-                    TolkHelper.Speak("RimWorldAccess.Notifications.Action.ActivatedBackToList".Loc(buttonLabel));
-                    AnnounceCurrentSelection();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"RimWorld Access: Failed to activate button: {ex.Message}");
-                TolkHelper.Speak("RimWorldAccess.Notifications.Menu.FailedToActivateButton".Loc());
-            }
-        }
-
-        /// <summary>
-        /// Closes the notification menu (Escape key).
-        /// </summary>
-        public static void CloseMenu()
-        {
-            Close();
-            TolkHelper.Speak("RimWorldAccess.Notifications.Menu.Closed".Loc());
-        }
-
-        /// <summary>
-        /// Enters detail view for the current notification.
-        /// Shows full letter content starting with the header.
-        /// </summary>
-        public static void EnterDetailView()
-        {
-            if (notifications == null || notifications.Count == 0)
-                return;
-
-            if (currentIndex < 0 || currentIndex >= notifications.Count)
-                return;
-
-            typeahead.ClearSearch();
-            detailHelper.RefreshButtons();
-            detailHelper.EnterDetailView();
-            detailHelper.AnnounceDetailPosition();
-        }
-
-        /// <summary>
-        /// Goes back from detail view to list view.
-        /// </summary>
-        public static void GoBackToList()
-        {
-            if (!detailHelper.IsInDetailView)
-            {
-                // Already in list view, close the menu
-                CloseMenu();
-                return;
-            }
-
-            detailHelper.GoBackToList();
-            typeahead.ClearSearch();
-
-            // Announce current notification in list format
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Handles Escape key: goes back from detail view, or closes menu from list view.
-        /// </summary>
-        public static void HandleEscape()
-        {
-            if (detailHelper.IsInDetailView)
-            {
-                GoBackToList();
-                TwoLevelMenuHelper.SpeakReturnToList();
-            }
-            else
-            {
-                CloseMenu();
-            }
-        }
-
-        /// <summary>
-        /// Gets the human-readable type label for a notification type.
-        /// </summary>
-        private static string GetTypeLabel(NotificationType type)
+        /// <summary>The human-readable label for a notification type.</summary>
+        internal static string GetTypeLabel(NotificationType type)
         {
             return (type == NotificationType.Message ? "RimWorldAccess.Notifications.Type.Message" :
                     type == NotificationType.Letter ? "RimWorldAccess.Notifications.Type.Letter" :
                     "RimWorldAccess.Notifications.Type.Alert").Translate();
         }
 
-        /// <summary>
-        /// Populates buttons for the current notification item.
-        /// Called by TwoLevelMenuHelper.RefreshButtons().
-        /// </summary>
-        private static void PopulateButtonsForCurrentItem(List<ButtonInfo> buttons)
+        /// <summary>Populates the detail-view buttons for one item, for the scope's TwoLevelMenuHelper.</summary>
+        internal static void PopulateButtons(NotificationItem item, List<ButtonInfo> buttons)
         {
-            if (notifications == null || notifications.Count == 0) return;
-            if (currentIndex < 0 || currentIndex >= notifications.Count) return;
-
-            NotificationItem item = notifications[currentIndex];
+            if (item == null)
+                return;
 
             switch (item.Type)
             {
@@ -325,95 +92,26 @@ namespace RimWorldAccess
                 case NotificationType.Alert:
                     ExtractAlertButtons(item, buttons);
                     break;
-                // Messages don't have buttons
+                // Messages don't have buttons.
             }
         }
 
-        /// <summary>
-        /// Deletes the currently selected letter. Only letters can be deleted.
-        /// </summary>
-        public static void DeleteSelected()
-        {
-            if (!isActive || notifications == null || notifications.Count == 0)
-                return;
-
-            if (currentIndex < 0 || currentIndex >= notifications.Count)
-                return;
-
-            NotificationItem item = notifications[currentIndex];
-
-            // Only letters can be deleted
-            if (item.Type != NotificationType.Letter)
-            {
-                TolkHelper.Speak("RimWorldAccess.Notifications.Menu.OnlyLettersDeletable".Loc(), SpeechPriority.High);
-                return;
-            }
-
-            // Get the letter from sourceObject
-            Letter letter = item.GetSourceLetter();
-            if (letter == null)
-            {
-                TolkHelper.Speak("RimWorldAccess.Notifications.Menu.CannotDeleteLetter".Loc(), SpeechPriority.High);
-                return;
-            }
-
-            string deletedLabel = item.Label;
-
-            // Delete immediately
-            Find.LetterStack.RemoveLetter(letter);
-
-            // Refresh the list
-            notifications = CollectNotifications();
-
-            // Adjust current index if needed
-            if (notifications.Count == 0)
-            {
-                Close();
-                TolkHelper.Speak("RimWorldAccess.Notifications.Action.DeletedNoneRemaining".Loc(deletedLabel));
-                return;
-            }
-
-            if (currentIndex >= notifications.Count)
-            {
-                currentIndex = notifications.Count - 1;
-            }
-
-            // Reset to list view and refresh buttons for new current notification
-            detailHelper.GoBackToList();
-            detailHelper.ResetDetailPosition();
-            detailHelper.RefreshButtons();
-
-            // Announce deletion and new current item in single announcement
-            NotificationItem newItem = notifications[currentIndex];
-            string typeLabel = GetTypeLabel(newItem.Type);
-            string position = MenuHelper.FormatPosition(currentIndex, notifications.Count);
-            TolkHelper.Speak("RimWorldAccess.Notifications.Action.DeletedNextItem".Loc(
-                deletedLabel, typeLabel, newItem.Label, position));
-        }
-
-        /// <summary>
-        /// Collects all notifications from messages, letters, and alerts.
-        /// </summary>
+        /// <summary>All live messages, letters and alerts, newest first.</summary>
         private static List<NotificationItem> CollectNotifications()
         {
             List<NotificationItem> items = new List<NotificationItem>();
 
-            // Collect live messages
             try
             {
-                FieldInfo messagesField = typeof(Messages).GetField("liveMessages",
-                    BindingFlags.NonPublic | BindingFlags.Static);
-                if (messagesField != null)
+                FieldInfo messagesField = VanillaAccess.GetField(typeof(Messages), "liveMessages");
+                List<Message> liveMessages = messagesField?.GetValue(null) as List<Message>;
+                if (liveMessages != null)
                 {
-                    List<Message> liveMessages = messagesField.GetValue(null) as List<Message>;
-                    if (liveMessages != null)
+                    foreach (Message msg in liveMessages)
                     {
-                        foreach (Message msg in liveMessages)
+                        if (!msg.Expired)
                         {
-                            if (!msg.Expired)
-                            {
-                                items.Add(new NotificationItem(msg));
-                            }
+                            items.Add(new NotificationItem(msg));
                         }
                     }
                 }
@@ -423,7 +121,6 @@ namespace RimWorldAccess
                 Log.Warning($"RimWorld Access: Failed to collect messages: {ex.Message}");
             }
 
-            // Collect letters
             try
             {
                 if (Find.LetterStack != null)
@@ -443,24 +140,19 @@ namespace RimWorldAccess
                 Log.Warning($"RimWorld Access: Failed to collect letters: {ex.Message}");
             }
 
-            // Collect active alerts
             try
             {
                 if (Find.Alerts != null)
                 {
-                    FieldInfo activeAlertsField = typeof(AlertsReadout).GetField("activeAlerts",
-                        BindingFlags.NonPublic | BindingFlags.Instance);
-                    if (activeAlertsField != null)
+                    FieldInfo activeAlertsField = VanillaAccess.GetField(typeof(AlertsReadout), "activeAlerts");
+                    List<Alert> activeAlerts = activeAlertsField?.GetValue(Find.Alerts) as List<Alert>;
+                    if (activeAlerts != null)
                     {
-                        List<Alert> activeAlerts = activeAlertsField.GetValue(Find.Alerts) as List<Alert>;
-                        if (activeAlerts != null)
+                        foreach (Alert alert in activeAlerts)
                         {
-                            foreach (Alert alert in activeAlerts)
+                            if (alert.Active)
                             {
-                                if (alert.Active)
-                                {
-                                    items.Add(new NotificationItem(alert));
-                                }
+                                items.Add(new NotificationItem(alert));
                             }
                         }
                     }
@@ -471,54 +163,19 @@ namespace RimWorldAccess
                 Log.Warning($"RimWorld Access: Failed to collect alerts: {ex.Message}");
             }
 
-            // Sort from newest to oldest (descending by timestamp)
             items.Sort((a, b) => b.Timestamp.CompareTo(a.Timestamp));
 
             return items;
         }
 
-        /// <summary>
-        /// Announces the currently selected notification.
-        /// In list view, announces only type and title.
-        /// In detail view, delegates to AnnounceDetailPosition.
-        /// </summary>
-        private static void AnnounceCurrentSelection()
-        {
-            if (notifications == null || notifications.Count == 0)
-                return;
-
-            if (currentIndex < 0 || currentIndex >= notifications.Count)
-                return;
-
-            if (detailHelper.IsInDetailView)
-            {
-                // In detail view, use the detail position announcement
-                detailHelper.AnnounceDetailPosition();
-                return;
-            }
-
-            // In list view, announce only type and title
-            NotificationItem item = notifications[currentIndex];
-
-            // Build announcement with just type and title
-            string announcement = "RimWorldAccess.Notifications.List.LineWithPosition".Translate(
-                GetTypeLabel(item.Type),
-                item.Label,
-                MenuHelper.FormatPosition(currentIndex, notifications.Count));
-
-            TolkHelper.SpeakData(announcement);
-        }
-
-        /// <summary>
-        /// Extracts buttons from a letter notification.
-        /// </summary>
+        /// <summary>The buttons of a letter notification.</summary>
         private static void ExtractLetterButtons(NotificationItem item, List<ButtonInfo> buttons)
         {
             Letter letter = item.GetSourceLetter();
             if (letter == null)
                 return;
 
-            // Handle growth moment letters (ChoiceLetter_GrowthMoment extends LetterWithTimeout, NOT ChoiceLetter)
+            // ChoiceLetter_GrowthMoment extends LetterWithTimeout, NOT ChoiceLetter.
             if (letter is ChoiceLetter_GrowthMoment growthLetter)
             {
                 string label = (growthLetter.ArchiveView
@@ -536,43 +193,32 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Extract buttons from ChoiceLetter
             if (letter is ChoiceLetter choiceLetter)
             {
                 try
                 {
-                    // Get the Choices property
-                    PropertyInfo choicesProperty = typeof(ChoiceLetter).GetProperty("Choices",
-                        BindingFlags.Public | BindingFlags.Instance);
-
-                    if (choicesProperty != null)
+                    IEnumerable<DiaOption> choices = choiceLetter.Choices;
+                    if (choices != null)
                     {
-                        var choices = choicesProperty.GetValue(choiceLetter) as IEnumerable<DiaOption>;
-                        if (choices != null)
+                        FieldInfo textField = VanillaAccess.GetField(typeof(DiaOption), "text");
+                        foreach (DiaOption option in choices)
                         {
-                            foreach (DiaOption option in choices)
+                            string label = textField?.GetValue(option)?.ToString()
+                                ?? "RimWorldAccess.Notifications.Type.Unknown".Translate();
+
+                            // The Delete key already covers Close.
+                            if (IsCloseAction(label))
+                                continue;
+
+                            ButtonInfo buttonInfo = new ButtonInfo
                             {
-                                // Get the text field (protected)
-                                FieldInfo textField = typeof(DiaOption).GetField("text",
-                                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-                                string label = textField?.GetValue(option)?.ToString()
-                                    ?? "RimWorldAccess.Notifications.Type.Unknown".Translate();
+                                Label = label,
+                                Action = CreateAccessibleAction(option, letter, label),
+                                IsDisabled = option.disabled,
+                                DisabledReason = option.disabledReason
+                            };
 
-                                // Skip "Close" button (already handled by Delete key)
-                                if (label.ToLower().Contains("close") || label == "Close".Translate())
-                                    continue;
-
-                                // Create button info with accessible action wrapper
-                                ButtonInfo buttonInfo = new ButtonInfo
-                                {
-                                    Label = label,
-                                    Action = CreateAccessibleAction(option, letter, label),
-                                    IsDisabled = option.disabled,
-                                    DisabledReason = option.disabledReason
-                                };
-
-                                buttons.Add(buttonInfo);
-                            }
+                            buttons.Add(buttonInfo);
                         }
                     }
                 }
@@ -584,8 +230,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Extracts buttons from an alert notification.
-        /// Alerts can have targets to jump to or custom click actions (like opening research).
+        /// The buttons of an alert notification. Alerts with culprit targets get a "jump to" button
+        /// per target; alerts with none fall back to the alert's own <c>OnClick</c>, which already
+        /// reproduces vanilla's click behavior without a per-alert-type special case.
         /// </summary>
         private static void ExtractAlertButtons(NotificationItem item, List<ButtonInfo> buttons)
         {
@@ -595,94 +242,64 @@ namespace RimWorldAccess
 
             try
             {
-                // Check alert type and create appropriate button
-                string alertTypeName = alert.GetType().Name;
+                AlertReport alertReport = alert.GetReport();
 
-                // Research alerts - open research menu
-                if (alertTypeName.Contains("Research") || alertTypeName.Contains("NeedResearch"))
+                var targets = new List<GlobalTargetInfo>();
+                if (alertReport.culpritsThings != null)
                 {
-                    buttons.Add(new ButtonInfo
-                    {
-                        Label = "RimWorldAccess.Notifications.Button.OpenResearch".Translate(),
-                        Action = () => {
-                            Close();
-                            WindowlessResearchMenuState.Open();
-                        },
-                        IsDisabled = false
-                    });
-                    return;
+                    targets.AddRange(
+                        alertReport.culpritsThings
+                            .Where(thing => thing != null)
+                            .Select(thing => new GlobalTargetInfo(thing)));
+                }
+                if (alertReport.culpritsPawns != null)
+                {
+                    targets.AddRange(
+                        alertReport.culpritsPawns
+                            .Where(pawn => pawn != null)
+                            .Select(pawn => new GlobalTargetInfo(pawn)));
+                }
+                if (alertReport.culpritsTargets != null)
+                {
+                    targets.AddRange(alertReport.culpritsTargets.Where(t => t.IsValid));
+                }
+                if (alertReport.culpritTarget.HasValue && alertReport.culpritTarget.Value.IsValid)
+                {
+                    targets.Add(alertReport.culpritTarget.Value);
                 }
 
-                // Check if alert has targets to jump to
-                var reportMethod = alert.GetType().GetMethod("GetReport",
-                    BindingFlags.Public | BindingFlags.Instance);
-
-                if (reportMethod != null)
+                if (targets.Count == 1)
                 {
-                    var report = reportMethod.Invoke(alert, null);
-                    if (report is AlertReport alertReport)
+                    var target = targets[0];
+                    buttons.Add(new ButtonInfo
                     {
-                        // Collect all valid targets
-                        var targets = new List<GlobalTargetInfo>();
-                        if (alertReport.culpritsThings != null)
+                        Label = "RimWorldAccess.Notifications.Button.JumpTo".Translate(GetTargetDescription(target)),
+                        Action = CreateJumpToTargetAction(target),
+                        IsDisabled = false,
+                        IsJumpAction = true
+                    });
+                }
+                else if (targets.Count > 1)
+                {
+                    int count = Math.Min(targets.Count, 5);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var target = targets[i];
+                        int index = i + 1;
+                        buttons.Add(new ButtonInfo
                         {
-                            targets.AddRange(
-                                alertReport.culpritsThings
-                                    .Where(thing => thing != null)
-                                    .Select(thing => new GlobalTargetInfo(thing)));
-                        }
-                        if (alertReport.culpritsPawns != null)
-                        {
-                            targets.AddRange(
-                                alertReport.culpritsPawns
-                                    .Where(pawn => pawn != null)
-                                    .Select(pawn => new GlobalTargetInfo(pawn)));
-                        }
-                        if (alertReport.culpritsTargets != null)
-                        {
-                            targets.AddRange(alertReport.culpritsTargets.Where(t => t.IsValid));
-                        }
-                        if (alertReport.culpritTarget.HasValue && alertReport.culpritTarget.Value.IsValid)
-                        {
-                            targets.Add(alertReport.culpritTarget.Value);
-                        }
-
-                        // Create a button for each target or a single "Jump to target" button
-                        if (targets.Count == 1)
-                        {
-                            var target = targets[0];
-                            buttons.Add(new ButtonInfo
-                            {
-                                Label = "RimWorldAccess.Notifications.Button.JumpTo".Translate(GetTargetDescription(target)),
-                                Action = CreateJumpToTargetAction(target),
-                                IsDisabled = false
-                            });
-                        }
-                        else if (targets.Count > 1)
-                        {
-                            // Multiple targets - create buttons for each (up to first 5)
-                            int count = Math.Min(targets.Count, 5);
-                            for (int i = 0; i < count; i++)
-                            {
-                                var target = targets[i];
-                                int index = i + 1;
-                                buttons.Add(new ButtonInfo
-                                {
-                                    Label = "RimWorldAccess.Notifications.Button.JumpToWithIndex".Translate(
-                                        GetTargetDescription(target), index, targets.Count),
-                                    Action = CreateJumpToTargetAction(target),
-                                    IsDisabled = false
-                                });
-                            }
-                        }
+                            Label = "RimWorldAccess.Notifications.Button.JumpToWithIndex".Translate(
+                                GetTargetDescription(target), index, targets.Count),
+                            Action = CreateJumpToTargetAction(target),
+                            IsDisabled = false,
+                            IsJumpAction = true
+                        });
                     }
                 }
 
-                // If no buttons were created, try to use the alert's default OnClick
                 if (buttons.Count == 0)
                 {
-                    var onClickMethod = alert.GetType().GetMethod("OnClick",
-                        BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+                    MethodInfo onClickMethod = VanillaAccess.GetMethod(typeof(Alert), "OnClick");
 
                     if (onClickMethod != null)
                     {
@@ -692,6 +309,8 @@ namespace RimWorldAccess
                             Action = () => {
                                 try
                                 {
+                                    // A window OnClick opens is deliberately driven, even non-modal.
+                                    Shell.ScopeForWindow.ArmDeliberateGenericAttach();
                                     onClickMethod.Invoke(alert, null);
                                     TolkHelper.Speak("RimWorldAccess.Notifications.Action.AlertActivated".Loc());
                                 }
@@ -711,18 +330,15 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Creates an action that jumps to a target and updates the cursor.
-        /// </summary>
+        /// <summary>An action that jumps to a target and moves the map or world cursor onto it.</summary>
         private static Action CreateJumpToTargetAction(GlobalTargetInfo target)
         {
             return () => {
                 if (target.IsValid)
                 {
-                    // For world targets, set pending tile BEFORE CameraJumper opens world view.
-                    // This is critical because WorldNavigationState.Open() is called in the next frame
-                    // when WorldNavigationPatch detects the mode change, and it would otherwise
-                    // default to the colony tile. PendingStartTile is checked first in Open().
+                    // The pending tile must be set BEFORE CameraJumper opens the world view:
+                    // WorldNavigationState.Open() runs a frame later, once WorldNavigationPatch sees
+                    // the mode change, and would otherwise default to the colony tile.
                     if (target.HasWorldObject)
                     {
                         PlanetTile tile = target.WorldObject.Tile;
@@ -738,7 +354,7 @@ namespace RimWorldAccess
 
                     CameraJumper.TryJumpAndSelect(target);
 
-                    // Also set current tile in case world view was already open (Open() won't be called)
+                    // The world view may already be open, in which case Open() never runs.
                     if (target.HasWorldObject)
                     {
                         PlanetTile tile = target.WorldObject.Tile;
@@ -753,7 +369,6 @@ namespace RimWorldAccess
                     }
                     else if (MapNavigationState.IsInitialized)
                     {
-                        // Map target - update map cursor
                         if (target.HasThing)
                             MapNavigationState.CurrentCursorPosition = target.Thing.Position;
                         else if (target.Cell.IsValid)
@@ -766,23 +381,18 @@ namespace RimWorldAccess
             };
         }
 
-        /// <summary>
-        /// Creates an accessible action wrapper for a letter button.
-        /// Handles Jump to Location, View Quest, Research hyperlinks, etc.
-        /// </summary>
+        /// <summary>The accessible action for a letter button: jump to location, view quest, research hyperlink, or the option's own action.</summary>
         private static Action CreateAccessibleAction(DiaOption option, Letter letter, string label)
         {
-            // Check for Jump to Location
             if (IsJumpAction(label))
             {
                 return () => {
                     GlobalTargetInfo target = letter.lookTargets?.TryGetPrimaryTarget() ?? GlobalTargetInfo.Invalid;
                     if (target.IsValid)
                     {
-                        // For world targets, set pending tile BEFORE CameraJumper opens world view.
-                        // This is critical because WorldNavigationState.Open() is called in the next frame
-                        // when WorldNavigationPatch detects the mode change, and it would otherwise
-                        // default to the colony tile. PendingStartTile is checked first in Open().
+                        // The pending tile must be set BEFORE CameraJumper opens the world view:
+                        // WorldNavigationState.Open() runs a frame later and would otherwise default
+                        // to the colony tile.
                         if (target.HasWorldObject)
                         {
                             PlanetTile tile = target.WorldObject.Tile;
@@ -796,9 +406,12 @@ namespace RimWorldAccess
                             WorldNavigationState.PendingStartTile = target.Tile;
                         }
 
-                        CameraJumper.TryJumpAndSelect(target);
+                        // Only the option's own action knows whether the jump consumes the letter:
+                        // Option_JumpToLocation removes it, Option_JumpToLocationAndPostpone (offer
+                        // letters) must not, since a removed offer is unrecoverable.
+                        option.action?.Invoke();
 
-                        // Also set current tile in case world view was already open (Open() won't be called)
+                        // The world view may already be open, in which case Open() never runs.
                         if (target.HasWorldObject)
                         {
                             PlanetTile tile = target.WorldObject.Tile;
@@ -813,14 +426,12 @@ namespace RimWorldAccess
                         }
                         else if (MapNavigationState.IsInitialized)
                         {
-                            // Map target - update map cursor
-                            if (target.HasThing)
+                                if (target.HasThing)
                                 MapNavigationState.CurrentCursorPosition = target.Thing.Position;
                             else if (target.Cell.IsValid)
                                 MapNavigationState.CurrentCursorPosition = target.Cell;
                         }
 
-                        Find.LetterStack.RemoveLetter(letter);
                         Close();
                         MapNavigationState.SpeakJumpedTo(GetTargetDescription(target));
                     }
@@ -831,17 +442,20 @@ namespace RimWorldAccess
                 };
             }
 
-            // Check for View in Quests Tab
             if (IsViewQuestAction(label) && letter is ChoiceLetter choiceLetter && choiceLetter.quest != null)
             {
                 Quest quest = choiceLetter.quest;
                 return () => {
                     Close();
+
+                    // Only the option's own action decides whether the letter survives:
+                    // Option_ViewInQuestsTab removes it, its postpone form keeps it.
+                    option.action?.Invoke();
+
                     QuestMenuState.OpenAndSelectQuest(quest);
                 };
             }
 
-            // Check for Research hyperlinks
             if (option.hyperlink.def is ResearchProjectDef researchDef)
             {
                 return () => {
@@ -850,7 +464,7 @@ namespace RimWorldAccess
                 };
             }
 
-            // Check for item/hediff info cards - announce and use vanilla for now
+            // Item/hediff info cards: announce, then let vanilla open the card.
             if (option.hyperlink.def != null)
             {
                 return () => {
@@ -859,43 +473,43 @@ namespace RimWorldAccess
                 };
             }
 
-            // Default: use vanilla action
             return () => {
                 option.action?.Invoke();
             };
         }
 
-        /// <summary>
-        /// Checks if the button label indicates a Jump to Location action.
-        /// </summary>
+        /// <summary>Whether the label is Option_Close's, matched on the exact translated key, never an English substring.</summary>
+        private static bool IsCloseAction(string label)
+        {
+            if (string.IsNullOrEmpty(label))
+                return false;
+
+            return label == "Close".Translate();
+        }
+
+        /// <summary>Whether the label is a jump-to-location option's, matched on the exact translated key, never an English substring.</summary>
         private static bool IsJumpAction(string label)
         {
             if (string.IsNullOrEmpty(label))
                 return false;
 
-            string lowerLabel = label.ToLower();
-            return lowerLabel.Contains("jump") ||
-                   lowerLabel.Contains("location") ||
-                   label == "JumpToLocation".Translate();
+            return label == "JumpToLocation".Translate();
         }
 
         /// <summary>
-        /// Checks if the button label indicates a View Quest action.
+        /// Whether the label is Option_ViewInQuestsTab's. Its label is the "ViewRelatedQuest" or
+        /// "ViewQuest" key, optionally suffixed with ": " + quest name, so this matches on prefix.
         /// </summary>
         private static bool IsViewQuestAction(string label)
         {
             if (string.IsNullOrEmpty(label))
                 return false;
 
-            string lowerLabel = label.ToLower();
-            return lowerLabel.Contains("quest") ||
-                   (lowerLabel.Contains("view") && lowerLabel.Contains("related")) ||
-                   label.Contains("ViewRelatedQuest".Translate());
+            return label.StartsWith("ViewRelatedQuest".Translate()) ||
+                   label.StartsWith("ViewQuest".Translate());
         }
 
-        /// <summary>
-        /// Gets a human-readable description of a target location.
-        /// </summary>
+        /// <summary>A human-readable description of a target location.</summary>
         private static string GetTargetDescription(GlobalTargetInfo target)
         {
             if (!target.IsValid)
@@ -924,239 +538,19 @@ namespace RimWorldAccess
             return "RimWorldAccess.Notifications.Target.Generic".Translate();
         }
 
-        /// <summary>
-        /// Jumps to the target location of the notification and closes the menu.
-        /// </summary>
-        private static void JumpToTarget(NotificationItem item)
-        {
-            if (!item.HasValidTarget)
-            {
-                TolkHelper.Speak("RimWorldAccess.Notifications.Menu.NoTargetLocation".Loc());
-                return;
-            }
-
-            try
-            {
-                GlobalTargetInfo target = item.GetPrimaryTarget();
-
-                if (target.IsValid)
-                {
-                    // Jump camera to target
-                    CameraJumper.TryJumpAndSelect(target);
-
-                    // Update map navigation state if initialized
-                    if (MapNavigationState.IsInitialized && target.HasThing)
-                    {
-                        MapNavigationState.CurrentCursorPosition = target.Thing.Position;
-                    }
-                    else if (MapNavigationState.IsInitialized && target.Cell.IsValid)
-                    {
-                        MapNavigationState.CurrentCursorPosition = target.Cell;
-                    }
-
-                    // Close the menu
-                    Close();
-
-                    // Announce the jump
-                    string locationDesc;
-                    if (target.HasThing)
-                        locationDesc = target.Thing.LabelShort;
-                    else if (target.Cell.IsValid)
-                        locationDesc = "RimWorldAccess.Notifications.Target.Position".Translate(target.Cell.x, target.Cell.z);
-                    else
-                        locationDesc = "RimWorldAccess.Notifications.Target.Generic".Translate();
-                    MapNavigationState.SpeakJumpedTo(locationDesc);
-                }
-                else
-                {
-                    TolkHelper.Speak("RimWorldAccess.Notifications.Menu.TargetNotValid".Loc());
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"RimWorld Access: Failed to jump to target: {ex.Message}");
-                TolkHelper.Speak("RimWorldAccess.Notifications.Menu.FailedToJump".Loc(), SpeechPriority.High);
-            }
-        }
-
-        /// <summary>
-        /// Jumps to the first item in the list. Returns to list view if in detail view.
-        /// </summary>
-        public static void JumpToFirst()
-        {
-            if (notifications == null || notifications.Count == 0)
-                return;
-
-            bool wasInDetailView = detailHelper.IsInDetailView;
-            detailHelper.GoBackToList();
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                currentIndex = typeahead.GetFirstMatch();
-            }
-            else
-            {
-                currentIndex = MenuHelper.JumpToFirst();
-                typeahead.ClearSearch();
-            }
-            detailHelper.ResetDetailPosition();
-            detailHelper.RefreshButtons();
-
-            if (wasInDetailView)
-                TwoLevelMenuHelper.SpeakReturnToList();
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Jumps to the last item in the list. Returns to list view if in detail view.
-        /// </summary>
-        public static void JumpToLast()
-        {
-            if (notifications == null || notifications.Count == 0)
-                return;
-
-            bool wasInDetailView = detailHelper.IsInDetailView;
-            detailHelper.GoBackToList();
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                currentIndex = typeahead.GetLastMatch();
-            }
-            else
-            {
-                currentIndex = MenuHelper.JumpToLast(notifications.Count);
-                typeahead.ClearSearch();
-            }
-            detailHelper.ResetDetailPosition();
-            detailHelper.RefreshButtons();
-
-            if (wasInDetailView)
-                TwoLevelMenuHelper.SpeakReturnToList();
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Jumps to the start of detail view (header position).
-        /// </summary>
-        public static void JumpToDetailStart()
-        {
-            detailHelper?.JumpToDetailStart();
-        }
-
-        /// <summary>
-        /// Jumps to the end of detail view (buttons section).
-        /// </summary>
-        public static void JumpToDetailEnd()
-        {
-            detailHelper?.JumpToDetailEnd();
-        }
-
-        /// <summary>
-        /// Gets a list of labels for all notifications for typeahead search.
-        /// </summary>
-        public static List<string> GetItemLabels()
-        {
-            List<string> labels = new List<string>();
-            if (notifications != null)
-            {
-                foreach (var item in notifications)
-                {
-                    labels.Add(item.Label);
-                }
-            }
-            return labels;
-        }
-
-        /// <summary>
-        /// Sets the current index directly.
-        /// </summary>
-        public static void SetCurrentIndex(int index)
-        {
-            if (notifications != null && index >= 0 && index < notifications.Count)
-            {
-                currentIndex = index;
-            }
-        }
-
-        /// <summary>
-        /// Announces the current selection with search context if active.
-        /// </summary>
-        public static void AnnounceWithSearch()
-        {
-            if (notifications == null || notifications.Count == 0)
-                return;
-
-            if (currentIndex < 0 || currentIndex >= notifications.Count)
-                return;
-
-            NotificationItem item = notifications[currentIndex];
-
-            string announcement = "RimWorldAccess.Notifications.List.LineWithPosition".Translate(
-                GetTypeLabel(item.Type),
-                item.Label,
-                MenuHelper.FormatPosition(currentIndex, notifications.Count));
-
-            // Add search context if active
-            if (typeahead.HasActiveSearch)
-            {
-                announcement += typeahead.BuildSearchContextSuffix();
-            }
-
-            TolkHelper.SpeakData(announcement);
-        }
-
-        /// <summary>
-        /// Handles backspace for typeahead search.
-        /// </summary>
-        public static void HandleBackspace()
-        {
-            if (!typeahead.HasActiveSearch)
-                return;
-
-            var labels = GetItemLabels();
-            if (typeahead.ProcessBackspace(labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                    currentIndex = newIndex;
-                AnnounceWithSearch();
-            }
-        }
-
-        /// <summary>
-        /// Handles character input for typeahead search.
-        /// </summary>
-        public static void HandleTypeahead(char c)
-        {
-            var labels = GetItemLabels();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    currentIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
-        }
-
-        /// <summary>
-        /// Represents a notification item (message, letter, or alert).
-        /// </summary>
-        private class NotificationItem
+        /// <summary>One message, letter or alert. Internal because <see cref="RimWorldAccess.Shell.NotificationScope"/> reads it.</summary>
+        internal class NotificationItem
         {
             public NotificationType Type { get; private set; }
             public string Label { get; private set; }
             public string Explanation { get; private set; }
             public bool HasValidTarget { get; private set; }
-            public int Timestamp { get; private set; } // Game tick or arrival tick for sorting
-            public string[] ExplanationLines { get; private set; } // Non-blank lines for scrolling
+            public int Timestamp { get; private set; } // Game tick or arrival tick, for sorting.
+            public string[] ExplanationLines { get; private set; }
 
-            private object sourceObject; // Stores the original Message, Letter, or Alert
+            private object sourceObject;
 
-            /// <summary>
-            /// Processes the explanation text to remove blank lines, strip color tags, and prepare for scrolling.
-            /// </summary>
+            /// <summary>Fills <see cref="ExplanationLines"/> with the tag-stripped, non-blank lines of the explanation.</summary>
             private void ProcessExplanation()
             {
                 if (string.IsNullOrEmpty(Explanation))
@@ -1165,10 +559,8 @@ namespace RimWorldAccess
                     return;
                 }
 
-                // Strip XML/color tags from the explanation text
                 string cleanedExplanation = StripTags(Explanation);
 
-                // Split by newlines and filter out blank/whitespace-only lines
                 string[] allLines = cleanedExplanation.Split('\n');
                 List<string> nonBlankLines = new List<string>();
 
@@ -1184,17 +576,12 @@ namespace RimWorldAccess
                 ExplanationLines = nonBlankLines.ToArray();
             }
 
-            /// <summary>
-            /// Strips XML-style tags (like color tags) from text.
-            /// Handles both self-closing and paired tags.
-            /// </summary>
+            /// <summary>Text with XML-style tags (colors and the like), self-closing or paired, removed.</summary>
             private string StripTags(string text)
             {
                 if (string.IsNullOrEmpty(text))
                     return text;
 
-                // Use regex to remove all XML-style tags: <tag>, </tag>, <tag attr="value">
-                // Pattern matches: < followed by optional /, followed by tag name and optional attributes, followed by >
                 System.Text.RegularExpressions.Regex tagRegex =
                     new System.Text.RegularExpressions.Regex(@"</?[a-zA-Z][^>]*>");
 
@@ -1205,9 +592,9 @@ namespace RimWorldAccess
             {
                 Type = NotificationType.Message;
                 Label = StripTags(message.text);
-                Explanation = ""; // Messages don't have extended explanations
+                Explanation = "";
                 HasValidTarget = message.lookTargets != null && message.lookTargets.IsValid();
-                Timestamp = message.startingFrame; // Use starting frame as timestamp
+                Timestamp = message.startingFrame;
                 sourceObject = message;
                 ProcessExplanation();
             }
@@ -1217,11 +604,10 @@ namespace RimWorldAccess
                 Type = NotificationType.Letter;
                 Label = StripTags(letter.Label);
 
-                // Get mouseover text as explanation using reflection
+                // Letter.GetMouseoverText is protected abstract.
                 try
                 {
-                    MethodInfo getMouseoverTextMethod = letter.GetType().GetMethod("GetMouseoverText",
-                        BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+                    MethodInfo getMouseoverTextMethod = VanillaAccess.GetMethod(typeof(Letter), "GetMouseoverText");
                     if (getMouseoverTextMethod != null)
                     {
                         object result = getMouseoverTextMethod.Invoke(letter, null);
@@ -1238,7 +624,7 @@ namespace RimWorldAccess
                 }
 
                 HasValidTarget = letter.lookTargets != null && letter.lookTargets.IsValid();
-                Timestamp = letter.arrivalTick; // Use arrival tick as timestamp
+                Timestamp = letter.arrivalTick;
                 sourceObject = letter;
                 ProcessExplanation();
             }
@@ -1248,7 +634,6 @@ namespace RimWorldAccess
                 Type = NotificationType.Alert;
                 Label = StripTags(alert.Label);
 
-                // Get explanation
                 try
                 {
                     Explanation = alert.GetExplanation();
@@ -1258,7 +643,6 @@ namespace RimWorldAccess
                     Explanation = "";
                 }
 
-                // Check if alert has valid culprits
                 try
                 {
                     AlertReport report = alert.GetReport();
@@ -1269,30 +653,24 @@ namespace RimWorldAccess
                     HasValidTarget = false;
                 }
 
-                Timestamp = Find.TickManager?.TicksGame ?? 0; // Use current game tick as timestamp (alerts are ongoing)
+                Timestamp = Find.TickManager?.TicksGame ?? 0; // Alerts are ongoing, so they sort as "now".
                 sourceObject = alert;
                 ProcessExplanation();
             }
 
-            /// <summary>
-            /// Gets the source Letter object if this is a letter notification.
-            /// </summary>
+            /// <summary>The source Letter, or null when this is not a letter.</summary>
             public Letter GetSourceLetter()
             {
                 return sourceObject as Letter;
             }
 
-            /// <summary>
-            /// Gets the source Alert object if this is an alert notification.
-            /// </summary>
+            /// <summary>The source Alert, or null when this is not an alert.</summary>
             public Alert GetSourceAlert()
             {
                 return sourceObject as Alert;
             }
 
-            /// <summary>
-            /// Gets the primary target for jumping.
-            /// </summary>
+            /// <summary>The first valid target to jump to, or <see cref="GlobalTargetInfo.Invalid"/>.</summary>
             public GlobalTargetInfo GetPrimaryTarget()
             {
                 if (sourceObject is Message message)
@@ -1316,7 +694,6 @@ namespace RimWorldAccess
                     }
                     catch
                     {
-                        // Ignore exceptions
                     }
                 }
 
@@ -1324,10 +701,8 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Notification types.
-        /// </summary>
-        private enum NotificationType
+        /// <summary>Internal because <see cref="RimWorldAccess.Shell.NotificationScope"/> reads it.</summary>
+        internal enum NotificationType
         {
             Message,
             Letter,

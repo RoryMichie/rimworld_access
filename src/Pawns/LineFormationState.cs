@@ -111,7 +111,9 @@ namespace RimWorldAccess
             var controller = Find.Selector.gotoController;
             controller.StartInteraction(firstPoint);
 
-            // Set the end point (private field)
+            // MUTATION-C: mirrors MultiPawnGotoController.ProcessInputEvents's own private
+            // "end" field write (end = intVec); the field has no public setter and no
+            // other vanilla method accepts an arbitrary end cell, so no A/B vehicle exists.
             var endField = AccessTools.Field(typeof(MultiPawnGotoController), "end");
             endField.SetValue(controller, secondPoint);
 
@@ -169,6 +171,16 @@ namespace RimWorldAccess
             firstPoint = IntVec3.Invalid;
             secondPoint = IntVec3.Invalid;
             pawnsToMove.Clear();
+        }
+
+        /// <summary>
+        /// Clears formation mode at game session boundaries (new game, save
+        /// load). Unlike <see cref="Cancel"/>, this is a silent defensive
+        /// reset, not a player-initiated action.
+        /// </summary>
+        public static void Reset()
+        {
+            Close();
         }
     }
 }

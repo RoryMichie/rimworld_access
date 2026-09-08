@@ -42,6 +42,12 @@ namespace RimWorldAccess
                 if (cover == null)
                     continue;
 
+                // A multi-cell pawn (e.g. a Vehicle Framework vehicle) occupies the cells
+                // adjacent to its own anchor, so GetCover returns the pawn itself -- reporting
+                // it as its own cover ("behind Bang Bus, blocks 80%") is nonsense. Skip self.
+                if (ReferenceEquals(cover, pawn))
+                    continue;
+
                 float blockChance = cover.BaseBlockChance();
                 if (blockChance > bestBlockChance)
                 {

@@ -7,13 +7,9 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Section model and builders for the IdeoBuilder hub.
-    ///
-    /// The hub is a flat menu where each row represents an editable facet of the ideoligion
-    /// (name, structure meme, normal memes, deities, precepts, roles, rituals, etc.). Each
-    /// row's label is built from the game's own translation keys and the current value of
-    /// that facet on the live Ideo, so the hub stays in sync as edits happen and remains
-    /// fully localized.
+    /// Section model and builders for the IdeoBuilder hub, a flat menu with one row per editable
+    /// facet of the ideoligion. Row labels come from the game's own translation keys and the live
+    /// Ideo's current values, so the hub stays in sync as edits happen and stays localized.
     /// </summary>
     public static class IdeoBuilderHelper
     {
@@ -52,7 +48,34 @@ namespace RimWorldAccess
             public bool Disabled;
             public string DisabledReason;
             public List<Def> InspectableDefs;
+
+            /// <summary>
+            /// Set only on a section discovered from a mod's precept class
+            /// (<see cref="DiscoverExtraPreceptClasses"/>). <see cref="Kind"/> carries no meaning
+            /// while this is non-null, so every consumer must branch on this field first.
+            /// </summary>
+            public System.Type PreceptClass;
         }
+
+        /// <summary>
+        /// The precept classes the typed sections claim, matched by <c>IsInstanceOfType</c> as those
+        /// sections match their own rows, so a subclass belongs to its base's section.
+        /// <c>typeof(Precept)</c> is deliberately absent — every other class derives from it, so
+        /// assignability here would claim the whole hierarchy; it is claimed by exact match in
+        /// <see cref="IsClaimedByTypedSection"/>.
+        /// </summary>
+        private static readonly System.Type[] TypedSectionPreceptClasses =
+        {
+            typeof(Precept_Role),
+            typeof(Precept_Ritual),
+            typeof(Precept_Building),
+            typeof(Precept_RitualSeat),
+            typeof(Precept_Relic),
+            typeof(Precept_Weapon),
+            typeof(Precept_Animal),
+            typeof(Precept_Xenotype),
+            typeof(Precept_Apparel),
+        };
 
         public static List<HubSection> BuildSections(Ideo ideo)
         {
@@ -74,7 +97,9 @@ namespace RimWorldAccess
             if (ideo.foundation is IdeoFoundation_Deity)
                 sections.Add(BuildDeities(ideo));
 
-            sections.Add(BuildPrecepts(ideo));
+            List<DiscoveredPreceptClass> extraPreceptClasses = DiscoverExtraPreceptClasses(ideo);
+
+            sections.Add(BuildPrecepts(ideo, extraPreceptClasses));
             sections.Add(BuildPreceptType(ideo, SectionKind.Roles, "IdeoRoles", typeof(Precept_Role)));
             sections.Add(BuildPreceptType(ideo, SectionKind.Rituals, "Rituals", typeof(Precept_Ritual)));
             sections.Add(BuildBuildingsSection(ideo));
@@ -86,10 +111,167 @@ namespace RimWorldAccess
                 sections.Add(BuildPreceptType(ideo, SectionKind.PreferredXenotypes, "PreferredXenotypes", typeof(Precept_Xenotype)));
 
             sections.Add(BuildPreceptType(ideo, SectionKind.Apparel, "IdeoApparel", typeof(Precept_Apparel)));
+
+            // Ahead of Appearance, matching where a mod's section lands on screen: vanilla draws
+            // every precept category before the appearance boxes, and a mod's DoPrecepts postfix
+            // paints its own category at the end of that block.
+            foreach (DiscoveredPreceptClass discovered in extraPreceptClasses)
+                sections.Add(BuildDiscoveredPreceptType(ideo, discovered));
+
             sections.Add(BuildAppearance(ideo));
 
             return sections;
         }
+
+        #region Mod-added precept classes
+
+        /// <summary>A mod-added precept class, paired with the section title derived for it.</summary>
+        public class DiscoveredPreceptClass
+        {
+            public System.Type PreceptClass;
+            public string Label;
+        }
+
+        /// <summary>The (issue label, defName) a discovered class orders by, compared in two stages so no separator character is needed.</summary>
+        private struct PreceptClassOrder : System.IComparable<PreceptClassOrder>
+        {
+            private readonly string issueLabel;
+            private readonly string defName;
+
+            public PreceptClassOrder(string issueLabel, string defName)
+            {
+                this.issueLabel = issueLabel ?? "";
+                this.defName = defName ?? "";
+            }
+
+            public int CompareTo(PreceptClassOrder other)
+            {
+                int byIssue = string.CompareOrdinal(issueLabel, other.issueLabel);
+                return byIssue != 0 ? byIssue : string.CompareOrdinal(defName, other.defName);
+            }
+        }
+
+        /// <summary>
+        /// What one discovered class accumulates over the single pass across the precept defs: the
+        /// labels its title derives from, its sort position, and whether this ideoligion can list any
+        /// of its defs at all.
+        /// </summary>
+        private class DiscoveredClassBuilder
+        {
+            private readonly List<IssueDef> issues = new List<IssueDef>();
+            private readonly List<string> labels = new List<string>();
+            private PreceptClassOrder order;
+            private bool ordered;
+
+            public bool Listable;
+
+            public PreceptClassOrder Order
+            {
+                get { return order; }
+            }
+
+            public void Note(PreceptDef def)
+            {
+                if (def.issue != null && !issues.Contains(def.issue)) issues.Add(def.issue);
+                string label = def.LabelCap.NullOrEmpty() ? def.defName : def.LabelCap.ToString();
+                if (!labels.Contains(label)) labels.Add(label);
+
+                var candidate = new PreceptClassOrder(def.issue != null ? def.issue.label : "", def.defName);
+                if (!ordered || candidate.CompareTo(order) < 0)
+                {
+                    order = candidate;
+                    ordered = true;
+                }
+            }
+
+            /// <summary>
+            /// The section title from the game's own resolved labels: the issue every def of the class
+            /// shares, else those defs' own labels. A mod passes its title straight into vanilla's
+            /// private drawing routine, so it is never readable here.
+            /// </summary>
+            public string BuildLabel(System.Type preceptClass)
+            {
+                if (issues.Count == 1) return issues[0].LabelCap.ToString();
+                if (labels.Count > 0) return string.Join(", ", labels);
+                return preceptClass.Name;
+            }
+        }
+
+        /// <summary>
+        /// The precept classes in play that no typed section claims, one section each, so a mod's
+        /// category is named and countable instead of folding into the general Precepts count.
+        /// Grouped by <c>PreceptDef.preceptClass</c> and ordered by the class's lowest
+        /// (issue label, defName) def, which keeps row order stable across rebuilds — an unstable
+        /// order would relocate the cursor on every refresh. Titles are derived in the same pass, so
+        /// naming a row costs no further def-database sweep. Empty with no ideology mods loaded.
+        /// </summary>
+        public static List<DiscoveredPreceptClass> DiscoverExtraPreceptClasses(Ideo ideo)
+        {
+            var result = new List<DiscoveredPreceptClass>();
+            if (ideo == null) return result;
+
+            var builders = new Dictionary<System.Type, DiscoveredClassBuilder>();
+            foreach (PreceptDef def in DefDatabase<PreceptDef>.AllDefs)
+            {
+                System.Type preceptClass = def.preceptClass;
+                // An abstract base or non-Precept type can only be named by a def in error:
+                // PreceptMaker could never instantiate one, so it can never become a row.
+                if (preceptClass == null || preceptClass.IsAbstract) continue;
+                if (!typeof(Precept).IsAssignableFrom(preceptClass)) continue;
+                if (IsClaimedByTypedSection(preceptClass)) continue;
+
+                if (!builders.TryGetValue(preceptClass, out DiscoveredClassBuilder builder))
+                {
+                    builder = new DiscoveredClassBuilder();
+                    builders[preceptClass] = builder;
+                }
+                // Title and order come from every def of the class, so neither shifts as this
+                // ideoligion's eligibility changes; only Listable is gated on the ideo.
+                builder.Note(def);
+                if (!builder.Listable && CanIdeoListPreceptDef(ideo, def)) builder.Listable = true;
+            }
+
+            foreach (var pair in builders)
+            {
+                if (pair.Value.Listable)
+                    result.Add(new DiscoveredPreceptClass { PreceptClass = pair.Key, Label = pair.Value.BuildLabel(pair.Key) });
+            }
+            result.Sort((a, b) => builders[a.PreceptClass].Order.CompareTo(builders[b.PreceptClass].Order));
+            return result;
+        }
+
+        private static bool IsClaimedByTypedSection(System.Type preceptClass)
+        {
+            if (preceptClass == typeof(Precept)) return true;
+            foreach (System.Type claimed in TypedSectionPreceptClasses)
+                if (claimed.IsAssignableFrom(preceptClass)) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Whether this ideoligion has reason to show a section for the class this def names: it
+        /// already carries such a precept, or vanilla's listing gate accepts the def — that gate
+        /// tracks the mod's own draw, but NREs on foundation-less ideos (classic-save carryovers).
+        /// </summary>
+        private static bool CanIdeoListPreceptDef(Ideo ideo, PreceptDef def)
+        {
+            if (ideo.foundation != null
+                && IdeoUIUtility.CanListPrecept(ideo, def, IdeoEditMode.GameStart).Accepted) return true;
+            return ideo.PreceptsListForReading.Any(p => p.def == def && p.def.visible);
+        }
+
+        private static HubSection BuildDiscoveredPreceptType(Ideo ideo, DiscoveredPreceptClass discovered)
+        {
+            return new HubSection
+            {
+                Label = discovered.Label,
+                ValueSummary = PreceptListSummary(
+                    ideo.PreceptsListForReading.Where(discovered.PreceptClass.IsInstanceOfType)),
+                PreceptClass = discovered.PreceptClass,
+            };
+        }
+
+        #endregion
 
         /// <summary>Allowed hair/beard and tattoo styles (vanilla's DoAppearanceItems).</summary>
         private static HubSection BuildAppearance(Ideo ideo)
@@ -106,15 +288,19 @@ namespace RimWorldAccess
         public static string AppearanceSummary(Ideo ideo)
         {
             if (ideo?.style == null) return "";
-            // The counts default to -1 until the game caches them, which it skips while the ideo has
-            // no culture (RecacheStyleItemCounts early-returns). Clamp so an uninitialized ideo never
-            // reads "-1 hair and beards" aloud.
+            // The counts stay -1 until the game caches them, which it skips while the ideo has no
+            // culture, so an uninitialized ideo would otherwise read "-1 hair and beards" aloud.
             int hair = System.Math.Max(0, ideo.style.NumHairAndBeardStylesAvailable);
             int tattoo = System.Math.Max(0, ideo.style.NumTattooStylesAvailable);
             return hair + " " + "HairAndBeards".Translate().ToString().ToLower()
                  + ", " + tattoo + " " + "Tattoos".Translate().ToString().ToLower();
         }
 
+        /// <summary>
+        /// A vanilla section's title. A mod-added section has no <see cref="SectionKind"/> and is
+        /// titled from its class's label discovery instead; <see cref="IdeoTypedPreceptState.SectionLabel"/>
+        /// picks between the two.
+        /// </summary>
         public static string GetLocalizedSectionLabel(SectionKind kind)
         {
             switch (kind)
@@ -301,13 +487,13 @@ namespace RimWorldAccess
                 if (!string.IsNullOrEmpty(structure.description))
                     value += ". " + structure.description;
             }
-            var inspectable = structure != null ? new List<Def> { structure } : null;
+            // No InspectableDefs: vanilla never opens an info card for a MemeDef, so offering one
+            // here would fabricate it. The full content is already in ValueSummary above.
             return new HubSection
             {
                 Kind = SectionKind.StructureMeme,
                 Label = GetLocalizedSectionLabel(SectionKind.StructureMeme),
                 ValueSummary = value,
-                InspectableDefs = inspectable,
             };
         }
 
@@ -326,13 +512,12 @@ namespace RimWorldAccess
                 string impactLabel = IdeoImpactUtility.OverallImpactLabel(impact);
                 value = $"{normals.Count}. {names}. {"IdeoImpact".Translate()}: {impactLabel}";
             }
-            var inspectable = normals.Count > 0 ? normals.Cast<Def>().ToList() : null;
+            // No InspectableDefs: vanilla gives a MemeDef no real info card. See BuildStructureMeme.
             return new HubSection
             {
                 Kind = SectionKind.NormalMemes,
                 Label = GetLocalizedSectionLabel(SectionKind.NormalMemes),
                 ValueSummary = value,
-                InspectableDefs = inspectable,
             };
         }
 
@@ -361,19 +546,13 @@ namespace RimWorldAccess
             };
         }
 
-        private static HubSection BuildPrecepts(Ideo ideo)
+        private static HubSection BuildPrecepts(Ideo ideo, List<DiscoveredPreceptClass> extraPreceptClasses)
         {
-            // Base precepts (issue-based) excluding the typed precept lists which get their own sections.
+            // Issue-based precepts, excluding every list that has a section of its own — typed and
+            // mod-added alike — or those would be counted twice.
             var basePrecepts = ideo.PreceptsListForReading
-                .Where(p => !(p is Precept_Role)
-                         && !(p is Precept_Ritual)
-                         && !(p is Precept_Building)
-                         && !(p is Precept_RitualSeat)
-                         && !(p is Precept_Relic)
-                         && !(p is Precept_Weapon)
-                         && !(p is Precept_Animal)
-                         && !(p is Precept_Xenotype)
-                         && !(p is Precept_Apparel))
+                .Where(p => !TypedSectionPreceptClasses.Any(t => t.IsInstanceOfType(p))
+                         && !extraPreceptClasses.Any(d => d.PreceptClass.IsInstanceOfType(p)))
                 .ToList();
 
             string value = basePrecepts.Count == 0
@@ -389,60 +568,39 @@ namespace RimWorldAccess
 
         private static HubSection BuildPreceptType(Ideo ideo, SectionKind kind, string labelKey, System.Type preceptType)
         {
-            var matching = ideo.PreceptsListForReading
-                .Where(p => preceptType.IsInstanceOfType(p))
-                .ToList();
-
-            string value;
-            if (matching.Count == 0)
-            {
-                value = "None".Translate().ToString();
-            }
-            else
-            {
-                var names = string.Join(", ", matching.Select(PreceptLabel));
-                value = $"{matching.Count}. {names}";
-            }
-
             return new HubSection
             {
                 Kind = kind,
                 Label = GetLocalizedSectionLabel(kind),
-                ValueSummary = value,
+                ValueSummary = PreceptListSummary(ideo.PreceptsListForReading.Where(preceptType.IsInstanceOfType)),
             };
         }
 
         private static HubSection BuildBuildingsSection(Ideo ideo)
         {
             // Buildings section covers both Precept_Building and Precept_RitualSeat (matches viewer).
-            var matching = ideo.PreceptsListForReading
-                .Where(p => p is Precept_Building || p is Precept_RitualSeat)
-                .ToList();
-
-            string value;
-            if (matching.Count == 0)
-            {
-                value = "None".Translate().ToString();
-            }
-            else
-            {
-                var names = string.Join(", ", matching.Select(PreceptLabel));
-                value = $"{matching.Count}. {names}";
-            }
-
             return new HubSection
             {
                 Kind = SectionKind.Buildings,
                 Label = GetLocalizedSectionLabel(SectionKind.Buildings),
-                ValueSummary = value,
+                ValueSummary = PreceptListSummary(
+                    ideo.PreceptsListForReading.Where(p => p is Precept_Building || p is Precept_RitualSeat)),
             };
         }
 
+        /// <summary>"{count}. {labels}" for a precept section's row value, or "None" when empty.</summary>
+        private static string PreceptListSummary(IEnumerable<Precept> matching)
+        {
+            var list = matching.ToList();
+            return list.Count == 0
+                ? "None".Translate().ToString()
+                : $"{list.Count}. {string.Join(", ", list.Select(PreceptLabel))}";
+        }
+
         /// <summary>
-        /// The display label for a precept, matching what vanilla draws in the precept box
-        /// (UIInfoFirstLine, plus UIInfoSecondLine when it adds information) rather than the
-        /// generic generated name. This is what surfaces the venerated animal, the desired
-        /// apparel item, the noble/despised weapon classes, the role's title, etc.
+        /// A precept's display label, matching what vanilla draws in the precept box
+        /// (UIInfoFirstLine, plus UIInfoSecondLine when it adds information) rather than the generic
+        /// generated name — this is what surfaces the venerated animal, the role's title, and so on.
         /// </summary>
         public static string PreceptLabel(Precept precept)
         {
@@ -457,9 +615,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Strips rich-text tags and unresolved grammar tokens (e.g. {ORGANIZER_labelShort}) from
-        /// game text and collapses runs of whitespace, so screen-reader output never reads markup
-        /// or template placeholders aloud.
+        /// Strips rich-text tags and unresolved grammar tokens from game text and collapses
+        /// whitespace runs, so markup and template placeholders are never read aloud.
         /// </summary>
         public static string CleanGameText(string s)
         {
@@ -473,10 +630,9 @@ namespace RimWorldAccess
         #endregion
 
         /// <summary>
-        /// Sum of all meme impact values, clamped to the game's combined cap.
-        /// Mirrors the private IdeoUIUtility.ImpactOf, which is used by the same
-        /// IdeoImpactUtility.OverallImpactLabel that vanilla shows next to the
-        /// continue button. Kept local so we stay independent of vanilla's private API.
+        /// Sum of all meme impact values, clamped to the game's combined cap. Mirrors the private
+        /// IdeoUIUtility.ImpactOf behind vanilla's own continue-button label, kept local rather than
+        /// depending on that private API.
         /// </summary>
         public static int ImpactOf(IEnumerable<MemeDef> memes)
         {
@@ -492,8 +648,8 @@ namespace RimWorldAccess
         #region Validation summary
 
         /// <summary>
-        /// Returns a player-readable validation message for the current ideoligion, or empty if it's valid.
-        /// Mirrors the checks in Page_ConfigureIdeo.CanDoNext so the user knows in advance what's blocking them.
+        /// A player-readable validation message for the current ideoligion, or empty when valid.
+        /// Mirrors Page_ConfigureIdeo.CanDoNext's checks so the block is known in advance.
         /// </summary>
         public static string BuildValidationSummary(Ideo ideo)
         {
@@ -527,10 +683,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Returns a non-blocking player warning for the current ideoligion (e.g. a precept
-        /// that won't function as intended), or empty. Mirrors the yellow warning vanilla shows
-        /// near the continue button via Ideo.FirstPreceptWithWarning / Precept.GetPlayerWarning.
-        /// This does NOT block continuing — it's surfaced alongside the impact readout.
+        /// The non-blocking warning vanilla shows near the continue button
+        /// (Ideo.FirstPreceptWithWarning / Precept.GetPlayerWarning), or empty. Surfaced alongside
+        /// the impact readout; it never blocks continuing.
         /// </summary>
         public static string BuildPlayerWarning(Ideo ideo)
         {
@@ -548,9 +703,7 @@ namespace RimWorldAccess
 
         #region Opening announcement
 
-        /// <summary>
-        /// Builds the first-time announcement when the builder hub opens.
-        /// </summary>
+        /// <summary>The first-time announcement when the builder hub opens.</summary>
         public static string BuildOpeningAnnouncement(Ideo ideo)
         {
             var sb = new StringBuilder();
@@ -561,7 +714,7 @@ namespace RimWorldAccess
                 sb.Append(ideo.name);
             }
 
-            // Add the impact line (sighted players see this near the continue button).
+            // The impact line, which sighted players see near the continue button.
             if (ideo?.memes != null)
             {
                 var normals = ideo.memes.Where(m => m.category == MemeCategory.Normal).ToList();

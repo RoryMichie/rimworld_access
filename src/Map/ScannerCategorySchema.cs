@@ -4,18 +4,15 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Maps internal scanner category and subcategory names (which are used as
-    /// dictionary keys and persistent identifiers) to localized display names
-    /// announced to the user.
-    ///
-    /// The internal Name fields on ScannerCategory and ScannerSubcategory stay
-    /// in English so schema lookups continue to work. Announcement code paths
-    /// call into these helpers when a string needs to be spoken.
+    /// Maps internal scanner category and subcategory names to localized display names.
+    /// The internal Name fields on ScannerCategory/ScannerSubcategory stay English — they
+    /// are dictionary keys and persistent identifiers — so only announcement paths call in
+    /// here.
     /// </summary>
     internal static class ScannerNameLocalizer
     {
-        // Map keyed by the canonical English category name. Values are XML key
-        // suffixes appended to RimWorldAccess.Map.Scanner.CatName.*.
+        // Canonical English category name -> XML key suffix under
+        // RimWorldAccess.Map.Scanner.CatName.*.
         private static readonly Dictionary<string, string> CategoryKeys = new Dictionary<string, string>
         {
             ["All"] = "All",
@@ -48,6 +45,7 @@ namespace RimWorldAccess
             ["Guests"] = "Guests",
             ["Hostile"] = "Hostile",
             ["Player Mechs"] = "PlayerMechs",
+            ["Controllable"] = "Controllable",
             ["Hostile Mechs"] = "HostileMechs",
             ["Pen"] = "Pen",
             ["NonPen"] = "NonPen",
@@ -97,10 +95,8 @@ namespace RimWorldAccess
         };
 
         /// <summary>
-        /// Returns the localized display name for a top-level scanner category
-        /// (the string used to address the user when navigating with
-        /// Ctrl+PageUp/Down). Falls back to the raw name for category strings
-        /// not in the static schema (e.g. dynamic uncategorized buckets).
+        /// The localized display name for a top-level scanner category, falling back to the
+        /// raw name for strings outside the static schema (dynamic uncategorized buckets).
         /// </summary>
         public static string LocalizeCategoryName(string name)
         {
@@ -111,13 +107,10 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Returns the localized display name for a scanner subcategory.
-        /// Subcategories are stored internally as "{Cat}-{Sub}" (e.g.
-        /// "Pawns-Colonists"). The "-All" suffix announces as just the
-        /// category name; specialized suffixes compose as
-        /// "{LocalizedCat}: {LocalizedSub}". Names that don't follow the
-        /// schema (Search filter labels, dynamic Uncategorized buckets) are
-        /// returned unchanged so existing wording is preserved.
+        /// The localized display name for a subcategory, stored internally as "{Cat}-{Sub}".
+        /// A "-All" suffix announces as just the category name; specialized suffixes compose
+        /// as "{LocalizedCat}: {LocalizedSub}". Names outside the schema (search filter
+        /// labels, dynamic Uncategorized buckets) come back unchanged.
         /// </summary>
         public static string LocalizeSubcategoryName(string fullName)
         {
@@ -130,9 +123,8 @@ namespace RimWorldAccess
             string catPart = fullName.Substring(0, dash);
             string subPart = fullName.Substring(dash + 1);
 
-            // Only attempt to localize when both halves are part of the static
-            // schema. Anything dynamic (search "Search: foo-All", uncategorized
-            // "Uncategorized-{defName}") falls through to the original string.
+            // Anything dynamic (search "Search: foo-All", "Uncategorized-{defName}") falls
+            // through to the original string.
             if (!CategoryKeys.ContainsKey(catPart))
                 return fullName;
 
@@ -141,8 +133,8 @@ namespace RimWorldAccess
             if (subPart == "All")
                 return localizedCat;
 
-            // Plans subcategories are per-color: the subPart is a planning-color suffix (e.g. "Red")
-            // whose display name comes from the Building PlanColor keys, not the scanner SubName table.
+            // Plans subcategories are per-color: subPart is a planning-color suffix whose
+            // display name comes from the Building PlanColor keys, not the SubName table.
             if (catPart == "Plans")
             {
                 string colorKey = "RimWorldAccess.Building.PlanColor." + subPart;
@@ -160,10 +152,9 @@ namespace RimWorldAccess
 
 
     /// <summary>
-    /// Container for all scanner categories during CollectMapItems. Provides O(1) lookup
-    /// by name for both categories (e.g., "Pawns") and specialized subcategories
-    /// (e.g., "Pawns-Colonists"), and a single AddItem helper that routes items to both
-    /// the specialized subcategory and the category's "All" subcategory.
+    /// Container for all scanner categories during CollectMapItems: O(1) lookup by category
+    /// name ("Pawns") or full subcategory name ("Pawns-Colonists"), plus an AddItem helper
+    /// that routes an item to both the specialized subcategory and the category's "All".
     /// </summary>
     internal sealed class ScannerBuckets
     {
@@ -173,9 +164,8 @@ namespace RimWorldAccess
         private readonly Dictionary<ScannerSubcategory, ScannerCategory> _parentByChild = new Dictionary<ScannerSubcategory, ScannerCategory>();
 
         /// <summary>
-        /// Builds all scanner categories + subcategories from the declarative schema.
-        /// Uncategorized is created empty here and populated with def-driven subcategories
-        /// at runtime by the caller.
+        /// Builds every category and subcategory from the declarative schema. Uncategorized
+        /// is created empty; the caller populates its def-driven subcategories at runtime.
         /// </summary>
         public static ScannerBuckets BuildFromSchema()
         {
@@ -183,7 +173,6 @@ namespace RimWorldAccess
             foreach (var schema in ScannerCategorySchemas.All)
                 buckets.AddCategory(schema.Build());
 
-            // Uncategorized is special — dynamic per-def subcategories are added at runtime.
             // Still gets an "All" subcategory at index 0 via ScannerCategory.Create.
             buckets.AddCategory(ScannerCategory.Create("Uncategorized"));
 
@@ -201,39 +190,24 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Looks up a subcategory by its full name (e.g., "Pawns-Colonists").
-        /// Throws KeyNotFoundException if missing — callers should pass static names.
-        /// </summary>
+        /// <summary>Subcategory by full name ("Pawns-Colonists"); throws KeyNotFoundException, so callers pass static names.</summary>
         public ScannerSubcategory Sub(string fullName) => _subcatsByFullName[fullName];
 
-        /// <summary>
-        /// Looks up a category by name (e.g., "Pawns").
-        /// </summary>
         public ScannerCategory Cat(string name) => _categoriesByName[name];
 
-        /// <summary>
-        /// Adds an item to the specialized subcategory AND its parent category's "All"
-        /// subcategory. Returns the parent category so callers can still do additional
-        /// bookkeeping (e.g., categorizedThings.Add).
-        /// </summary>
+        /// <summary>Adds an item to the specialized subcategory AND its parent category's "All" subcategory.</summary>
         public void AddItem(ScannerSubcategory specialized, ScannerItem item)
         {
             specialized.Items.Add(item);
             _parentByChild[specialized].Subcategories[0].Items.Add(item);
         }
 
-        /// <summary>
-        /// Adds an item by subcategory full name. Equivalent to AddItem(Sub(fullName), item).
-        /// </summary>
         public void AddItem(string subFullName, ScannerItem item)
         {
             AddItem(_subcatsByFullName[subFullName], item);
         }
 
-        /// <summary>
-        /// Registers a dynamically-created subcategory (used by Uncategorized for per-def buckets).
-        /// </summary>
+        /// <summary>Registers a dynamically-created subcategory (Uncategorized's per-def buckets).</summary>
         public void RegisterDynamicSubcategory(ScannerCategory parent, ScannerSubcategory sub)
         {
             parent.Subcategories.Add(sub);
@@ -244,10 +218,9 @@ namespace RimWorldAccess
 
 
     /// <summary>
-    /// Declarative schema for a scanner category: its name and the specialized subcategory
-    /// names it contains. Every category built via this schema gets an "All" subcategory
-    /// inserted at index 0 automatically by Build(). Uncategorized is built separately
-    /// because its subcategories are def-driven and dynamic.
+    /// Declarative schema for a scanner category: its name and its specialized subcategory
+    /// names. Build() always inserts an "All" subcategory at index 0. Uncategorized is built
+    /// separately because its subcategories are def-driven and dynamic.
     /// </summary>
     internal sealed class ScannerCategorySchema
     {
@@ -260,10 +233,7 @@ namespace RimWorldAccess
             SpecializedSubcategories = subcategories;
         }
 
-        /// <summary>
-        /// Builds a fresh ScannerCategory with "All" at index 0 followed by the specialized
-        /// subcategories in declaration order.
-        /// </summary>
+        /// <summary>A fresh ScannerCategory with "All" at index 0 followed by the specialized subcategories in declaration order.</summary>
         public ScannerCategory Build()
         {
             var cat = ScannerCategory.Create(Name); // inserts "{Name}-All" at index 0
@@ -273,22 +243,20 @@ namespace RimWorldAccess
         }
     }
 
-    /// <summary>
-    /// The canonical list of scanner category schemas. Adding a new category or subcategory
-    /// is a one-line change here — no more hunting through the 66-line manual-declaration block.
-    /// </summary>
+    /// <summary>The canonical list of scanner category schemas; a new category or subcategory is a one-line addition here.</summary>
     internal static class ScannerCategorySchemas
     {
         public static readonly ScannerCategorySchema[] All = new[]
         {
-            // Top-level "All" category — a flat cross-category view containing every
-            // scanner item on the map, sorted by distance. Has no specialized subcategories
-            // because the other top-level categories already serve that purpose.
-            // Populated in CollectMapItems by flattening each other category's "-All"
-            // subcategory with reference-based deduplication.
+            // A flat cross-category view of every scanner item on the map, sorted by
+            // distance, populated in CollectMapItems by flattening each other category's
+            // "-All" subcategory with reference-based deduplication.
             new ScannerCategorySchema("All"),
             new ScannerCategorySchema("Pawns",
-                "Colonists", "Prisoners", "Slaves", "Guests", "Hostile", "Player Mechs", "Hostile Mechs"),
+                "Colonists", "Prisoners", "Slaves", "Guests", "Hostile", "Player Mechs", "Controllable", "Hostile Mechs",
+                // Catch-all for pawns whose race is none of humanlike, animal, mechanoid
+                // or anomaly entity and that carry no draft controller — see ClassifyPawn.
+                "Other"),
             new ScannerCategorySchema("Entities", "Hostile", "Captured"),
             new ScannerCategorySchema("Tame", "Pen", "NonPen"),
             new ScannerCategorySchema("Wild", "Hostile", "Passive"),

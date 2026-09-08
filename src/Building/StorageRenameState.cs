@@ -32,7 +32,10 @@ namespace RimWorldAccess
 
             var spec = new TextFieldSpec(
                 labelKey: "RimWorldAccess.TextInput.LabelStorage",
-                maxLength: 28,
+                // Dialog_RenameBuildingStorage inherits Dialog_Rename<T>'s strict
+                // "text.Length < MaxNameLength" gate (default 28), so vanilla accepts
+                // at most 27 characters.
+                maxLength: 27,
                 minLength: 1,
                 customValidator: ValidateUnique);
 

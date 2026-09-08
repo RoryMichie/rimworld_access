@@ -6,8 +6,8 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// State management for ability/psycast map targeting.
-    /// Tracks when an ability is being targeted and provides range/affected target announcements.
+    /// Targeting session state for abilities and psycasts, with the range, affected-target
+    /// and rejection-diagnosis announcements the map scope speaks during targeting.
     /// </summary>
     public static class AbilityTargetingState
     {
@@ -20,31 +20,20 @@ namespace RimWorldAccess
         private static bool destinationRequiresLineOfSight = false;
         private static CompAbilityEffect_WithDest destinationComp = null;
 
-        /// <summary>
-        /// Gets whether ability targeting mode is currently active.
-        /// </summary>
         public static bool IsActive => isActive;
 
         /// <summary>
-        /// Gets whether targeting is in the destination-selection phase of a dual-target
-        /// ability (e.g., Skip's second click). Used by callers that need to gate behavior
-        /// on phase since the game emits no Messages for destination-phase rejections.
+        /// Whether targeting is in the destination-selection phase of a dual-target ability.
+        /// Callers must gate on it: the game emits no Messages for destination rejections.
         /// </summary>
         public static bool IsDestinationPhase => isDestinationPhase;
 
-        /// <summary>
-        /// Gets the current ability being targeted.
-        /// </summary>
         public static Ability CurrentAbility => currentAbility;
 
-        /// <summary>
-        /// Gets the caster's position for distance calculations.
-        /// </summary>
+        /// <summary>Range/LOS origin: the caster, or the first target once in destination phase.</summary>
         public static IntVec3 CasterPosition => casterPosition;
 
-        /// <summary>
-        /// Opens ability targeting state when an ability begins targeting.
-        /// </summary>
+        /// <summary>Opens the session and announces that targeting started.</summary>
         public static void Open(Ability ability)
         {
             if (ability == null)
@@ -58,14 +47,10 @@ namespace RimWorldAccess
             casterMap = ability.pawn?.Map;
             isActive = true;
 
-            // Announce targeting start
             string announcement = AbilityTargetingHelper.BuildTargetingStartAnnouncement(ability);
             TolkHelper.SpeakData(announcement, SpeechPriority.Normal);
         }
 
-        /// <summary>
-        /// Closes ability targeting state.
-        /// </summary>
         public static void Close()
         {
             isActive = false;
@@ -79,14 +64,12 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Transitions to destination phase for dual-target abilities (e.g., Skip).
-        /// Updates the range origin to the first selected target and uses the destination
-        /// comp's range instead of the ability's verb range.
-        /// Called from TargetingPatch when DestinationSelector is detected.
+        /// Enters the destination phase of a dual-target ability: the range origin moves to
+        /// the selected target and the comp's own range replaces the verb's.
         /// </summary>
         public static void EnterDestinationPhase(IntVec3 selectedTargetPos, CompAbilityEffect_WithDest destComp)
         {
-            casterPosition = selectedTargetPos;  // Range and LOS are now measured from the selected target
+            casterPosition = selectedTargetPos;
             destinationComp = destComp;
             destinationRange = destComp?.Props?.range ?? 0f;
             destinationRequiresLineOfSight = destComp?.Props?.requiresLineOfSight ?? false;
@@ -94,10 +77,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Returns null if the destination cell is a valid teleport target for the
-        /// selected pawn/thing, or a human-readable error describing why it isn't.
-        /// Wraps CompAbilityEffect_WithDest.CanPlaceSelectedTargetAt with reason detection
-        /// so screen reader users get the same info sighted players see in the ring color.
+        /// Null when the destination cell is a valid teleport target, else the reason it is
+        /// not. Wraps <c>CanPlaceSelectedTargetAt</c>, which answers only yes/no, with the
+        /// reason detection that gives the same information as the ring color.
         /// </summary>
         public static string ValidateDestinationCell(IntVec3 cursorPos)
         {
@@ -108,7 +90,6 @@ namespace RimWorldAccess
             if (destinationComp.CanPlaceSelectedTargetAt(target))
                 return null;
 
-            // Surface the specific reason the cell was rejected.
             if (cursorPos.Impassable(casterMap))
                 return (string)"RimWorldAccess.Abilities.Teleport.Impassable".Translate();
 
@@ -132,11 +113,7 @@ namespace RimWorldAccess
             return (string)"RimWorldAccess.Abilities.Teleport.Generic".Translate();
         }
 
-
-        /// <summary>
-        /// Announces range and distance information for the current cursor position.
-        /// Called when user presses R key during targeting.
-        /// </summary>
+        /// <summary>R: announces range and distance for the cursor position.</summary>
         public static void AnnounceRangeInfo()
         {
             if (!isActive || currentAbility == null)
@@ -155,7 +132,6 @@ namespace RimWorldAccess
             string announcement;
             if (isDestinationPhase && destinationRange > 0f)
             {
-                // During destination phase, use destination-specific range from the selected target
                 float distance = AbilityTargetingHelper.CalculateDistance(casterPosition, cursorPos);
                 var sb = new System.Text.StringBuilder();
                 sb.Append("RimWorldAccess.Abilities.Range.Distance".Translate(distance.ToString("F0")));
@@ -165,7 +141,7 @@ namespace RimWorldAccess
                     sb.Append("RimWorldAccess.Abilities.Range.OutOfRange".Translate(destinationRange.ToString("F0")));
                 announcement = sb.ToString();
 
-                // Append LOS and cell-validity info so the user gets the full picture from one R press.
+                // LOS and cell validity ride along so one R press gives the full picture.
                 if (destinationRequiresLineOfSight && casterMap != null
                     && !GenSight.LineOfSight(casterPosition, cursorPos, casterMap))
                 {
@@ -185,10 +161,7 @@ namespace RimWorldAccess
             TolkHelper.SpeakData(announcement, SpeechPriority.Normal);
         }
 
-        /// <summary>
-        /// Announces affected targets at the current cursor position.
-        /// Called when user presses T key during targeting.
-        /// </summary>
+        /// <summary>T: announces the targets affected at the cursor position.</summary>
         public static void AnnounceAffectedTargets()
         {
             if (!isActive || currentAbility == null)
@@ -204,8 +177,7 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Destination phase: there's no AOE on the destination tile — describe what's
-            // at the cell so the user can judge whether it's a sensible teleport target.
+            // A destination tile has no AOE; describe the cell instead.
             if (isDestinationPhase)
             {
                 TolkHelper.SpeakData(BuildDestinationCellAnnouncement(cursorPos), SpeechPriority.Normal);
@@ -218,9 +190,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Builds an announcement describing the destination cell for dual-target abilities
-        /// (e.g., Skip). Lists terrain, things at the cell, and impassability so the user can
-        /// judge whether the cell is a valid teleport destination before pressing Enter.
+        /// Describes a destination cell — terrain, contents, and validity — so the user can
+        /// judge the teleport target before pressing Enter.
         /// </summary>
         private static string BuildDestinationCellAnnouncement(IntVec3 cursorPos)
         {
@@ -232,7 +203,9 @@ namespace RimWorldAccess
             sb.Append((string)"RimWorldAccess.Abilities.Destination.Terrain".Translate(terrainName));
 
             var things = cursorPos.GetThingList(casterMap);
-            var pawnsAtCell = things.OfType<Pawn>().Select(p => p.LabelShort).ToList();
+            var pawnsAtCell = things.OfType<Pawn>()
+                .Where(p => !HiddenPawns.IsHidden(p))
+                .Select(p => p.LabelShort).ToList();
             var otherThings = things
                 .Where(t => !(t is Pawn)
                          && t.def.category != ThingCategory.Mote
@@ -254,36 +227,7 @@ namespace RimWorldAccess
             return sb.ToString();
         }
 
-        /// <summary>
-        /// Handles keyboard input during ability targeting.
-        /// Returns true if input was handled.
-        /// </summary>
-        public static bool HandleInput(UnityEngine.KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!isActive)
-                return false;
-
-            // R - Announce range info
-            if (key == UnityEngine.KeyCode.R && !shift && !ctrl && !alt)
-            {
-                AnnounceRangeInfo();
-                return true;
-            }
-
-            // T - Announce affected targets
-            if (key == UnityEngine.KeyCode.T && !shift && !ctrl && !alt)
-            {
-                AnnounceAffectedTargets();
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Gets immunity message for a target, if applicable.
-        /// Used by TargetingPatch to provide specific rejection messages.
-        /// </summary>
+        /// <summary>The target's immunity message, or null when none applies.</summary>
         public static string GetImmunityMessage(LocalTargetInfo target)
         {
             if (!isActive || currentAbility == null)
@@ -292,10 +236,7 @@ namespace RimWorldAccess
             return AbilityTargetingHelper.GetImmunityMessage(currentAbility, target);
         }
 
-        /// <summary>
-        /// Validates that a target is in range for the current ability.
-        /// Returns an error message if out of range, or null if valid.
-        /// </summary>
+        /// <summary>Out-of-range error for the target position, or null when in range.</summary>
         public static string ValidateRange(IntVec3 targetPos)
         {
             if (!isActive || currentAbility == null)
@@ -303,7 +244,7 @@ namespace RimWorldAccess
 
             float range = isDestinationPhase ? destinationRange : AbilityTargetingHelper.GetRange(currentAbility);
 
-            // Zero range means touch/melee - game handles reachability internally
+            // Zero range is touch/melee; the game handles reachability itself.
             if (range <= 0f)
                 return null;
 
@@ -317,19 +258,14 @@ namespace RimWorldAccess
             return null;
         }
 
-        /// <summary>
-        /// Validates line of sight to target.
-        /// Returns an error message if no LOS, or null if valid.
-        /// </summary>
+        /// <summary>Line-of-sight error for the target position, or null when clear.</summary>
         public static string ValidateLineOfSight(IntVec3 targetPos)
         {
             if (!isActive || currentAbility == null || casterMap == null)
                 return null;
 
-            // Destination phase: LOS is from the selected target to the destination,
-            // not from the caster (matches CompAbilityEffect_WithDest.CanHitTarget).
-            // The destination comp's own requiresLineOfSight prop drives this, which
-            // can differ from the verb's requireLineOfSight.
+            // In destination phase LOS runs from the selected target, not the caster, and is
+            // driven by the comp's requiresLineOfSight, which can differ from the verb's.
             if (isDestinationPhase)
             {
                 if (!destinationRequiresLineOfSight)
@@ -354,42 +290,33 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Validates that there is a valid target present when the ability requires one.
-        /// This prevents the confusing "out of range" message when targeting empty cells
-        /// with abilities that require a pawn target.
-        /// Returns an error message if no valid target, or null if valid.
+        /// Error when the ability needs a target and the cursor has none, or null. Keeps an
+        /// empty cell from being reported as merely "out of range".
         /// </summary>
         public static string ValidateTargetPresent(LocalTargetInfo target, IntVec3 cursorPos)
         {
             if (!isActive || currentAbility == null || casterMap == null)
                 return null;
 
-            // Destination phase (e.g., Skip teleport target) targets a cell, not a pawn —
-            // CompAbilityEffect_WithDest.targetParams sets canTargetLocations = true. Don't
-            // gate on the first-phase pawn requirement; the game's CanHitTarget /
-            // CanPlaceSelectedTargetAt validates the cell downstream.
+            // The destination phase targets a cell, not a pawn (targetParams sets
+            // canTargetLocations), and the game validates the cell downstream.
             if (isDestinationPhase)
                 return null;
 
-            // If the ability can target locations (like Wallraise, Smokepop), any cell is valid
             if (AbilityTargetingHelper.CanTargetLocations(currentAbility))
                 return null;
 
-            // If we have a thing target, it's valid
             if (target.HasThing)
                 return null;
 
-            // Check if there's a pawn at the cursor position
             var pawn = cursorPos.GetFirstPawn(casterMap);
             if (pawn != null)
-                return null; // There is a pawn, let the game's validation handle specifics
+                return null;
 
-            // No valid target directly at cursor
-            // For AOE abilities, explain that you must target a pawn (the AOE spreads from them)
+            // An AOE ability spreads from a pawn, so name the nearby ones it could reach.
             if (currentAbility.def.HasAreaOfEffect)
             {
                 float radius = currentAbility.def.EffectRadius;
-                // Check if there are pawns nearby that could be targeted
                 var nearby = AbilityTargetingHelper.GetAffectedPawns(currentAbility, cursorPos, casterMap);
                 if (nearby.Count > 0)
                 {
@@ -404,12 +331,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Diagnoses why the current ability/comp's ValidateTarget rejected the cursor
-        /// position. Only called by TargetingPatch when it detected the rejection was
-        /// silent (no Messages.Message emitted). Tries the same checks the vanilla
-        /// ValidateTarget paths use (range, LOS) and falls back to a generic message.
-        /// Works for both first phase and destination phase since the underlying
-        /// validators read isDestinationPhase to pick the right range/origin.
+        /// Why ValidateTarget rejected the cursor, for rejections the game left silent. Reruns
+        /// vanilla's own range and LOS checks, then falls back to a generic message; both
+        /// phases work, since the validators pick their origin from the phase.
         /// </summary>
         public static string DiagnoseRejection(LocalTargetInfo target, IntVec3 cursorPos)
         {
@@ -424,8 +348,6 @@ namespace RimWorldAccess
             if (losError != null)
                 return losError;
 
-            // No specific reason found — surface a generic but phase-aware message so the
-            // user knows the cast didn't queue and can move/retry.
             return isDestinationPhase
                 ? (string)"RimWorldAccess.Abilities.Teleport.InvalidDestination".Translate()
                 : (string)"RimWorldAccess.Abilities.World.InvalidTarget".Translate();
@@ -444,15 +366,13 @@ namespace RimWorldAccess
                 return "RimWorldAccess.Abilities.Success.TargetingLocation".Translate(label);
             }
 
-            // For AOE abilities, list all affected pawns
             if (currentAbility.def.HasAreaOfEffect)
             {
                 var affected = AbilityTargetingHelper.GetAffectedPawns(currentAbility, cursorPos, casterMap);
 
                 if (affected.Count == 0)
                 {
-                    // For location-targeting abilities (Solar Pinhole, Wallraise, etc.),
-                    // no pawns is expected - just confirm the location
+                    // A location-targeting ability expects no pawns; confirm the location.
                     if (AbilityTargetingHelper.CanTargetLocations(currentAbility))
                     {
                         var terrain = casterMap.terrainGrid.TerrainAt(cursorPos);
@@ -468,13 +388,11 @@ namespace RimWorldAccess
                 }
                 else
                 {
-                    // Use RimWorld's ToCommaList with useAnd for proper grammar (A, B, and C)
                     var names = affected.Select(p => p.LabelShort).ToCommaList(useAnd: true);
                     return "RimWorldAccess.Abilities.Success.TargetingMany".Translate(affected.Count, names);
                 }
             }
 
-            // For non-AOE abilities
             string baseLine;
             if (target.HasThing)
             {
@@ -482,16 +400,13 @@ namespace RimWorldAccess
             }
             else
             {
-                // Cell-only target (like Wallraise, Smokepop)
-                // Try to describe what's at the cell
                 var terrain = casterMap.terrainGrid.TerrainAt(cursorPos);
                 string terrainName = terrain?.label
                     ?? (string)"RimWorldAccess.Abilities.Label.Ground".Translate();
                 baseLine = (string)"RimWorldAccess.Abilities.Success.TargetingLocation".Translate(terrainName);
             }
 
-            // Append any cursor-side warnings the ability's effect comps emit
-            // (e.g., bloodfeed's "Will kill" / "Will cause serious blood loss").
+            // Effect comps emit their own cursor-side warnings (bloodfeed's "Will kill").
             string warnings = AbilityTargetingHelper.GetExtraTargetWarnings(currentAbility, target);
             if (!string.IsNullOrEmpty(warnings))
                 baseLine += (string)"RimWorldAccess.Abilities.Success.WarningsSuffix".Translate(warnings);

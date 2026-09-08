@@ -49,9 +49,7 @@
   <RimWorldAccess.Prisoner.Tab.OpenedPrisoner>囚犯选项卡: {0}</RimWorldAccess.Prisoner.Tab.OpenedPrisoner>
   <RimWorldAccess.Prisoner.Tab.OpenedSlave>奴隶选项卡: {0}</RimWorldAccess.Prisoner.Tab.OpenedSlave>
   <RimWorldAccess.Prisoner.Tab.CurrentMode>当前模式: {0}</RimWorldAccess.Prisoner.Tab.CurrentMode>
-  <RimWorldAccess.Prisoner.Tab.NavigationHint>
-按左右键切换分区，上下键在分区内移动，回车键选择</RimWorldAccess.Prisoner.Tab.NavigationHint>
-  <!-- Inline variant without leading newline — used when embedded in a larger announcement sentence. -->
+  <!-- Embedded in a larger announcement sentence. -->
   <RimWorldAccess.Prisoner.Tab.NavigationHintInline>按左右键切换分区，上下键在分区内移动，回车键选择</RimWorldAccess.Prisoner.Tab.NavigationHintInline>
 
   <!-- Section announcements. {0} = count (or current mode label). -->
@@ -62,16 +60,13 @@
   <RimWorldAccess.Prisoner.Section.NonExclusiveModes>非独占模式 - {0} 项可用。按空格键切换</RimWorldAccess.Prisoner.Section.NonExclusiveModes>
   <RimWorldAccess.Prisoner.Section.IdeologySelection>信仰选择 - 选择教化目标</RimWorldAccess.Prisoner.Section.IdeologySelection>
 
-  <!-- Item-level announcements during navigation.
-       Active/Current markers are placed at the start of the item line. -->
-  <RimWorldAccess.Prisoner.Item.StateOn>[开]</RimWorldAccess.Prisoner.Item.StateOn>
-  <RimWorldAccess.Prisoner.Item.StateOff>[关]</RimWorldAccess.Prisoner.Item.StateOff>
-  <RimWorldAccess.Prisoner.Item.NonExclusiveMode>{0}: {1}. {2}</RimWorldAccess.Prisoner.Item.NonExclusiveMode>
-  <RimWorldAccess.Prisoner.Item.SelectedSuffix>, 已选中</RimWorldAccess.Prisoner.Item.SelectedSuffix>
-
-  <!-- Selection / toggle action feedback. -->
-  <RimWorldAccess.Prisoner.Action.Selected>已选择: {0}. {1}</RimWorldAccess.Prisoner.Action.Selected>
-  <RimWorldAccess.Prisoner.Action.ToggleEnabled>启用</RimWorldAccess.Prisoner.Action.ToggleEnabled>
-  <RimWorldAccess.Prisoner.Action.ToggleDisabled>禁用</RimWorldAccess.Prisoner.Action.ToggleDisabled>
-  <RimWorldAccess.Prisoner.Action.ToggleMode>{0}: {1}</RimWorldAccess.Prisoner.Action.ToggleMode>
+  <!-- Item-level announcements and selection/toggle feedback used to be composed
+       here by hand. The prisoner tab is now a ScreenScope whose rows carry a role
+       and a state, so the shared element vocabulary
+       (RimWorldAccess.Shell.Role.* / RimWorldAccess.Shell.State.*) speaks the
+       selected marker, the on/off state and the toggle result instead. The keys
+       Item.StateOn, Item.StateOff, Item.NonExclusiveMode, Item.SelectedSuffix,
+       Action.Selected, Action.ToggleEnabled, Action.ToggleDisabled and
+       Action.ToggleMode were removed with that change (element-uniformity
+       campaign, task 8 packet C). -->
 </LanguageData>

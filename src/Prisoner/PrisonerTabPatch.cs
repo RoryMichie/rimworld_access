@@ -41,7 +41,7 @@ namespace RimWorldAccess
 
                 // Auto-open the prisoner tab state
                 // Users can still manually open it via keyboard shortcut if desired
-                // For now, we'll wait for explicit keyboard activation via UnifiedKeyboardPatch
+                // For now, we'll wait for explicit keyboard activation via MapScope's P opener claim
             }
         }
 

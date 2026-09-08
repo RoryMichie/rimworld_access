@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using HarmonyLib;
 using Verse;
 using RimWorld;
 using UnityEngine;
@@ -8,23 +10,40 @@ using UnityEngine;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages a windowless bill configuration menu.
-    /// Provides keyboard navigation through all bill settings.
+    /// The bill configuration menu's FIELD half: which of one bill's settings are currently shown,
+    /// what each says, and every write back into the bill.
+    /// Navigation, typeahead, announcements and exact numeric entry live on
+    /// <see cref="Shell.BillConfigScope"/>, which owns the cursor and asks this class about the row
+    /// under it by index into <see cref="visibleFields"/>. Nothing here tracks a selection, a search
+    /// or an announcement.
     /// </summary>
-    public static class BillConfigState
+    public static partial class BillConfigState
     {
         private static Bill_Production bill = null;
         private static IntVec3 billGiverPos;
-        private static List<MenuItem> menuItems = null;
-        private static int selectedIndex = 0;
         private static bool isActive = false;
-        private static bool isEditing = false;
 
-        // Numeric input mode fields
-        private static string numericBuffer = "";
-        private static bool isNumericInputMode = false;
+        /// <summary>The real dialog on screen for this session, so both close directions can find it; null between sessions.</summary>
+        private static Window openedDialog;
 
-        // Text input mode fields (for bill rename)
+        /// <summary>
+        /// Vanilla's own protected virtual dialog factory, the vehicle the Details button rides, so
+        /// a bill subclass with its own dialog is honored instead of hard-coding Dialog_BillConfig.
+        /// </summary>
+        private static readonly MethodInfo GetBillDialogMethod =
+            AccessTools.Method(typeof(Bill_Production), "GetBillDialog");
+
+        private static readonly AccessTools.FieldRef<Dialog_BillConfig, Bill_Production> DialogBillRef =
+            AccessTools.FieldRefAccess<Dialog_BillConfig, Bill_Production>("bill");
+
+        /// <summary>
+        /// The descriptors whose <see cref="FieldDescriptor.IsVisible"/> currently holds, in table
+        /// order: the row list <see cref="Shell.BillConfigScope"/> presents. Rebuilt by
+        /// <see cref="RefreshRows"/> on every model refresh; labels are composed lazily per row, so a
+        /// refresh never builds them all.
+        /// </summary>
+        private static readonly List<FieldDescriptor> visibleFields = new List<FieldDescriptor>();
+
         private static readonly TextInputController billRenameController = new TextInputController();
 
         private enum MenuItemType
@@ -55,35 +74,82 @@ namespace RimWorldAccess
             DeleteBill
         }
 
-        private class MenuItem
+        /// <summary>
+        /// One descriptor carries every behavior a field can have — visibility, label, search text,
+        /// arrow step, Enter action, min/max jumps, typed value — rather than the same field
+        /// reappearing in five parallel switches. A field lacking a behavior leaves that delegate
+        /// null, and the dispatchers below refuse.
+        /// </summary>
+        private class FieldDescriptor
         {
-            public MenuItemType type;
-            public string label;
-            public string searchLabel; // Label used for typeahead search (field name only, no values)
-            public object data;
-            public bool isEditable; // Can be edited with left/right or Enter
+            public readonly MenuItemType Type;
+            public readonly Func<bool> IsVisible;
+            public readonly Func<string> GetLabel;
+            public readonly Func<string> GetSearchLabel;
+            public readonly bool IsEditable;
+            public readonly Action<int, int> Adjust;   // (direction, multiplier)
+            public readonly Action Execute;             // Enter
+            public readonly Action JumpMin;              // Shift+Home
+            public readonly Action JumpMax;              // Shift+End
+            public readonly Func<string> GetNumericText; // the digits exact entry starts from
+            public readonly Action<int> ApplyNumeric;    // the typed value's commit
 
-            public MenuItem(MenuItemType type, string label, string searchLabel = null, object data = null, bool editable = false)
+            /// <summary>Whether Enter opens exact numeric entry rather than running an action: the fields that can both state a value as digits and take one back.</summary>
+            public bool TakesTypedNumber
             {
-                this.type = type;
-                this.label = label;
-                this.searchLabel = searchLabel ?? label; // Default to full label if not specified
-                this.data = data;
-                this.isEditable = editable;
+                get { return GetNumericText != null && ApplyNumeric != null; }
+            }
+
+            /// <summary>
+            /// The control role a sighted player sees, harvested from Dialog_BillConfig's own
+            /// widgets: float-menu openers are ComboBox, CheckboxLabeled rows Checkbox, IntEntry/
+            /// IntRange rows Stepper, plain Label rows roleless, and anything whose Enter runs an
+            /// action or opens an editor a Button.
+            /// </summary>
+            public readonly Shell.ElementRole Role;
+
+            /// <summary>Live checkbox state for a Checkbox field; null for every other role.</summary>
+            public readonly Func<Shell.CheckState?> GetCheck;
+
+            public FieldDescriptor(MenuItemType type, Func<bool> isVisible, Func<string> getLabel,
+                Func<string> getSearchLabel = null, bool isEditable = false,
+                Action<int, int> adjust = null, Action execute = null,
+                Action jumpMin = null, Action jumpMax = null,
+                Func<string> numericText = null, Action<int> applyNumeric = null,
+                Shell.ElementRole role = Shell.ElementRole.None, Func<Shell.CheckState?> getCheck = null)
+            {
+                Role = role;
+                GetCheck = getCheck;
+                Type = type;
+                IsVisible = isVisible;
+                GetLabel = getLabel;
+                GetSearchLabel = getSearchLabel ?? getLabel;
+                IsEditable = isEditable;
+                Adjust = adjust;
+                Execute = execute;
+                GetNumericText = numericText;
+                JumpMin = jumpMin;
+                JumpMax = jumpMax;
+                ApplyNumeric = applyNumeric;
             }
         }
 
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
+        // Built lazily once, not per Open: every descriptor delegate reads the current static `bill`
+        // at call time, so one table serves every bill.
+        private static List<FieldDescriptor> fieldDescriptorOrder;
+
+        private static void EnsureFieldDescriptors()
+        {
+            if (fieldDescriptorOrder != null) return;
+            fieldDescriptorOrder = BuildFieldDescriptors();
+        }
 
         public static bool IsActive => isActive;
-        public static bool HasActiveSearch => typeahead.HasActiveSearch;
-        public static bool HasNoMatches => typeahead.HasNoMatches;
-        public static bool IsEditing => isEditing;
-        public static bool IsNumericInputMode => isNumericInputMode;
-        public static bool IsTextInputMode => TextInputManager.Active == billRenameController;
+        public static Bill_Production ConfiguredBill => bill;
 
         /// <summary>
-        /// Opens the bill configuration menu.
+        /// Opens the menu together with the real dialog a sighted player would see. The scope resets
+        /// its cursor and speaks the entry announcement itself once the mirror pushes it.
         /// </summary>
         public static void Open(Bill_Production productionBill, IntVec3 position)
         {
@@ -93,168 +159,366 @@ namespace RimWorldAccess
                 return;
             }
 
-            bill = productionBill;
-            billGiverPos = position;
-            menuItems = new List<MenuItem>();
-            selectedIndex = 0;
-            isActive = true;
-            isEditing = false;
-            if (TextInputManager.Active == billRenameController) TextInputManager.Clear();
-            typeahead.ClearSearch();
+            // GetBillDialog computes the dialog's own billGiverPos; the position parameter stays
+            // this state's own.
+            Window dialog = GetBillDialogMethod?.Invoke(productionBill, null) as Window;
+            if (dialog == null)
+            {
+                ModLogger.Dev("Bill dialog factory yielded no window; bill config runs without its visual surface");
+            }
 
-            BuildMenuItems();
-            AnnounceCurrentSelection();
+            StartSession(productionBill, position, dialog);
 
-            Log.Message($"Opened bill config for {bill.LabelCap}");
+            ModLogger.Dev($"Opened bill config for {bill.LabelCap}");
         }
 
         /// <summary>
-        /// Closes the bill configuration menu.
+        /// The mouse path: vanilla's Details button opens the dialog on its own, so the shell adopts
+        /// it and drives the same rows. Reached through the ScopeForWindow registration, which also
+        /// keeps the generic window reader off a dialog this state fronts.
         /// </summary>
-        public static void Close()
+        internal static void AdoptOpenDialog(Window window)
         {
-            bill = null;
-            menuItems = null;
-            selectedIndex = 0;
-            isActive = false;
-            isEditing = false;
-            isNumericInputMode = false;
-            if (TextInputManager.Active == billRenameController) TextInputManager.Clear();
-            numericBuffer = "";
-            typeahead.ClearSearch();
+            if (isActive || !(window is Dialog_BillConfig dialog))
+            {
+                return;
+            }
+
+            Bill_Production dialogBill = DialogBillRef(dialog);
+            if (dialogBill?.billStack?.billGiver is Thing billGiver)
+            {
+                StartSession(dialogBill, billGiver.Position, window);
+            }
         }
 
-        private static void BuildMenuItems()
+        /// <summary>
+        /// Everything the two entry points must leave identical. <see cref="isActive"/> holds before
+        /// the window reaches the stack, which is what makes <see cref="AdoptOpenDialog"/> stand down
+        /// for a dialog opened from here.
+        /// </summary>
+        private static void StartSession(Bill_Production productionBill, IntVec3 position, Window dialog)
         {
-            menuItems.Clear();
+            bill = productionBill;
+            billGiverPos = position;
+            isActive = true;
+            openedDialog = dialog;
+            if (TextInputManager.Active == billRenameController) TextInputManager.Clear();
 
-            // 1. Recipe info (read-only)
-            menuItems.Add(new MenuItem(MenuItemType.RecipeInfo, GetRecipeInfoLabel(),
-                "RimWorldAccess.Inspection.BillConfig.SearchLabel.Recipe".Translate(), null, false));
-
-            // 2. Suspend/Resume toggle
-            string suspendLabel = bill.suspended ? "Suspended".Translate().ToString() : "NotSuspended".Translate().ToString();
-            menuItems.Add(new MenuItem(MenuItemType.SuspendToggle, suspendLabel, suspendLabel, null, true));
-
-            // 2b. Unpause button (only when auto-paused, matching vanilla's Unpause button)
-            if (bill.paused)
+            WindowStack stack = Find.WindowStack;
+            if (dialog != null && stack != null && !stack.IsOpen(dialog))
             {
-                menuItems.Add(new MenuItem(MenuItemType.UnpauseBill, "Unpause".Translate().ToString(),
-                    "Unpause".Translate().ToString(), null, true));
+                stack.Add(dialog);
             }
 
-            // 3. Repeat mode
-            menuItems.Add(new MenuItem(MenuItemType.RepeatMode, GetRepeatModeLabel(),
-                "RimWorldAccess.Inspection.BillConfig.SearchLabel.RepeatMode".Translate(), null, true));
+            Shell.BillConfigScopeMirror.OpenFresh();
+        }
 
-            // 4. Repeat count (only if mode is RepeatCount)
-            if (bill.repeatMode == BillRepeatModeDefOf.RepeatCount)
+        /// <summary>Closes the menu, and the dialog with it.</summary>
+        public static void Close()
+        {
+            Window dialog = openedDialog;
+            openedDialog = null;
+            bill = null;
+            visibleFields.Clear();
+            isActive = false;
+            if (TextInputManager.Active == billRenameController) TextInputManager.Clear();
+
+            // Removed last, session already torn down, so the PostClose patch's re-entry through
+            // NotifyDialogClosed finds nothing left to close.
+            if (dialog != null)
             {
-                menuItems.Add(new MenuItem(MenuItemType.RepeatCount, GetRepeatCountLabel(),
-                    "RimWorldAccess.Inspection.BillConfig.SearchLabel.RepeatCount".Translate(), null, true));
+                Find.WindowStack?.TryRemove(dialog, true);
             }
+        }
 
-            // 5-14. Target count block (only if mode is TargetCount)
-            if (bill.repeatMode == BillRepeatModeDefOf.TargetCount)
+        /// <summary>
+        /// The other close direction: the dialog leaving by a route this state did not drive ends the
+        /// session too. Reference equality keeps a second, independently opened bill dialog from
+        /// tearing this session down.
+        /// </summary>
+        internal static void NotifyDialogClosed(Window window)
+        {
+            if (!isActive || !ReferenceEquals(window, openedDialog))
             {
-                menuItems.Add(new MenuItem(MenuItemType.TargetCount, GetTargetCountLabel(),
-                    "RimWorldAccess.Inspection.BillConfig.SearchLabel.TargetCount".Translate(), null, true));
+                return;
+            }
+            Close();
+        }
 
-                // Currently have (read-only live count)
-                menuItems.Add(new MenuItem(MenuItemType.CurrentlyHave, GetCurrentlyHaveLabel(),
-                    "RimWorldAccess.Inspection.BillConfig.SearchLabel.CurrentlyHave".Translate(), null, false));
-
-                ThingDef producedThingDef = bill.recipe.ProducedThingDef;
-                if (producedThingDef != null)
+        /// <summary>
+        /// Re-evaluates which fields are visible. Called from the scope's content refresh, so a
+        /// change that reveals or hides a row reshapes the list with no caller having to rebuild it.
+        /// </summary>
+        internal static void RefreshRows()
+        {
+            visibleFields.Clear();
+            if (bill == null)
+            {
+                return;
+            }
+            EnsureFieldDescriptors();
+            foreach (FieldDescriptor descriptor in fieldDescriptorOrder)
+            {
+                if (descriptor.IsVisible())
                 {
-                    // Include equipped (weapons/apparel only)
-                    if (producedThingDef.IsWeapon || producedThingDef.IsApparel)
-                    {
-                        menuItems.Add(new MenuItem(MenuItemType.IncludeEquipped, GetIncludeEquippedLabel(),
-                            "IncludeEquipped".Translate().ToString(), null, true));
-                    }
-
-                    // Include tainted (apparel with corpse-care only)
-                    if (producedThingDef.IsApparel && producedThingDef.apparel.careIfWornByCorpse)
-                    {
-                        menuItems.Add(new MenuItem(MenuItemType.IncludeTainted, GetIncludeTaintedLabel(),
-                            "IncludeTainted".Translate().ToString(), null, true));
-                    }
-
-                    // Include source (count from which stockpile)
-                    menuItems.Add(new MenuItem(MenuItemType.IncludeSource, GetIncludeSourceLabel(),
-                        "IncludeFromAll".Translate().ToString(), null, true));
-
-                    // HP range (products with hit points only)
-                    if (bill.recipe.products.Any(p => p.thingDef.useHitPoints))
-                    {
-                        menuItems.Add(new MenuItem(MenuItemType.HpRange, GetHpRangeLabel(),
-                            "HitPointsBasic".Translate().CapitalizeFirst().ToString(), null, true));
-                    }
-
-                    // Quality range (products with CompQuality only)
-                    if (producedThingDef.HasComp(typeof(CompQuality)))
-                    {
-                        menuItems.Add(new MenuItem(MenuItemType.QualityRange, GetQualityRangeLabel(),
-                            "Quality".Translate().ToString(), null, true));
-                    }
-
-                    // Limit to allowed stuff (products made from stuff only)
-                    if (producedThingDef.MadeFromStuff)
-                    {
-                        menuItems.Add(new MenuItem(MenuItemType.LimitToAllowedStuff, GetLimitToAllowedStuffLabel(),
-                            "LimitToAllowedStuff".Translate().ToString(), null, true));
-                    }
-                }
-
-                // Pause when satisfied checkbox
-                menuItems.Add(new MenuItem(MenuItemType.PauseWhenSatisfied, GetPauseWhenSatisfiedLabel(),
-                    "PauseWhenSatisfied".Translate().ToString(), null, true));
-
-                // Only show unpause threshold if pauseWhenSatisfied is enabled
-                if (bill.pauseWhenSatisfied)
-                {
-                    menuItems.Add(new MenuItem(MenuItemType.UnpauseAt, GetUnpauseAtLabel(), "UnpauseWhenYouHave".Translate().ToString(), null, true));
+                    visibleFields.Add(descriptor);
                 }
             }
+        }
 
-            // 15. Store mode
-            menuItems.Add(new MenuItem(MenuItemType.StoreMode, GetStoreModeLabel(), bill.GetStoreMode().LabelCap.ToString(), null, true));
-
-            // 16. Pawn restriction
-            menuItems.Add(new MenuItem(MenuItemType.PawnRestriction, GetPawnRestrictionLabel(), "AnyWorker".Translate().ToString(), null, true));
-
-            // 17-18. Skill range (two items: min and max, conditional)
-            if (bill.PawnRestriction == null && bill.recipe.workSkill != null && !bill.MechsOnly)
+        /// <summary>
+        /// Builds the ordered field-descriptor table once, in vanilla's own Dialog_BillConfig row
+        /// order, so display and typeahead order follow the dialog a sighted player reads. Each
+        /// IsVisible predicate reproduces the exact condition, block nesting included, that vanilla
+        /// guards that row's draw with.
+        /// </summary>
+        private static List<FieldDescriptor> BuildFieldDescriptors()
+        {
+            return new List<FieldDescriptor>
             {
-                string skillSearchLabel = "AllowedSkillRange".Translate(bill.recipe.workSkill.label).ToString();
-                menuItems.Add(new MenuItem(MenuItemType.SkillRangeMin, GetSkillRangeMinLabel(), skillSearchLabel, null, true));
-                menuItems.Add(new MenuItem(MenuItemType.SkillRangeMax, GetSkillRangeMaxLabel(), skillSearchLabel, null, true));
-            }
+                new FieldDescriptor(MenuItemType.RecipeInfo,
+                    isVisible: () => true,
+                    getLabel: GetRecipeInfoLabel,
+                    getSearchLabel: () => "RimWorldAccess.Inspection.BillConfig.SearchLabel.Recipe".Translate().ToString()),
 
-            // 19. Ingredient search radius
-            menuItems.Add(new MenuItem(MenuItemType.IngredientSearchRadius, GetIngredientRadiusLabel(), "IngredientSearchRadius".Translate().ToString(), null, true));
+                // Vanilla is a ButtonText whose caption IS the state: a button, not a checkbox.
+                new FieldDescriptor(MenuItemType.SuspendToggle,
+                    isVisible: () => true,
+                    getLabel: () => bill.suspended ? "Suspended".Translate().ToString() : "NotSuspended".Translate().ToString(),
+                    isEditable: true,
+                    execute: ExecuteSuspendToggle,
+                    role: Shell.ElementRole.Button),
 
-            // 20. Ingredient filter
-            menuItems.Add(new MenuItem(MenuItemType.IngredientFilter,
-                "Filter".Translate() + " " + "Ingredients".Translate().ToLower() + "...",
-                "Ingredients".Translate().ToString(), null, true));
+                new FieldDescriptor(MenuItemType.UnpauseBill,
+                    isVisible: () => bill.paused,
+                    getLabel: () => "Unpause".Translate().ToString(),
+                    isEditable: true,
+                    execute: ExecuteUnpauseBill,
+                    role: Shell.ElementRole.Button),
 
-            // 21. Rename bill
-            menuItems.Add(new MenuItem(MenuItemType.RenameBill, GetRenameBillLabel(), "Rename".Translate().ToString(), null, true));
+                new FieldDescriptor(MenuItemType.RepeatMode,
+                    isVisible: () => true,
+                    getLabel: GetRepeatModeLabel,
+                    getSearchLabel: () => "RimWorldAccess.Inspection.BillConfig.SearchLabel.RepeatMode".Translate().ToString(),
+                    isEditable: true,
+                    execute: OpenRepeatModeMenu,
+                    role: Shell.ElementRole.ComboBox),
 
-            // 22. Ideology styling (conditional)
-            if (ModsConfig.IdeologyActive && !Find.IdeoManager.classicMode && bill.recipe.ProducedThingDef != null)
-            {
-                ThingDef producedDef = bill.recipe.ProducedThingDef;
-                if (producedDef.RelevantStyleCategories != null && producedDef.RelevantStyleCategories.Any())
-                {
-                    menuItems.Add(new MenuItem(MenuItemType.StyleSelection, GetStyleLabel(), "Stat_Thing_StyleLabel".Translate().ToString(), null, true));
-                }
-            }
+                new FieldDescriptor(MenuItemType.RepeatCount,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.RepeatCount,
+                    getLabel: GetRepeatCountLabel,
+                    getSearchLabel: () => "RimWorldAccess.Inspection.BillConfig.SearchLabel.RepeatCount".Translate().ToString(),
+                    isEditable: true,
+                    adjust: AdjustRepeatCount,
+                    jumpMin: JumpRepeatCountToMin,
+                    jumpMax: JumpRepeatCountToMax,
+                    numericText: () => bill.repeatCount.ToString(),
+                    applyNumeric: ApplyRepeatCountValue,
+                    role: Shell.ElementRole.Stepper),
 
-            // 23. Delete bill
-            menuItems.Add(new MenuItem(MenuItemType.DeleteBill, "DeleteBillTip".Translate().ToString(), "DeleteBillTip".Translate().ToString(), null, true));
+                new FieldDescriptor(MenuItemType.TargetCount,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.TargetCount,
+                    getLabel: GetTargetCountLabel,
+                    getSearchLabel: () => "RimWorldAccess.Inspection.BillConfig.SearchLabel.TargetCount".Translate().ToString(),
+                    isEditable: true,
+                    adjust: AdjustTargetCount,
+                    jumpMin: JumpTargetCountToMin,
+                    jumpMax: JumpTargetCountToMax,
+                    numericText: () => bill.targetCount.ToString(),
+                    applyNumeric: ApplyTargetCountValue,
+                    role: Shell.ElementRole.Stepper),
+
+                new FieldDescriptor(MenuItemType.CurrentlyHave,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.TargetCount,
+                    getLabel: GetCurrentlyHaveLabel,
+                    getSearchLabel: () => "RimWorldAccess.Inspection.BillConfig.SearchLabel.CurrentlyHave".Translate().ToString()),
+
+                new FieldDescriptor(MenuItemType.IncludeEquipped,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.TargetCount
+                        && bill.recipe.ProducedThingDef != null
+                        && (bill.recipe.ProducedThingDef.IsWeapon || bill.recipe.ProducedThingDef.IsApparel),
+                    getLabel: GetIncludeEquippedLabel,
+                    getSearchLabel: () => "IncludeEquipped".Translate().ToString(),
+                    isEditable: true,
+                    execute: ExecuteIncludeEquippedToggle,
+                    role: Shell.ElementRole.Checkbox,
+                    getCheck: () => CheckStateOf(bill.includeEquipped)),
+
+                new FieldDescriptor(MenuItemType.IncludeTainted,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.TargetCount
+                        && bill.recipe.ProducedThingDef != null
+                        && bill.recipe.ProducedThingDef.IsApparel
+                        && bill.recipe.ProducedThingDef.apparel.careIfWornByCorpse,
+                    getLabel: GetIncludeTaintedLabel,
+                    getSearchLabel: () => "IncludeTainted".Translate().ToString(),
+                    isEditable: true,
+                    execute: ExecuteIncludeTaintedToggle,
+                    role: Shell.ElementRole.Checkbox,
+                    getCheck: () => CheckStateOf(bill.includeTainted)),
+
+                new FieldDescriptor(MenuItemType.IncludeSource,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.TargetCount
+                        && bill.recipe.ProducedThingDef != null,
+                    getLabel: GetIncludeSourceLabel,
+                    getSearchLabel: () => "IncludeFromAll".Translate().ToString(),
+                    isEditable: true,
+                    execute: OpenIncludeSourceMenu,
+                    role: Shell.ElementRole.ComboBox),
+
+                new FieldDescriptor(MenuItemType.HpRange,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.TargetCount
+                        && bill.recipe.ProducedThingDef != null
+                        && bill.recipe.products.Any(p => p.thingDef.useHitPoints),
+                    getLabel: GetHpRangeLabel,
+                    getSearchLabel: () => "HitPointsBasic".Translate().CapitalizeFirst().ToString(),
+                    isEditable: true,
+                    execute: () => RangeEditMenuState.OpenHitPointsRange(
+                        () => bill.hpRange,
+                        v => bill.hpRange = new FloatRange(Mathf.Round(v.min * 100f) / 100f,
+                                                           Mathf.Round(v.max * 100f) / 100f),
+                        onClosed: RangeEditClosed),
+                    // Vanilla draws a two-handle FloatRange, but this row OPENS the shared range
+                    // editor rather than adjusting by arrow, so Button is the honest role; the live
+                    // range rides the label.
+                    role: Shell.ElementRole.Button),
+
+                new FieldDescriptor(MenuItemType.QualityRange,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.TargetCount
+                        && bill.recipe.ProducedThingDef != null
+                        && bill.recipe.ProducedThingDef.HasComp(typeof(CompQuality)),
+                    getLabel: GetQualityRangeLabel,
+                    getSearchLabel: () => "Quality".Translate().ToString(),
+                    isEditable: true,
+                    execute: () => RangeEditMenuState.OpenQualityRange(
+                        () => bill.qualityRange,
+                        v => bill.qualityRange = v,
+                        onClosed: RangeEditClosed),
+                    // Same reasoning as HpRange above.
+                    role: Shell.ElementRole.Button),
+
+                new FieldDescriptor(MenuItemType.LimitToAllowedStuff,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.TargetCount
+                        && bill.recipe.ProducedThingDef != null
+                        && bill.recipe.ProducedThingDef.MadeFromStuff,
+                    getLabel: GetLimitToAllowedStuffLabel,
+                    getSearchLabel: () => "LimitToAllowedStuff".Translate().ToString(),
+                    isEditable: true,
+                    execute: ExecuteLimitToAllowedStuffToggle,
+                    role: Shell.ElementRole.Checkbox,
+                    getCheck: () => CheckStateOf(bill.limitToAllowedStuff)),
+
+                new FieldDescriptor(MenuItemType.PauseWhenSatisfied,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.TargetCount,
+                    getLabel: GetPauseWhenSatisfiedLabel,
+                    getSearchLabel: () => "PauseWhenSatisfied".Translate().ToString(),
+                    isEditable: true,
+                    execute: ExecutePauseWhenSatisfiedToggle,
+                    role: Shell.ElementRole.Checkbox,
+                    getCheck: () => CheckStateOf(bill.pauseWhenSatisfied)),
+
+                new FieldDescriptor(MenuItemType.UnpauseAt,
+                    isVisible: () => bill.repeatMode == BillRepeatModeDefOf.TargetCount && bill.pauseWhenSatisfied,
+                    getLabel: GetUnpauseAtLabel,
+                    getSearchLabel: () => "UnpauseWhenYouHave".Translate().ToString(),
+                    isEditable: true,
+                    adjust: AdjustUnpauseAt,
+                    jumpMin: JumpUnpauseAtToMin,
+                    jumpMax: JumpUnpauseAtToMax,
+                    numericText: () => bill.unpauseWhenYouHave.ToString(),
+                    applyNumeric: ApplyUnpauseAtValue,
+                    role: Shell.ElementRole.Stepper),
+
+                new FieldDescriptor(MenuItemType.StoreMode,
+                    isVisible: () => true,
+                    getLabel: GetStoreModeLabel,
+                    getSearchLabel: () => bill.GetStoreMode().LabelCap.ToString(),
+                    isEditable: true,
+                    execute: OpenStoreModeMenu,
+                    role: Shell.ElementRole.ComboBox),
+
+                new FieldDescriptor(MenuItemType.PawnRestriction,
+                    isVisible: () => true,
+                    getLabel: GetPawnRestrictionLabel,
+                    getSearchLabel: () => "AnyWorker".Translate().ToString(),
+                    isEditable: true,
+                    execute: OpenPawnRestrictionMenu,
+                    role: Shell.ElementRole.ComboBox),
+
+                new FieldDescriptor(MenuItemType.SkillRangeMin,
+                    isVisible: () => bill.PawnRestriction == null && bill.recipe.workSkill != null && !bill.MechsOnly,
+                    getLabel: GetSkillRangeMinLabel,
+                    getSearchLabel: () => "AllowedSkillRange".Translate(bill.recipe.workSkill.label).ToString(),
+                    isEditable: true,
+                    adjust: (direction, multiplier) => AdjustSkillRangeMin(direction),
+                    jumpMin: JumpSkillRangeMinToMin,
+                    jumpMax: JumpSkillRangeMinToMax,
+                    numericText: () => bill.allowedSkillRange.min.ToString(),
+                    applyNumeric: ApplySkillRangeMinValue,
+                    // Vanilla's IntRange slider, split into two bounds; each really is arrow-stepped
+                    // here, so Stepper is the honest role.
+                    role: Shell.ElementRole.Stepper),
+
+                new FieldDescriptor(MenuItemType.SkillRangeMax,
+                    isVisible: () => bill.PawnRestriction == null && bill.recipe.workSkill != null && !bill.MechsOnly,
+                    getLabel: GetSkillRangeMaxLabel,
+                    getSearchLabel: () => "AllowedSkillRange".Translate(bill.recipe.workSkill.label).ToString(),
+                    isEditable: true,
+                    adjust: (direction, multiplier) => AdjustSkillRangeMax(direction),
+                    jumpMin: JumpSkillRangeMaxToMin,
+                    jumpMax: JumpSkillRangeMaxToMax,
+                    numericText: () => bill.allowedSkillRange.max.ToString(),
+                    applyNumeric: ApplySkillRangeMaxValue,
+                    role: Shell.ElementRole.Stepper),
+
+                new FieldDescriptor(MenuItemType.IngredientSearchRadius,
+                    isVisible: () => true,
+                    getLabel: GetIngredientRadiusLabel,
+                    getSearchLabel: () => "IngredientSearchRadius".Translate().ToString(),
+                    isEditable: true,
+                    adjust: AdjustIngredientRadius,
+                    jumpMin: JumpIngredientRadiusToMin,
+                    jumpMax: JumpIngredientRadiusToMax,
+                    // "Unlimited" is a display word, never a seed: the field's own 999 is what
+                    // vanilla's text box shows and what re-typing it means.
+                    numericText: () => bill.ingredientSearchRadius.ToString("F0"),
+                    applyNumeric: ApplyIngredientRadiusValue,
+                    role: Shell.ElementRole.Stepper),
+
+                new FieldDescriptor(MenuItemType.IngredientFilter,
+                    isVisible: () => true,
+                    getLabel: () => "Filter".Translate() + " " + "Ingredients".Translate().ToLower() + "...",
+                    getSearchLabel: () => "Ingredients".Translate().ToString(),
+                    isEditable: true,
+                    execute: OpenIngredientFilterMenu,
+                    role: Shell.ElementRole.Button),
+
+                new FieldDescriptor(MenuItemType.RenameBill,
+                    isVisible: () => true,
+                    getLabel: GetRenameBillLabel,
+                    getSearchLabel: () => "Rename".Translate().ToString(),
+                    isEditable: true,
+                    execute: StartTextInput,
+                    // Enter starts the text session.
+                    role: Shell.ElementRole.Button),
+
+                new FieldDescriptor(MenuItemType.StyleSelection,
+                    isVisible: () => ModsConfig.IdeologyActive && !Find.IdeoManager.classicMode
+                        && bill.recipe.ProducedThingDef != null
+                        && bill.recipe.ProducedThingDef.RelevantStyleCategories != null
+                        && bill.recipe.ProducedThingDef.RelevantStyleCategories.Any(),
+                    getLabel: GetStyleLabel,
+                    getSearchLabel: () => "Stat_Thing_StyleLabel".Translate().ToString(),
+                    isEditable: true,
+                    execute: OpenStyleMenu,
+                    role: Shell.ElementRole.ComboBox),
+
+                new FieldDescriptor(MenuItemType.DeleteBill,
+                    isVisible: () => true,
+                    getLabel: () => "DeleteBillTip".Translate().ToString(),
+                    isEditable: true,
+                    execute: DeleteBill,
+                    role: Shell.ElementRole.Button),
+            };
         }
 
         #region Label Generators
@@ -263,14 +527,12 @@ namespace RimWorldAccess
         {
             string label = "RimWorldAccess.Inspection.BillConfig.Recipe.Title".Translate(bill.recipe.LabelCap);
 
-            // Recipe description (description text already includes trailing punctuation
-            // from the def; we wrap with ". " separator only).
+            // The def's description already ends in punctuation, so only a ". " separator is added.
             if (!bill.recipe.description.NullOrEmpty())
             {
                 label += $". {bill.recipe.description}";
             }
 
-            // Work amount (formatted as hours)
             float workAmount = bill.recipe.WorkAmountTotal(null);
             if (workAmount > 0f)
             {
@@ -278,7 +540,6 @@ namespace RimWorldAccess
                     "WorkAmount".Translate(), workAmount.ToStringWorkAmount());
             }
 
-            // Minimum skill requirements (or just skill name if no requirements)
             if (!bill.recipe.skillRequirements.NullOrEmpty())
             {
                 var reqs = bill.recipe.skillRequirements
@@ -293,7 +554,6 @@ namespace RimWorldAccess
                     bill.recipe.workSkill.LabelCap);
             }
 
-            // Biotech: wearable by developmental stages
             if (ModsConfig.BiotechActive && bill.recipe.products != null && bill.recipe.products.Count == 1)
             {
                 ThingDef thingDef = bill.recipe.products[0].thingDef;
@@ -305,7 +565,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Mech bill info
             if (bill is Bill_Mech)
             {
                 label += "RimWorldAccess.Inspection.BillConfig.Recipe.GestationCyclesSuffix".Translate(
@@ -370,12 +629,12 @@ namespace RimWorldAccess
 
         private static string GetIncludeEquippedLabel()
         {
-            return LabelWithOnOff("IncludeEquipped".Translate(), bill.includeEquipped);
+            return "IncludeEquipped".Translate().ToString();
         }
 
         private static string GetIncludeTaintedLabel()
         {
-            return LabelWithOnOff("IncludeTainted".Translate(), bill.includeTainted);
+            return "IncludeTainted".Translate().ToString();
         }
 
         private static string GetIncludeSourceLabel()
@@ -402,12 +661,12 @@ namespace RimWorldAccess
 
         private static string GetLimitToAllowedStuffLabel()
         {
-            return LabelWithOnOff("LimitToAllowedStuff".Translate(), bill.limitToAllowedStuff);
+            return "LimitToAllowedStuff".Translate().ToString();
         }
 
         private static string GetPauseWhenSatisfiedLabel()
         {
-            return LabelWithOnOff("PauseWhenSatisfied".Translate(), bill.pauseWhenSatisfied);
+            return "PauseWhenSatisfied".Translate().ToString();
         }
 
         private static string GetUnpauseAtLabel()
@@ -431,7 +690,8 @@ namespace RimWorldAccess
                     "IncompatibleLower".Translate());
             }
 
-            return label;
+            // Vanilla's button has no caption, but a combo row needs its field named.
+            return "RimWorldAccess.Inspection.BillConfig.Label.StoreModeWithLabel".Translate(label);
         }
 
         private static string GetPawnRestrictionLabel()
@@ -503,1357 +763,13 @@ namespace RimWorldAccess
             return stylePrefix;
         }
 
-        /// <summary>
-        /// Composes "{label}: {On/Off}" using vanilla "On" and "Off" keys for the
-        /// boolean state and the shared LabelWithValue key for the colon glue.
-        /// </summary>
-        private static string LabelWithOnOff(string label, bool value)
+        /// <summary>The Check datum for one of vanilla's four CheckboxLabeled rows; the state rides the Check channel rather than being composed into the label.</summary>
+        private static Shell.CheckState CheckStateOf(bool value)
         {
-            return "RimWorldAccess.Inspection.BillConfig.Label.LabelWithValue".Translate(
-                label, (value ? "On" : "Off").Translate());
-        }
-
-        /// <summary>
-        /// Gets the label for a menu item type.
-        /// Used by JumpToMin/JumpToMax to update labels after value changes.
-        /// </summary>
-        private static string GetLabelForItem(MenuItemType type)
-        {
-            switch (type)
-            {
-                case MenuItemType.RepeatCount:
-                    return GetRepeatCountLabel();
-                case MenuItemType.TargetCount:
-                    return GetTargetCountLabel();
-                case MenuItemType.UnpauseAt:
-                    return GetUnpauseAtLabel();
-                case MenuItemType.IngredientSearchRadius:
-                    return GetIngredientRadiusLabel();
-                case MenuItemType.SkillRangeMin:
-                    return GetSkillRangeMinLabel();
-                case MenuItemType.SkillRangeMax:
-                    return GetSkillRangeMaxLabel();
-                default:
-                    return "";
-            }
+            return value ? Shell.CheckState.Checked : Shell.CheckState.Unchecked;
         }
 
         #endregion
 
-        public static void SelectNext()
-        {
-            if (menuItems == null || menuItems.Count == 0)
-                return;
-
-            if (isEditing)
-            {
-                TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.FinishEditingFirst".Loc());
-                return;
-            }
-
-            selectedIndex = MenuHelper.SelectNext(selectedIndex, menuItems.Count);
-            AnnounceCurrentSelection();
-        }
-
-        public static void SelectPrevious()
-        {
-            if (menuItems == null || menuItems.Count == 0)
-                return;
-
-            if (isEditing)
-            {
-                TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.FinishEditingFirst".Loc());
-                return;
-            }
-
-            selectedIndex = MenuHelper.SelectPrevious(selectedIndex, menuItems.Count);
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Jumps to the first item in the list.
-        /// </summary>
-        public static void JumpToFirst()
-        {
-            if (menuItems == null || menuItems.Count == 0)
-                return;
-
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                selectedIndex = typeahead.GetFirstMatch();
-                AnnounceWithSearch();
-                return;
-            }
-
-            selectedIndex = MenuHelper.JumpToFirst();
-            typeahead.ClearSearch();
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Jumps to the last item in the list.
-        /// </summary>
-        public static void JumpToLast()
-        {
-            if (menuItems == null || menuItems.Count == 0)
-                return;
-
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                selectedIndex = typeahead.GetLastMatch();
-                AnnounceWithSearch();
-                return;
-            }
-
-            selectedIndex = MenuHelper.JumpToLast(menuItems.Count);
-            typeahead.ClearSearch();
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Sets the selected index directly (used for typeahead navigation).
-        /// </summary>
-        public static void SetSelectedIndex(int index)
-        {
-            if (menuItems == null || menuItems.Count == 0)
-                return;
-
-            if (index >= 0 && index < menuItems.Count)
-            {
-                selectedIndex = index;
-            }
-        }
-
-        /// <summary>
-        /// Gets a list of search labels for typeahead.
-        /// These are the field names only, not values.
-        /// </summary>
-        private static List<string> GetSearchLabels()
-        {
-            List<string> labels = new List<string>();
-            if (menuItems != null)
-            {
-                foreach (var item in menuItems)
-                {
-                    labels.Add(item.searchLabel ?? "");
-                }
-            }
-            return labels;
-        }
-
-        /// <summary>
-        /// Processes a typeahead character input.
-        /// </summary>
-        public static bool ProcessTypeaheadCharacter(char c)
-        {
-            if (menuItems == null || menuItems.Count == 0)
-                return false;
-
-            if (isEditing)
-                return false;
-
-            var labels = GetSearchLabels();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-                return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Processes backspace for typeahead search.
-        /// </summary>
-        public static bool ProcessBackspace()
-        {
-            if (!typeahead.HasActiveSearch)
-                return false;
-
-            var labels = GetSearchLabels();
-            if (typeahead.ProcessBackspace(labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                }
-                AnnounceWithSearch();
-                return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Clears the typeahead search and announces the action.
-        /// </summary>
-        public static bool ClearTypeaheadSearch()
-        {
-            return typeahead.ClearSearchAndAnnounce();
-        }
-
-        /// <summary>
-        /// Gets the next match index when navigating with active search.
-        /// </summary>
-        public static int SelectNextMatch()
-        {
-            return typeahead.GetNextMatch(selectedIndex);
-        }
-
-        /// <summary>
-        /// Gets the previous match index when navigating with active search.
-        /// </summary>
-        public static int SelectPreviousMatch()
-        {
-            return typeahead.GetPreviousMatch(selectedIndex);
-        }
-
-        /// <summary>
-        /// Gets the last failed search string for no-match announcements.
-        /// </summary>
-        public static string GetLastFailedSearch()
-        {
-            return typeahead.LastFailedSearch;
-        }
-
-        /// <summary>
-        /// Handles typeahead character input from the layout-aware dispatcher.
-        /// Wraps <see cref="ProcessTypeaheadCharacter"/> with the no-match announcement.
-        /// </summary>
-        public static void HandleTypeahead(char c)
-        {
-            if (!isActive) return;
-            // While a numeric field is being edited, the digit's KeyCode event is routed to the
-            // numeric buffer by BuildingInspectPatch. Unity also fires a twin layout-aware
-            // character event (keyCode == None) for the same keypress, which arrives here. Swallow
-            // it: this consumer stays the active input owner, so the char isn't dispatched to a
-            // lower-priority consumer beneath us (e.g. the inspection tree the bill editor opened
-            // from, which would announce a stray "Overview" match).
-            if (isNumericInputMode) return;
-            if (!ProcessTypeaheadCharacter(c))
-            {
-                typeahead.SpeakNoMatches();
-            }
-        }
-
-        /// <summary>
-        /// Announces the current selection with search context if applicable.
-        /// </summary>
-        public static void AnnounceWithSearch()
-        {
-            if (menuItems == null || menuItems.Count == 0)
-                return;
-
-            if (selectedIndex < 0 || selectedIndex >= menuItems.Count)
-                return;
-
-            MenuItem item = menuItems[selectedIndex];
-            string announcement = item.label;
-
-            if (typeahead.HasActiveSearch)
-            {
-                announcement += typeahead.BuildSearchContextSuffix();
-            }
-            else
-            {
-                announcement += $". {MenuHelper.FormatPosition(selectedIndex, menuItems.Count)}";
-            }
-
-            TolkHelper.SpeakData(announcement);
-        }
-
-        public static void AdjustValue(int direction, int multiplier = 1)
-        {
-            if (menuItems == null || selectedIndex >= menuItems.Count)
-                return;
-
-            MenuItem item = menuItems[selectedIndex];
-
-            if (!item.isEditable)
-            {
-                TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.NotAdjustable".Loc(), SpeechPriority.High);
-                return;
-            }
-
-            switch (item.type)
-            {
-                case MenuItemType.RepeatMode:
-                    CycleRepeatMode(direction);
-                    break;
-
-                case MenuItemType.RepeatCount:
-                    AdjustRepeatCount(direction, multiplier);
-                    break;
-
-                case MenuItemType.TargetCount:
-                    AdjustTargetCount(direction, multiplier);
-                    break;
-
-                case MenuItemType.UnpauseAt:
-                    AdjustUnpauseAt(direction, multiplier);
-                    break;
-
-                case MenuItemType.SkillRangeMin:
-                    AdjustSkillRangeMin(direction);
-                    break;
-
-                case MenuItemType.SkillRangeMax:
-                    AdjustSkillRangeMax(direction);
-                    break;
-
-                case MenuItemType.IngredientSearchRadius:
-                    AdjustIngredientRadius(direction, multiplier);
-                    break;
-
-                default:
-                    TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.UseEnterToOpenSubmenu".Loc());
-                    break;
-            }
-        }
-
-        public static void ExecuteSelected()
-        {
-            if (menuItems == null || selectedIndex >= menuItems.Count)
-                return;
-
-            MenuItem item = menuItems[selectedIndex];
-
-            switch (item.type)
-            {
-                case MenuItemType.SuspendToggle:
-                    bill.suspended = !bill.suspended;
-                    BuildMenuItems();
-                    AnnounceCurrentSelection();
-                    break;
-
-                case MenuItemType.UnpauseBill:
-                    bill.paused = false;
-                    BuildMenuItems();
-                    AnnounceCurrentSelection();
-                    break;
-
-                case MenuItemType.PauseWhenSatisfied:
-                    bill.pauseWhenSatisfied = !bill.pauseWhenSatisfied;
-                    if (bill.pauseWhenSatisfied && bill.unpauseWhenYouHave >= bill.targetCount)
-                    {
-                        bill.unpauseWhenYouHave = bill.targetCount - 1;
-                    }
-                    BuildMenuItems();
-                    AnnounceCurrentSelection();
-                    break;
-
-                case MenuItemType.IncludeEquipped:
-                    bill.includeEquipped = !bill.includeEquipped;
-                    BuildMenuItems();
-                    AnnounceCurrentSelection();
-                    break;
-
-                case MenuItemType.IncludeTainted:
-                    bill.includeTainted = !bill.includeTainted;
-                    BuildMenuItems();
-                    AnnounceCurrentSelection();
-                    break;
-
-                case MenuItemType.LimitToAllowedStuff:
-                    bill.limitToAllowedStuff = !bill.limitToAllowedStuff;
-                    BuildMenuItems();
-                    AnnounceCurrentSelection();
-                    break;
-
-                case MenuItemType.IncludeSource:
-                    OpenIncludeSourceMenu();
-                    break;
-
-                case MenuItemType.HpRange:
-                    RangeEditMenuState.OpenHitPointsRange(bill.hpRange);
-                    break;
-
-                case MenuItemType.QualityRange:
-                    RangeEditMenuState.OpenQualityRange(bill.qualityRange);
-                    break;
-
-                case MenuItemType.StoreMode:
-                    OpenStoreModeMenu();
-                    break;
-
-                case MenuItemType.PawnRestriction:
-                    OpenPawnRestrictionMenu();
-                    break;
-
-                case MenuItemType.IngredientFilter:
-                    OpenIngredientFilterMenu();
-                    break;
-
-                case MenuItemType.RenameBill:
-                    StartTextInput();
-                    break;
-
-                case MenuItemType.StyleSelection:
-                    OpenStyleMenu();
-                    break;
-
-                case MenuItemType.DeleteBill:
-                    DeleteBill();
-                    break;
-
-                default:
-                    TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.UseLeftRightToAdjust".Loc());
-                    break;
-            }
-        }
-
-        #region Value Adjustment Methods
-
-        private static void CycleRepeatMode(int direction)
-        {
-            List<BillRepeatModeDef> modes = DefDatabase<BillRepeatModeDef>.AllDefsListForReading;
-            int currentIndex = modes.IndexOf(bill.repeatMode);
-
-            if (direction > 0)
-            {
-                currentIndex = (currentIndex + 1) % modes.Count;
-            }
-            else
-            {
-                currentIndex = (currentIndex - 1 + modes.Count) % modes.Count;
-            }
-
-            bill.repeatMode = modes[currentIndex];
-            BuildMenuItems(); // Rebuild to show/hide related options
-            AnnounceCurrentSelection();
-        }
-
-        private static void AdjustRepeatCount(int direction, int multiplier = 1)
-        {
-            int step = direction * multiplier;
-            int oldValue = bill.repeatCount;
-            bill.repeatCount = Mathf.Max(1, bill.repeatCount + step);
-
-            // Check if we hit a boundary
-            if (bill.repeatCount == oldValue)
-            {
-                NumericStepperHelper.SpeakBoundary(direction);
-                return;
-            }
-            if (bill.repeatCount == 1 && direction < 0)
-            {
-                NumericStepperHelper.SpeakValueAtMinimum("1");
-            }
-            else
-            {
-                TolkHelper.SpeakData(bill.repeatCount.ToString());
-            }
-
-            menuItems[selectedIndex].label = GetRepeatCountLabel();
-        }
-
-        private static void AdjustTargetCount(int direction, int multiplier = 1)
-        {
-            int step = direction * multiplier;
-            int oldValue = bill.targetCount;
-            bill.targetCount = Mathf.Max(1, bill.targetCount + step);
-
-            // Enforce unpauseAt constraint
-            if (bill.pauseWhenSatisfied && bill.unpauseWhenYouHave >= bill.targetCount)
-            {
-                bill.unpauseWhenYouHave = bill.targetCount - 1;
-            }
-
-            // Check if we hit Infinite threshold
-            if (bill.targetCount >= 999999)
-            {
-                bill.targetCount = 999999;  // Normalize to exactly 999999
-                TolkHelper.Speak("Infinite".Loc());
-                menuItems[selectedIndex].label = GetTargetCountLabel();
-                return;
-            }
-
-            // Check if we hit a boundary
-            if (bill.targetCount == oldValue)
-            {
-                NumericStepperHelper.SpeakBoundary(direction);
-                return;
-            }
-            if (bill.targetCount == 1 && direction < 0)
-            {
-                NumericStepperHelper.SpeakValueAtMinimum("1");
-            }
-            else
-            {
-                TolkHelper.SpeakData(bill.targetCount.ToString());
-            }
-
-            menuItems[selectedIndex].label = GetTargetCountLabel();
-        }
-
-        private static void AdjustUnpauseAt(int direction, int multiplier = 1)
-        {
-            int step = direction * multiplier;
-            int oldValue = bill.unpauseWhenYouHave;
-            int maxValue = bill.targetCount - 1;
-            bill.unpauseWhenYouHave = Mathf.Clamp(bill.unpauseWhenYouHave + step, 0, maxValue);
-
-            // Check if we hit a boundary
-            if (bill.unpauseWhenYouHave == oldValue)
-            {
-                NumericStepperHelper.SpeakBoundary(direction);
-                return;
-            }
-            if (bill.unpauseWhenYouHave == 0 && direction < 0)
-            {
-                NumericStepperHelper.SpeakValueAtMinimum("0");
-            }
-            else if (bill.unpauseWhenYouHave == maxValue && direction > 0)
-            {
-                NumericStepperHelper.SpeakValueAtMaximum(bill.unpauseWhenYouHave.ToString());
-            }
-            else
-            {
-                TolkHelper.SpeakData(bill.unpauseWhenYouHave.ToString());
-            }
-
-            menuItems[selectedIndex].label = GetUnpauseAtLabel();
-        }
-
-        private static void AdjustSkillRangeMin(int direction)
-        {
-            int oldMin = bill.allowedSkillRange.min;
-            int newMin = Mathf.Clamp(oldMin + direction, 0, bill.allowedSkillRange.max);
-            if (newMin == oldMin)
-            {
-                NumericStepperHelper.SpeakBoundary(direction);
-                return;
-            }
-            bill.allowedSkillRange = new IntRange(newMin, bill.allowedSkillRange.max);
-            menuItems[selectedIndex].label = GetSkillRangeMinLabel();
-            TolkHelper.SpeakData(newMin.ToString());
-        }
-
-        private static void AdjustSkillRangeMax(int direction)
-        {
-            int oldMax = bill.allowedSkillRange.max;
-            int newMax = Mathf.Clamp(oldMax + direction, bill.allowedSkillRange.min, 20);
-            if (newMax == oldMax)
-            {
-                NumericStepperHelper.SpeakBoundary(direction);
-                return;
-            }
-            bill.allowedSkillRange = new IntRange(bill.allowedSkillRange.min, newMax);
-            menuItems[selectedIndex].label = GetSkillRangeMaxLabel();
-            TolkHelper.SpeakData(newMax.ToString());
-        }
-
-        /// <summary>
-        /// Jumps to the minimum value for the current numeric field.
-        /// </summary>
-        public static void JumpToMin()
-        {
-            if (menuItems == null || selectedIndex >= menuItems.Count)
-                return;
-
-            MenuItem item = menuItems[selectedIndex];
-
-            switch (item.type)
-            {
-                case MenuItemType.RepeatCount:
-                    if (bill.repeatCount == 1)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Minimum);
-                        return;
-                    }
-                    bill.repeatCount = 1;
-                    NumericStepperHelper.SpeakValueAtMinimum("1");
-                    break;
-
-                case MenuItemType.TargetCount:
-                    if (bill.targetCount == 1)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Minimum);
-                        return;
-                    }
-                    bill.targetCount = 1;
-                    if (bill.pauseWhenSatisfied && bill.unpauseWhenYouHave >= bill.targetCount)
-                    {
-                        bill.unpauseWhenYouHave = 0;
-                    }
-                    NumericStepperHelper.SpeakValueAtMinimum("1");
-                    break;
-
-                case MenuItemType.UnpauseAt:
-                    if (bill.unpauseWhenYouHave == 0)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Minimum);
-                        return;
-                    }
-                    bill.unpauseWhenYouHave = 0;
-                    NumericStepperHelper.SpeakValueAtMinimum("0");
-                    break;
-
-                case MenuItemType.IngredientSearchRadius:
-                    if (bill.ingredientSearchRadius <= 3f)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Minimum);
-                        return;
-                    }
-                    bill.ingredientSearchRadius = 3f;
-                    NumericStepperHelper.SpeakValueAtMinimum("3");
-                    break;
-
-                case MenuItemType.SkillRangeMin:
-                    if (bill.allowedSkillRange.min == 0)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Minimum);
-                        return;
-                    }
-                    bill.allowedSkillRange = new IntRange(0, bill.allowedSkillRange.max);
-                    NumericStepperHelper.SpeakValueAtMinimum("0");
-                    break;
-
-                case MenuItemType.SkillRangeMax:
-                    if (bill.allowedSkillRange.max == bill.allowedSkillRange.min)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Minimum);
-                        return;
-                    }
-                    bill.allowedSkillRange = new IntRange(bill.allowedSkillRange.min, bill.allowedSkillRange.min);
-                    NumericStepperHelper.SpeakValueAtMinimum(bill.allowedSkillRange.min.ToString());
-                    break;
-
-                default:
-                    TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.FieldNotAdjustable".Loc());
-                    return;
-            }
-
-            menuItems[selectedIndex].label = GetLabelForItem(item.type);
-        }
-
-        /// <summary>
-        /// Jumps to the maximum value for the current numeric field.
-        /// </summary>
-        public static void JumpToMax()
-        {
-            if (menuItems == null || selectedIndex >= menuItems.Count)
-                return;
-
-            MenuItem item = menuItems[selectedIndex];
-
-            switch (item.type)
-            {
-                case MenuItemType.RepeatCount:
-                    TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.NoMaximumLimit".Loc());
-                    return;
-
-                case MenuItemType.TargetCount:
-                    if (bill.targetCount >= 999999)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Maximum);
-                        return;
-                    }
-                    bill.targetCount = 999999;
-                    NumericStepperHelper.SpeakValueAtMaximum("Infinite".Translate());
-                    break;
-
-                case MenuItemType.UnpauseAt:
-                    int maxValue = bill.targetCount - 1;
-                    if (bill.unpauseWhenYouHave == maxValue)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Maximum);
-                        return;
-                    }
-                    bill.unpauseWhenYouHave = maxValue;
-                    NumericStepperHelper.SpeakValueAtMaximum(maxValue.ToString());
-                    break;
-
-                case MenuItemType.IngredientSearchRadius:
-                    if (bill.ingredientSearchRadius >= 999f)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Maximum);
-                        return;
-                    }
-                    bill.ingredientSearchRadius = 999f;
-                    NumericStepperHelper.SpeakValueAtMaximum("Unlimited".Translate());
-                    break;
-
-                case MenuItemType.SkillRangeMin:
-                    if (bill.allowedSkillRange.min == bill.allowedSkillRange.max)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Maximum);
-                        return;
-                    }
-                    bill.allowedSkillRange = new IntRange(bill.allowedSkillRange.max, bill.allowedSkillRange.max);
-                    NumericStepperHelper.SpeakValueAtMaximum(bill.allowedSkillRange.max.ToString());
-                    break;
-
-                case MenuItemType.SkillRangeMax:
-                    if (bill.allowedSkillRange.max == 20)
-                    {
-                        MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Maximum);
-                        return;
-                    }
-                    bill.allowedSkillRange = new IntRange(bill.allowedSkillRange.min, 20);
-                    NumericStepperHelper.SpeakValueAtMaximum("20");
-                    break;
-
-                default:
-                    TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.FieldNotAdjustable".Loc());
-                    return;
-            }
-
-            menuItems[selectedIndex].label = GetLabelForItem(item.type);
-        }
-
-        #endregion
-
-        #region Numeric Input Methods
-
-        /// <summary>
-        /// Starts numeric input mode for typing a value directly.
-        /// </summary>
-        public static void StartNumericInput()
-        {
-            if (menuItems == null || selectedIndex >= menuItems.Count)
-                return;
-
-            MenuItem item = menuItems[selectedIndex];
-
-            // Only allow numeric input for numeric fields - otherwise execute the action
-            if (item.type != MenuItemType.RepeatCount &&
-                item.type != MenuItemType.TargetCount &&
-                item.type != MenuItemType.UnpauseAt &&
-                item.type != MenuItemType.IngredientSearchRadius &&
-                item.type != MenuItemType.SkillRangeMin &&
-                item.type != MenuItemType.SkillRangeMax)
-            {
-                // Not a numeric field - execute the action instead
-                ExecuteSelected();
-                return;
-            }
-
-            numericBuffer = "";
-            isNumericInputMode = true;
-            TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Numeric.Prompt".Loc());
-        }
-
-        /// <summary>
-        /// Handles a digit input during numeric input mode.
-        /// </summary>
-        public static void HandleNumericDigit(char digit)
-        {
-            if (!isNumericInputMode) return;
-
-            numericBuffer += digit;
-            TolkHelper.SpeakData(numericBuffer, SpeechPriority.Low);
-        }
-
-        /// <summary>
-        /// Handles backspace during numeric input mode.
-        /// </summary>
-        public static void HandleNumericBackspace()
-        {
-            if (!isNumericInputMode || numericBuffer.Length == 0) return;
-
-            numericBuffer = numericBuffer.Substring(0, numericBuffer.Length - 1);
-            if (numericBuffer.Length > 0)
-            {
-                TolkHelper.SpeakData(numericBuffer, SpeechPriority.Low);
-            }
-            else
-            {
-                TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Numeric.Empty".Loc(), SpeechPriority.Low);
-            }
-        }
-
-        /// <summary>
-        /// Confirms and applies the numeric input value.
-        /// </summary>
-        public static void ConfirmNumericInput()
-        {
-            if (!isNumericInputMode) return;
-
-            if (int.TryParse(numericBuffer, out int value) && value >= 0)
-            {
-                ApplyNumericValue(value);
-            }
-            else
-            {
-                TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Numeric.InvalidNumber".Loc());
-            }
-
-            isNumericInputMode = false;
-            numericBuffer = "";
-        }
-
-        /// <summary>
-        /// Cancels numeric input mode without applying changes.
-        /// </summary>
-        public static void CancelNumericInput()
-        {
-            isNumericInputMode = false;
-            numericBuffer = "";
-            TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Numeric.Cancelled".Loc());
-        }
-
-        private static void ApplyNumericValue(int value)
-        {
-            if (menuItems == null || selectedIndex >= menuItems.Count)
-                return;
-
-            MenuItem item = menuItems[selectedIndex];
-
-            switch (item.type)
-            {
-                case MenuItemType.RepeatCount:
-                    bill.repeatCount = Mathf.Max(1, value);
-                    menuItems[selectedIndex].label = GetRepeatCountLabel();
-                    TolkHelper.SpeakData(menuItems[selectedIndex].label);
-                    break;
-
-                case MenuItemType.TargetCount:
-                    bill.targetCount = Mathf.Max(1, value);
-                    // Ensure unpause constraint
-                    if (bill.pauseWhenSatisfied && bill.unpauseWhenYouHave >= bill.targetCount)
-                    {
-                        bill.unpauseWhenYouHave = bill.targetCount - 1;
-                    }
-                    menuItems[selectedIndex].label = GetTargetCountLabel();
-                    if (bill.targetCount >= 999999)
-                    {
-                        bill.targetCount = 999999;
-                        TolkHelper.Speak("Infinite".Loc());
-                    }
-                    else
-                    {
-                        TolkHelper.SpeakData(bill.targetCount.ToString());
-                    }
-                    break;
-
-                case MenuItemType.UnpauseAt:
-                    // Clamp to valid range: 0 to targetCount - 1
-                    bill.unpauseWhenYouHave = Mathf.Clamp(value, 0, bill.targetCount - 1);
-                    menuItems[selectedIndex].label = GetUnpauseAtLabel();
-                    TolkHelper.SpeakData(menuItems[selectedIndex].label);
-                    break;
-
-                case MenuItemType.IngredientSearchRadius:
-                    // Valid range is 3-100, anything over 100 becomes unlimited (999)
-                    if (value > 100)
-                    {
-                        bill.ingredientSearchRadius = 999f;
-                        TolkHelper.Speak("Unlimited".Loc());
-                    }
-                    else
-                    {
-                        bill.ingredientSearchRadius = Mathf.Clamp(value, 3, 100);
-                        TolkHelper.SpeakData(bill.ingredientSearchRadius.ToString("F0"));
-                    }
-                    menuItems[selectedIndex].label = GetIngredientRadiusLabel();
-                    break;
-
-                case MenuItemType.SkillRangeMin:
-                    int newMin = Mathf.Clamp(value, 0, bill.allowedSkillRange.max);
-                    bill.allowedSkillRange = new IntRange(newMin, bill.allowedSkillRange.max);
-                    menuItems[selectedIndex].label = GetSkillRangeMinLabel();
-                    TolkHelper.SpeakData(menuItems[selectedIndex].label);
-                    break;
-
-                case MenuItemType.SkillRangeMax:
-                    int newMax = Mathf.Clamp(value, bill.allowedSkillRange.min, 20);
-                    bill.allowedSkillRange = new IntRange(bill.allowedSkillRange.min, newMax);
-                    menuItems[selectedIndex].label = GetSkillRangeMaxLabel();
-                    TolkHelper.SpeakData(menuItems[selectedIndex].label);
-                    break;
-
-                default:
-                    TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Numeric.NotApplicable".Loc());
-                    break;
-            }
-        }
-
-        #endregion
-
-        #region Text Input Methods (Bill Rename)
-
-        // Modal bill rename — controller registers with TextInputManager so the
-        // priority -1.6 dispatch in UnifiedKeyboardPatch handles every key.
-        private static readonly TextFieldSpec billRenameSpec = new TextFieldSpec(
-            labelKey: "RimWorldAccess.TextInput.LabelDefault",
-            maxLength: 28,
-            minLength: 1);
-
-        private static void StartTextInput()
-        {
-            billRenameController.Begin(bill.RenamableLabel, billRenameSpec, OnBillRenameConfirm, OnBillRenameCancel, replaceOnType: true);
-        }
-
-        private static void OnBillRenameConfirm(string newName)
-        {
-            bill.RenamableLabel = newName;
-            BuildMenuItems();
-            BillsMenuState.RefreshMenuItems();
-            TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.RenamedTo".Loc(newName));
-            AnnounceCurrentSelection();
-        }
-
-        private static void OnBillRenameCancel()
-        {
-            TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.RenameCancelled".Loc());
-        }
-
-        #endregion
-
-        #region Range Edit Integration
-
-        /// <summary>
-        /// Applies range changes from RangeEditMenuState back to the bill.
-        /// Called from BuildingInspectPatch when range editing completes.
-        /// </summary>
-        public static void ApplyRangeChanges(FloatRange hitPoints, QualityRange quality)
-        {
-            if (menuItems == null || selectedIndex >= menuItems.Count || bill == null)
-                return;
-
-            var item = menuItems[selectedIndex];
-            if (item.type == MenuItemType.HpRange)
-            {
-                bill.hpRange = hitPoints;
-                // Match vanilla rounding
-                bill.hpRange = new FloatRange(
-                    Mathf.Round(bill.hpRange.min * 100f) / 100f,
-                    Mathf.Round(bill.hpRange.max * 100f) / 100f);
-                TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.HitPointsApplied".Loc(
-                    bill.hpRange.min.ToStringPercent(), bill.hpRange.max.ToStringPercent()));
-            }
-            else if (item.type == MenuItemType.QualityRange)
-            {
-                bill.qualityRange = quality;
-                TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.QualityApplied".Loc(
-                    bill.qualityRange.min.GetLabel(), bill.qualityRange.max.GetLabel()));
-            }
-
-            BuildMenuItems();
-            AnnounceCurrentSelection();
-        }
-
-        #endregion
-
-        private static void AdjustIngredientRadius(int direction, int multiplier = 1)
-        {
-            float oldValue = bill.ingredientSearchRadius;
-
-            // Handle unlimited state
-            if (bill.ingredientSearchRadius >= 999f)
-            {
-                if (direction < 0)
-                {
-                    bill.ingredientSearchRadius = 100f;
-                    TolkHelper.SpeakData("100");
-                }
-                else
-                {
-                    MenuHelper.SpeakAlreadyAtEdge(MenuHelper.EdgeDirection.Maximum);
-                }
-                menuItems[selectedIndex].label = GetIngredientRadiusLabel();
-                return;
-            }
-
-            // Translate multipliers for ingredient radius (range is only 3-100)
-            float step;
-            if (multiplier >= 1000)
-            {
-                // Shift+Ctrl = jump to 100 (or unlimited if already at 100)
-                if (direction > 0)
-                {
-                    if (bill.ingredientSearchRadius >= 100f)
-                    {
-                        bill.ingredientSearchRadius = 999f;
-                        NumericStepperHelper.SpeakValueAtMaximum("Unlimited".Translate());
-                    }
-                    else
-                    {
-                        bill.ingredientSearchRadius = 100f;
-                        TolkHelper.SpeakData("100");
-                    }
-                }
-                else
-                {
-                    // Shift+Ctrl+Down = jump to 3
-                    bill.ingredientSearchRadius = 3f;
-                    NumericStepperHelper.SpeakValueAtMinimum("3");
-                }
-                menuItems[selectedIndex].label = GetIngredientRadiusLabel();
-                return;
-            }
-            else if (multiplier >= 100)
-            {
-                // Ctrl = ±25 for ingredient radius
-                step = direction * 25f;
-            }
-            else
-            {
-                // Normal or Shift
-                step = direction * multiplier;
-            }
-
-            bill.ingredientSearchRadius = Mathf.Clamp(bill.ingredientSearchRadius + step, 3f, 100f);
-
-            // Check if we should go to unlimited (at 100 and pressing up)
-            if (bill.ingredientSearchRadius >= 100f && direction > 0 && oldValue >= 100f)
-            {
-                bill.ingredientSearchRadius = 999f;
-                NumericStepperHelper.SpeakValueAtMaximum("Unlimited".Translate());
-                menuItems[selectedIndex].label = GetIngredientRadiusLabel();
-                return;
-            }
-
-            // Check if we hit a boundary
-            if (bill.ingredientSearchRadius == oldValue)
-            {
-                NumericStepperHelper.SpeakBoundary(direction);
-                return;
-            }
-
-            // Announce the new value
-            if (bill.ingredientSearchRadius == 3f && direction < 0)
-            {
-                NumericStepperHelper.SpeakValueAtMinimum("3");
-            }
-            else if (bill.ingredientSearchRadius >= 100f)
-            {
-                TolkHelper.SpeakData("100");
-            }
-            else
-            {
-                TolkHelper.SpeakData($"{bill.ingredientSearchRadius:F0}");
-            }
-
-            menuItems[selectedIndex].label = GetIngredientRadiusLabel();
-        }
-
-        #region Submenu Methods
-
-        private static void OpenStoreModeMenu()
-        {
-            List<FloatMenuOption> options = new List<FloatMenuOption>();
-
-            foreach (BillStoreModeDef storeDef in DefDatabase<BillStoreModeDef>.AllDefs
-                .OrderBy(bsm => bsm.listOrder))
-            {
-                if (storeDef == BillStoreModeDefOf.SpecificStockpile)
-                {
-                    FillOutputDropdownOptions(options,
-                        BillStoreModeDefOf.SpecificStockpile.LabelCap,
-                        delegate(ISlotGroup slot)
-                        {
-                            bill.SetStoreMode(BillStoreModeDefOf.SpecificStockpile, slot);
-                            BuildMenuItems();
-                            AnnounceCurrentSelection();
-                        });
-                }
-                else
-                {
-                    BillStoreModeDef smLocal = storeDef;
-                    options.Add(new FloatMenuOption(smLocal.LabelCap, delegate
-                    {
-                        bill.SetStoreMode(smLocal);
-                        BuildMenuItems();
-                        AnnounceCurrentSelection();
-                    }));
-                }
-            }
-
-            WindowlessFloatMenuState.Open(options, false, announceSelection: false);
-        }
-
-        private static void OpenPawnRestrictionMenu()
-        {
-            List<FloatMenuOption> options = new List<FloatMenuOption>();
-            Map map = bill.billStack.billGiver.Map;
-
-            if (ModsConfig.BiotechActive && bill.recipe.mechanitorOnlyRecipe)
-            {
-                // Mechanitor-only recipe: show AnyMechanitor + only mechanitor pawns
-                options.Add(new FloatMenuOption("AnyMechanitor".Translate().ToString(), delegate
-                {
-                    bill.SetAnyPawnRestriction();
-                    BuildMenuItems();
-                    AnnounceCurrentSelection();
-                }));
-
-                foreach (Pawn pawn in map.mapPawns.FreeColonists.Where(MechanitorUtility.IsMechanitor))
-                {
-                    Pawn localPawn = pawn;
-                    string label = pawn.LabelShortCap;
-                    options.Add(new FloatMenuOption(label, delegate
-                    {
-                        bill.SetPawnRestriction(localPawn);
-                        BuildMenuItems();
-                        AnnounceCurrentSelection();
-                    }));
-                }
-            }
-            else
-            {
-                // Standard: AnyWorker
-                options.Add(new FloatMenuOption("AnyWorker".Translate().ToString(), delegate
-                {
-                    bill.SetAnyPawnRestriction();
-                    BuildMenuItems();
-                    AnnounceCurrentSelection();
-                }));
-
-                // Ideology: AnySlave
-                if (ModsConfig.IdeologyActive)
-                {
-                    options.Add(new FloatMenuOption("AnySlave".Translate().ToString(), delegate
-                    {
-                        bill.SetAnySlaveRestriction();
-                        BuildMenuItems();
-                        AnnounceCurrentSelection();
-                    }));
-                }
-
-                // Biotech: AnyMech / AnyNonMech
-                if (ModsConfig.BiotechActive && MechWorkUtility.AnyWorkMechCouldDo(bill.recipe))
-                {
-                    options.Add(new FloatMenuOption("AnyMech".Translate().ToString(), delegate
-                    {
-                        bill.SetAnyMechRestriction();
-                        BuildMenuItems();
-                        AnnounceCurrentSelection();
-                    }));
-                    options.Add(new FloatMenuOption("AnyNonMech".Translate().ToString(), delegate
-                    {
-                        bill.SetAnyNonMechRestriction();
-                        BuildMenuItems();
-                        AnnounceCurrentSelection();
-                    }));
-                }
-
-                // Individual pawns
-                List<Pawn> colonists = map.mapPawns.FreeColonists.ToList();
-                if (bill.recipe.workSkill != null)
-                {
-                    colonists = colonists.OrderByDescending(p => p.skills.GetSkill(bill.recipe.workSkill).Level).ToList();
-                }
-
-                foreach (Pawn pawn in colonists)
-                {
-                    string label = pawn.LabelShortCap;
-
-                    if (bill.recipe.workSkill != null)
-                    {
-                        int skillLevel = pawn.skills.GetSkill(bill.recipe.workSkill).Level;
-                        label = "RimWorldAccess.Inspection.BillConfig.Label.PawnWithSkillSuffix".Translate(
-                            label, skillLevel);
-                    }
-
-                    Pawn localPawn = pawn;
-                    options.Add(new FloatMenuOption(label, delegate
-                    {
-                        bill.SetPawnRestriction(localPawn);
-                        BuildMenuItems();
-                        AnnounceCurrentSelection();
-                    }));
-                }
-            }
-
-            WindowlessFloatMenuState.Open(options, false, announceSelection: false);
-        }
-
-        private static void OpenIncludeSourceMenu()
-        {
-            List<FloatMenuOption> options = new List<FloatMenuOption>();
-
-            // Include from all
-            options.Add(new FloatMenuOption("IncludeFromAll".Translate().ToString(), delegate
-            {
-                bill.SetIncludeGroup(null);
-                BuildMenuItems();
-                AnnounceCurrentSelection();
-            }));
-
-            // Specific storage locations (grouped like vanilla)
-            FillOutputDropdownOptions(options,
-                "IncludeSpecific".Translate(),
-                delegate(ISlotGroup slot)
-                {
-                    bill.SetIncludeGroup(slot);
-                    BuildMenuItems();
-                    AnnounceCurrentSelection();
-                });
-
-            WindowlessFloatMenuState.Open(options, false, announceSelection: false);
-        }
-
-        private static void OpenStyleMenu()
-        {
-            if (bill.recipe.ProducedThingDef == null)
-                return;
-
-            ThingDef producedDef = bill.recipe.ProducedThingDef;
-            List<FloatMenuOption> options = new List<FloatMenuOption>();
-
-            // Use global style
-            options.Add(new FloatMenuOption("UseGlobalStyle".Translate().ToString(), delegate
-            {
-                bill.globalStyle = true;
-                bill.style = null;
-                bill.graphicIndexOverride = null;
-                BuildMenuItems();
-                AnnounceCurrentSelection();
-            }));
-
-            // Basic (no style)
-            options.Add(new FloatMenuOption("RimWorldAccess.Inspection.BillConfig.Style.Basic".Translate(), delegate
-            {
-                bill.globalStyle = false;
-                bill.style = null;
-                bill.graphicIndexOverride = null;
-                BuildMenuItems();
-                AnnounceCurrentSelection();
-            }));
-
-            // Per-style category options
-            if (producedDef.RelevantStyleCategories != null)
-            {
-                foreach (StyleCategoryDef styleCat in producedDef.RelevantStyleCategories)
-                {
-                    ThingStyleDef styleDef = styleCat.GetStyleForThingDef(producedDef);
-                    if (styleDef != null)
-                    {
-                        StyleCategoryDef localCat = styleCat;
-                        ThingStyleDef localStyle = styleDef;
-                        options.Add(new FloatMenuOption(localCat.LabelCap.ToString(), delegate
-                        {
-                            bill.globalStyle = false;
-                            bill.style = localStyle;
-                            bill.graphicIndexOverride = null;
-                            BuildMenuItems();
-                            AnnounceCurrentSelection();
-                        }));
-                    }
-                }
-            }
-
-            WindowlessFloatMenuState.Open(options, false, announceSelection: false);
-        }
-
-        /// <summary>
-        /// Fills dropdown options for storage locations, replicating vanilla's
-        /// FillOutputDropdownOptions logic with StorageGroup deduplication
-        /// and unnamed Building_Storage filtering.
-        /// </summary>
-        private static void FillOutputDropdownOptions(
-            List<FloatMenuOption> options,
-            string prefix,
-            Action<ISlotGroup> onSelected)
-        {
-            List<SlotGroup> allGroups = bill.billStack.billGiver.Map
-                .haulDestinationManager.AllGroupsListInPriorityOrder;
-
-            var groupsByLabel = new Dictionary<string, List<ISlotGroup>>();
-
-            for (int i = 0; i < allGroups.Count; i++)
-            {
-                SlotGroup slotGroup = allGroups[i];
-
-                if (slotGroup.StorageGroup != null)
-                {
-                    StorageGroup storageGroup = slotGroup.StorageGroup;
-                    if (!groupsByLabel.ContainsKey(storageGroup.GroupingLabel))
-                        groupsByLabel.Add(storageGroup.GroupingLabel, new List<ISlotGroup>());
-                    if (!groupsByLabel[storageGroup.GroupingLabel].Contains(storageGroup))
-                        groupsByLabel[storageGroup.GroupingLabel].Add(storageGroup);
-                }
-                else if (!(slotGroup.parent is Building_Storage) || slotGroup.parent is IRenameable)
-                {
-                    if (!groupsByLabel.ContainsKey(slotGroup.GroupingLabel))
-                        groupsByLabel.Add(slotGroup.GroupingLabel, new List<ISlotGroup>());
-                    groupsByLabel[slotGroup.GroupingLabel].Add(slotGroup);
-                }
-            }
-
-            // Flatten groups maintaining GroupingOrder, then separate compatible from incompatible
-            var orderedGroups = groupsByLabel
-                .OrderBy(kv => (kv.Value.Count > 0) ? kv.Value[0].GroupingOrder : 0)
-                .SelectMany(kv => kv.Value)
-                .ToList();
-
-            var compatible = new List<ISlotGroup>();
-            var incompatible = new List<ISlotGroup>();
-
-            foreach (var group in orderedGroups)
-            {
-                if (bill.recipe.WorkerCounter.CanPossiblyStore(bill, group))
-                    compatible.Add(group);
-                else
-                    incompatible.Add(group);
-            }
-
-            // Compatible locations first
-            foreach (var group in compatible)
-            {
-                string label = string.Format(prefix, SlotGroup.GetGroupLabel(group));
-                ISlotGroup localGroup = group;
-                options.Add(new FloatMenuOption(label, delegate
-                {
-                    onSelected(localGroup);
-                }));
-            }
-
-            // Incompatible locations after
-            foreach (var group in incompatible)
-            {
-                string label = string.Format(prefix, SlotGroup.GetGroupLabel(group));
-                options.Add(new FloatMenuOption(
-                    label + "RimWorldAccess.Inspection.BillConfig.Label.IncompatibleSuffix".Translate(
-                        "IncompatibleLower".Translate()),
-                    null));
-            }
-        }
-
-        private static void OpenIngredientFilterMenu()
-        {
-            ThingFilterMenuState.Open(bill.ingredientFilter, bill.recipe.fixedIngredientFilter,
-                "RimWorldAccess.Inspection.BillConfig.IngredientFilterTitle".Translate());
-        }
-
-        private static void DeleteBill()
-        {
-            string billLabel = bill.LabelCap;
-            bill.billStack.Delete(bill);
-            TolkHelper.Speak("RimWorldAccess.Inspection.BillConfig.Action.DeletedBill".Loc(billLabel));
-            Close();
-
-            // Go back to bills menu
-            if (bill.billStack.billGiver is IBillGiver billGiver)
-            {
-                BillsMenuState.Open(billGiver, billGiverPos);
-            }
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Opens the info card for the product of the current bill.
-        /// </summary>
-        public static void OpenInfoCard()
-        {
-            InfoCardState.TryOpenInfoCardForDef(bill?.recipe?.ProducedThingDef);
-        }
-
-        public static void Reannounce() => AnnounceCurrentSelection();
-
-        private static void AnnounceCurrentSelection()
-        {
-            if (selectedIndex >= 0 && selectedIndex < menuItems.Count)
-            {
-                MenuItem item = menuItems[selectedIndex];
-                string announcement = $"{item.label}. {MenuHelper.FormatPosition(selectedIndex, menuItems.Count)}";
-                TolkHelper.SpeakData(announcement);
-            }
-        }
     }
 }

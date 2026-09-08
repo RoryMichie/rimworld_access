@@ -3,8 +3,8 @@ using UnityEngine;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Single-active-session model. UnifiedKeyboardPatch checks <see cref="IsActive"/>
-    /// at priority -1.5 and routes keyboard events to <see cref="Active"/>. Only one
+    /// Single-active-session model. ShellDispatcherPatch checks <see cref="IsActive"/>
+    /// and routes keyboard events to <see cref="Active"/>. Only one
     /// editing session at a time — matches RimWorld's actual modality.
     /// </summary>
     public static class TextInputManager

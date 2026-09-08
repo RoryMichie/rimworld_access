@@ -72,6 +72,16 @@
   <RimWorldAccess.Factions.Recent.EntrySignedSuffix>{0} {1}</RimWorldAccess.Factions.Recent.EntrySignedSuffix>
   <RimWorldAccess.Factions.Recent.Summary>Recent: {0}</RimWorldAccess.Factions.Recent.Summary>
 
+  <!-- Natural-goodwill tooltip breakdown (FactionHelper.BuildNaturalGoodwillBreakdown),
+       vanilla shows only on mouse hover over the natural-goodwill badge
+       (FactionUIUtility.cs:258-269). NaturalGoodwillRange: {0} = min, {1} = max
+       of the ±50 band around natural goodwill. AffectedBy: {0} = comma-joined
+       "situation: offset" entries (GetNaturalGoodwillExplanation). Vanilla's
+       own NaturalGoodwillDescription key (reused directly, not duplicated
+       here) supplies the decay-rate sentence that follows AffectedBy. -->
+  <RimWorldAccess.Factions.NaturalGoodwillRange>Natural goodwill range: {0} to {1}</RimWorldAccess.Factions.NaturalGoodwillRange>
+  <RimWorldAccess.Factions.AffectedBy>Affected by: {0}</RimWorldAccess.Factions.AffectedBy>
+
   <!-- Ideology section (Ideology DLC, non-classic mode).
        Primary: {0} = primary ideology name.
        Minor: {0} = comma-joined minor ideology names. -->

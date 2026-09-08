@@ -41,23 +41,31 @@
        NoColonistsNeedConverting: spoken when "Assign colonists" is triggered but
          all colonists already follow the chosen ideoligion.
        ErrorConfirming: spoken on exception during the "Next" commit. -->
-  <RimWorldAccess.Archonexus.Reform.OpenInstructions>Вгору і Вниз для перегляду, пошук за введенням, Tab для повних відомостей, Enter, щоб зробити основною, Alt S для підтвердження.</RimWorldAccess.Archonexus.Reform.OpenInstructions>
   <RimWorldAccess.Archonexus.Reform.CannotCancel>Скасувати реформування ідеології не можна. Натисніть Alt S, щоб підтвердити та продовжити.</RimWorldAccess.Archonexus.Reform.CannotCancel>
-  <RimWorldAccess.Archonexus.Reform.NoIdeoDetailsHere>Тут немає відомостей про ідеологію. Спершу перейдіть до ідеології.</RimWorldAccess.Archonexus.Reform.NoIdeoDetailsHere>
   <RimWorldAccess.Archonexus.Reform.AlreadyPrimary>{0} вже є основною ідеологією.</RimWorldAccess.Archonexus.Reform.AlreadyPrimary>
   <RimWorldAccess.Archonexus.Reform.SetAsPrimary>{0} призначено основною ідеологією.</RimWorldAccess.Archonexus.Reform.SetAsPrimary>
+  <RimWorldAccess.Archonexus.Reform.CurrentPrimaryFragment>Поточна основна</RimWorldAccess.Archonexus.Reform.CurrentPrimaryFragment>
   <RimWorldAccess.Archonexus.Reform.NoColonistsNeedConverting>Немає колоністів, яких потрібно конвертувати.</RimWorldAccess.Archonexus.Reform.NoColonistsNeedConverting>
   <RimWorldAccess.Archonexus.Reform.ErrorConfirming>Помилка підтвердження ідеології</RimWorldAccess.Archonexus.Reform.ErrorConfirming>
+  <RimWorldAccess.Archonexus.Reform.ListRegion>Ідеології</RimWorldAccess.Archonexus.Reform.ListRegion>
+  <RimWorldAccess.Archonexus.Reform.DetailsRegion>Подробиці</RimWorldAccess.Archonexus.Reform.DetailsRegion>
   <!-- PressTabToEdit: appended to an item announcement when the focused ideoligion
        is the editable custom one and the player just returned from a sub-screen. -->
-  <RimWorldAccess.Archonexus.Reform.PressTabToEdit>Натисніть Tab, щоб редагувати цю ідеологію.</RimWorldAccess.Archonexus.Reform.PressTabToEdit>
 
   <!-- Screen 4 sub-dialog — assign colonists (ArchonexusConvertColonistsState).
        OpenInstructions: appended after the vanilla dialog title, description,
          and pawn count.
        SpaceOrEnterToConvert: the keyboard hint in the opening announcement. -->
   <RimWorldAccess.Archonexus.Convert.OpenInstructions>Пробіл або Enter, щоб конвертувати; Escape, коли завершите.</RimWorldAccess.Archonexus.Convert.OpenInstructions>
-  <RimWorldAccess.Archonexus.Convert.Selected>Вибрано</RimWorldAccess.Archonexus.Convert.Selected>
-  <RimWorldAccess.Archonexus.Convert.NotSelected>Не вибрано</RimWorldAccess.Archonexus.Convert.NotSelected>
-  <RimWorldAccess.Archonexus.Convert.NotSelectedCurrently>Не вибрано. Зараз {0}</RimWorldAccess.Archonexus.Convert.NotSelectedCurrently>
+
+  <!-- Convert-colonists checkbox: Selected/NotSelected retired (Task 8 packet F) — the
+       checked/unchecked state now rides the composer's own Checkbox state word.
+       CurrentlyFollowing is the one piece NotSelectedCurrently carried that the state
+       word alone cannot: which ideoligion an unconverted colonist keeps. {0} = ideoligion name. -->
+  <RimWorldAccess.Archonexus.Convert.CurrentlyFollowing>Зараз {0}</RimWorldAccess.Archonexus.Convert.CurrentlyFollowing>
+
+  <!-- Colony-selection section header: how many things are selected out of the
+       section's maximum ({0} = selected count, {1} = maximum). Not a cursor
+       position, so it does not reuse Menu.Position. -->
+  <RimWorldAccess.Archonexus.Colony.CountOfMax>{0} з {1}</RimWorldAccess.Archonexus.Colony.CountOfMax>
 </LanguageData>

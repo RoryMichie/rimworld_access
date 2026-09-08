@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Combat autopilot strings (src/Combat/Autopilot/). The drafted gizmos, the combat and
+    hunting policy dialogs and columns, the per-ability autocast menu entry, and the
+    master settings row. The tactical job reports live on the JobDefs
+    (Defs/JobDefs/CombatAutopilot.xml), translated per language in DefInjected/JobDef/.
+  -->
+
+  <!-- Drafted-pawn gizmos -->
+  <RimWorldAccess.Autopilot.Engage.Label>Engage target</RimWorldAccess.Autopilot.Engage.Label>
+  <RimWorldAccess.Autopilot.Engage.Desc>Order {0} to attack a chosen target. {0} will move to the target and attack it under the assigned combat policy, fighting off enemies that attack along the way.</RimWorldAccess.Autopilot.Engage.Desc>
+  <RimWorldAccess.Autopilot.Engage.CurrentOrders>Current orders: {0}.</RimWorldAccess.Autopilot.Engage.CurrentOrders>
+  <RimWorldAccess.Autopilot.Patrol.Label>Patrol: {0}</RimWorldAccess.Autopilot.Patrol.Label>
+  <RimWorldAccess.Autopilot.Patrol.Desc>Order {0} to walk around the chosen area, stopping to fight any enemy that comes into range.</RimWorldAccess.Autopilot.Patrol.Desc>
+  <RimWorldAccess.Autopilot.Patrol.NoneOption>No patrol</RimWorldAccess.Autopilot.Patrol.NoneOption>
+  <RimWorldAccess.Autopilot.PatrolAssigned>{0} patrolling {1}.</RimWorldAccess.Autopilot.PatrolAssigned>
+  <RimWorldAccess.Autopilot.PatrolCleared>{0}: patrol cleared.</RimWorldAccess.Autopilot.PatrolCleared>
+  <RimWorldAccess.Autopilot.SeekDestroy.Label>Search and destroy</RimWorldAccess.Autopilot.SeekDestroy.Label>
+  <RimWorldAccess.Autopilot.SeekDestroy.Desc>{0} will chase down enemies instead of holding position. Marked and ordered targets come first.</RimWorldAccess.Autopilot.SeekDestroy.Desc>
+  <RimWorldAccess.Autopilot.PickerLabel>Combat policy: {0}</RimWorldAccess.Autopilot.PickerLabel>
+  <RimWorldAccess.Autopilot.PickerDesc>The combat policy {0} fights by.</RimWorldAccess.Autopilot.PickerDesc>
+  <RimWorldAccess.Autopilot.HuntAnimals.Label>Hunt animals</RimWorldAccess.Autopilot.HuntAnimals.Label>
+  <RimWorldAccess.Autopilot.HuntAnimals.Desc>{0} will hunt wild animals while drafted. Enemies always come first. {0}'s hunting policy decides which animals may be hunted.</RimWorldAccess.Autopilot.HuntAnimals.Desc>
+  <RimWorldAccess.Autopilot.AutocastAll.Label>Autocast all abilities</RimWorldAccess.Autopilot.AutocastAll.Label>
+  <RimWorldAccess.Autopilot.AutocastAll.Desc>Mark all of {0}'s abilities for automatic casting while drafted. Single abilities can be marked or unmarked from their own menus.</RimWorldAccess.Autopilot.AutocastAll.Desc>
+  <RimWorldAccess.Autopilot.Pause.Label>Pause combat autopilot</RimWorldAccess.Autopilot.Pause.Label>
+  <RimWorldAccess.Autopilot.Pause.Desc>Stop all automatic combat behavior for {0} and take back full control. Policies and orders are kept, but nothing acts on them until this is unchecked. Giving a fresh engage or patrol order also resumes.</RimWorldAccess.Autopilot.Pause.Desc>
+
+  <!-- Combat policy behavior checkboxes (manage dialog rows) -->
+  <RimWorldAccess.Autopilot.TakeCover.Label>Take cover</RimWorldAccess.Autopilot.TakeCover.Label>
+  <RimWorldAccess.Autopilot.TakeCover.Desc>Ranged fighters move to firing positions with cover. Melee fighters ignore this.</RimWorldAccess.Autopilot.TakeCover.Desc>
+  <RimWorldAccess.Autopilot.MeleeCharge.Label>Melee charge</RimWorldAccess.Autopilot.MeleeCharge.Label>
+  <RimWorldAccess.Autopilot.MeleeCharge.Desc>Melee fighters charge distant targets. When off, they only attack enemies that come close.</RimWorldAccess.Autopilot.MeleeCharge.Desc>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Label>Pursue anywhere</RimWorldAccess.Autopilot.PursueAnywhere.Label>
+  <RimWorldAccess.Autopilot.PursueAnywhere.Desc>Search and destroy picks targets from the whole map and chases them however far they run. When off, only nearby enemies the pawn can see are picked. Does nothing while search and destroy is off.</RimWorldAccess.Autopilot.PursueAnywhere.Desc>
+  <RimWorldAccess.Autopilot.FightAsSquad.Label>Fight as a squad</RimWorldAccess.Autopilot.FightAsSquad.Label>
+  <RimWorldAccess.Autopilot.FightAsSquad.Desc>Coordinate with nearby drafted pawns whose policy also fights as a squad: spread fire across the enemy group instead of piling onto one target, and keep one tile apart so stray shots and blasts catch one pawn, not a huddle.</RimWorldAccess.Autopilot.FightAsSquad.Desc>
+  <RimWorldAccess.Autopilot.BashDoors.Label>Bash doors</RimWorldAccess.Autopilot.BashDoors.Label>
+  <RimWorldAccess.Autopilot.BashDoors.Desc>Break through locked or hostile doors that block the way to a target.</RimWorldAccess.Autopilot.BashDoors.Desc>
+  <RimWorldAccess.Autopilot.KeepDistance.Label>Keep distance</RimWorldAccess.Autopilot.KeepDistance.Label>
+  <RimWorldAccess.Autopilot.KeepDistance.Desc>Ranged fighters back away from melee attackers that get too close.</RimWorldAccess.Autopilot.KeepDistance.Desc>
+  <RimWorldAccess.Autopilot.FallBackInjured.Label>Fall back when injured</RimWorldAccess.Autopilot.FallBackInjured.Label>
+  <RimWorldAccess.Autopilot.FallBackInjured.Desc>When badly hurt, retreat from enemies pressing the attack, then keep fighting carefully from cover at range instead of charging.</RimWorldAccess.Autopilot.FallBackInjured.Desc>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Label>Avoid explosions</RimWorldAccess.Autopilot.AvoidBlasts.Label>
+  <RimWorldAccess.Autopilot.AvoidBlasts.Desc>Run clear of ticking explosives and incoming blasts.</RimWorldAccess.Autopilot.AvoidBlasts.Desc>
+  <RimWorldAccess.Autopilot.AutocastMarked.Label>Autocast marked abilities</RimWorldAccess.Autopilot.AutocastMarked.Label>
+  <RimWorldAccess.Autopilot.AutocastMarked.Desc>Cast the abilities this pawn has marked for autocast. The marks say which abilities; this says whether. When off, the marks are kept but ignored.</RimWorldAccess.Autopilot.AutocastMarked.Desc>
+
+  <!-- Per-ability autocast (one checkbox-style menu row; the state suffix is appended in code) -->
+  <RimWorldAccess.Autopilot.AutocastOption>Autocast</RimWorldAccess.Autopilot.AutocastOption>
+  <RimWorldAccess.Autopilot.AutocastOn>autocast on</RimWorldAccess.Autopilot.AutocastOn>
+
+  <!-- The master settings row; everything else is configured in-game through policies -->
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>Enable combat autopilot</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Label>
+  <RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>Allow drafted pawns to fight on their own. Adds combat and hunting policies and new gizmos to drafted pawns. Turning this off removes the gizmos and stops the automation.</RimWorldAccess.Core.Settings.EnableCombatAutopilot.Desc>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>Undrafting turns off search and destroy and hunt animals</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Label>
+  <RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>Unchecks Search and destroy and Hunt animals whenever a pawn is undrafted.</RimWorldAccess.Core.Settings.UndraftClearsStandingOrders.Desc>
+
+  <!-- Combat policies: the manage dialog, the Assign-tab column, the gizmo picker, and the starter presets -->
+  <RimWorldAccess.Autopilot.PolicyTitle>Combat policies</RimWorldAccess.Autopilot.PolicyTitle>
+  <RimWorldAccess.Autopilot.PolicyTip>Create and manage templates for controlling how drafted pawns fight on their own. Assign policies from the Assign, Animals, or Mechs tab; vehicles carry a combat policy gizmo instead.</RimWorldAccess.Autopilot.PolicyTip>
+  <RimWorldAccess.Autopilot.PolicyName>Combat policy</RimWorldAccess.Autopilot.PolicyName>
+  <RimWorldAccess.Autopilot.ManagePolicies>Manage combat policies</RimWorldAccess.Autopilot.ManagePolicies>
+  <RimWorldAccess.Autopilot.Policy.None>None</RimWorldAccess.Autopilot.Policy.None>
+  <RimWorldAccess.Autopilot.Policy.None.Tip>No combat policy. The combat autopilot is fully off for this pawn: no search and destroy, no engage orders, no automatic casting. Hunting animals and patrolling are separate and keep working.</RimWorldAccess.Autopilot.Policy.None.Tip>
+  <RimWorldAccess.Autopilot.PolicyInUse>Combat policy in use by {0}.</RimWorldAccess.Autopilot.PolicyInUse>
+  <RimWorldAccess.Autopilot.Policy.FullControl>Full control</RimWorldAccess.Autopilot.Policy.FullControl>
+  <RimWorldAccess.Autopilot.Policy.FightNearby>Fight nearby</RimWorldAccess.Autopilot.Policy.FightNearby>
+  <RimWorldAccess.Autopilot.Policy.StaySafe>Stay safe</RimWorldAccess.Autopilot.Policy.StaySafe>
+
+  <!-- Hunting policies: the manage dialog, the Assign-tab column, and the starter presets -->
+  <RimWorldAccess.Autopilot.HuntPolicyTitle>Hunting policies</RimWorldAccess.Autopilot.HuntPolicyTitle>
+  <RimWorldAccess.Autopilot.HuntPolicyTip>Create and manage templates for controlling which animals drafted pawns may hunt: an allowed-species list, a revenge chance range, and venerated-animal protection. Hunting itself is switched on per pawn with the Hunt animals gizmo. While drafted, these rules take priority over hunting marks.</RimWorldAccess.Autopilot.HuntPolicyTip>
+  <RimWorldAccess.Autopilot.HuntPolicyName>Hunting policy</RimWorldAccess.Autopilot.HuntPolicyName>
+  <RimWorldAccess.Autopilot.ManageHuntPolicies>Manage hunting policies</RimWorldAccess.Autopilot.ManageHuntPolicies>
+  <RimWorldAccess.Autopilot.HuntPolicyInUse>Hunting policy in use by {0}.</RimWorldAccess.Autopilot.HuntPolicyInUse>
+  <RimWorldAccess.Autopilot.HuntPolicyIsDefault>The default hunting policy cannot be deleted.</RimWorldAccess.Autopilot.HuntPolicyIsDefault>
+  <RimWorldAccess.Autopilot.HuntPolicy.SafeGame>Safe game</RimWorldAccess.Autopilot.HuntPolicy.SafeGame>
+  <RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>Any animal</RimWorldAccess.Autopilot.HuntPolicy.AnyAnimal>
+  <RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>Allowed animals</RimWorldAccess.Autopilot.HuntPolicyAnimalsRegion>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.Desc>Only animals whose revenge chance on harm falls inside this range may be hunted.</RimWorldAccess.Autopilot.HuntRevengeRange.Desc>
+  <RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>Revenge chance on harm: {0}</RimWorldAccess.Autopilot.HuntRevengeRange.SliderLabel>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Label>Spare venerated animals</RimWorldAccess.Autopilot.HuntSpareVenerated.Label>
+  <RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>Never hunt animals the pawn's ideoligion venerates.</RimWorldAccess.Autopilot.HuntSpareVenerated.Desc>
+
+  <!-- Policy behavior summary, shown as the tooltip on every picker row -->
+  <RimWorldAccess.Autopilot.SummaryPrefix>Enables: {0}.</RimWorldAccess.Autopilot.SummaryPrefix>
+  <RimWorldAccess.Autopilot.SummarySeparator>, </RimWorldAccess.Autopilot.SummarySeparator>
+  <RimWorldAccess.Autopilot.SummaryNothing>Enables nothing. The pawn holds position and fires at will.</RimWorldAccess.Autopilot.SummaryNothing>
+
+  <!-- Rich movement-job reports (Job.reportStringOverride); the JobDef reportString is the fallback -->
+  <RimWorldAccess.Autopilot.Report.MovingToCover>moving to cover at {0}, {1}.</RimWorldAccess.Autopilot.Report.MovingToCover>
+  <RimWorldAccess.Autopilot.Report.MovingToCoverBehind>moving to cover behind {0} at {1}, {2}.</RimWorldAccess.Autopilot.Report.MovingToCoverBehind>
+  <RimWorldAccess.Autopilot.Report.MovingToEngage>moving to engage {0}.</RimWorldAccess.Autopilot.Report.MovingToEngage>
+  <RimWorldAccess.Autopilot.Report.FallingBack>badly hurt, falling back to {0}, {1}.</RimWorldAccess.Autopilot.Report.FallingBack>
+  <RimWorldAccess.Autopilot.Report.FleeingBlast>running clear of a blast from {0}.</RimWorldAccess.Autopilot.Report.FleeingBlast>
+  <RimWorldAccess.Autopilot.Report.BackingAway>backing away from {0}.</RimWorldAccess.Autopilot.Report.BackingAway>
+  <RimWorldAccess.Autopilot.Report.Casting>casting {0}.</RimWorldAccess.Autopilot.Report.Casting>
+  <RimWorldAccess.Autopilot.Report.CastingOn>casting {0} on {1}.</RimWorldAccess.Autopilot.Report.CastingOn>
+  <RimWorldAccess.Autopilot.Report.VehicleAdvance>driving to engage the nearest hostile.</RimWorldAccess.Autopilot.Report.VehicleAdvance>
+  <RimWorldAccess.Autopilot.Report.VehicleFiringPosition>driving to a firing position.</RimWorldAccess.Autopilot.Report.VehicleFiringPosition>
+  <RimWorldAccess.Autopilot.Report.VehicleHolding>holding a firing position.</RimWorldAccess.Autopilot.Report.VehicleHolding>
+  <RimWorldAccess.Autopilot.Report.EngagingOrdered>engaging {0} as ordered.</RimWorldAccess.Autopilot.Report.EngagingOrdered>
+  <RimWorldAccess.Autopilot.Report.EngagingMarked>engaging marked target {0}.</RimWorldAccess.Autopilot.Report.EngagingMarked>
+  <RimWorldAccess.Autopilot.Report.ReturningToPost>returning to post at {0}, {1}.</RimWorldAccess.Autopilot.Report.ReturningToPost>
+  <RimWorldAccess.Autopilot.Report.Patrolling>patrolling {0}.</RimWorldAccess.Autopilot.Report.Patrolling>
+  <RimWorldAccess.Autopilot.Report.FightingOff>fighting off {0}.</RimWorldAccess.Autopilot.Report.FightingOff>
+  <RimWorldAccess.Autopilot.Report.HoldingFiring>holding position and firing.</RimWorldAccess.Autopilot.Report.HoldingFiring>
+  <RimWorldAccess.Autopilot.Report.SpreadingFire>spreading fire to {0}.</RimWorldAccess.Autopilot.Report.SpreadingFire>
+  <RimWorldAccess.Autopilot.Report.WoundedHolding>hurt, holding position.</RimWorldAccess.Autopilot.Report.WoundedHolding>
+
+  <!-- Engage orders: the right-click option, the announcements, and the clear entry -->
+  <RimWorldAccess.Autopilot.EngageOption>Engage {0}</RimWorldAccess.Autopilot.EngageOption>
+  <RimWorldAccess.Autopilot.EngageOption.Tip>Attack this target until it is down. Enemies attacking on the way are fought off first.</RimWorldAccess.Autopilot.EngageOption.Tip>
+  <RimWorldAccess.Autopilot.EngagePawnCount>{0} pawns</RimWorldAccess.Autopilot.EngagePawnCount>
+  <RimWorldAccess.Autopilot.EngageOrdered>{0} engaging {1}.</RimWorldAccess.Autopilot.EngageOrdered>
+  <RimWorldAccess.Autopilot.EngageQueued>{0} queued {1}.</RimWorldAccess.Autopilot.EngageQueued>
+  <RimWorldAccess.Autopilot.ClearOrders>Clear engagement orders</RimWorldAccess.Autopilot.ClearOrders>
+  <RimWorldAccess.Autopilot.OrdersCleared>Engagement orders cleared.</RimWorldAccess.Autopilot.OrdersCleared>
+
+  <!-- The attack-mark designator (Orders tab) -->
+  <RimWorldAccess.Autopilot.AttackDesignator.Label>mark for attack</RimWorldAccess.Autopilot.AttackDesignator.Label>
+  <RimWorldAccess.Autopilot.AttackDesignator.Desc>Mark targets for search-and-destroy pawns to attack first. Area sweeps mark hostiles only; shift adds factionless creatures, control and shift adds everyone.</RimWorldAccess.Autopilot.AttackDesignator.Desc>
+  <RimWorldAccess.Autopilot.AttackDesignator.MustTarget>Must mark an attackable pawn.</RimWorldAccess.Autopilot.AttackDesignator.MustTarget>
+</LanguageData>

@@ -7,9 +7,10 @@ namespace RimWorldAccess
 {
     /// <summary>
     /// Harmony lifecycle patches for vanilla's <c>Dialog_StylingStation</c>. Opens
-    /// <see cref="StylingStationState"/> when the dialog opens, closes it when the dialog closes,
-    /// and blocks the window's default Enter/Escape (Accept/Cancel) handling while our state owns
-    /// the keyboard. Same defensive pattern as <see cref="EntityCodexPatch"/>.
+    /// <see cref="StylingStationState"/> when the dialog opens and closes it when the
+    /// dialog closes. The Escape/Enter key-blocker prefixes are retired — see their own
+    /// tombstone comment below; key routing now lives in
+    /// StylingStationScope (src/Shell/Screens/StylingStationScope.Game.cs).
     /// </summary>
     public static class StylingStationPatch
     {
@@ -55,32 +56,37 @@ namespace RimWorldAccess
             }
         }
 
-        // Block the window's Cancel (Escape) handling while we own input — our Escape handler
-        // reverts changes and closes deliberately.
-        [HarmonyPatch(typeof(Window), "OnCancelKeyPressed")]
-        public static class Window_OnCancelKeyPressed_Styling_Patch
-        {
-            [HarmonyPrefix]
-            public static bool Prefix(Window __instance)
-            {
-                if (__instance is Dialog_StylingStation && StylingStationState.IsActive)
-                    return false;
-                return true;
-            }
-        }
-
-        // Block the window's Accept (Enter) handling so pressing Enter to apply a style item or a
-        // color-picker option never triggers vanilla's accept-and-close.
-        [HarmonyPatch(typeof(Window), "OnAcceptKeyPressed")]
-        public static class Window_OnAcceptKeyPressed_Styling_Patch
-        {
-            [HarmonyPrefix]
-            public static bool Prefix(Window __instance)
-            {
-                if (__instance is Dialog_StylingStation && StylingStationState.IsActive)
-                    return false;
-                return true;
-            }
-        }
+        // RETIRED: Window_OnCancelKeyPressed_Styling_Patch and
+        // Window_OnAcceptKeyPressed_Styling_Patch. Replaced by StylingStationScope's own
+        // Cancel/Activate claims stamping ShellFrameStamps, consulted by the shell's
+        // consolidated WindowCancelKeyRouterPatch/WindowAcceptKeyRouterPatch twins.
+        // Decompiled-verified: Dialog_StylingStation overrides neither
+        // OnCancelKeyPressed nor OnAcceptKeyPressed, and both base Window bodies are
+        // already inert for this dialog (closeOnCancel = false; closeOnAccept = false;
+        // set in its own ctor) -- these two prefixes were blocking an already-no-op
+        // body even before this slice; the router twins now do the same "belt, not
+        // load-bearing" job. Retired, verbatim:
+        //   [HarmonyPatch(typeof(Window), "OnCancelKeyPressed")]
+        //   public static class Window_OnCancelKeyPressed_Styling_Patch
+        //   {
+        //       [HarmonyPrefix]
+        //       public static bool Prefix(Window __instance)
+        //       {
+        //           if (__instance is Dialog_StylingStation && StylingStationState.IsActive)
+        //               return false;
+        //           return true;
+        //       }
+        //   }
+        //   [HarmonyPatch(typeof(Window), "OnAcceptKeyPressed")]
+        //   public static class Window_OnAcceptKeyPressed_Styling_Patch
+        //   {
+        //       [HarmonyPrefix]
+        //       public static bool Prefix(Window __instance)
+        //       {
+        //           if (__instance is Dialog_StylingStation && StylingStationState.IsActive)
+        //               return false;
+        //           return true;
+        //       }
+        //   }
     }
 }

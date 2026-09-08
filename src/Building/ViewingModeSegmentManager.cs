@@ -7,29 +7,15 @@ using Verse;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Handles segment stack management and undo functionality for ViewingModeState.
-    /// Contains methods for removing segments, tracking items, and managing undo operations
-    /// for all designator types (Build, Zone, Orders, Cells).
-    /// </summary>
+    /// <summary>Segment-stack management and undo for ViewingModeState, across every designator type.</summary>
     public static class ViewingModeSegmentManager
     {
         #region Segment Removal
 
         /// <summary>
-        /// Removes items from a single segment (blueprints, zone cells, area cells, or designations).
-        /// This is the core removal logic for all segment types.
+        /// Removes one segment's items — blueprints, zone cells, area cells or designations — or
+        /// every segment when <paramref name="segmentIndex"/> is -1. Returns the number removed.
         /// </summary>
-        /// <param name="segmentIndex">Index of the segment to remove, or -1 to process all segments</param>
-        /// <param name="segments">List of blueprint segments (for Build designators)</param>
-        /// <param name="cellSegments">List of cell segments (for non-Build designators)</param>
-        /// <param name="isBuildDesignator">Whether this is a Build designator</param>
-        /// <param name="isZoneDesignator">Whether this is a Zone designator</param>
-        /// <param name="isAreaDesignator">Whether this is an Area designator (Allowed Areas)</param>
-        /// <param name="isBuiltInAreaDesignator">Whether this is a built-in Area designator (Snow/Sand, Roof, Home)</param>
-        /// <param name="activeDesignator">The active designator (for designation removal)</param>
-        /// <param name="targetZone">The target zone (for zone undo cell count calculation)</param>
-        /// <returns>The count of items that were removed</returns>
         public static int RemoveSegmentItems(
             int segmentIndex,
             List<List<Thing>> segments,
@@ -44,8 +30,8 @@ namespace RimWorldAccess
             int removedCount = 0;
             Map map = Find.CurrentMap;
 
-            // Check for area designator first (areas use AreaUndoTracker, not segments)
-            // This includes both Allowed Areas and Built-in Areas (Snow/Sand, Roof, Home)
+            // Areas first: they undo through AreaUndoTracker rather than segments, allowed and
+            // built-in areas alike.
             if (isAreaDesignator || isBuiltInAreaDesignator)
             {
                 removedCount = RemoveAreaSegmentItems(map);
@@ -62,9 +48,9 @@ namespace RimWorldAccess
             }
             else if (activeDesignator is Designator_Plan_Add)
             {
-                // Plan cells live in the PlanManager, not the DesignationManager, so undo removes
-                // the placed cells from whatever plan now occupies them (Plan.RemoveCell auto-
-                // deregisters a plan once its last cell is gone).
+                // Plan cells live in the PlanManager, not the DesignationManager, so undo takes the
+                // placed cells out of whatever plan now occupies them; Plan.RemoveCell deregisters
+                // a plan once its last cell is gone.
                 removedCount = RemovePlanSegmentItems(segmentIndex, cellSegments, map);
             }
             else
@@ -75,16 +61,13 @@ namespace RimWorldAccess
             return removedCount;
         }
 
-        /// <summary>
-        /// Removes blueprint items from Build designator segments.
-        /// </summary>
+        /// <summary>Removes blueprint items from Build designator segments.</summary>
         private static int RemoveBuildSegmentItems(int segmentIndex, List<List<Thing>> segments)
         {
             int removedCount = 0;
 
             if (segmentIndex >= 0 && segmentIndex < segments.Count)
             {
-                // Remove single segment
                 var segment = segments[segmentIndex];
                 foreach (Thing blueprint in segment)
                 {
@@ -97,7 +80,6 @@ namespace RimWorldAccess
             }
             else if (segmentIndex == -1)
             {
-                // Remove all segments
                 foreach (var segment in segments)
                 {
                     foreach (Thing blueprint in segment)
@@ -114,9 +96,7 @@ namespace RimWorldAccess
             return removedCount;
         }
 
-        /// <summary>
-        /// Removes zone cells using ZoneUndoTracker to restore previous state.
-        /// </summary>
+        /// <summary>Removes zone cells through ZoneUndoTracker, restoring the previous state.</summary>
         private static int RemoveZoneSegmentItems(
             int segmentIndex,
             List<List<IntVec3>> cellSegments,
@@ -129,23 +109,19 @@ namespace RimWorldAccess
             {
                 if (segmentIndex >= 0 && segmentIndex < cellSegments.Count)
                 {
-                    // Get the count from the cell segment - this is what was actually placed
-                    // This handles both new zone creation (where LastSegmentTargetZone is null)
-                    // and zone expansion (where we want the actual cells placed, not zone diff)
+                    // The cell segment's own count is what was actually placed, which covers both a
+                    // new zone and an expansion, where a zone diff would be wrong.
                     removedCount = cellSegments[segmentIndex].Count;
 
-                    // Perform the undo
                     ZoneUndoTracker.UndoLastSegment(map);
                 }
                 else if (segmentIndex == -1)
                 {
-                    // For undo all, sum up all cell segments
                     foreach (var segment in cellSegments)
                     {
                         removedCount += segment.Count;
                     }
 
-                    // Perform the undo
                     ZoneUndoTracker.UndoAll(map);
                 }
             }
@@ -154,9 +130,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Removes plan cells placed in one segment (or all segments when segmentIndex is -1) by
-        /// taking them back out of the PlanManager. Mirrors how the plan-remove tool works, but
-        /// scoped to exactly the cells this placement added.
+        /// Takes this placement's plan cells back out of the PlanManager, as the plan-remove tool
+        /// does but scoped to exactly the cells it added.
         /// </summary>
         private static int RemovePlanSegmentItems(
             int segmentIndex,
@@ -194,9 +169,7 @@ namespace RimWorldAccess
             return removedCount;
         }
 
-        /// <summary>
-        /// Removes the last segment of area cell changes using AreaUndoTracker.
-        /// </summary>
+        /// <summary>Removes the last segment of area cell changes through AreaUndoTracker.</summary>
         private static int RemoveAreaSegmentItems(Map map)
         {
             if (!AreaUndoTracker.HasUndoData)
@@ -206,9 +179,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Removes designations from DesignationManager for Orders/Cells designators.
-        /// Uses OrderUndoTracker to remove actual Designation objects, which correctly
-        /// handles both thing-based (Hunt, Haul, Tame) and cell-based (Mine) designators.
+        /// Removes Orders/Cells designations through OrderUndoTracker, which removes real
+        /// Designation objects and so handles thing-based and cell-based designators alike.
         /// </summary>
         private static int RemoveDesignationSegmentItems(
             int segmentIndex,
@@ -221,35 +193,25 @@ namespace RimWorldAccess
 
             if (segmentIndex >= 0)
             {
-                // Remove single segment (last one)
                 return OrderUndoTracker.UndoLastSegment(map);
             }
             else if (segmentIndex == -1)
             {
-                // Remove all segments
                 return OrderUndoTracker.UndoAll(map);
             }
 
             return 0;
         }
 
-        /// <summary>
-        /// Removes a designation at a specific cell.
-        /// Used for undoing Orders/Cells designations.
-        /// </summary>
-        /// <param name="cell">The cell to remove designation from</param>
-        /// <param name="map">The map</param>
-        /// <param name="activeDesignator">The active designator (to get the designation type)</param>
-        /// <returns>True if a designation was removed</returns>
+        /// <summary>Removes the designation at one cell, for undoing Orders/Cells designations.</summary>
         public static bool RemoveDesignationAtCell(IntVec3 cell, Map map, Designator activeDesignator)
         {
             if (map?.designationManager == null)
                 return false;
 
-            // Try to get the designation def from the active designator
             DesignationDef designationDef = null;
 
-            // Use reflection to get the protected Designation property from most designator types
+            // Most designator types expose their def only through a protected property.
             var designationProperty = activeDesignator?.GetType().GetProperty("Designation",
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             if (designationProperty != null)
@@ -259,7 +221,6 @@ namespace RimWorldAccess
 
             if (designationDef != null)
             {
-                // Remove designation of the specific type
                 Designation existing = map.designationManager.DesignationAt(cell, designationDef);
                 if (existing != null)
                 {
@@ -269,8 +230,7 @@ namespace RimWorldAccess
             }
             else
             {
-                // Fallback: try to remove any designation at the cell
-                // This is less precise but handles edge cases
+                // Fallback for a designator with no readable def: less precise, but not nothing.
                 List<Designation> designations = new List<Designation>(map.designationManager.AllDesignationsAt(cell));
                 foreach (var designation in designations)
                 {
@@ -286,14 +246,7 @@ namespace RimWorldAccess
 
         #region Item Type Helpers
 
-        /// <summary>
-        /// Gets the item type string with proper pluralization based on count.
-        /// Returns singular form for count of 1, plural form otherwise.
-        /// </summary>
-        /// <param name="count">The item count</param>
-        /// <param name="isBuildDesignator">Whether this is a Build designator</param>
-        /// <param name="isZoneDesignator">Whether this is a Zone designator</param>
-        /// <returns>The item type string (e.g., "blueprint", "blueprints", "zone cell", "zone cells")</returns>
+        /// <summary>The item-type word for a count, singular at one and plural otherwise.</summary>
         public static string GetItemTypeForCount(int count, bool isBuildDesignator, bool isZoneDesignator)
         {
             if (isBuildDesignator)
@@ -308,13 +261,7 @@ namespace RimWorldAccess
 
         #region Segment Stack Queries
 
-        /// <summary>
-        /// Gets the total count of placed items across all segments.
-        /// </summary>
-        /// <param name="segments">List of blueprint segments (for Build designators)</param>
-        /// <param name="cellSegments">List of cell segments (for non-Build designators)</param>
-        /// <param name="isBuildDesignator">Whether this is a Build designator</param>
-        /// <returns>The total count of placed items</returns>
+        /// <summary>The total number of placed items across all segments.</summary>
         public static int GetTotalPlacedCount(
             List<List<Thing>> segments,
             List<List<IntVec3>> cellSegments,
@@ -340,12 +287,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets all placed blueprints across all segments.
-        /// Only meaningful for Build designators.
-        /// </summary>
-        /// <param name="segments">List of blueprint segments</param>
-        /// <returns>A list of all placed blueprints</returns>
+        /// <summary>Every placed blueprint across all segments; meaningful only for Build designators.</summary>
         public static List<Thing> GetAllPlacedBlueprints(List<List<Thing>> segments)
         {
             var all = new List<Thing>();
@@ -356,12 +298,7 @@ namespace RimWorldAccess
             return all;
         }
 
-        /// <summary>
-        /// Gets all placed cells across all segments.
-        /// For non-Build designators (Orders, Zones, Cells).
-        /// </summary>
-        /// <param name="cellSegments">List of cell segments</param>
-        /// <returns>A list of all placed cells</returns>
+        /// <summary>Every placed cell across all segments, for the non-Build designators.</summary>
         public static List<IntVec3> GetAllPlacedCells(List<List<IntVec3>> cellSegments)
         {
             var all = new List<IntVec3>();
@@ -372,13 +309,7 @@ namespace RimWorldAccess
             return all;
         }
 
-        /// <summary>
-        /// Gets the number of segments in the stack.
-        /// </summary>
-        /// <param name="segments">List of blueprint segments (for Build designators)</param>
-        /// <param name="cellSegments">List of cell segments (for non-Build designators)</param>
-        /// <param name="isBuildDesignator">Whether this is a Build designator</param>
-        /// <returns>The segment count</returns>
+        /// <summary>The number of segments in the stack.</summary>
         public static int GetSegmentCount(
             List<List<Thing>> segments,
             List<List<IntVec3>> cellSegments,

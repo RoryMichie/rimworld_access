@@ -7,10 +7,13 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Turns a raw <see cref="Color"/> into a human-readable name for announcement. RimWorld stores
-    /// many colors (hair, apparel, skin) as raw RGB rather than as <see cref="ColorDef"/>s, so to
-    /// announce a current color we reverse-map it back to the closest named <see cref="ColorDef"/>.
-    /// Falls back to the nearest named color, then to a hex code if nothing is close.
+    /// Spoken name for a raw <see cref="Color"/>: an exact <see cref="ColorDef"/> keeps the game's
+    /// translated label; anything else is described from its actual HSV components ("dark muted
+    /// orange") — never nearest-matched, since the sparse def vocabulary misnames freely (a pure
+    /// dark orange came back "auburn"). Hue/saturation words depend only on hue and saturation:
+    /// the <see cref="RimWorld.Dialog_ColorPickerBase"/> family saves exactly those two components
+    /// onto the target's old brightness, so a picked swatch and the color it produces share every
+    /// word but the lightness one.
     /// </summary>
     public static class ColorNameHelper
     {
@@ -31,10 +34,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Best-effort spoken name for a color. Exact (indistinguishable) ColorDef match wins;
-        /// otherwise the nearest named color by RGB distance; otherwise a hex code.
-        /// </summary>
+        /// <summary>Spoken name for a color: an exact (indistinguishable) ColorDef's own label, otherwise a description of its HSV components.</summary>
         public static string NameForColor(Color color)
         {
             // Exact match first — this is how the game itself compares swatches.
@@ -43,28 +43,48 @@ namespace RimWorldAccess
                 if (color.IndistinguishableFrom(def.color))
                     return def.LabelCap.ToString();
             }
+            return DescriptiveName(color);
+        }
 
-            // Nearest named color by squared RGB distance.
-            ColorDef nearest = null;
-            float bestDist = float.MaxValue;
-            foreach (ColorDef def in NamedColors)
+        // Hue buckets, centered on their word so the picker family's 20-degree hue grid lands one
+        // word per step (the two greens are the lone collision; NamesForColors numbers those).
+        private static readonly (float upTo, string key)[] HueBuckets =
+        {
+            (10f, "Red"), (30f, "Orange"), (50f, "Amber"), (70f, "Yellow"), (90f, "Lime"),
+            (150f, "Green"), (170f, "Teal"), (190f, "Cyan"), (210f, "Azure"), (230f, "Blue"),
+            (250f, "Indigo"), (270f, "Violet"), (290f, "Purple"), (310f, "Magenta"),
+            (330f, "Pink"), (350f, "Rose"), (360f, "Red"),
+        };
+
+        private static string DescriptiveName(Color color)
+        {
+            Color.RGBToHSV(color, out float h, out float s, out float v);
+            if (s < 0.12f)
             {
-                float dr = color.r - def.color.r;
-                float dg = color.g - def.color.g;
-                float db = color.b - def.color.b;
-                float dist = dr * dr + dg * dg + db * db;
-                if (dist < bestDist)
-                {
-                    bestDist = dist;
-                    nearest = def;
-                }
+                string grayKey;
+                if (v < 0.15f) grayKey = "Black";
+                else if (v >= 0.9f) grayKey = "White";
+                else if (v < 0.4f) grayKey = "GrayDark";
+                else if (v >= 0.7f) grayKey = "GrayLight";
+                else grayKey = "Gray";
+                return ("RimWorldAccess.Color." + grayKey).Translate().ToString().CapitalizeFirst();
             }
 
-            if (nearest != null)
-                return nearest.LabelCap.ToString();
+            string hueWord = HueWord(h * 360f);
+            string band = v < 0.4f ? "Dark" : v >= 0.7f ? "Light" : "Mid";
+            string strength = s >= 0.7f ? "Vivid" : s >= 0.35f ? "Muted" : "Pale";
+            return ("RimWorldAccess.Color." + band + strength)
+                .Translate(hueWord).ToString().CapitalizeFirst();
+        }
 
-            // Last resort: hex.
-            return "#" + ColorUtility.ToHtmlStringRGB(color);
+        private static string HueWord(float degrees)
+        {
+            foreach ((float upTo, string key) in HueBuckets)
+            {
+                if (degrees < upTo)
+                    return ("RimWorldAccess.Color.Hue." + key).Translate().ToString();
+            }
+            return "RimWorldAccess.Color.Hue.Red".Translate().ToString();
         }
 
         /// <summary>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Configure Spoken Announcements screen (src/Shell/Screens/AnnouncementConfigDialog.Game.cs
+    — Dialog_ConfigureAnnouncements / AnnouncementConfigScope). Opened from a button in both
+    RimWorld Access settings surfaces (see RimWorldAccess_Core.xml's
+    RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button).
+
+    The seven part names/examples are read top-to-bottom in the canonical order; the example
+    fragments show a translator exactly what that part sounds like in an announcement so they
+    can adapt the sample text to their own language's phrasing.
+  -->
+
+  <RimWorldAccess.AnnounceConfig.Title>配置语音播报</RimWorldAccess.AnnounceConfig.Title>
+  <RimWorldAccess.AnnounceConfig.Intro>选择播报中要朗读的部分及其播放顺序。更改会立即生效，因此你可以在浏览此列表时听到效果。按空格键或回车键切换某个部分，按 Ctrl 加上下方向键移动它。</RimWorldAccess.AnnounceConfig.Intro>
+  <RimWorldAccess.AnnounceConfig.PartsRegion>播报部分</RimWorldAccess.AnnounceConfig.PartsRegion>
+
+  <!-- The Name part's row is always drawn checked and disabled; see
+       RimWorldAccess.AnnounceConfig.NameAlwaysOn below. -->
+  <RimWorldAccess.AnnounceConfig.Part.Label>名称</RimWorldAccess.AnnounceConfig.Part.Label>
+  <RimWorldAccess.AnnounceConfig.Part.Hotkey>快捷键</RimWorldAccess.AnnounceConfig.Part.Hotkey>
+  <RimWorldAccess.AnnounceConfig.Part.RoleAndState>控件类型和状态</RimWorldAccess.AnnounceConfig.Part.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Part.Level>树形层级</RimWorldAccess.AnnounceConfig.Part.Level>
+  <RimWorldAccess.AnnounceConfig.Part.Position>列表中的位置</RimWorldAccess.AnnounceConfig.Part.Position>
+  <RimWorldAccess.AnnounceConfig.Part.Extras>描述和详情</RimWorldAccess.AnnounceConfig.Part.Extras>
+  <RimWorldAccess.AnnounceConfig.Part.Hint>交互提示</RimWorldAccess.AnnounceConfig.Part.Hint>
+
+  <RimWorldAccess.AnnounceConfig.Example.Label>例如: 允许新鲜尸体</RimWorldAccess.AnnounceConfig.Example.Label>
+  <RimWorldAccess.AnnounceConfig.Example.Hotkey>例如: Alt+C</RimWorldAccess.AnnounceConfig.Example.Hotkey>
+  <RimWorldAccess.AnnounceConfig.Example.RoleAndState>例如: 复选框，已勾选</RimWorldAccess.AnnounceConfig.Example.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Example.Level>例如: 层级 2</RimWorldAccess.AnnounceConfig.Example.Level>
+  <RimWorldAccess.AnnounceConfig.Example.Position>例如: 第 4 项，共 13 项</RimWorldAccess.AnnounceConfig.Example.Position>
+  <RimWorldAccess.AnnounceConfig.Example.Extras>例如: 包含腐烂的尸体</RimWorldAccess.AnnounceConfig.Example.Extras>
+  <RimWorldAccess.AnnounceConfig.Example.Hint>例如: 按回车键选择</RimWorldAccess.AnnounceConfig.Example.Hint>
+
+  <!-- Spoken (as Extras, after the example fragment) and appended in place of the toggle
+       when the player tries to act on the Name part's row; it can be reordered but never
+       turned off, since silencing it would leave the player unable to tell what is focused. -->
+  <RimWorldAccess.AnnounceConfig.NameAlwaysOn>该项目的名称始终会被朗读。</RimWorldAccess.AnnounceConfig.NameAlwaysOn>
+
+  <RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition>表格中的行列位置</RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition>
+  <RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition.Example>例如: 第 3 行，共 8 行, 第 2 列，共 5 列</RimWorldAccess.AnnounceConfig.Extra.RowColumnPosition.Example>
+  <RimWorldAccess.AnnounceConfig.Extra.TableDimensions>进入表格时的表格大小</RimWorldAccess.AnnounceConfig.Extra.TableDimensions>
+  <RimWorldAccess.AnnounceConfig.Extra.TableDimensions.Example>例如: 表格，5 列，8 行</RimWorldAccess.AnnounceConfig.Extra.TableDimensions.Example>
+  <RimWorldAccess.AnnounceConfig.Extra.SectionCount>屏幕包含的部分数量, 以及你所在的部分</RimWorldAccess.AnnounceConfig.Extra.SectionCount>
+  <RimWorldAccess.AnnounceConfig.Extra.SectionCount.Example>例如: 2 个部分, 或第 2 部分，共 3 部分</RimWorldAccess.AnnounceConfig.Extra.SectionCount.Example>
+
+  <!-- The Preview button's canned demo item, composed live through the same ComposeFocus
+       path as every real announcement, so it always reflects the current working toggles/order. -->
+  <RimWorldAccess.AnnounceConfig.Preview.Button>预览播报</RimWorldAccess.AnnounceConfig.Preview.Button>
+  <RimWorldAccess.AnnounceConfig.Preview.Label>示例项目</RimWorldAccess.AnnounceConfig.Preview.Label>
+  <RimWorldAccess.AnnounceConfig.Preview.Hotkey>Alt+P</RimWorldAccess.AnnounceConfig.Preview.Hotkey>
+  <RimWorldAccess.AnnounceConfig.Preview.Extras>这是一个示例描述，展示了项目自身文本所提供的详细程度。</RimWorldAccess.AnnounceConfig.Preview.Extras>
+  <RimWorldAccess.AnnounceConfig.Preview.Hint>按回车键选择。</RimWorldAccess.AnnounceConfig.Preview.Hint>
+
+  <!-- Spoken once when the Restore defaults button or its chord runs. The button's own caption
+       reuses Core's RestoreToDefaultSettings, the same way Save and Cancel reuse Core's. -->
+  <RimWorldAccess.AnnounceConfig.ResetToDefaults.Done>播报设置已还原为默认设置。</RimWorldAccess.AnnounceConfig.ResetToDefaults.Done>
+</LanguageData>

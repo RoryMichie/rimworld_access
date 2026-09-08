@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <PawnColumnDef>
+    <defName>RWA_CombatPolicy</defName>
+    <label>combat policy</label>
+    <workerClass>RimWorldAccess.PawnColumnWorker_CombatPolicy</workerClass>
+    <sortable>true</sortable>
+  </PawnColumnDef>
+
+  <!-- Hunting policy: humans only, so no Animals/Mechs variants. -->
+  <PawnColumnDef>
+    <defName>RWA_HuntPolicy</defName>
+    <label>hunting policy</label>
+    <workerClass>RimWorldAccess.PawnColumnWorker_HuntPolicy</workerClass>
+    <sortable>true</sortable>
+  </PawnColumnDef>
+
+  <!-- Animals/Mechs variants: hidden until the table lists a draftable pawn. -->
+  <PawnColumnDef>
+    <defName>RWA_CombatPolicyAnimals</defName>
+    <label>combat policy</label>
+    <workerClass>RimWorldAccess.PawnColumnWorker_CombatPolicyAnimals</workerClass>
+    <sortable>true</sortable>
+  </PawnColumnDef>
+
+  <PawnColumnDef>
+    <defName>RWA_CombatPolicyMechs</defName>
+    <label>combat policy</label>
+    <workerClass>RimWorldAccess.PawnColumnWorker_CombatPolicyMechs</workerClass>
+    <sortable>true</sortable>
+  </PawnColumnDef>
+</Defs>

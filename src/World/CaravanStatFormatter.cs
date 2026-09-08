@@ -1,4 +1,5 @@
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
 
 namespace RimWorldAccess
@@ -69,8 +70,9 @@ namespace RimWorldAccess
         {
             string description = "DaysWorthOfFoodTooltip".Translate();
 
-            // Match game behavior: >= 600 days means "Infinite" (no consumers or tons of food)
-            if (days >= 600f)
+            // Match game behavior: DaysWorthOfFoodCalculator returns this sentinel for
+            // "Infinite" (no consumers or tons of food) - see ApproxDaysWorthOfFood.
+            if (days >= DaysWorthOfFoodCalculator.InfiniteDaysWorthOfFood)
             {
                 string infiniteLabel = "InfiniteDaysWorthOfFoodInfo".Translate();
                 return includeDescription
@@ -87,7 +89,7 @@ namespace RimWorldAccess
             {
                 string daysStr = days.ToString("F1");
                 // Only show spoilage if food will rot before it's consumed AND it's not "infinite"
-                bool showSpoil = tillRot < days && tillRot > 0 && tillRot < 600f;
+                bool showSpoil = tillRot < days && tillRot > 0 && tillRot < DaysWorthOfFoodCalculator.InfiniteDaysWorthOfFood;
                 if (showSpoil)
                 {
                     string rotStr = tillRot.ToString("F1");

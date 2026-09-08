@@ -2,402 +2,26 @@ using HarmonyLib;
 using RimWorld;
 using RimWorld.Planet;
 using System.Linq;
-using UnityEngine;
 using Verse;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patch that intercepts keyboard input when the work menu is active.
-    /// Supports grid-based navigation in manual mode and list navigation in basic mode.
-    /// </summary>
-    [HarmonyPatch(typeof(UIRoot))]
-    [HarmonyPatch("UIRootOnGUI")]
-    public static class WorkMenuPatch
-    {
-        /// <summary>
-        /// Prefix patch that intercepts keyboard events when work menu is active.
-        /// </summary>
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix()
-        {
-            if (!WorkMenuState.IsActive)
-                return;
-
-            if (Event.current.type != EventType.KeyDown)
-                return;
-
-            KeyCode key = Event.current.keyCode;
-            bool shift = Event.current.shift;
-            bool alt = KeyboardHelper.IsAltHeld;
-            var typeahead = WorkMenuState.Typeahead;
-
-
-            // Handle Escape - clear search first, then save & close
-            if (key == KeyCode.Escape)
-            {
-                if (WorkMenuState.ClearSearchIfActive())
-                {
-                    Event.current.Use();
-                    return;
-                }
-                WorkMenuState.Confirm();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Enter/Return
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                if (WorkMenuState.SearchJumpPending)
-                {
-                    // Jump to the search result
-                    WorkMenuState.JumpToSearchResult();
-                }
-                else
-                {
-                    // Confirm and close
-                    WorkMenuState.Confirm();
-                }
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Backspace for search
-            if (key == KeyCode.Backspace)
-            {
-                if (WorkMenuState.ProcessBackspace())
-                {
-                    Event.current.Use();
-                    return;
-                }
-            }
-
-            // Handle Alt+M: Toggle between basic and manual mode
-            if (alt && key == KeyCode.M)
-            {
-                WorkMenuState.ToggleMode();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Ctrl+Tab (Option+Tab on macOS): Swap to table view.
-            // IsCtrlHeld transparently substitutes Alt for Ctrl on Mac+Tab — see
-            // KeyboardHelper.IsCtrlHeld for the cross-platform abstraction.
-            if (key == KeyCode.Tab && KeyboardHelper.IsCtrlHeld)
-            {
-                WorkMenuOpener.SwapToTable();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Tab: Switch pawns (saves current changes)
-            if (key == KeyCode.Tab && !shift)
-            {
-                WorkMenuState.SwitchToNextPawn();
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.Tab && shift)
-            {
-                WorkMenuState.SwitchToPreviousPawn();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Up/Down arrows (priority level navigation in manual mode, search navigation otherwise)
-            if (key == KeyCode.UpArrow)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    WorkMenuState.PreviousSearchMatch();
-                }
-                else
-                {
-                    WorkMenuState.MoveUp();
-                }
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.DownArrow)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                {
-                    WorkMenuState.NextSearchMatch();
-                }
-                else
-                {
-                    WorkMenuState.MoveDown();
-                }
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Left/Right arrows (task navigation within priority level)
-            if (key == KeyCode.LeftArrow)
-            {
-                WorkMenuState.MoveLeft();
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.RightArrow)
-            {
-                WorkMenuState.MoveRight();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Home/End: Jump to top/bottom of current column/list
-            if (key == KeyCode.Home)
-            {
-                WorkMenuState.JumpToFirst();
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.End)
-            {
-                WorkMenuState.JumpToLast();
-                Event.current.Use();
-                return;
-            }
-
-            // Brackets cycle priority vanilla-style. Shift applies to all colonists.
-            if (key == KeyCode.LeftBracket)
-            {
-                if (shift) WorkMenuState.CycleAllPawnsPriorityForCurrent(decrease: true);
-                else WorkMenuState.CyclePriorityForCurrentEntry(decrease: true);
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.RightBracket)
-            {
-                if (shift) WorkMenuState.CycleAllPawnsPriorityForCurrent(decrease: false);
-                else WorkMenuState.CyclePriorityForCurrentEntry(decrease: false);
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Shift+0-4: Set priority for ALL compatible pawns in manual mode.
-            // In basic mode, shift+digit is a no-op but still consumed so vanilla
-            // TimeSpeed_* KeyBindingDefs can't interpret Shift+1/2/3 as game speed.
-            if (shift && !alt)
-            {
-                bool isDigit04 =
-                    key == KeyCode.Alpha0 || key == KeyCode.Keypad0 ||
-                    key == KeyCode.Alpha1 || key == KeyCode.Keypad1 ||
-                    key == KeyCode.Alpha2 || key == KeyCode.Keypad2 ||
-                    key == KeyCode.Alpha3 || key == KeyCode.Keypad3 ||
-                    key == KeyCode.Alpha4 || key == KeyCode.Keypad4;
-                if (isDigit04)
-                {
-                    if (WorkMenuState.IsManualMode)
-                    {
-                        int digit =
-                            (key == KeyCode.Alpha0 || key == KeyCode.Keypad0) ? 0 :
-                            (key == KeyCode.Alpha1 || key == KeyCode.Keypad1) ? 1 :
-                            (key == KeyCode.Alpha2 || key == KeyCode.Keypad2) ? 2 :
-                            (key == KeyCode.Alpha3 || key == KeyCode.Keypad3) ? 3 : 4;
-                        WorkMenuState.SetPriorityForAllPawns(digit);
-                    }
-                    Event.current.Use();
-                    return;
-                }
-            }
-
-            // Handle number keys 0-4: Set priority (manual mode only).
-            // In basic mode digits are no-ops (Space toggles, [ / ] cycle) but we
-            // still consume them so vanilla time controls don't hear them.
-            if (!alt && !shift)
-            {
-                bool isDigit04 =
-                    key == KeyCode.Alpha0 || key == KeyCode.Keypad0 ||
-                    key == KeyCode.Alpha1 || key == KeyCode.Keypad1 ||
-                    key == KeyCode.Alpha2 || key == KeyCode.Keypad2 ||
-                    key == KeyCode.Alpha3 || key == KeyCode.Keypad3 ||
-                    key == KeyCode.Alpha4 || key == KeyCode.Keypad4;
-                if (isDigit04)
-                {
-                    if (WorkMenuState.IsManualMode)
-                    {
-                        int digit =
-                            (key == KeyCode.Alpha0 || key == KeyCode.Keypad0) ? 0 :
-                            (key == KeyCode.Alpha1 || key == KeyCode.Keypad1) ? 1 :
-                            (key == KeyCode.Alpha2 || key == KeyCode.Keypad2) ? 2 :
-                            (key == KeyCode.Alpha3 || key == KeyCode.Keypad3) ? 3 : 4;
-                        WorkMenuState.SetPriority(digit);
-                    }
-                    Event.current.Use();
-                    return;
-                }
-            }
-
-            // Handle Space: Toggle selected work type (basic mode only)
-            if (key == KeyCode.Space && !WorkMenuState.IsManualMode)
-            {
-                WorkMenuState.ToggleSelected();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle type-ahead search characters (letters only, not numbers since 0-4 are for priorities)
-            bool isLetter = key >= KeyCode.A && key <= KeyCode.Z;
-            if (isLetter && !alt && !shift)
-            {
-                Event.current.Use();
-                return;
-            }
-
-            // Consume * to prevent passthrough
-            bool isStar = key == KeyCode.KeypadMultiply || (shift && key == KeyCode.Alpha8);
-            if (isStar)
-            {
-                Event.current.Use();
-                return;
-            }
-        }
-
-        /// <summary>
-        /// Postfix patch that draws visual feedback for the work menu.
-        /// </summary>
-        [HarmonyPostfix]
-        public static void Postfix()
-        {
-            if (!WorkMenuState.IsActive)
-                return;
-
-            DrawMenuOverlay();
-        }
-
-        /// <summary>
-        /// Draws a visual overlay indicating the work menu is active.
-        /// </summary>
-        private static void DrawMenuOverlay()
-        {
-            float screenWidth = UI.screenWidth;
-            float screenHeight = UI.screenHeight;
-
-            float overlayWidth = 750f;
-            float overlayHeight = 160f;
-            float overlayX = (screenWidth - overlayWidth) / 2f;
-            float overlayY = 20f;
-
-            Rect overlayRect = new Rect(overlayX, overlayY, overlayWidth, overlayHeight);
-
-            // Draw semi-transparent background
-            Color backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.9f);
-            Widgets.DrawBoxSolid(overlayRect, backgroundColor);
-
-            // Draw border
-            Color borderColor = new Color(0.5f, 0.7f, 1.0f, 1.0f);
-            Widgets.DrawBox(overlayRect, 2);
-
-            // Draw text
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.MiddleCenter;
-
-            string pawnName = WorkMenuState.CurrentPawn != null
-                ? WorkMenuState.CurrentPawn.LabelShort
-                : "RimWorldAccess.Work.UnknownPawn".Translate().ToString();
-            int pawnIndex = WorkMenuState.CurrentPawnIndex + 1;
-            int totalPawns = WorkMenuState.TotalPawns;
-            string mode = WorkMenuState.IsManualMode
-                ? "RimWorldAccess.Work.Mode.ManualOverlay".Translate().ToString()
-                : "RimWorldAccess.Work.Mode.BasicOverlay".Translate().ToString();
-
-            string title = "RimWorldAccess.Work.Overlay.Title".Translate(pawnName, pawnIndex, totalPawns, mode);
-
-            string instructions1, instructions2, instructions3;
-
-            if (WorkMenuState.IsManualMode)
-            {
-                instructions1 = "RimWorldAccess.Work.Overlay.ManualInstructions1".Translate();
-                instructions2 = "RimWorldAccess.Work.Overlay.ManualInstructions2".Translate();
-                instructions3 = "RimWorldAccess.Work.Overlay.ManualInstructions3".Translate();
-            }
-            else
-            {
-                instructions1 = "RimWorldAccess.Work.Overlay.BasicInstructions1".Translate();
-                instructions2 = "RimWorldAccess.Work.Overlay.BasicInstructions2".Translate();
-                instructions3 = "RimWorldAccess.Work.Overlay.BasicInstructions3".Translate();
-            }
-
-            // Show current position info
-            string positionInfo = "";
-            var entry = WorkMenuState.GetCurrentEntry();
-            if (entry != null)
-            {
-                if (WorkMenuState.IsManualMode)
-                {
-                    var columns = WorkMenuState.GetColumns();
-                    int colIndex = WorkMenuState.CurrentColumn;
-                    string colName;
-                    switch (colIndex)
-                    {
-                        case 0: colName = "RimWorldAccess.Work.Column.Priority1".Translate(); break;
-                        case 1: colName = "RimWorldAccess.Work.Column.Priority2".Translate(); break;
-                        case 2: colName = "RimWorldAccess.Work.Column.Priority3".Translate(); break;
-                        case 3: colName = "RimWorldAccess.Work.Column.Priority4".Translate(); break;
-                        case 4: colName = "RimWorldAccess.Work.Column.Disabled".Translate(); break;
-                        default: colName = "RimWorldAccess.Work.Column.Unknown".Translate(); break;
-                    }
-                    int colCount = columns[colIndex].Count;
-                    positionInfo = "RimWorldAccess.Work.Overlay.PositionInfoManual".Translate(colName, WorkMenuState.CurrentRow + 1, colCount, entry.WorkType.labelShort);
-                }
-                else
-                {
-                    int totalEntries = WorkMenuState.GetAllEntries().Count;
-                    string status = entry.CurrentPriority > 0
-                        ? "RimWorldAccess.Work.Overlay.StatusEnabled".Translate().ToString()
-                        : "RimWorldAccess.Work.Overlay.StatusDisabled".Translate().ToString();
-                    positionInfo = "RimWorldAccess.Work.Overlay.PositionInfoBasic".Translate(status, entry.WorkType.labelShort);
-                }
-            }
-
-            // Search info
-            var typeahead = WorkMenuState.Typeahead;
-            if (typeahead.HasActiveSearch)
-            {
-                positionInfo = "RimWorldAccess.Work.Overlay.SearchInfo".Translate(typeahead.SearchBuffer, typeahead.CurrentMatchPosition, typeahead.MatchCount);
-            }
-
-            Rect titleRect = new Rect(overlayX, overlayY + 10f, overlayWidth, 25f);
-            Rect positionRect = new Rect(overlayX, overlayY + 35f, overlayWidth, 25f);
-            Rect instructions1Rect = new Rect(overlayX, overlayY + 65f, overlayWidth, 22f);
-            Rect instructions2Rect = new Rect(overlayX, overlayY + 90f, overlayWidth, 22f);
-            Rect instructions3Rect = new Rect(overlayX, overlayY + 115f, overlayWidth, 22f);
-
-            Widgets.Label(titleRect, title);
-
-            Text.Font = GameFont.Tiny;
-            GUI.color = new Color(0.8f, 0.9f, 1.0f);
-            Widgets.Label(positionRect, positionInfo);
-            GUI.color = Color.white;
-
-            Widgets.Label(instructions1Rect, instructions1);
-            Widgets.Label(instructions2Rect, instructions2);
-            Widgets.Label(instructions3Rect, instructions3);
-
-            Text.Anchor = TextAnchor.UpperLeft;
-            Text.Font = GameFont.Small;
-        }
-    }
-
-    /// <summary>
-    /// Harmony patch to intercept the Work tab opening and replace it with our accessible version.
-    /// Dispatches to either WorkMenuState (focused view) or WorkTableState (table view)
-    /// based on the DefaultWorkMenuView setting.
+    /// Opens the accessible screen for the Work tab while the real vanilla window keeps drawing. This
+    /// no longer replaces the window, it just dispatches to either WorkMenuState (focused view) or
+    /// WorkTableState (table view) via WorkMenuOpener, based on the DefaultWorkMenuView setting, while
+    /// making sure one of them is active. The IsActive guard is load-bearing: this prefix now runs
+    /// EVERY FRAME the window is open, not just once.
     /// </summary>
     [HarmonyPatch(typeof(MainTabWindow_Work), nameof(MainTabWindow_Work.DoWindowContents))]
     public static class WorkWindowInterceptPatch
     {
         [HarmonyPrefix]
-        public static bool Prefix()
+        public static void Prefix()
         {
             if (WorkMenuState.IsActive || WorkTableState.IsActive)
             {
-                Find.WindowStack.TryRemove(typeof(MainTabWindow_Work), doCloseSound: false);
-                return false;
+                return;
             }
 
             if (Find.World?.renderer?.wantedMode == WorldRenderMode.Planet)
@@ -412,13 +36,17 @@ namespace RimWorldAccess
             if (targetPawn == null && Find.CurrentMap != null)
                 targetPawn = Find.CurrentMap.mapPawns.FreeColonists.FirstOrDefault();
 
-            if (targetPawn != null)
+            // No colonist: vanilla drew its own (empty) window here before this wave too.
+            if (targetPawn == null)
             {
-                WorkMenuOpener.OpenDefaultView(targetPawn);
-                Find.WindowStack.TryRemove(typeof(MainTabWindow_Work), doCloseSound: false);
-                return false;
+                return;
             }
-            return true;
+
+            WorkMenuOpener.OpenDefaultView(targetPawn);
+            if (!WorkMenuState.IsActive && !WorkTableState.IsActive)
+            {
+                Shell.MainTabWindowLink.CloseTab(Shell.MainTabWindowLink.Work);
+            }
         }
     }
 
@@ -452,12 +80,17 @@ namespace RimWorldAccess
 
         /// <summary>
         /// Swap from table view to focused view. Persists the chosen view.
+        /// Table-model T2 migration: the table's current pawn now lives on
+        /// RimWorldAccess.Shell.WorkTableScope (the pawn row list moved off
+        /// WorkTableState), so the caller (the scope's own
+        /// "workTable.swapToFocusedView" claim) hands it in directly instead
+        /// of this method reading a WorkTableState.CurrentPawn bridge
+        /// property.
         /// </summary>
-        public static void SwapToFocused()
+        public static void SwapToFocused(Pawn currentPawn)
         {
             if (!WorkTableState.IsActive) return;
-            Pawn currentPawn = WorkTableState.CurrentPawn;
-            WorkTableState.CloseForSwap();
+            WorkTableState.Close();
             RememberView(WorkMenuView.Focused);
             WorkMenuState.Open(currentPawn);
         }
@@ -473,298 +106,17 @@ namespace RimWorldAccess
         }
     }
 
-    /// <summary>
-    /// Harmony patch that intercepts keyboard input when the work table view is active.
-    /// Separate from WorkMenuPatch to keep the two views' input-handling concerns apart.
-    /// </summary>
-    [HarmonyPatch(typeof(UIRoot))]
-    [HarmonyPatch("UIRootOnGUI")]
-    public static class WorkTableMenuInputPatch
-    {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix()
-        {
-            if (!WorkTableState.IsActive) return;
-            if (Event.current.type != EventType.KeyDown) return;
+    // WorkTableMenuInputPatch (the table view's keyboard-input side door) is
+    // fully deleted, not just gutted — its only member was the Prefix, and
+    // it is driven by the shell now (WorkTableScope, attached via
+    // WorkTableScopeMirror). Its consume-all tails live on as the modal backstop / the scope's
+    // claim-wrapper design — see WorkTableScope.Game.cs's class remarks.
+    // (Matches the E4 precedent: PawnSkillsTableMenuInputPatch was deleted
+    // the same way, not tombstoned in place.)
 
-            KeyCode key = Event.current.keyCode;
-            bool shift = Event.current.shift;
-            bool ctrl = KeyboardHelper.IsCtrlHeld;
-            bool alt = KeyboardHelper.IsAltHeld;
-            var typeahead = WorkTableState.Typeahead;
-
-            // Ctrl+Tab (Option+Tab on macOS) — swap to focused view.
-            // IsCtrlHeld transparently substitutes Alt for Ctrl on Mac+Tab — see
-            // KeyboardHelper.IsCtrlHeld for the cross-platform abstraction.
-            if (key == KeyCode.Tab && KeyboardHelper.IsCtrlHeld)
-            {
-                WorkMenuOpener.SwapToFocused();
-                Event.current.Use();
-                return;
-            }
-
-            // Escape — clear search first, otherwise save & close
-            if (key == KeyCode.Escape)
-            {
-                if (WorkTableState.ClearSearchIfActive())
-                {
-                    Event.current.Use();
-                    return;
-                }
-                WorkTableState.Confirm();
-                Event.current.Use();
-                return;
-            }
-
-            // Enter — save & close (or commit a search jump if active)
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                if (typeahead != null && typeahead.HasActiveSearch)
-                {
-                    typeahead.ClearSearch();
-                    WorkTableState.AnnounceCurrentCell(includePawnName: true);
-                }
-                else
-                {
-                    WorkTableState.Confirm();
-                }
-                Event.current.Use();
-                return;
-            }
-
-            if (key == KeyCode.Backspace)
-            {
-                if (WorkTableState.HandleBackspace())
-                {
-                    Event.current.Use();
-                    return;
-                }
-            }
-
-            if (alt && key == KeyCode.M)
-            {
-                WorkTableState.ToggleMode();
-                Event.current.Use();
-                return;
-            }
-
-            if (alt && key == KeyCode.S)
-            {
-                WorkTableState.ToggleSortByCurrentColumn();
-                Event.current.Use();
-                return;
-            }
-
-            // Painting: Ctrl+Shift+Home/End — paint entire column
-            if ((key == KeyCode.Home || key == KeyCode.End) && ctrl && shift)
-            {
-                WorkTableState.PaintEntireColumn();
-                Event.current.Use();
-                return;
-            }
-            // Shift+Home/End — paint range toward start/end
-            if (key == KeyCode.Home && shift)
-            {
-                WorkTableState.PaintToFirst();
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.End && shift)
-            {
-                WorkTableState.PaintToLast();
-                Event.current.Use();
-                return;
-            }
-            // Shift+Up/Down — paint single + move
-            if (key == KeyCode.DownArrow && shift)
-            {
-                WorkTableState.PaintDown();
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.UpArrow && shift)
-            {
-                WorkTableState.PaintUp();
-                Event.current.Use();
-                return;
-            }
-
-            // Navigation
-            if (key == KeyCode.UpArrow)
-            {
-                WorkTableState.SelectPreviousPawn();
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.DownArrow)
-            {
-                WorkTableState.SelectNextPawn();
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.LeftArrow)
-            {
-                WorkTableState.SelectPreviousColumn();
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.RightArrow)
-            {
-                WorkTableState.SelectNextColumn();
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.Home)
-            {
-                WorkTableState.JumpToFirst();
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.End)
-            {
-                WorkTableState.JumpToLast();
-                Event.current.Use();
-                return;
-            }
-
-            // Bracket cycling — [ decreases priority number (more important),
-            // ] increases it (less important). Shift applies to every colonist.
-            if (key == KeyCode.LeftBracket)
-            {
-                if (shift) WorkTableState.CycleAllColonistsPriority(decrease: true);
-                else WorkTableState.CycleCurrentCellPriority(decrease: true);
-                Event.current.Use();
-                return;
-            }
-            if (key == KeyCode.RightBracket)
-            {
-                if (shift) WorkTableState.CycleAllColonistsPriority(decrease: false);
-                else WorkTableState.CycleCurrentCellPriority(decrease: false);
-                Event.current.Use();
-                return;
-            }
-
-            // Number keys 0-4 — absolute priority for current cell (manual mode only).
-            // In basic mode digits are no-ops (Space toggles, [ / ] cycle) but we
-            // still consume them so vanilla time controls don't hear them.
-            if (!alt && !shift && !ctrl)
-            {
-                int? digit = DigitFromKey(key);
-                if (digit.HasValue && digit.Value <= 4)
-                {
-                    if (WorkTableState.IsManualMode)
-                        WorkTableState.SetPriorityForCurrentCell(digit.Value);
-                    Event.current.Use();
-                    return;
-                }
-            }
-
-            // Shift+0-4 — set priority for ALL eligible colonists in current column
-            // (manual mode only; in basic mode we still consume to block vanilla
-            // TimeSpeed_* KeyBindingDefs from interpreting Shift+1/2/3 as game speed).
-            if (shift && !alt && !ctrl)
-            {
-                int? digit = DigitFromKey(key);
-                if (digit.HasValue && digit.Value <= 4)
-                {
-                    if (WorkTableState.IsManualMode)
-                        WorkTableState.SetPriorityForAllColonists(digit.Value);
-                    Event.current.Use();
-                    return;
-                }
-            }
-
-            // Space — basic-mode toggle
-            if (key == KeyCode.Space && !WorkTableState.IsManualMode)
-            {
-                WorkTableState.ToggleCurrentCell();
-                Event.current.Use();
-                return;
-            }
-
-            // Typeahead character routing handled by TypeaheadDispatcher upstream
-            // (see TypeaheadConsumerRegistry). Swallow the keycode-only event here
-            // so RimWorld's bindings on KeyCode.A..Z don't fire while the table is open.
-            bool isLetter = key >= KeyCode.A && key <= KeyCode.Z;
-            if (isLetter && !alt && !shift && !ctrl)
-            {
-                Event.current.Use();
-                return;
-            }
-
-            // Consume * to prevent passthrough (matches focused view behavior)
-            bool isStar = key == KeyCode.KeypadMultiply || (shift && key == KeyCode.Alpha8);
-            if (isStar)
-            {
-                Event.current.Use();
-                return;
-            }
-        }
-
-        private static int? DigitFromKey(KeyCode key)
-        {
-            if (key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9) return key - KeyCode.Alpha0;
-            if (key >= KeyCode.Keypad0 && key <= KeyCode.Keypad9) return key - KeyCode.Keypad0;
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Draws a visual overlay indicating the work table view is active.
-    /// </summary>
-    [HarmonyPatch(typeof(UIRoot))]
-    [HarmonyPatch("UIRootOnGUI")]
-    public static class WorkTableMenuOverlayPatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix()
-        {
-            if (!WorkTableState.IsActive) return;
-
-            float screenWidth = UI.screenWidth;
-            float overlayWidth = 800f;
-            float overlayHeight = 140f;
-            float overlayX = (screenWidth - overlayWidth) / 2f;
-            float overlayY = 20f;
-
-            Rect overlayRect = new Rect(overlayX, overlayY, overlayWidth, overlayHeight);
-            Widgets.DrawBoxSolid(overlayRect, new Color(0.1f, 0.1f, 0.1f, 0.9f));
-            Widgets.DrawBox(overlayRect, 2);
-
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.MiddleCenter;
-
-            int pawnCount = WorkTableState.PawnCount;
-            int row = WorkTableState.CurrentRowIndex + 1;
-            string mode = WorkTableState.IsManualMode
-                ? "RimWorldAccess.Work.Mode.ManualOverlay".Translate().ToString()
-                : "RimWorldAccess.Work.Mode.BasicOverlay".Translate().ToString();
-            string colName = pawnCount > 0
-                ? WorkTableState.TableHelper?.GetCurrentColumnName() ?? ""
-                : "";
-            string title = "RimWorldAccess.Work.Overlay.TableTitle".Translate(mode, row, pawnCount, colName);
-
-            Rect titleRect = new Rect(overlayX, overlayY + 10f, overlayWidth, 25f);
-            Widgets.Label(titleRect, title);
-
-            Text.Font = GameFont.Tiny;
-            GUI.color = new Color(0.8f, 0.9f, 1.0f);
-
-            string line1 = "RimWorldAccess.Work.Overlay.TableInstructions1".Translate();
-            string line2 = "RimWorldAccess.Work.Overlay.TableInstructions2".Translate();
-            string line3 = "RimWorldAccess.Work.Overlay.TableInstructions3".Translate(KeyboardHelper.CtrlLabel);
-
-            Rect l1 = new Rect(overlayX, overlayY + 45f, overlayWidth, 22f);
-            Rect l2 = new Rect(overlayX, overlayY + 70f, overlayWidth, 22f);
-            Rect l3 = new Rect(overlayX, overlayY + 95f, overlayWidth, 22f);
-            Widgets.Label(l1, line1);
-            Widgets.Label(l2, line2);
-            Widgets.Label(l3, line3);
-
-            GUI.color = Color.white;
-            Text.Anchor = TextAnchor.UpperLeft;
-            Text.Font = GameFont.Small;
-        }
-    }
+    // WorkTableMenuOverlayPatch (the table view's sighted-only status banner) is likewise fully
+    // deleted, not tombstoned: the real MainTabWindow_Work window now covers this tab instead, so the
+    // banner's only reason to exist — telling a sighted player something was happening off-screen — no
+    // longer applies. The scope's OverlayPawnCount/ OverlayCurrentRow/OverlayCurrentColumnName members
+    // it used to read stay on WorkTableScope (see that file's remarks).
 }

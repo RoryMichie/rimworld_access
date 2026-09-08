@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using HarmonyLib;
 using RimWorld;
+using RimWorldAccess.Shell;
 using UnityEngine;
 using Verse;
 using Verse.Sound;
@@ -13,14 +14,15 @@ namespace RimWorldAccess
 {
     /// <summary>
     /// Keyboard-accessible driver for the Archonexus relocation selection screen
-    /// (Dialog_ChooseThingsForNewColony). Vanilla draws four sections in one
-    /// scrolled column — People / Animals / Relics / Items — so we present them
-    /// as four tabs: Left/Right (or Tab/Shift+Tab) switches sections, Up/Down
-    /// navigates within, and typeahead matches only within the current section.
-    /// Empty sections are skipped (matches vanilla's `count &gt; 0` draw gate).
-    /// Accept is gated solely by the dialog's own AcceptanceReport so it is
-    /// structurally impossible to relocate with more than the allowed number of
-    /// any category; on rejection the red reason is announced.
+    /// (Dialog_ChooseThingsForNewColony). Vanilla draws four sections in one scrolled column —
+    /// People / Animals / Relics / Items — which
+    /// <see cref="RimWorldAccess.Shell.ArchonexusColonyScope"/> presents as one content region each;
+    /// empty sections are skipped, matching vanilla's <c>count &gt; 0</c> draw gate. Accept is gated
+    /// solely by the dialog's own AcceptanceReport, so relocating with more than the allowed number
+    /// of any category is structurally impossible; on rejection the red reason is announced.
+    /// Cursors, per-section typeaheads and the announcements live on that scope; what stays here is
+    /// the section/entry data, the toggle mutation, Accept, the info-card and pawn-info entry points,
+    /// and the status text.
     /// </summary>
     public static class ArchonexusColonyState
     {
@@ -28,34 +30,13 @@ namespace RimWorldAccess
 
         public static bool IsActive { get; private set; }
 
-        /// <summary>
-        /// True when a typeahead search is filtering the current tab. The
-        /// OnCancelKeyPressed prefix uses this to decide whether to intercept
-        /// Escape (clear the search) or let vanilla close the dialog as a
-        /// guaranteed exit.
-        /// </summary>
-        public static bool HasActiveSearch =>
-            sections.Count > 0 && CurrentTypeahead.HasActiveSearch;
-
         private static Dialog_ChooseThingsForNewColony dialog;
 
         // Tab order is fixed (matches vanilla's draw order). Only non-empty sections appear.
         private static readonly Section[] AllSections = { Section.Colonists, Section.Animals, Section.Relics, Section.Items };
         private static List<Section> sections = new List<Section>();
-        private static int currentSectionIdx;
 
         private static readonly Dictionary<Section, List<Thing>> entries = new Dictionary<Section, List<Thing>>();
-        private static readonly Dictionary<Section, int> selectedIndex = new Dictionary<Section, int>();
-        private static readonly Dictionary<Section, TypeaheadSearchHelper> typeaheads = new Dictionary<Section, TypeaheadSearchHelper>();
-
-        private static Section CurrentSection => sections[currentSectionIdx];
-        private static List<Thing> CurrentEntries => entries[CurrentSection];
-        private static int CurrentSelectedIndex
-        {
-            get => selectedIndex[CurrentSection];
-            set => selectedIndex[CurrentSection] = value;
-        }
-        private static TypeaheadSearchHelper CurrentTypeahead => typeaheads[CurrentSection];
 
         #region Reflection cache
 
@@ -84,26 +65,21 @@ namespace RimWorldAccess
 
         public static void EnsureOpen(Dialog_ChooseThingsForNewColony d)
         {
-            // Reference equality alone — see IdeoLoadState.EnsureOpen for the
-            // window-stack snapshot-tail rationale. Keying off IsActive would
+            // Reference equality alone (see IdeoLoadState.EnsureOpen): keying off IsActive would
             // re-announce every time vanilla closes the dialog.
             if (ReferenceEquals(dialog, d))
                 return;
             dialog = d;
             IsActive = true;
 
-            // This dialog is the first screen of the relocation chain, reached by accepting the
-            // quest from the (windowless) quest menu — which does NOT close on accept, so it
-            // lingers active through the whole chain. Later screens that are NOT protected by the
-            // UnifiedKeyboardPatch EXCLUSIVE block (notably the world-tile pick) would then route
-            // arrows to the lingering quest menu instead of the world map. Clear it here, silently,
-            // at the head of the chain. (Screens 1 and 4 are exclusive-protected regardless; this
-            // is what frees Screen 3.)
+            // This dialog heads the relocation chain, reached by accepting the quest from the
+            // windowless quest menu, which does NOT close on accept and would linger active through
+            // the whole chain — later screens without exclusive protection (the world-tile pick) would
+            // then route arrows to it instead of the world map. Clear it here, silently.
             if (QuestMenuState.IsActive)
                 QuestMenuState.Close(announce: false);
 
             RebuildAll();
-            AnnounceOpening();
         }
 
         public static void Close()
@@ -111,9 +87,6 @@ namespace RimWorldAccess
             IsActive = false;
             sections.Clear();
             entries.Clear();
-            selectedIndex.Clear();
-            typeaheads.Clear();
-            currentSectionIdx = 0;
             // dialog reference is intentionally retained — see EnsureOpen.
         }
 
@@ -121,9 +94,6 @@ namespace RimWorldAccess
         {
             sections.Clear();
             entries.Clear();
-            selectedIndex.Clear();
-            typeaheads.Clear();
-            currentSectionIdx = 0;
 
             foreach (Section s in AllSections)
             {
@@ -132,8 +102,6 @@ namespace RimWorldAccess
                     continue; // matches vanilla's `count > 0` draw gate
                 sections.Add(s);
                 entries[s] = list;
-                selectedIndex[s] = 0;
-                typeaheads[s] = new TypeaheadSearchHelper();
             }
         }
 
@@ -155,169 +123,60 @@ namespace RimWorldAccess
 
         #region Input
 
-        public static bool HandleInput(Event ev)
+        /// <summary>True while any section holds at least one eligible thing.</summary>
+        internal static bool HasSections => sections.Count > 0;
+
+        /// <summary>The non-empty sections, in vanilla's draw order — one scope content region each.</summary>
+        internal static int SectionCount => sections.Count;
+
+        internal static int EntryCount(int section)
         {
-            if (ev.type != EventType.KeyDown) return false;
-
-            KeyCode key = ev.keyCode;
-            bool alt = KeyboardHelper.IsAltHeld;
-            bool ctrl = ev.control;
-            bool shift = ev.shift;
-
-            if (sections.Count == 0)
-                return HandleEmpty(key, alt, ctrl);
-
-            if (key == KeyCode.Escape && !alt && !ctrl)
-            {
-                if (CurrentTypeahead.HasActiveSearch)
-                {
-                    CurrentTypeahead.ClearSearchAndAnnounce();
-                    AnnounceCurrent(includeSectionHeader: false);
-                    return true;
-                }
-                // Let vanilla OnCancelKeyPressed close the dialog and fire the cancel
-                // callback (the questline's outSignalCancelled). Returning false here
-                // and the OnCancel prefix gate together restore the game's escape hatch.
-                return false;
-            }
-
-            // Tab navigation: Left/Right (and Tab/Shift+Tab as an alias).
-            if (key == KeyCode.LeftArrow && !alt && !ctrl) { SwitchSection(-1); return true; }
-            if (key == KeyCode.RightArrow && !alt && !ctrl) { SwitchSection(1); return true; }
-            if (key == KeyCode.Tab && !alt && !ctrl) { SwitchSection(shift ? -1 : 1); return true; }
-
-            if (key == KeyCode.UpArrow) { Move(-1); return true; }
-            if (key == KeyCode.DownArrow) { Move(1); return true; }
-            if (key == KeyCode.Home) { CurrentTypeahead.ClearSearch(); CurrentSelectedIndex = 0; AnnounceCurrent(includeSectionHeader: false); return true; }
-            if (key == KeyCode.End) { CurrentTypeahead.ClearSearch(); CurrentSelectedIndex = CurrentEntries.Count - 1; AnnounceCurrent(includeSectionHeader: false); return true; }
-
-            // Space and Enter both toggle the current row's checkbox (parity with the
-            // caravan formation screen); sending the colony off is Alt+S.
-            if (key == KeyCode.Space && !alt && !ctrl) { ToggleCurrent(); return true; }
-            if ((key == KeyCode.Return || key == KeyCode.KeypadEnter) && !alt && !ctrl) { ToggleCurrent(); return true; }
-
-            if (key == KeyCode.S && alt && !ctrl) { AttemptAccept(); return true; }
-
-            // Alt+H/M/N/G/K read the focused pawn's health / mood / needs / gear / skills,
-            // exactly like the caravan formation screen. Only the People and Animals tabs
-            // hold pawns; on Relics/Items these keys fall through.
-            if (alt && !ctrl && !shift)
-            {
-                Pawn selectedPawn = GetSelectedPawn();
-                if (selectedPawn != null &&
-                    CaravanInputHelper.HandlePawnInfoShortcuts(key, selectedPawn, alt, shift, ctrl))
-                    return true;
-            }
-
-            if (key == KeyCode.I && alt && !ctrl) { OpenInfoCard(); return true; }
-
-            if (key == KeyCode.T && !alt && !ctrl) { AnnounceStatus(); return true; }
-
-            if (key == KeyCode.Backspace)
-            {
-                if (CurrentTypeahead.HasActiveSearch && CurrentTypeahead.ProcessBackspace(LabelsFor(CurrentSection), out int ni))
-                {
-                    if (ni >= 0) CurrentSelectedIndex = ni;
-                    AnnounceCurrent(includeSectionHeader: false);
-                }
-                return true;
-            }
-
-            char c = ev.character;
-            if (!alt && !ctrl && c != '\0' && char.IsLetterOrDigit(c))
-            {
-                if (CurrentTypeahead.ProcessCharacterInput(c, LabelsFor(CurrentSection), out int ni))
-                {
-                    CurrentSelectedIndex = ni;
-                    AnnounceCurrent(includeSectionHeader: false);
-                }
-                else
-                {
-                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    CurrentTypeahead.SpeakNoMatches();
-                }
-                return true;
-            }
-
-            return false;
+            return section >= 0 && section < sections.Count ? entries[sections[section]].Count : 0;
         }
 
-        private static bool HandleEmpty(KeyCode key, bool alt, bool ctrl)
+        /// <summary>The Thing one row stands for, or null when either index is out of range.</summary>
+        internal static Thing EntryAt(int section, int index)
         {
-            // No eligible things in any section. Escape falls through to vanilla so the
-            // user can still cancel the relocation.
-            if (key == KeyCode.Escape && !alt && !ctrl)
-                return false;
-            return true; // swallow other keys
+            if (section < 0 || section >= sections.Count) return null;
+            List<Thing> list = entries[sections[section]];
+            return index >= 0 && index < list.Count ? list[index] : null;
         }
+
+        internal static void ShowHealthInfo(Pawn pawn) => CaravanInputHelper.HandlePawnInfoShortcuts(KeyCode.H, pawn, true, false, false);
+        internal static void ShowMoodInfo(Pawn pawn) => CaravanInputHelper.HandlePawnInfoShortcuts(KeyCode.M, pawn, true, false, false);
+        internal static void ShowNeedsInfo(Pawn pawn) => CaravanInputHelper.HandlePawnInfoShortcuts(KeyCode.N, pawn, true, false, false);
+        internal static void ShowGearInfo(Pawn pawn) => CaravanInputHelper.HandlePawnInfoShortcuts(KeyCode.G, pawn, true, false, false);
+        internal static void ShowSkillsInfo(Pawn pawn) => CaravanInputHelper.HandlePawnInfoShortcuts(KeyCode.K, pawn, true, false, false);
 
         #endregion
 
-        #region Navigation
+        #region Mutation
 
-        private static void SwitchSection(int delta)
+        internal static void Toggle(int section, int index)
         {
-            if (sections.Count <= 1) return;
-            // Always wrap around — tabs are a fixed small set; staying put on Left at
-            // index 0 would be confusing ("did I press it?"). MenuHelper.SelectNext/Previous
-            // honors the user's WrapNavigation setting which is for long lists, not tabs.
-            int next = (currentSectionIdx + delta + sections.Count) % sections.Count;
-            if (next == currentSectionIdx) return;
-            currentSectionIdx = next;
-            SoundDefOf.Tick_High.PlayOneShotOnCamera();
-            AnnounceCurrent(includeSectionHeader: true);
-        }
-
-        private static void Move(int delta)
-        {
-            int n = CurrentEntries.Count;
-            if (n == 0) return;
-
-            TypeaheadSearchHelper ta = CurrentTypeahead;
-            if (ta.HasActiveSearch && ta.MatchCount > 0)
-            {
-                // While a search filters the list, arrows step through matches only — so
-                // typing "mi" then arrowing visits just the matching pawns, not the whole list.
-                int mi = delta > 0 ? ta.GetNextMatch(CurrentSelectedIndex) : ta.GetPreviousMatch(CurrentSelectedIndex);
-                if (mi >= 0) CurrentSelectedIndex = mi;
-            }
-            else
-            {
-                CurrentSelectedIndex = delta > 0
-                    ? MenuHelper.SelectNext(CurrentSelectedIndex, n)
-                    : MenuHelper.SelectPrevious(CurrentSelectedIndex, n);
-            }
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrent(includeSectionHeader: false);
-        }
-
-        private static void ToggleCurrent()
-        {
-            if (CurrentEntries.Count == 0) return;
-            Thing t = CurrentEntries[CurrentSelectedIndex];
+            Thing t = EntryAt(section, index);
+            if (t == null) return;
+            Section s = sections[section];
             var selected = (HashSet<Thing>)SelectedField.GetValue(dialog);
             bool wasSelected = selected.Contains(t);
             if (wasSelected)
             {
                 selected.Remove(t);
-                if (CurrentSection == Section.Items)
+                if (s == Section.Items)
                     SetSelectedItemCount(GetSelectedItemCount() - 1);
                 SoundDefOf.Checkbox_TurnedOff.PlayOneShotOnCamera();
             }
             else
             {
                 selected.Add(t);
-                if (CurrentSection == Section.Items)
+                if (s == Section.Items)
                     SetSelectedItemCount(GetSelectedItemCount() + 1);
                 SoundDefOf.Checkbox_TurnedOn.PlayOneShotOnCamera();
             }
-            // Clear any active typeahead on select so the next keystrokes start a fresh search
-            // (parity with other selection screens).
-            CurrentTypeahead.ClearSearch();
-            AnnounceToggle(!wasSelected);
+            AnnounceToggle(s, !wasSelected);
         }
 
-        private static void AttemptAccept()
+        internal static void AttemptAccept()
         {
             var report = (AcceptanceReport)AcceptanceReportProp.GetValue(dialog);
             if (!report.Accepted)
@@ -330,24 +189,15 @@ namespace RimWorldAccess
             int colonistCount = (int)ColonistCountProp.GetValue(dialog);
             bool onlySlavesSelected = slaveCount > 0 && slaveCount == colonistCount;
             var selectedList = ((HashSet<Thing>)SelectedField.GetValue(dialog)).ToList();
-            // ConfirmArchonexusSettlementConsequences opens a Dialog_MessageBox the
-            // mod's MessageBoxAccessibilityPatch already announces; on confirm it
-            // closes this dialog and fires postAccepted with the selected list.
+            // ConfirmArchonexusSettlementConsequences opens a real Dialog_MessageBox driven by
+            // MessageBoxScope; on confirm it closes this dialog and fires postAccepted.
             ConfirmConsequencesMethod.Invoke(dialog, new object[] { selectedList, onlySlavesSelected });
         }
 
-        private static void OpenInfoCard()
+        internal static void OpenInfoCard(Thing t)
         {
-            if (CurrentEntries.Count == 0) return;
-            Thing t = CurrentEntries[CurrentSelectedIndex];
+            if (t == null) return;
             Find.WindowStack.Add(new Dialog_InfoCard(t));
-        }
-
-        /// <summary>The focused entry as a Pawn (People/Animals tabs), or null on Relics/Items.</summary>
-        private static Pawn GetSelectedPawn()
-        {
-            if (sections.Count == 0 || CurrentEntries.Count == 0) return null;
-            return CurrentEntries[CurrentSelectedIndex] as Pawn;
         }
 
         #endregion
@@ -396,9 +246,6 @@ namespace RimWorldAccess
 
         #region Labels and tooltips
 
-        private static List<string> LabelsFor(Section s) =>
-            entries[s].Select(t => LabelFor(t, s)).ToList();
-
         private static string LabelFor(Thing t, Section s)
         {
             if (t is Pawn p && p.RaceProps?.Animal == true)
@@ -406,6 +253,20 @@ namespace RimWorldAccess
             if (s == Section.Items)
                 return GenLabel.ThingLabel(t, 1, includeHp: false).CapitalizeFirst();
             return t.LabelCap;
+        }
+
+        /// <summary>
+        /// One section's region name: vanilla's short tab-style label plus the selected-count-of-maximum.
+        /// The chassis's region frame spends Extras on the row under the cursor, so the fullness count
+        /// rides the name — the one place a Tab landing, a typeahead jump and an empty-section
+        /// announcement all read it from.
+        /// </summary>
+        internal static string SectionName(int section)
+        {
+            if (section < 0 || section >= sections.Count) return "";
+            Section s = sections[section];
+            return SectionLabel(s) + ". "
+                + "RimWorldAccess.Archonexus.Colony.CountOfMax".Translate(GetCount(s), GetMax(s));
         }
 
         private static string SectionLabel(Section s)
@@ -421,98 +282,76 @@ namespace RimWorldAccess
             }
         }
 
-        private static string SectionHeaderFull(Section s)
-        {
-            int max = GetMax(s);
-            switch (s)
-            {
-                case Section.Colonists: return "ChoosePeopleDesc".Translate(max).ToString();
-                case Section.Animals: return "ChooseThingsDesc".Translate(max, "AnimalsLower".Translate()).ToString();
-                case Section.Relics: return "ChooseThingsDesc".Translate(max, max == 1 ? "RelicLower".Translate() : "RelicsLower".Translate()).ToString();
-                case Section.Items: return "ChooseThingsDesc".Translate(max, "ItemsLower".Translate()).ToString();
-                default: return "";
-            }
-        }
-
         #endregion
 
         #region Announcements
 
-        private static void AnnounceOpening()
+        /// <summary>
+        /// The screen's opening text: title, description, how-to line and the full four-category
+        /// status. The section header and focused row are not folded in — the chassis speaks both as
+        /// its entry announcement right after this one.
+        /// </summary>
+        internal static string BuildOpeningText()
         {
             var sb = new StringBuilder();
             sb.Append("ChooseThingsForNewColonyTitle".Translate());
             sb.Append(". ").Append("ChooseThingsForNewColonyDesc".Translate());
             sb.Append(". ").Append("RimWorldAccess.Archonexus.Colony.OpenInstructions".Translate());
             sb.Append(" ").Append(BuildStatusText());
-            if (sections.Count > 0)
-                sb.Append(". ").Append(BuildCurrentText(includeSectionHeader: true));
-            TolkHelper.SpeakData(sb.ToString(), SpeechPriority.High);
-        }
-
-        private static void AnnounceCurrent(bool includeSectionHeader)
-        {
-            if (sections.Count == 0) return;
-            string text = BuildCurrentText(includeSectionHeader);
-            if (!string.IsNullOrEmpty(text))
-                TolkHelper.SpeakData(text);
-        }
-
-        private static string BuildCurrentText(bool includeSectionHeader)
-        {
-            if (sections.Count == 0) return "";
-            Section s = CurrentSection;
-            var sb = new StringBuilder();
-            if (includeSectionHeader)
-            {
-                // Tab style: "People tab. 3 of 5."
-                sb.Append(SectionLabel(s)).Append(" tab. ");
-                sb.Append(GetCount(s)).Append(" of ").Append(GetMax(s)).Append(". ");
-            }
-            if (CurrentEntries.Count == 0)
-            {
-                sb.Append("NoneLower".Translate());
-                return sb.ToString();
-            }
-            Thing t = CurrentEntries[CurrentSelectedIndex];
-            sb.Append(LabelFor(t, s));
-            sb.Append(". ").Append(IsSelected(t) ? "selected" : "unselected");
-            if (s == Section.Items)
-                sb.Append(". ").Append(GetItemStackCount(t));
-            string position = MenuHelper.FormatPosition(CurrentSelectedIndex, CurrentEntries.Count);
-            if (!string.IsNullOrEmpty(position))
-                sb.Append(". ").Append(position);
             return sb.ToString();
         }
 
-        private static void AnnounceToggle(bool nowSelected)
+        /// <summary>
+        /// One entry row for the scope's DescribeContentItem: a <see cref="ElementRole.Checkbox"/>
+        /// whose Check carries the selected state, with the item stack count riding Extras where one
+        /// applies. Position is the chassis's to fill.
+        /// </summary>
+        internal static ElementDescription DescribeEntry(int section, int index)
         {
-            // Per the toggle-announcements convention: announce only the changed
-            // value plus the running total, not the full label (already known).
-            var sb = new StringBuilder();
-            sb.Append(nowSelected ? "selected" : "unselected");
-            sb.Append(". ").Append(GetCount(CurrentSection)).Append(" of ").Append(GetMax(CurrentSection));
-            TolkHelper.SpeakData(sb.ToString());
+            ElementDescription d = new ElementDescription();
+            Thing t = EntryAt(section, index);
+            if (t == null) return d;
+            Section s = sections[section];
+            d.Label = LabelFor(t, s);
+            d.Role = ElementRole.Checkbox;
+            d.Check = IsSelected(t) ? CheckState.Checked : CheckState.Unchecked;
+            if (s == Section.Items)
+            {
+                d.Extras = GetItemStackCount(t).ToString();
+            }
+            return d;
         }
 
-        private static void AnnounceStatus()
+        private static void AnnounceToggle(Section section, bool nowSelected)
+        {
+            // Toggle convention: announce only the changed value plus the running total, not the full
+            // label. No label prefix is needed — the toggle never closes this surface, since Accept is
+            // a separate action.
+            ElementDescription d = new ElementDescription();
+            d.Check = nowSelected ? CheckState.Checked : CheckState.Unchecked;
+            string stateText = AnnouncementComposer.ComposeStateChange(d, TranslatedShellVocabulary.Instance);
+            string countText = "RimWorldAccess.Archonexus.Colony.CountOfMax".Translate(GetCount(section), GetMax(section)).ToString();
+            TolkHelper.SpeakData(stateText + ". " + countText);
+        }
+
+        internal static void AnnounceStatus()
         {
             TolkHelper.SpeakData(BuildStatusText(), SpeechPriority.High);
         }
 
         private static string BuildStatusText()
         {
-            // Status always reports all four categories (the dialog tracks them
-            // even when a section has zero entries). Order matches vanilla.
+            // Always reports all four categories (the dialog tracks them even with zero entries), in
+            // vanilla's order.
             var sb = new StringBuilder();
             int cMax = (int)MaxColonistsField.GetValue(dialog);
             int aMax = (int)MaxAnimalsField.GetValue(dialog);
             int rMax = (int)MaxRelicsField.GetValue(dialog);
             int iMax = (int)MaxItemsField.GetValue(dialog);
-            sb.Append(GetCount(Section.Colonists)).Append(" of ").Append(cMax).Append(" ").Append("People".Translate().ToString().ToLower());
-            sb.Append(", ").Append(GetCount(Section.Animals)).Append(" of ").Append(aMax).Append(" ").Append("AnimalsLower".Translate());
-            sb.Append(", ").Append(GetCount(Section.Relics)).Append(" of ").Append(rMax).Append(" ").Append(rMax == 1 ? "RelicLower".Translate() : "RelicsLower".Translate());
-            sb.Append(", ").Append(GetCount(Section.Items)).Append(" of ").Append(iMax).Append(" ").Append("ItemsLower".Translate());
+            sb.Append("RimWorldAccess.Archonexus.Colony.CountOfMax".Translate(GetCount(Section.Colonists), cMax).ToString()).Append(" ").Append("People".Translate().ToString().ToLower());
+            sb.Append(", ").Append("RimWorldAccess.Archonexus.Colony.CountOfMax".Translate(GetCount(Section.Animals), aMax).ToString()).Append(" ").Append("AnimalsLower".Translate());
+            sb.Append(", ").Append("RimWorldAccess.Archonexus.Colony.CountOfMax".Translate(GetCount(Section.Relics), rMax).ToString()).Append(" ").Append(rMax == 1 ? "RelicLower".Translate() : "RelicsLower".Translate());
+            sb.Append(", ").Append("RimWorldAccess.Archonexus.Colony.CountOfMax".Translate(GetCount(Section.Items), iMax).ToString()).Append(" ").Append("ItemsLower".Translate());
             var report = (AcceptanceReport)AcceptanceReportProp.GetValue(dialog);
             if (!report.Accepted)
                 sb.Append(". ").Append(report.Reason);

@@ -1,26 +1,34 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using HarmonyLib;
 using RimWorld;
-using UnityEngine;
 using Verse;
 using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Keyboard-accessible state for the in-game two-stage reform dialog (Dialog_ReformIdeo).
+    /// Slim facade over <c>Dialog_ReformIdeo</c> (the in-game two-stage fluid-ideoligion reform
+    /// dialog) — reflection surface, row source, and mutation vehicles only. The stage/panel
+    /// presentation and input machinery this class
+    /// used to own (HandleInput, the flat action-menu selectedIndex/typeahead, the section list
+    /// built by RebuildForStage, every announce builder) moved to
+    /// <see cref="RimWorldAccess.Shell.IdeoReformScreenScope"/>, a real windowed
+    /// <see cref="RimWorldAccess.Shell.ScreenScope"/> — see that class's remarks for the two
+    /// stage-aware regions (Changes / Edit) it presents instead.
     ///
-    /// Stage 1 (Memes &amp; styles): the "choose one change" stage. A short menu offers changing
-    /// the structure meme, the normal memes, or the styles — but only one category may change
-    /// per reform, so once a change is made the other categories are announced as locked.
-    /// Reset clears the pending change; Alt+S advances to stage 2.
-    ///
-    /// Stage 2 (Precepts, narrative &amp; deities): free editing, presented as the same section
-    /// menu as the Custom-creation hub (minus memes/styles, which belong to stage 1), operating
-    /// on the reform's working copy. Alt+S confirms and applies; Escape returns to stage 1;
-    /// Alt+R randomizes.
+    /// What survives here, and why: <see cref="EnsureOpen"/>/<see cref="Close"/> (lifecycle,
+    /// called by <c>IdeoReformPatch</c>'s PostOpen/PostClose, unchanged); the reflection surface
+    /// into the dialog's private <c>newIdeo</c>/<c>ideo</c>/<c>stage</c> fields and its public
+    /// <c>StructureMemeChanged</c>/<c>NormalMemesChanged</c>/<c>StylesChanged</c>/
+    /// <c>AnyChooseOneChanges</c> properties; <see cref="BuildStage1Actions"/>, the stage-1
+    /// "choose one change" row source (now returning only the three real content rows — Reset
+    /// changes/Next moved to the new scope's Buttons region, matching vanilla's own separation of
+    /// the choose-one-change body from its bottom button row, decompiled Dialog_ReformIdeo.cs
+    /// :240-261); and the three vanilla-vehicle methods the scope's Buttons-region actions invoke
+    /// (<see cref="ResetChanges"/>, <see cref="RandomizeNewIdeo"/>, <see cref="Confirm"/>) plus
+    /// <see cref="BuildImpactLine"/>, the impact-readout builder the scope's Edit-region status
+    /// row reuses verbatim.
     /// </summary>
     public static class IdeoReformState
     {
@@ -39,12 +47,6 @@ namespace RimWorldAccess
         private static Ideo newIdeo;
         private static Ideo originalIdeo;
 
-        private static int selectedIndex;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
-
-        // Stage-2 sections (excludes memes/styles, which are stage-1 concerns).
-        private static List<IdeoBuilderHelper.HubSection> sections = new List<IdeoBuilderHelper.HubSection>();
-
         #region Reflection
 
         private static readonly System.Reflection.FieldInfo NewIdeoField = AccessTools.Field(typeof(Dialog_ReformIdeo), "newIdeo");
@@ -53,21 +55,56 @@ namespace RimWorldAccess
         private static readonly System.Reflection.MethodInfo RandomizeNewIdeoMethod = AccessTools.Method(typeof(Dialog_ReformIdeo), "RandomizeNewIdeo");
         private static readonly System.Reflection.MethodInfo ResetChangesMethod = AccessTools.Method(typeof(Dialog_ReformIdeo), "ResetAllChooseOneChanges");
 
-        private static IdeoReformStage Stage
+        /// <summary>The reform's scratch working copy — every stage-1/stage-2 edit mutates this, never <see cref="OriginalIdeo"/>.</summary>
+        public static Ideo NewIdeo
         {
-            get => (IdeoReformStage)StageField.GetValue(dialog);
-            set => StageField.SetValue(dialog, value);
+            get { return newIdeo; }
         }
 
-        private static bool StructureMemeChanged => dialog.StructureMemeChanged;
-        private static bool NormalMemesChanged => dialog.NormalMemesChanged;
-        private static bool StylesChanged => dialog.StylesChanged;
-        private static bool AnyChooseOneChanges => dialog.AnyChooseOneChanges;
+        /// <summary>The live ideoligion the reform will overwrite on Apply. Read-only outside this class.</summary>
+        public static Ideo OriginalIdeo
+        {
+            get { return originalIdeo; }
+        }
+
+        /// <summary>Reflected read/write of the dialog's own private <c>stage</c> field — writing it keeps vanilla's own draw in sync, exactly as its Back/Next buttons do.</summary>
+        public static IdeoReformStage Stage
+        {
+            get { return (IdeoReformStage)StageField.GetValue(dialog); }
+            set { StageField.SetValue(dialog, value); }
+        }
+
+        public static bool StructureMemeChanged
+        {
+            get { return dialog.StructureMemeChanged; }
+        }
+
+        public static bool NormalMemesChanged
+        {
+            get { return dialog.NormalMemesChanged; }
+        }
+
+        public static bool StylesChanged
+        {
+            get { return dialog.StylesChanged; }
+        }
+
+        public static bool AnyChooseOneChanges
+        {
+            get { return dialog.AnyChooseOneChanges; }
+        }
 
         #endregion
 
         #region Lifecycle
 
+        /// <summary>
+        /// Idempotent (ReferenceEquals-guarded, called from <c>IdeoReformPatch_PostOpen</c>).
+        /// Presentation is owned entirely by <see cref="RimWorldAccess.Shell.IdeoReformScreenScope"/>
+        /// now — its own constructor/OnFocus builds the first region and speaks the opening
+        /// announcement, and its own OnPush registers this scope with
+        /// <see cref="IdeoEditNotifyHub"/> — so this method only resolves the reflection surface.
+        /// </summary>
         public static void EnsureOpen(Dialog_ReformIdeo d)
         {
             if (IsActive && System.Object.ReferenceEquals(dialog, d))
@@ -76,10 +113,6 @@ namespace RimWorldAccess
             newIdeo = (Ideo)NewIdeoField.GetValue(d);
             originalIdeo = (Ideo)IdeoField.GetValue(d);
             IsActive = true;
-            selectedIndex = 0;
-            typeahead.ClearSearch();
-            RebuildForStage();
-            AnnounceStage();
         }
 
         public static void Close()
@@ -88,52 +121,29 @@ namespace RimWorldAccess
             dialog = null;
             newIdeo = null;
             originalIdeo = null;
-            sections.Clear();
-            typeahead.ClearSearch();
-        }
-
-        public static void RefreshSections()
-        {
-            if (!IsActive) return;
-            RebuildForStage();
-            AnnounceCurrent();
-            // Proactively flag a freshly-created precept conflict so the player hears about it the
-            // moment an edit causes it, not only when they try to confirm.
-            AnnounceIncompatibilityIfAny();
-        }
-
-        private static void RebuildForStage()
-        {
-            selectedIndex = 0;
-            if (Stage == IdeoReformStage.PreceptsNarrativeAndDeities)
-            {
-                // Stage 2 sections: everything except the meme / style facets (stage-1 only).
-                sections = IdeoBuilderHelper.BuildSections(newIdeo)
-                    .Where(s => s.Kind != IdeoBuilderHelper.SectionKind.StructureMeme
-                             && s.Kind != IdeoBuilderHelper.SectionKind.NormalMemes
-                             && s.Kind != IdeoBuilderHelper.SectionKind.Styles)
-                    .ToList();
-            }
-            else
-            {
-                sections.Clear();
-            }
         }
 
         #endregion
 
         #region Stage 1 actions
 
-        private class Stage1Action
+        public sealed class Stage1Action
         {
             public string Label;
             public bool Enabled;
             public string DisabledReason;
-            public string Shortcut;
             public System.Action Activate;
         }
 
-        private static List<Stage1Action> BuildStage1Actions()
+        /// <summary>
+        /// The three "choose one change" content rows (decompiled Dialog_ReformIdeo.cs :142-209):
+        /// change structure meme / add-or-remove normal memes / change styles. Reset changes and
+        /// Next are vanilla's own separate bottom BUTTONS (:250,257) — presented by
+        /// <see cref="RimWorldAccess.Shell.IdeoReformScreenScope"/>'s Buttons region instead of as
+        /// flat rows here, correcting the pre-ScreenScope FocusScope-era flattening that put all
+        /// five items in one menu.
+        /// </summary>
+        public static List<Stage1Action> BuildStage1Actions()
         {
             var list = new List<Stage1Action>();
             string oneChangeReason = "MessageFluidIdeoOneChangeAllowed".Translate();
@@ -170,198 +180,48 @@ namespace RimWorldAccess
                 Activate = () => IdeoSymbolEditState.OpenStylePicker(newIdeo),
             });
 
-            if (AnyChooseOneChanges)
-            {
-                list.Add(new Stage1Action
-                {
-                    Label = "ReformIdeoResetChanges".Translate(),
-                    Shortcut = "Alt+R",
-                    Enabled = true,
-                    Activate = ResetChanges,
-                });
-            }
-
-            // Explicit "Next" to the free-edit stage, so the Alt+S advance is discoverable.
-            list.Add(new Stage1Action
-            {
-                Label = "Next".Translate(),
-                Shortcut = "Alt+S",
-                Enabled = true,
-                Activate = GoToStage2,
-            });
-
             return list;
         }
 
-        private static List<Stage1Action> stage1Cache = new List<Stage1Action>();
-
         #endregion
 
-        #region Input
+        #region Vehicles
 
-        public static bool HandleInput(Event ev)
-        {
-            if (ev.type != EventType.KeyDown) return false;
-
-            KeyCode key = ev.keyCode;
-            bool alt = KeyboardHelper.IsAltHeld;
-            bool ctrl = ev.control;
-
-            // Alt+S — advance (stage 1 → stage 2, "Next") or apply the reform (stage 2, "Apply changes").
-            if (key == KeyCode.S && alt && !ctrl)
-            {
-                if (Stage == IdeoReformStage.MemesAndStyles)
-                    GoToStage2();
-                else
-                    Confirm();
-                return true;
-            }
-
-            // Alt+R — stage 1: reset the pending change ("Reset changes" row); stage 2: randomize.
-            if (key == KeyCode.R && alt && !ctrl)
-            {
-                if (Stage == IdeoReformStage.MemesAndStyles)
-                {
-                    if (AnyChooseOneChanges) ResetChanges();
-                    else SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                }
-                else
-                {
-                    RandomizeNewIdeoMethod.Invoke(dialog, null);
-                    SoundDefOf.Tick_High.PlayOneShotOnCamera();
-                    RebuildForStage();
-                    AnnounceCurrent();
-                    AnnounceImpactAndWarnings();
-                }
-                return true;
-            }
-
-            // Escape
-            if (key == KeyCode.Escape && !alt && !ctrl)
-            {
-                if (typeahead.HasActiveSearch) { typeahead.ClearSearchAndAnnounce(); AnnounceCurrent(); return true; }
-                if (Stage == IdeoReformStage.PreceptsNarrativeAndDeities)
-                {
-                    Stage = IdeoReformStage.MemesAndStyles;
-                    RebuildForStage();
-                    AnnounceStage(includeIntro: false);
-                }
-                else
-                {
-                    dialog.Close(doCloseSound: false);
-                }
-                return true;
-            }
-
-            int count = ItemCount();
-            if (count == 0) return true;
-
-            if (key == KeyCode.UpArrow) { Move(-1); return true; }
-            if (key == KeyCode.DownArrow) { Move(1); return true; }
-            if (key == KeyCode.Home)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches) selectedIndex = typeahead.GetFirstMatch();
-                else { selectedIndex = 0; typeahead.ClearSearch(); }
-                AnnounceCurrent();
-                return true;
-            }
-            if (key == KeyCode.End)
-            {
-                if (typeahead.HasActiveSearch && !typeahead.HasNoMatches) selectedIndex = typeahead.GetLastMatch();
-                else { selectedIndex = count - 1; typeahead.ClearSearch(); }
-                AnnounceCurrent();
-                return true;
-            }
-
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter || key == KeyCode.Space)
-            {
-                Activate();
-                return true;
-            }
-
-            if (key == KeyCode.Backspace)
-            {
-                if (typeahead.HasActiveSearch && typeahead.ProcessBackspace(ItemLabels(), out int ni))
-                {
-                    if (ni >= 0) selectedIndex = ni;
-                    AnnounceCurrent();
-                }
-                return true;
-            }
-
-            // Typeahead
-            char c = ev.character;
-            if (!alt && !ctrl && c != '\0' && char.IsLetterOrDigit(c))
-            {
-                if (typeahead.ProcessCharacterInput(c, ItemLabels(), out int ni))
-                {
-                    selectedIndex = ni;
-                    AnnounceCurrent();
-                }
-                else
-                {
-                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    typeahead.SpeakNoMatches();
-                }
-                return true;
-            }
-
-            return true;
-        }
-
-        private static void Move(int delta)
-        {
-            int count = ItemCount();
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                selectedIndex = delta > 0
-                    ? typeahead.GetNextMatch(selectedIndex)
-                    : typeahead.GetPreviousMatch(selectedIndex);
-            else
-                selectedIndex = delta > 0
-                    ? MenuHelper.SelectNext(selectedIndex, count)
-                    : MenuHelper.SelectPrevious(selectedIndex, count);
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            AnnounceCurrent();
-        }
-
-        private static void Activate()
-        {
-            if (Stage == IdeoReformStage.MemesAndStyles)
-            {
-                stage1Cache = BuildStage1Actions();
-                if (selectedIndex < 0 || selectedIndex >= stage1Cache.Count) return;
-                var action = stage1Cache[selectedIndex];
-                if (!action.Enabled)
-                {
-                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    TolkHelper.SpeakData(action.DisabledReason ?? (string)"RimWorldAccess.Ideology.Builder.Unavailable".Translate(), SpeechPriority.High);
-                    return;
-                }
-                action.Activate?.Invoke();
-            }
-            else
-            {
-                if (selectedIndex == sections.Count) { Confirm(); return; }
-                if (selectedIndex < 0 || selectedIndex >= sections.Count) return;
-                IdeoBuilderSectionActions.Activate(newIdeo, sections[selectedIndex].Kind);
-            }
-        }
-
-        private static void GoToStage2()
-        {
-            Stage = IdeoReformStage.PreceptsNarrativeAndDeities;
-            RebuildForStage();
-            AnnounceStage(includeIntro: false);
-        }
-
-        private static void ResetChanges()
+        /// <summary>Vehicle A: mirrors the "ReformIdeoResetChanges" button body verbatim (decompiled :250-254).</summary>
+        public static void ResetChanges()
         {
             ResetChangesMethod.Invoke(dialog, null);
             SoundDefOf.Tick_Low.PlayOneShotOnCamera();
-            RefreshSections();
         }
 
-        private static void Confirm()
+        /// <summary>Vehicle A: mirrors the "Randomize" button body verbatim (decompiled :293-296).</summary>
+        public static void RandomizeNewIdeo()
+        {
+            RandomizeNewIdeoMethod.Invoke(dialog, null);
+            SoundDefOf.Tick_High.PlayOneShotOnCamera();
+        }
+
+        /// <summary>"Impact: N, label" for the working copy's normal memes, or "" if it has none. Reused verbatim by the Edit region's status row.</summary>
+        public static string BuildImpactLine()
+        {
+            if (newIdeo == null) return "";
+            var normals = newIdeo.memes.Where(m => m.category == MemeCategory.Normal).ToList();
+            if (normals.Count == 0) return "";
+            int impact = IdeoBuilderHelper.ImpactOf(normals);
+            return $"{"IdeoImpact".Translate()}: {impact}, {IdeoImpactUtility.OverallImpactLabel(impact)}";
+        }
+
+        /// <summary>
+        /// Vehicle A: the "DoneButton" body (decompiled :297-304) — <c>IdeoDevelopmentUtility
+        /// .ConfirmChangesToIdeo</c> opens vanilla's own lost-precept confirmation
+        /// <c>Dialog_MessageBox</c> when needed (already keyboard-accessible via its own
+        /// ScopeForWindow registration) and otherwise applies immediately. The
+        /// <c>FirstIncompatiblePreceptPair</c> gate ahead of it is NOT vanilla parity (vanilla's
+        /// own Done button applies unconditionally; the pair only ever drives a cosmetic red
+        /// label, decompiled :269-286) — a pre-existing, lead-approved accessibility hardening
+        /// carried forward unchanged from the retired IdeoReformState.Confirm.
+        /// </summary>
+        public static void Confirm()
         {
             var pair = newIdeo.FirstIncompatiblePreceptPair();
             if (pair != default(Pair<Precept, Precept>))
@@ -380,152 +240,11 @@ namespace RimWorldAccess
             IdeoDevelopmentUtility.ConfirmChangesToIdeo(ideoLocal, newLocal, delegate
             {
                 IdeoDevelopmentUtility.ApplyChangesToIdeo(ideoLocal, newLocal);
-                dlg.Close(doCloseSound: false);
+                dlg.Close();
                 // The game shows no message on a successful reform, so confirm it ourselves —
-                // otherwise Alt+S just silently closes the dialog.
+                // otherwise Apply just silently closes the dialog.
                 TolkHelper.SpeakData(reformedName + ", " + (string)"RimWorldAccess.Ideology.Builder.Status.Reformed".Translate(), SpeechPriority.High);
             });
-        }
-
-        #endregion
-
-        #region Items helpers
-
-        // The free-edit stage appends one synthetic action item after the sections: "Apply changes".
-        private static string ApplyLabel => "Accept".Translate();
-
-        private static int ItemCount()
-        {
-            if (Stage == IdeoReformStage.MemesAndStyles)
-                return BuildStage1Actions().Count;
-            return sections.Count + 1; // + the "Apply changes" action
-        }
-
-        private static List<string> ItemLabels()
-        {
-            if (Stage == IdeoReformStage.MemesAndStyles)
-                return BuildStage1Actions().Select(a => a.Label).ToList();
-            var labels = sections.Select(s => s.Label).ToList();
-            labels.Add(ApplyLabel);
-            return labels;
-        }
-
-        #endregion
-
-        #region Announcements
-
-        private static void AnnounceStage(bool includeIntro = true)
-        {
-            var parts = new List<string>();
-            // The title + long description orient the player on first open, but repeating them on
-            // every stage flip is noise — switching stages only needs the stage-specific guidance.
-            if (includeIntro)
-            {
-                parts.Add("ReformIdeoligion".Translate());
-                parts.Add("ReformIdeoligionDesc".Translate());
-            }
-            if (Stage == IdeoReformStage.MemesAndStyles)
-            {
-                parts.Add("ReformIdeoChooseOneChange".Translate());
-            }
-            else
-            {
-                parts.Add("ReformIdeoChangeAny".Translate());
-                // On arriving at free-edit, state the current overall impact so the player hears
-                // where their meme changes left it (parity with the builder hub).
-                parts.Add(BuildImpactLine());
-            }
-            parts.Add(BuildCurrentText());
-
-            // Join non-empty parts with ". " so an absent intro/impact never leaves a lone period.
-            TolkHelper.SpeakData(string.Join(". ", parts.Where(p => !string.IsNullOrEmpty(p))), SpeechPriority.High);
-        }
-
-        /// <summary>"Impact: N, label" for the working copy's normal memes, or "" if it has none.</summary>
-        private static string BuildImpactLine()
-        {
-            if (newIdeo == null) return "";
-            var normals = newIdeo.memes.Where(m => m.category == MemeCategory.Normal).ToList();
-            if (normals.Count == 0) return "";
-            int impact = IdeoBuilderHelper.ImpactOf(normals);
-            return $"{"IdeoImpact".Translate()}: {impact}, {IdeoImpactUtility.OverallImpactLabel(impact)}";
-        }
-
-        /// <summary>Announces the working copy's overall impact plus any non-blocking precept warning.</summary>
-        private static void AnnounceImpactAndWarnings()
-        {
-            if (newIdeo == null) return;
-            var sb = new StringBuilder();
-            string impact = BuildImpactLine();
-            if (!string.IsNullOrEmpty(impact))
-                sb.Append(impact);
-
-            string warning = IdeoBuilderHelper.BuildPlayerWarning(newIdeo);
-            if (!string.IsNullOrEmpty(warning))
-            {
-                if (sb.Length > 0) sb.Append(' ');
-                sb.Append(warning);
-            }
-            if (sb.Length > 0)
-                TolkHelper.SpeakData(sb.ToString());
-
-            AnnounceIncompatibilityIfAny();
-        }
-
-        /// <summary>Speaks a high-priority alert if the working copy now has an incompatible precept pair.</summary>
-        private static void AnnounceIncompatibilityIfAny()
-        {
-            if (newIdeo == null) return;
-            var pair = newIdeo.FirstIncompatiblePreceptPair();
-            if (pair != default(Pair<Precept, Precept>))
-            {
-                TolkHelper.SpeakData("MessageIdeoIncompatiblePrecepts".Translate(
-                    pair.First.Label.Named("PRECEPT1"), pair.Second.Label.Named("PRECEPT2")).CapitalizeFirst(),
-                    SpeechPriority.High);
-            }
-        }
-
-        private static void AnnounceCurrent()
-        {
-            string text = BuildCurrentText();
-            if (!string.IsNullOrEmpty(text))
-                TolkHelper.SpeakData(text);
-        }
-
-        private static string BuildCurrentText()
-        {
-            int count = ItemCount();
-            if (count == 0) return "";
-            if (selectedIndex < 0 || selectedIndex >= count) selectedIndex = 0;
-
-            var sb = new StringBuilder();
-            if (Stage == IdeoReformStage.MemesAndStyles)
-            {
-                var actions = BuildStage1Actions();
-                var a = actions[selectedIndex];
-                sb.Append(a.Label);
-                if (!a.Enabled)
-                    sb.Append(". ").Append("Disabled".Translate().ToString().CapitalizeFirst());
-                else if (!string.IsNullOrEmpty(a.Shortcut))
-                    sb.Append(". ").Append(a.Shortcut);
-            }
-            else if (selectedIndex == sections.Count)
-            {
-                // The synthetic "Apply changes" action, with its Alt+S shortcut announced.
-                sb.Append(ApplyLabel).Append(". ").Append("Alt+S");
-            }
-            else
-            {
-                var s = sections[selectedIndex];
-                sb.Append(s.Label);
-                if (!string.IsNullOrEmpty(s.ValueSummary))
-                    sb.Append(": ").Append(s.ValueSummary);
-            }
-
-            string position = MenuHelper.FormatPosition(selectedIndex, count);
-            if (!string.IsNullOrEmpty(position))
-                sb.Append(". ").Append(position);
-            return sb.ToString();
         }
 
         #endregion

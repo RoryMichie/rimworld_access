@@ -6,14 +6,13 @@ namespace RimWorldAccess
 {
     /// <summary>
     /// One editing session: owns the working text buffer, the field's spec, and
-    /// confirm/cancel callbacks. Routes character/backspace/copy/paste/enter/escape
-    /// events from the priority -1.5 dispatch in <see cref="UnifiedKeyboardPatch"/>.
+    /// confirm/cancel callbacks, routing the events the shell dispatcher's text funnel hands it.
     /// Modal — only one controller is active at a time via <see cref="TextInputManager"/>.
-    ///
-    /// Supports a text-review cursor: Left/Right move one char, Ctrl+Left/Right move one
-    /// word, Home/End jump, Shift+{arrows,Home,End} extend selection, Delete removes
-    /// forward, Up/Down re-read the whole buffer. Typing still announces each character
-    /// (chatty mode) — review is purely additive.
+    /// Carries a text-review cursor (char/word moves, Home/End, Shift selection, Delete,
+    /// Up/Down re-read) on top of the per-character typing announcements.
+    /// A <see cref="TextFieldSpec.ReadOnlyText"/> spec turns the same session into a read-only
+    /// browse of text the game owns: the caret starts at the top, every key that would change
+    /// the buffer refuses with one voice, and navigation, selection and copy are unchanged.
     /// </summary>
     public sealed class TextInputController
     {
@@ -34,18 +33,18 @@ namespace RimWorldAccess
 
         private Action<string> onConfirm;
         private Action onCancel;
+        private Action<bool> onTabExit;
 
         /// <summary>
-        /// Begin an editing session. When <paramref name="modal"/> is true (default), the
-        /// controller registers as <see cref="TextInputManager.Active"/> so UnifiedKeyboardPatch
-        /// routes ALL keys to it (modal text edit — used by renames). When false, the
-        /// caller (an embedded text field inside a larger menu) is responsible for routing
-        /// keys to <see cref="HandleCharacter"/> / <see cref="HandleEnter"/> / etc. itself.
-        /// When <paramref name="replaceOnType"/> is true and initial text is non-empty,
-        /// the first character/paste replaces the existing text.
-        /// <paramref name="displayLabel"/> overrides the field caption used in the editing prompt
-        /// and the commit announcement — pass an embedded field's own label (e.g. "First name")
-        /// when the spec carries only a generic label key.
+        /// Begin an editing session. With <paramref name="modal"/> the controller registers as
+        /// <see cref="TextInputManager.Active"/> and the dispatcher routes ALL keys to it;
+        /// otherwise the embedding caller must route keys to the handlers itself.
+        /// <paramref name="replaceOnType"/> makes the first character or paste replace non-empty
+        /// initial text. <paramref name="displayLabel"/> overrides the spec's label key in the
+        /// editing prompt and commit announcement.
+        /// <paramref name="onTabExit"/>, when supplied, makes Tab/Shift+Tab leave the value in
+        /// place (like Escape) and hand control to the callback instead of confirming; Tab is
+        /// inert without it.
         /// </summary>
         public void Begin(
             string initialText,
@@ -55,22 +54,41 @@ namespace RimWorldAccess
             bool replaceOnType = true,
             bool modal = true,
             bool announceOnCommit = true,
-            string displayLabel = null)
+            string displayLabel = null,
+            bool announceBegin = true,
+            Action<bool> onTabExit = null)
         {
             currentText = initialText ?? string.Empty;
             this.initialText = currentText;
-            replaceOnFirstKeystroke = replaceOnType && !string.IsNullOrEmpty(currentText);
-            cursorPos = currentText.Length;
-            selectionAnchor = cursorPos;
             Spec = spec;
+            replaceOnFirstKeystroke = replaceOnType && !ReadOnly && !string.IsNullOrEmpty(currentText);
+            // A reader starts at the top of the text; an editor starts where typing continues.
+            cursorPos = ReadOnly ? 0 : currentText.Length;
+            selectionAnchor = cursorPos;
             this.onConfirm = onConfirm;
             this.onCancel = onCancel;
+            this.onTabExit = onTabExit;
             this.modal = modal;
             this.announceOnCommit = announceOnCommit;
             this.displayLabel = displayLabel;
             if (modal) TextInputManager.SetActive(this);
 
+            // A scope composing its own field announcement passes announceBegin: false so the
+            // session opening has exactly one voice.
+            if (!announceBegin)
+            {
+                return;
+            }
             string label = ResolveLabel();
+            if (ReadOnly)
+            {
+                // Only the line under the caret: the rest of the buffer is one arrow key away.
+                string firstLine = string.IsNullOrEmpty(currentText)
+                    ? "RimWorldAccess.TextInput.Empty".Translate().ToString()
+                    : TextCursor.LineAt(currentText, cursorPos);
+                TolkHelper.Speak("RimWorldAccess.TextInput.BrowsingField".Loc(label, firstLine), SpeechPriority.High);
+                return;
+            }
             string preview = string.IsNullOrEmpty(currentText)
                 ? "RimWorldAccess.TextInput.Empty".Translate().ToString()
                 : currentText;
@@ -80,11 +98,23 @@ namespace RimWorldAccess
             TolkHelper.Speak(announceKey.Loc(label, preview), SpeechPriority.High);
         }
 
+        /// <summary>True while this session browses text the game owns (see the class remarks).</summary>
+        private bool ReadOnly => Spec != null && Spec.ReadOnly;
+
+        /// <summary>One voice for every refused edit key, so a read-only field answers a keystroke
+        /// rather than swallowing it. True when the caller must do nothing further.</summary>
+        private bool RefuseWhenReadOnly()
+        {
+            if (!ReadOnly) return false;
+            TolkHelper.Speak("RimWorldAccess.TextInput.ReadOnlyField".Loc(), SpeechPriority.High);
+            return true;
+        }
+
         public void HandleCharacter(char c)
         {
+            if (RefuseWhenReadOnly()) return;
             if (c == '\n')
             {
-                // Newlines only allowed in multi-line fields.
                 if (Spec == null || !Spec.MultiLine) return;
             }
             else if (char.IsControl(c)) return;
@@ -108,6 +138,7 @@ namespace RimWorldAccess
 
         public void HandleBackspace()
         {
+            if (RefuseWhenReadOnly()) return;
             replaceOnFirstKeystroke = false;
             if (HasSelection)
             {
@@ -126,6 +157,7 @@ namespace RimWorldAccess
 
         public void HandleDelete()
         {
+            if (RefuseWhenReadOnly()) return;
             replaceOnFirstKeystroke = false;
             if (HasSelection)
             {
@@ -175,10 +207,8 @@ namespace RimWorldAccess
             AnnounceCursorMove(oldCursor, cursorPos, shift, ctrl, leftward: false);
         }
 
-        /// <summary>
-        /// Home: in single-line mode (or with Ctrl), jumps to the start of the field.
-        /// In multi-line mode without Ctrl, jumps to the start of the current line.
-        /// </summary>
+        /// <summary>Jumps to the start of the field, or to the start of the current line in
+        /// multi-line mode without Ctrl.</summary>
         public void HandleHome(bool shift, bool ctrl = false)
         {
             replaceOnFirstKeystroke = false;
@@ -191,10 +221,8 @@ namespace RimWorldAccess
             AnnounceCursorMove(oldCursor, cursorPos, shift, ctrl: false, leftward: true);
         }
 
-        /// <summary>
-        /// End: in single-line mode (or with Ctrl), jumps to the end of the field.
-        /// In multi-line mode without Ctrl, jumps to the end of the current line.
-        /// </summary>
+        /// <summary>Jumps to the end of the field, or to the end of the current line in
+        /// multi-line mode without Ctrl.</summary>
         public void HandleEnd(bool shift, bool ctrl = false)
         {
             replaceOnFirstKeystroke = false;
@@ -207,10 +235,8 @@ namespace RimWorldAccess
             AnnounceCursorMove(oldCursor, cursorPos, shift, ctrl: false, leftward: false);
         }
 
-        /// <summary>
-        /// Multi-line only: move cursor up one line, preserving column position.
-        /// If already on the first line, stays at line start and announces the first line.
-        /// </summary>
+        /// <summary>Multi-line only: moves up one line, preserving column; on the first line it
+        /// stays at the line start.</summary>
         public void HandleArrowUp(bool shift)
         {
             if (Spec == null || !Spec.MultiLine)
@@ -219,28 +245,13 @@ namespace RimWorldAccess
                 return;
             }
             replaceOnFirstKeystroke = false;
-            int currentLineStart = FindStartOfCurrentLine(cursorPos);
-            if (currentLineStart == 0)
-            {
-                // Already on first line — snap to start and announce.
-                cursorPos = 0;
-                if (!shift) selectionAnchor = cursorPos;
-                AnnounceLine(0);
-                return;
-            }
-            int col = cursorPos - currentLineStart;
-            int prevLineStart = FindStartOfCurrentLine(currentLineStart - 1);
-            int prevLineLen = (currentLineStart - 1) - prevLineStart; // excludes the \n
-            int targetCol = Math.Min(col, prevLineLen);
-            cursorPos = prevLineStart + targetCol;
+            cursorPos = TextCursor.LineUp(currentText, cursorPos);
             if (!shift) selectionAnchor = cursorPos;
-            AnnounceLine(prevLineStart);
+            AnnounceLine(cursorPos);
         }
 
-        /// <summary>
-        /// Multi-line only: move cursor down one line, preserving column position.
-        /// If already on the last line, snaps to the end of the field and announces it.
-        /// </summary>
+        /// <summary>Multi-line only: moves down one line, preserving column; on the last line it
+        /// snaps to the end of the field.</summary>
         public void HandleArrowDown(bool shift)
         {
             if (Spec == null || !Spec.MultiLine)
@@ -249,24 +260,9 @@ namespace RimWorldAccess
                 return;
             }
             replaceOnFirstKeystroke = false;
-            int currentLineStart = FindStartOfCurrentLine(cursorPos);
-            int currentLineEnd = FindEndOfCurrentLine(cursorPos);
-            if (currentLineEnd >= currentText.Length)
-            {
-                // Already on last line — snap to end and announce.
-                cursorPos = currentText.Length;
-                if (!shift) selectionAnchor = cursorPos;
-                AnnounceLine(currentLineStart);
-                return;
-            }
-            int col = cursorPos - currentLineStart;
-            int nextLineStart = currentLineEnd + 1;
-            int nextLineEnd = FindEndOfCurrentLine(nextLineStart);
-            int nextLineLen = nextLineEnd - nextLineStart;
-            int targetCol = Math.Min(col, nextLineLen);
-            cursorPos = nextLineStart + targetCol;
+            cursorPos = TextCursor.LineDown(currentText, cursorPos);
             if (!shift) selectionAnchor = cursorPos;
-            AnnounceLine(nextLineStart);
+            AnnounceLine(cursorPos);
         }
 
         public void HandleCopy()
@@ -276,13 +272,10 @@ namespace RimWorldAccess
             TolkHelper.Speak("RimWorldAccess.TextInput.Copied".Loc(), SpeechPriority.High);
         }
 
-        /// <summary>
-        /// Cut: with a selection, copies selection to clipboard and removes it. Without a
-        /// selection, cuts the entire field (matches VS Code's "cut line" convention applied
-        /// to a single-line field — useful for "clear and save to clipboard").
-        /// </summary>
+        /// <summary>Cuts the selection, or the entire field when there is none.</summary>
         public void HandleCut()
         {
+            if (RefuseWhenReadOnly()) return;
             replaceOnFirstKeystroke = false;
             if (HasSelection)
             {
@@ -299,12 +292,10 @@ namespace RimWorldAccess
             TolkHelper.Speak("RimWorldAccess.TextInput.Cut".Loc(), SpeechPriority.High);
         }
 
-        /// <summary>
-        /// Ctrl+Backspace: delete the word to the left of the cursor. With a selection,
-        /// falls back to deleting the selection (same as plain Backspace).
-        /// </summary>
+        /// <summary>Deletes the word left of the cursor, or the selection when there is one.</summary>
         public void HandleBackspaceWord()
         {
+            if (RefuseWhenReadOnly()) return;
             replaceOnFirstKeystroke = false;
             if (HasSelection)
             {
@@ -321,12 +312,10 @@ namespace RimWorldAccess
             TolkHelper.Speak("RimWorldAccess.TextInput.Deleted".Loc(removed), SpeechPriority.High);
         }
 
-        /// <summary>
-        /// Ctrl+Delete: delete the word to the right of the cursor. With a selection,
-        /// falls back to deleting the selection (same as plain Delete).
-        /// </summary>
+        /// <summary>Deletes the word right of the cursor, or the selection when there is one.</summary>
         public void HandleDeleteWord()
         {
+            if (RefuseWhenReadOnly()) return;
             replaceOnFirstKeystroke = false;
             if (HasSelection)
             {
@@ -352,9 +341,7 @@ namespace RimWorldAccess
             }
             selectionAnchor = 0;
             cursorPos = currentText.Length;
-            // For large buffers (e.g. a scenario description), reading the whole thing
-            // would take a long time; announce the char count instead. The user can
-            // press Up/Down to re-read the full contents explicitly.
+            // A large buffer announces its char count instead; Up/Down re-reads it in full.
             const int LongTextThreshold = 200;
             if (currentText.Length > LongTextThreshold)
                 TolkHelper.Speak("RimWorldAccess.TextInput.SelectedAllLong".Loc(currentText.Length), SpeechPriority.High);
@@ -364,6 +351,7 @@ namespace RimWorldAccess
 
         public void HandlePaste()
         {
+            if (RefuseWhenReadOnly()) return;
             string clipboard = GUIUtility.systemCopyBuffer;
             if (string.IsNullOrEmpty(clipboard))
             {
@@ -407,6 +395,15 @@ namespace RimWorldAccess
 
         public void HandleEnter()
         {
+            if (ReadOnly)
+            {
+                // Nothing to validate or write back: Enter just leaves the text.
+                var exit = onConfirm;
+                string browsed = currentText;
+                Close();
+                exit?.Invoke(browsed);
+                return;
+            }
             var result = TextFieldValidator.Validate(currentText, Spec);
             if (!result.IsOk)
             {
@@ -416,10 +413,7 @@ namespace RimWorldAccess
             var cb = onConfirm;
             string text = currentText;
 
-            // Capture what we need for the dismissal announcement before Close() clears Spec.
-            // Gated purely on announceOnCommit: embedded fields that route Enter through the
-            // controller (e.g. WindowlessDialogState) announce too; sites that re-announce their
-            // own result handle Enter themselves and never reach here.
+            // Capture the dismissal announcement's inputs before Close() clears Spec.
             bool announce = announceOnCommit;
             bool changed = text != initialText;
             string label = ResolveLabel();
@@ -427,17 +421,13 @@ namespace RimWorldAccess
             Close();
             cb?.Invoke(text);
 
-            // Confirm the dismissal last, so it's the authoritative final word even when the caller's
-            // confirm handler re-announces something (it interrupts that, avoiding double-speak).
+            // Last, so it interrupts any re-announcement the confirm handler made.
             if (announce)
                 AnnounceCommit(label, text, changed);
         }
 
-        /// <summary>
-        /// The human label used in the editing prompt and commit announcement. Prefers the explicit
-        /// display label passed to <see cref="Begin"/> (e.g. a dialog field's own caption like
-        /// "First name"); otherwise falls back to the spec's translated label key.
-        /// </summary>
+        /// <summary>The label for the editing prompt and commit announcement: the display label
+        /// passed to <see cref="Begin"/>, else the spec's translated label key.</summary>
         private string ResolveLabel()
         {
             if (!string.IsNullOrEmpty(displayLabel))
@@ -445,10 +435,7 @@ namespace RimWorldAccess
             return Spec?.LabelKey != null ? Spec.LabelKey.Translate().ToString() : string.Empty;
         }
 
-        /// <summary>
-        /// Speaks the field's value on dismissal: "{field} set to {value}" when edited, "{value}
-        /// unchanged" when the user pressed Enter without changing anything. Never truncated.
-        /// </summary>
+        /// <summary>Speaks the field's value on dismissal, set-to or unchanged. Never truncated.</summary>
         private void AnnounceCommit(string label, string text, bool changed)
         {
             string value = string.IsNullOrEmpty(text)
@@ -456,8 +443,7 @@ namespace RimWorldAccess
                 : text;
             if (!changed)
             {
-                // Identify the field by name ("First name unchanged"); fall back to the value only
-                // when no label is available, so we never speak a bare " unchanged".
+                // Fall back to the value so a missing label never speaks a bare " unchanged".
                 string subject = string.IsNullOrEmpty(label) ? value : label;
                 TolkHelper.Speak("RimWorldAccess.TextInput.FieldUnchanged".Loc(subject), SpeechPriority.High);
                 return;
@@ -485,12 +471,9 @@ namespace RimWorldAccess
                 TolkHelper.SpeakData(currentText);
         }
 
-        /// <summary>
-        /// Cursor-review subset of <see cref="HandleEvent"/>: handles only Left/Right/Home/End/Delete
-        /// (with Shift / Ctrl modifiers). Intended for embedded sites whose surrounding list still
-        /// owns Up/Down and Enter/Escape — call this from the site's input handler before its own
-        /// arrow-nav branch so a user editing a field gets cursor review without losing list nav.
-        /// </summary>
+        /// <summary>Cursor-review subset of <see cref="HandleEvent"/>: Left/Right/Home/End/Delete
+        /// only. Embedded sites whose list still owns Up/Down and Enter/Escape call this before
+        /// their own arrow-nav branch.</summary>
         public bool HandleCursorNavEvent(Event evt)
         {
             if (evt.type != EventType.KeyDown) return false;
@@ -510,10 +493,8 @@ namespace RimWorldAccess
             return false;
         }
 
-        /// <summary>
-        /// Dispatch an IMGUI key event to the appropriate handler. Returns true if the
-        /// event was consumed and the caller should call <c>Event.current.Use()</c>.
-        /// </summary>
+        /// <summary>Dispatches an IMGUI key event. True when consumed, meaning the caller should
+        /// call <c>Event.current.Use()</c>.</summary>
         public bool HandleEvent(Event evt)
         {
             if (evt.type != EventType.KeyDown) return false;
@@ -521,7 +502,6 @@ namespace RimWorldAccess
             bool shift = evt.shift;
             bool ctrl = KeyboardHelper.IsCtrlHeld;
 
-            // Ctrl-modified non-cursor shortcuts.
             if (ctrl && !shift)
             {
                 if (evt.keyCode == KeyCode.C) { HandleCopy(); return true; }
@@ -534,7 +514,6 @@ namespace RimWorldAccess
             {
                 case KeyCode.Return:
                 case KeyCode.KeypadEnter:
-                    // Shift+Enter inserts a newline in multi-line fields; plain Enter always confirms.
                     if (shift && Spec != null && Spec.MultiLine)
                     {
                         HandleCharacter('\n');
@@ -566,7 +545,7 @@ namespace RimWorldAccess
                     HandleEnd(shift, ctrl);
                     return true;
                 case KeyCode.UpArrow:
-                    // Multi-line: navigate lines. Single-line OR Ctrl-held: re-read whole field.
+                    // Single-line, or Ctrl held: re-read the whole field instead of moving.
                     if (Spec != null && Spec.MultiLine && !ctrl) HandleArrowUp(shift);
                     else ReadCurrentText();
                     return true;
@@ -574,10 +553,16 @@ namespace RimWorldAccess
                     if (Spec != null && Spec.MultiLine && !ctrl) HandleArrowDown(shift);
                     else ReadCurrentText();
                     return true;
+                case KeyCode.Tab:
+                    // Opt-in only: without a callback Tab falls through unclaimed.
+                    if (onTabExit == null) return false;
+                    Action<bool> tabExit = onTabExit;
+                    Close();
+                    tabExit(shift);
+                    return true;
             }
 
-            // Layout-aware character (keyCode == None, character != '\0'). Skip control
-            // chars (e.g. \b backspace) — those are handled above by KeyCode.Backspace.
+            // Layout-aware character; control chars are already handled by their key cases.
             if (evt.keyCode == KeyCode.None && evt.character != '\0' && !char.IsControl(evt.character))
             {
                 HandleCharacter(evt.character);
@@ -597,6 +582,7 @@ namespace RimWorldAccess
             displayLabel = null;
             onConfirm = null;
             onCancel = null;
+            onTabExit = null;
             if (TextInputManager.Active == this)
                 TextInputManager.Clear();
         }
@@ -619,61 +605,46 @@ namespace RimWorldAccess
 
         private int FindStartOfCurrentLine(int pos)
         {
-            if (pos <= 0) return 0;
-            int i = Math.Min(pos, currentText.Length) - 1;
-            while (i >= 0 && currentText[i] != '\n') i--;
-            return i + 1;
+            return TextCursor.StartOfLine(currentText, pos);
         }
 
         private int FindEndOfCurrentLine(int pos)
         {
-            int i = Math.Max(0, Math.Min(pos, currentText.Length));
-            while (i < currentText.Length && currentText[i] != '\n') i++;
-            return i;
+            return TextCursor.EndOfLine(currentText, pos);
         }
 
-        private void AnnounceLine(int lineStart)
+        /// <summary>Speaks the line any position on it identifies.</summary>
+        private void AnnounceLine(int posOnLine)
         {
-            int lineEnd = FindEndOfCurrentLine(lineStart);
-            if (lineStart >= lineEnd)
+            string line = TextCursor.LineAt(currentText, posOnLine);
+            if (line.Length == 0)
             {
                 TolkHelper.Speak("RimWorldAccess.TextInput.BlankLine".Loc(), SpeechPriority.High);
                 return;
             }
-            TolkHelper.SpeakData(currentText.Substring(lineStart, lineEnd - lineStart), SpeechPriority.High);
+            TolkHelper.SpeakData(line, SpeechPriority.High);
         }
 
         private string GetWordAt(int pos)
         {
-            if (pos < 0 || pos >= currentText.Length) return string.Empty;
-            if (!char.IsLetterOrDigit(currentText[pos])) return string.Empty;
-            int end = pos;
-            while (end < currentText.Length && char.IsLetterOrDigit(currentText[end])) end++;
-            return currentText.Substring(pos, end - pos);
+            return TextCursor.WordAt(currentText, pos);
         }
 
         private int FindNextWordBoundary(int from)
         {
-            int i = from;
-            while (i < currentText.Length && char.IsLetterOrDigit(currentText[i])) i++;
-            while (i < currentText.Length && !char.IsLetterOrDigit(currentText[i])) i++;
-            return i;
+            return TextCursor.NextWordBoundary(currentText, from);
         }
 
         private int FindPreviousWordBoundary(int from)
         {
-            int i = from;
-            while (i > 0 && !char.IsLetterOrDigit(currentText[i - 1])) i--;
-            while (i > 0 && char.IsLetterOrDigit(currentText[i - 1])) i--;
-            return i;
+            return TextCursor.PreviousWordBoundary(currentText, from);
         }
 
         private void AnnounceCursorMove(int oldCursor, int newCursor, bool shift, bool ctrl, bool leftward)
         {
             if (currentText.Length == 0) return; // nothing to announce on an empty field
 
-            // Shift-selection: announce the range we just added/removed. If no movement
-            // (hit a boundary), repeat the first or last char based on direction.
+            // Shift-selection: speak the range just added or removed; at a boundary, the edge char.
             if (shift)
             {
                 int lo = Math.Min(oldCursor, newCursor);
@@ -688,9 +659,7 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Ctrl+arrow (word jump): announce the word at the new cursor position. If no
-            // word there (boundary hit), announce the first/last word based on direction,
-            // falling back to the edge char when the field has no words at all.
+            // Word jump: the word at the cursor, else the edge word, else the edge char.
             if (ctrl)
             {
                 string wordAtCursor = GetWordAt(newCursor);
@@ -710,31 +679,19 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Plain arrow / Home / End: announce the char at the cursor. If the cursor
-            // is past the last char (at `length`) or didn't move off a boundary, repeat
-            // the edge char based on direction.
+            // The char at the cursor, or the last char when the cursor sits past the end.
             int idx = newCursor < currentText.Length ? newCursor : currentText.Length - 1;
             TolkHelper.SpeakData(currentText[idx].ToString(), SpeechPriority.High);
         }
 
         private string GetFirstWord()
         {
-            int i = 0;
-            while (i < currentText.Length && !char.IsLetterOrDigit(currentText[i])) i++;
-            if (i >= currentText.Length) return string.Empty;
-            int start = i;
-            while (i < currentText.Length && char.IsLetterOrDigit(currentText[i])) i++;
-            return currentText.Substring(start, i - start);
+            return TextCursor.FirstWord(currentText);
         }
 
         private string GetLastWord()
         {
-            int i = currentText.Length - 1;
-            while (i >= 0 && !char.IsLetterOrDigit(currentText[i])) i--;
-            if (i < 0) return string.Empty;
-            int end = i + 1;
-            while (i >= 0 && char.IsLetterOrDigit(currentText[i])) i--;
-            return currentText.Substring(i + 1, end - i - 1);
+            return TextCursor.LastWord(currentText);
         }
 
         private static string SummarizePaste(string clipboard)

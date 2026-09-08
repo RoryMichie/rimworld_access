@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Shell element vocabulary (src/Shell/Elements/). Standard control role and
+    state words, following common Russian screen reader terminology.
+  -->
+
+  <!-- Role words -->
+  <RimWorldAccess.Shell.Role.Button>кнопка</RimWorldAccess.Shell.Role.Button>
+  <RimWorldAccess.Shell.Role.Checkbox>флажок</RimWorldAccess.Shell.Role.Checkbox>
+  <RimWorldAccess.Shell.Role.RadioButton>переключатель</RimWorldAccess.Shell.Role.RadioButton>
+  <RimWorldAccess.Shell.Role.ComboBox>поле со списком</RimWorldAccess.Shell.Role.ComboBox>
+  <RimWorldAccess.Shell.Role.Slider>ползунок</RimWorldAccess.Shell.Role.Slider>
+  <RimWorldAccess.Shell.Role.Stepper>счётчик</RimWorldAccess.Shell.Role.Stepper>
+  <RimWorldAccess.Shell.Role.TextField>поле ввода</RimWorldAccess.Shell.Role.TextField>
+  <RimWorldAccess.Shell.Role.Tab>вкладка</RimWorldAccess.Shell.Role.Tab>
+  <RimWorldAccess.Shell.Role.Map>карта</RimWorldAccess.Shell.Role.Map>
+
+  <!-- State words -->
+  <RimWorldAccess.Shell.State.Checked>отмечено</RimWorldAccess.Shell.State.Checked>
+  <RimWorldAccess.Shell.State.Unchecked>не отмечено</RimWorldAccess.Shell.State.Unchecked>
+  <RimWorldAccess.Shell.State.PartiallyChecked>частично отмечено</RimWorldAccess.Shell.State.PartiallyChecked>
+  <RimWorldAccess.Shell.State.Selected>выбрано</RimWorldAccess.Shell.State.Selected>
+  <RimWorldAccess.Shell.State.NotSelected>не выбрано</RimWorldAccess.Shell.State.NotSelected>
+  <RimWorldAccess.Shell.State.Expanded>развёрнуто</RimWorldAccess.Shell.State.Expanded>
+  <RimWorldAccess.Shell.State.Collapsed>свёрнуто</RimWorldAccess.Shell.State.Collapsed>
+  <RimWorldAccess.Shell.State.Blank>пусто</RimWorldAccess.Shell.State.Blank>
+  <RimWorldAccess.Shell.State.Disabled>отключено</RimWorldAccess.Shell.State.Disabled>
+  <RimWorldAccess.Shell.State.ReadOnly>только для чтения</RimWorldAccess.Shell.State.ReadOnly>
+  <RimWorldAccess.Shell.State.AtMinimum>минимум</RimWorldAccess.Shell.State.AtMinimum>
+  <RimWorldAccess.Shell.State.AtMaximum>максимум</RimWorldAccess.Shell.State.AtMaximum>
+  <RimWorldAccess.Shell.State.ColumnHeader>заголовок столбца</RimWorldAccess.Shell.State.ColumnHeader>
+  <RimWorldAccess.Shell.State.Sortable>сортируемый</RimWorldAccess.Shell.State.Sortable>
+  <RimWorldAccess.Shell.State.SortedAscending>отсортировано по возрастанию</RimWorldAccess.Shell.State.SortedAscending>
+  <RimWorldAccess.Shell.State.SortedDescending>отсортировано по убыванию</RimWorldAccess.Shell.State.SortedDescending>
+
+  <!-- ScreenScope shared screen shape (screen-model refactor): the
+       automatic Buttons region name and the empty-region word. -->
+  <RimWorldAccess.Shell.Screen.ActionsRegion>Панель кнопок</RimWorldAccess.Shell.Screen.ActionsRegion>
+  <RimWorldAccess.Shell.Screen.ExtrasRegion>Дополнительные элементы управления</RimWorldAccess.Shell.Screen.ExtrasRegion>
+  <RimWorldAccess.Shell.Screen.EmptyRegion>пусто</RimWorldAccess.Shell.Screen.EmptyRegion>
+
+  <RimWorldAccess.Shell.ScopeFailed>Поддержка программы экранного доступа для этого окна столкнулась с ошибкой. Нажмите Escape, чтобы закрыть окно.</RimWorldAccess.Shell.ScopeFailed>
+
+  <RimWorldAccess.Shell.BandOrdinalLabel>{0} {1}</RimWorldAccess.Shell.BandOrdinalLabel>
+
+  <RimWorldAccess.Shell.ContentChanged>Содержимое окна изменилось. {0_numCase ? элемент : элемента : элементов}.</RimWorldAccess.Shell.ContentChanged>
+  <RimWorldAccess.Shell.ContentReordered>Порядок элементов изменён.</RimWorldAccess.Shell.ContentReordered>
+
+  <!-- Enter double-press proceed (DefaultAcceptActionId, S4c): the first Enter on an
+       inert element arms this prompt instead of doing nothing; a second Enter on the
+       same element fires the screen's default/proceed button. {0} is that button's label. -->
+  <RimWorldAccess.Shell.Screen.PressEnterAgain>Нажмите Enter ещё раз, чтобы активировать: {0}.</RimWorldAccess.Shell.Screen.PressEnterAgain>
+
+  <!-- Shift+Enter one-chord proceed (SharedMenuGrammar.ActivateDefault, QA session 5):
+       presses the screen's default/proceed button from anywhere, bypassing the focused
+       control. PressingDefault is spoken BEFORE the button fires because the player
+       chose not to look the button up first; {0} is that button's label. -->
+  <RimWorldAccess.Shell.Screen.PressingDefault>Нажатие: {0}.</RimWorldAccess.Shell.Screen.PressingDefault>
+  <RimWorldAccess.Shell.Screen.NoDefaultButton>У этого экрана нет кнопки по умолчанию.</RimWorldAccess.Shell.Screen.NoDefaultButton>
+
+  <!-- Shared reorder grammar (SharedMenuGrammar.ReorderUp/Down/Left/Right,
+       ScreenScope's Ctrl+Up/Down seam): the mod-wide keyboard equivalent of
+       the player's drag-and-drop gesture. MovedBetween/MovedToTop/MovedToBottom
+       name the item's new neighbors ({0}/{1} are neighbor labels, above then
+       below); Moved is the fallback when a neighbor's label cannot be resolved.
+       Whichever phrase is chosen prefixes the standard full item announcement
+       ("Moved between Duster and Parka. Duster, 3 of 7."); CannotReorder is the
+       refusal when the subclass's mutation vehicle vetoes the move. -->
+  <RimWorldAccess.Shell.Screen.Moved>Перемещено.</RimWorldAccess.Shell.Screen.Moved>
+  <RimWorldAccess.Shell.Screen.MovedBetween>Перемещено между {0} и {1}.</RimWorldAccess.Shell.Screen.MovedBetween>
+  <RimWorldAccess.Shell.Screen.MovedToTop>Перемещено наверх, выше {0}.</RimWorldAccess.Shell.Screen.MovedToTop>
+  <RimWorldAccess.Shell.Screen.MovedToBottom>Перемещено вниз, ниже {0}.</RimWorldAccess.Shell.Screen.MovedToBottom>
+  <RimWorldAccess.Shell.Screen.CannotReorder>Этот элемент нельзя переместить.</RimWorldAccess.Shell.Screen.CannotReorder>
+
+  <!-- Table regions (docs/table-model.md): the shared table grammar. -->
+  <RimWorldAccess.Shell.Screen.TabCount>разделов: {0}</RimWorldAccess.Shell.Screen.TabCount>
+  <RimWorldAccess.Shell.Screen.SectionPosition>раздел {0} из {1}</RimWorldAccess.Shell.Screen.SectionPosition>
+  <RimWorldAccess.Shell.Table.RowPosition>строка {0} из {1}</RimWorldAccess.Shell.Table.RowPosition>
+  <RimWorldAccess.Shell.Table.ColumnPosition>столбец {0} из {1}</RimWorldAccess.Shell.Table.ColumnPosition>
+  <RimWorldAccess.Shell.Table.Dimensions>таблица, {0_numCase ? столбец : столбца : столбцов}, {1_numCase ? строка : строки : строк}</RimWorldAccess.Shell.Table.Dimensions>
+  <RimWorldAccess.Shell.Table.SortedBy>Отсортировано по «{0}», {1}</RimWorldAccess.Shell.Table.SortedBy>
+  <RimWorldAccess.Shell.Table.SortCleared>Сортировка сброшена, порядок по умолчанию</RimWorldAccess.Shell.Table.SortCleared>
+  <RimWorldAccess.Shell.Table.NotSortable>Этот столбец не сортируется</RimWorldAccess.Shell.Table.NotSortable>
+  <RimWorldAccess.Shell.Table.SortHint>Enter — сортировка</RimWorldAccess.Shell.Table.SortHint>
+
+  <!-- Cross-region typeahead (docs/table-model.md section 7): the locating
+       frame spoken after a search jump lands in another region, and the
+       fallback name for unnamed regions on generic screens ({0} is the
+       1-based tab number). -->
+  <RimWorldAccess.Shell.Search.NowAt>Сейчас: {0}</RimWorldAccess.Shell.Search.NowAt>
+  <RimWorldAccess.Shell.Search.UnnamedTab>вкладка {0}</RimWorldAccess.Shell.Search.UnnamedTab>
+
+  <!-- Transfer-screen table columns (table-model T3): mod-provided short
+       labels for columns vanilla shows only as icons with hover tooltips.
+       DaysValue's {0} is a decimal day count, so no _numCase plural. -->
+  <RimWorldAccess.Shell.Table.Transferable.DaysUntilRot>Дней до порчи</RimWorldAccess.Shell.Table.Transferable.DaysUntilRot>
+  <RimWorldAccess.Shell.Table.Transferable.DaysValue>{0} дн.</RimWorldAccess.Shell.Table.Transferable.DaysValue>
+  <RimWorldAccess.Shell.Table.Transferable.CanGraze>Может пастись</RimWorldAccess.Shell.Table.Transferable.CanGraze>
+
+  <!-- Generic pawn-table tier (table-model T5, GenericPawnTableScope). -->
+  <RimWorldAccess.Shell.Generic.CellNotReadable>значение недоступно</RimWorldAccess.Shell.Generic.CellNotReadable>
+  <RimWorldAccess.Shell.Generic.Incapable>неспособен</RimWorldAccess.Shell.Generic.Incapable>
+  <RimWorldAccess.Shell.Generic.Trained>обучено</RimWorldAccess.Shell.Generic.Trained>
+  <RimWorldAccess.Shell.Generic.HourRange>с {0} до {1}: {2}</RimWorldAccess.Shell.Generic.HourRange>
+  <RimWorldAccess.Shell.Generic.HourSingle>{0}: {1}</RimWorldAccess.Shell.Generic.HourSingle>
+  <RimWorldAccess.Shell.Generic.PawnTableRegion>Таблица персонажей</RimWorldAccess.Shell.Generic.PawnTableRegion>
+
+  <!-- Shared tree chords (ShellActionInventory.Part7, the "tree"/"filterTree"
+       pseudo-screens). These label the rebinding list entries for every migrated
+       tree screen. -->
+
+  <!-- Shared big-text reader (TextBufferScope): section jumps inside one block of text. -->
+
+  <!--
+    Spoken key names (KeyChordFormat, installed by ShellBootstrap). Russian
+    house style, matching the key names already used across this translation:
+    modifier and named function keys keep their Latin form (Ctrl, Shift, Alt,
+    Enter, Escape, Tab, Page Up, Home, End), while symbol and arrow keys get
+    their Russian names (Пробел, Стрелка вверх, Запятая, Равно, Косая черта).
+    NumpadDigit formats the ten numeric keypad keys; {0} is the digit 0 to 9.
+  -->
+  <RimWorldAccess.Shell.Key.Ctrl>Ctrl</RimWorldAccess.Shell.Key.Ctrl>
+  <RimWorldAccess.Shell.Key.Option>Option</RimWorldAccess.Shell.Key.Option>
+  <RimWorldAccess.Shell.Key.Shift>Shift</RimWorldAccess.Shell.Key.Shift>
+  <RimWorldAccess.Shell.Key.Alt>Alt</RimWorldAccess.Shell.Key.Alt>
+
+  <RimWorldAccess.Shell.Key.UpArrow>Стрелка вверх</RimWorldAccess.Shell.Key.UpArrow>
+  <RimWorldAccess.Shell.Key.DownArrow>Стрелка вниз</RimWorldAccess.Shell.Key.DownArrow>
+  <RimWorldAccess.Shell.Key.LeftArrow>Стрелка влево</RimWorldAccess.Shell.Key.LeftArrow>
+  <RimWorldAccess.Shell.Key.RightArrow>Стрелка вправо</RimWorldAccess.Shell.Key.RightArrow>
+  <RimWorldAccess.Shell.Key.Return>Enter</RimWorldAccess.Shell.Key.Return>
+  <RimWorldAccess.Shell.Key.PageUp>Page Up</RimWorldAccess.Shell.Key.PageUp>
+  <RimWorldAccess.Shell.Key.PageDown>Page Down</RimWorldAccess.Shell.Key.PageDown>
+  <RimWorldAccess.Shell.Key.Escape>Escape</RimWorldAccess.Shell.Key.Escape>
+  <RimWorldAccess.Shell.Key.Tab>Tab</RimWorldAccess.Shell.Key.Tab>
+  <RimWorldAccess.Shell.Key.Space>Пробел</RimWorldAccess.Shell.Key.Space>
+  <RimWorldAccess.Shell.Key.Backspace>Backspace</RimWorldAccess.Shell.Key.Backspace>
+  <RimWorldAccess.Shell.Key.Delete>Delete</RimWorldAccess.Shell.Key.Delete>
+  <RimWorldAccess.Shell.Key.Insert>Insert</RimWorldAccess.Shell.Key.Insert>
+  <RimWorldAccess.Shell.Key.Home>Home</RimWorldAccess.Shell.Key.Home>
+  <RimWorldAccess.Shell.Key.End>End</RimWorldAccess.Shell.Key.End>
+  <RimWorldAccess.Shell.Key.BackQuote>Обратный апостроф</RimWorldAccess.Shell.Key.BackQuote>
+  <RimWorldAccess.Shell.Key.LeftBracket>Левая квадратная скобка</RimWorldAccess.Shell.Key.LeftBracket>
+  <RimWorldAccess.Shell.Key.RightBracket>Правая квадратная скобка</RimWorldAccess.Shell.Key.RightBracket>
+  <RimWorldAccess.Shell.Key.Comma>Запятая</RimWorldAccess.Shell.Key.Comma>
+  <RimWorldAccess.Shell.Key.Period>Точка</RimWorldAccess.Shell.Key.Period>
+  <RimWorldAccess.Shell.Key.Slash>Косая черта</RimWorldAccess.Shell.Key.Slash>
+  <RimWorldAccess.Shell.Key.Minus>Минус</RimWorldAccess.Shell.Key.Minus>
+  <RimWorldAccess.Shell.Key.Plus>Плюс</RimWorldAccess.Shell.Key.Plus>
+  <RimWorldAccess.Shell.Key.Equals>Равно</RimWorldAccess.Shell.Key.Equals>
+
+  <RimWorldAccess.Shell.Key.KeypadEnter>Num Enter</RimWorldAccess.Shell.Key.KeypadEnter>
+  <RimWorldAccess.Shell.Key.KeypadPlus>Num Плюс</RimWorldAccess.Shell.Key.KeypadPlus>
+  <RimWorldAccess.Shell.Key.KeypadMinus>Num Минус</RimWorldAccess.Shell.Key.KeypadMinus>
+  <RimWorldAccess.Shell.Key.KeypadMultiply>Num Звёздочка</RimWorldAccess.Shell.Key.KeypadMultiply>
+  <RimWorldAccess.Shell.Key.KeypadDivide>Num Косая черта</RimWorldAccess.Shell.Key.KeypadDivide>
+  <RimWorldAccess.Shell.Key.KeypadPeriod>Num Точка</RimWorldAccess.Shell.Key.KeypadPeriod>
+  <RimWorldAccess.Shell.Key.NumpadDigit>Num {0}</RimWorldAccess.Shell.Key.NumpadDigit>
+
+  <RimWorldAccess.Shell.Glyph.ReorderUp>Переместить вверх</RimWorldAccess.Shell.Glyph.ReorderUp>
+  <RimWorldAccess.Shell.Glyph.ReorderDown>Переместить вниз</RimWorldAccess.Shell.Glyph.ReorderDown>
+  <RimWorldAccess.Shell.Glyph.Plus>Добавить</RimWorldAccess.Shell.Glyph.Plus>
+  <RimWorldAccess.Shell.Glyph.Minus>Убрать</RimWorldAccess.Shell.Glyph.Minus>
+  <RimWorldAccess.Shell.Glyph.Delete>Удалить</RimWorldAccess.Shell.Glyph.Delete>
+  <RimWorldAccess.Shell.Glyph.Close>Закрыть</RimWorldAccess.Shell.Glyph.Close>
+  <RimWorldAccess.Shell.Glyph.Copy>Копировать</RimWorldAccess.Shell.Glyph.Copy>
+  <RimWorldAccess.Shell.Glyph.Paste>Вставить</RimWorldAccess.Shell.Glyph.Paste>
+  <RimWorldAccess.Shell.Glyph.Rename>Переименовать</RimWorldAccess.Shell.Glyph.Rename>
+  <RimWorldAccess.Shell.Glyph.Info>Информация</RimWorldAccess.Shell.Glyph.Info>
+  <RimWorldAccess.Shell.Glyph.Drag>Маркер перемещения</RimWorldAccess.Shell.Glyph.Drag>
+  <RimWorldAccess.Shell.Glyph.OpenInspector>Открыть инспектор</RimWorldAccess.Shell.Glyph.OpenInspector>
+  <RimWorldAccess.Shell.Glyph.ToggleLog>Переключить журнал</RimWorldAccess.Shell.Glyph.ToggleLog>
+
+  <!-- Coverage-gaps packet: Dialog_ChooseColor / Dialog_SelectXenogerm. -->
+  <RimWorldAccess.Shell.ChooseColor.RegionName>Цвета</RimWorldAccess.Shell.ChooseColor.RegionName>
+
+  <RimWorldAccess.Shell.ColorPicker.PaletteRegion>Палитра цветов</RimWorldAccess.Shell.ColorPicker.PaletteRegion>
+  <RimWorldAccess.Shell.ColorPicker.AdjustRegion>Точная настройка</RimWorldAccess.Shell.ColorPicker.AdjustRegion>
+  <RimWorldAccess.Shell.ColorPicker.ReadbackRegion>Текущий выбор</RimWorldAccess.Shell.ColorPicker.ReadbackRegion>
+  <RimWorldAccess.Shell.SelectXenogerm.RegionName>Ксеносемена</RimWorldAccess.Shell.SelectXenogerm.RegionName>
+  <RimWorldAccess.Shell.SelectXenogerm.MoreGenes>и ещё {0_numCase ? ген : гена : генов}</RimWorldAccess.Shell.SelectXenogerm.MoreGenes>
+
+  <!-- Action label keys (Shell.Action.*) are inert until the rebind UI exists — see
+       ShellActionInventory. -->
+</LanguageData>

@@ -11,16 +11,13 @@ namespace RimWorldAccess
     [HarmonyPatch("DoWindowContents")]
     public class StartingSitePatch
     {
-        private static bool patchActive = false;
-        private static bool hasAnnouncedTitle = false;
         private static bool advancingToNextPage = false;
         private static PlanetTile savedTileForReturn = PlanetTile.Invalid;
 
-        // Prefix: Initialize state and handle keyboard input
-        // NOTE: Most key handling here is duplicated in UnifiedKeyboardPatch at priority 0.55.
-        // UnifiedKeyboardPatch runs OUTSIDE GUI.Window context and handles keys reliably even
-        // when IMGUI focus is not properly established (e.g., after closing faction dialog).
-        // This handler serves as a defensive fallback when GUI.Window focus is working normally.
+        // Prefix: initialize the world-navigation session. Keyboard input and
+        // the one-shot opening announcement are StartingSiteScreenScope's
+        // (src/Shell/Screens/StartingSiteScreenScope.Game.cs) — the latter
+        // through its ComposeOpenAnnouncement override.
         static void Prefix(Page_SelectStartingSite __instance, Rect rect)
         {
             try
@@ -44,192 +41,96 @@ namespace RimWorldAccess
                     StartingSiteContext.Open();
                 }
 
-                // Announce window title once
-                if (!hasAnnouncedTitle)
-                {
-                    string pageTitle = "SelectStartingSite".Translate();
-                    TolkHelper.Speak("RimWorldAccess.StartingSite.OpenInstructions".Loc(pageTitle));
-                    hasAnnouncedTitle = true;
-                }
-
-                // Handle keyboard input. Yield entirely while the Learning Helper overlay is open —
-                // it owns navigation keys and is routed first by UnifiedKeyboardPatch.
-                if (Event.current.type == EventType.KeyDown && !WindowlessDialogState.IsActive
-                    && !LearningHelperState.IsActive)
-                {
-                    KeyCode keyCode = Event.current.keyCode;
-                    bool shift = Event.current.shift;
-                    bool ctrl = Event.current.control;
-                    bool alt = KeyboardHelper.IsAltHeld;
-
-                    // === Scanner search text input (highest priority) ===
-                    // When search is active, capture letters/numbers/Enter/Escape/Backspace.
-                    // This is a defensive fallback - UnifiedKeyboardPatch normally handles this
-                    // at priority -0.2, but may not fire during world gen (ProgramState.Entry).
-                    if (ScannerSearchState.IsActive)
-                    {
-                        if (keyCode == KeyCode.Return || keyCode == KeyCode.KeypadEnter)
-                        {
-                            ScannerSearchState.ConfirmSearch();
-                            Event.current.Use();
-                            patchActive = true;
-                            return;
-                        }
-                        if (keyCode == KeyCode.Escape)
-                        {
-                            ScannerSearchState.CancelSearch();
-                            Event.current.Use();
-                            patchActive = true;
-                            return;
-                        }
-                        if (keyCode == KeyCode.Backspace)
-                        {
-                            ScannerSearchState.HandleBackspace();
-                            Event.current.Use();
-                            patchActive = true;
-                            return;
-                        }
-                        if (keyCode >= KeyCode.A && keyCode <= KeyCode.Z && !ctrl && !alt)
-                        {
-                            char c = shift ? (char)('A' + (keyCode - KeyCode.A)) : (char)('a' + (keyCode - KeyCode.A));
-                            ScannerSearchState.HandleCharacter(c);
-                            Event.current.Use();
-                            patchActive = true;
-                            return;
-                        }
-                        if (keyCode >= KeyCode.Alpha0 && keyCode <= KeyCode.Alpha9 && !ctrl && !alt)
-                        {
-                            char c = (char)('0' + (keyCode - KeyCode.Alpha0));
-                            ScannerSearchState.HandleCharacter(c);
-                            Event.current.Use();
-                            patchActive = true;
-                            return;
-                        }
-                        // Arrow keys, PgUp/PgDn, Home/End, Space: pass through to navigation below
-                    }
-
-                    bool menuOpen = StartingSiteContext.IsMenuOpen;
-
-                    // When I-menu is open, route Up/Down/Enter/Escape to menu and block other keys
-                    if (menuOpen)
-                    {
-                        if (keyCode == KeyCode.UpArrow)
-                        {
-                            StartingSiteContext.NavigateMenu(-1);
-                            Event.current.Use();
-                            patchActive = true;
-                        }
-                        else if (keyCode == KeyCode.DownArrow)
-                        {
-                            StartingSiteContext.NavigateMenu(1);
-                            Event.current.Use();
-                            patchActive = true;
-                        }
-                        else if (keyCode == KeyCode.Return || keyCode == KeyCode.KeypadEnter)
-                        {
-                            StartingSiteContext.ReadSelectedMenuItem();
-                            Event.current.Use();
-                            patchActive = true;
-                        }
-                        else if (keyCode == KeyCode.Escape)
-                        {
-                            StartingSiteContext.CloseMenu();
-                            Event.current.Use();
-                            patchActive = true;
-                        }
-                        return; // Block all other keys while menu is open
-                    }
-
-                    // Arrow keys: route to shared WorldNavigationState (3D compass)
-                    if (keyCode == KeyCode.UpArrow || keyCode == KeyCode.DownArrow ||
-                        keyCode == KeyCode.LeftArrow || keyCode == KeyCode.RightArrow)
-                    {
-                        if (ctrl)
-                        {
-                            // Ctrl+arrows: biome jump
-                            StartingSiteContext.JumpToNextBiomeInDirection(keyCode);
-                            Event.current.Use();
-                            patchActive = true;
-                        }
-                        else
-                        {
-                            // Plain arrows: standard 3D compass navigation
-                            WorldNavigationState.HandleArrowKey(keyCode);
-                            Event.current.Use();
-                            patchActive = true;
-                        }
-                    }
-                    else if (keyCode == KeyCode.R && !shift && !ctrl && !alt)
-                    {
-                        StartingSiteContext.SelectRandomTile();
-                        Event.current.Use();
-                        patchActive = true;
-                    }
-                    else if (keyCode == KeyCode.Space && !shift && !ctrl && !alt)
-                    {
-                        // Re-announce current tile
-                        WorldNavigationState.AnnounceTile();
-                        Event.current.Use();
-                        patchActive = true;
-                    }
-                    else if (keyCode == KeyCode.I && !shift && !ctrl && !alt)
-                    {
-                        // Open additional info menu
-                        StartingSiteContext.OpenAdditionalInfoMenu();
-                        Event.current.Use();
-                        patchActive = true;
-                    }
-                    else if (keyCode == KeyCode.F && !shift && !ctrl && !alt)
-                    {
-                        Find.WindowStack.Add(new Dialog_FactionDuringLanding());
-                        // Opening announcement handled by FactionLandingState via PostOpen patch
-                        Event.current.Use();
-                        patchActive = true;
-                    }
-                    // === Z key: activate scanner search ===
-                    // Defensive fallback - also handled by UnifiedKeyboardPatch at priority 4.745
-                    else if (keyCode == KeyCode.Z && !shift && !ctrl && !alt && !ScannerSearchState.IsActive)
-                    {
-                        ScannerSearchState.Activate(true);
-                        // Block game's keybinding system from seeing Z
-                        Event.current.keyCode = KeyCode.None;
-                        Event.current.Use();
-                        patchActive = true;
-                    }
-                    // Ctrl+Z clears the active search filter
-                    // Defensive fallback - also handled by UnifiedKeyboardPatch at priority 4.745
-                    else if (keyCode == KeyCode.Z && ctrl && !shift && !alt && !ScannerSearchState.IsActive && ScannerSearchState.HasActiveFilter)
-                    {
-                        ScannerSearchState.ClearActiveFilter();
-                        Event.current.Use();
-                        patchActive = true;
-                    }
-                    // === Number keys 1-5: tile info categories ===
-                    // Defensive fallback - also handled by UnifiedKeyboardPatch at priority 5.45
-                    else if (!shift && !ctrl && !alt)
-                    {
-                        int category = 0;
-                        if (keyCode == KeyCode.Alpha1 || keyCode == KeyCode.Keypad1) category = 1;
-                        else if (keyCode == KeyCode.Alpha2 || keyCode == KeyCode.Keypad2) category = 2;
-                        else if (keyCode == KeyCode.Alpha3 || keyCode == KeyCode.Keypad3) category = 3;
-                        else if (keyCode == KeyCode.Alpha4 || keyCode == KeyCode.Keypad4) category = 4;
-                        else if (keyCode == KeyCode.Alpha5 || keyCode == KeyCode.Keypad5) category = 5;
-
-                        if (category > 0)
-                        {
-                            WorldNavigationState.AnnounceTileInfoCategory(category);
-                            Event.current.Use();
-                            patchActive = true;
-                        }
-                    }
-                    // Note: Scanner keys (PgUp/PgDn/Home/End) are handled by
-                    // UnifiedKeyboardPatch at priority 0.5 before this patch runs
-                }
+                // This patch is lifecycle-only: every key for this screen is
+                // claimed by StartingSiteScreenScope and the widened
+                // ScannerSearchScope — the scanner-search text fallback,
+                // arrows/Ctrl+arrows, R/Space/F, Z / Ctrl+Z, and the 1-5
+                // tile-info digits. Handling them out of window, through the
+                // dispatcher, is what survives Entry's IMGUI focus loss.
             }
             catch (System.Exception ex)
             {
                 Log.Error($"[RimWorld Access] Error in StartingSitePatch Prefix: {ex}");
             }
+        }
+
+        /// <summary>
+        /// The Enter path, absorbed from the retired OnAcceptKeyPressed
+        /// prefix: validate the current tile,
+        /// sync the selection into the game, announce, persist the R10
+        /// return-trip state, and run the page's own DoNext (which handles
+        /// CheckConfirmSettle's proximity confirmation internally). Called by
+        /// StartingSiteScreenScope's map-item activation and its Next row; the
+        /// search-confirm branch that preceded this logic in the retired prefix
+        /// belongs to ScannerSearchScope now, and the I-menu-read branch is gone
+        /// with the menu itself.
+        /// </summary>
+        internal static void ConfirmSiteSelection(Page_SelectStartingSite instance)
+        {
+            // Use shared navigation state's tile
+            PlanetTile tile = WorldNavigationState.CurrentSelectedTile;
+            if (!tile.Valid)
+            {
+                // MUTATION-C: mirrors Page_SelectStartingSite.CanDoNext's dev-mode
+                // auto-select branch (Page_SelectStartingSite.cs:191-196) so Enter and
+                // the Buttons-toolbar Next row behave like the mouse Next button (which
+                // calls the real CanDoNext()) in debug mode -- this branch was missing
+                // here, so pressing Enter/Next with no
+                // tile selected in dev mode silently did nothing instead of
+                // auto-selecting a tile the way the mouse path does.
+                if (Prefs.DevMode && !Find.WorldInterface.selector.AnyObjectOrTileSelected)
+                {
+                    tile = TileFinder.RandomStartingTile();
+                    Find.WorldInterface.SelectedTile = tile;
+                    WorldNavigationState.CurrentSelectedTile = tile;
+                    string tileInfo = WorldInfoHelper.GetTileSummary(tile, includeRouteInfo: false);
+                    TolkHelper.Speak("RimWorldAccess.StartingSite.DevRandomTileSelected".Loc(tileInfo));
+                }
+                else
+                {
+                    TolkHelper.Speak("RimWorldAccess.StartingSite.NoTileSelected".Loc());
+                    return;
+                }
+            }
+
+            // Check if tile is valid for settlement
+            StringBuilder reason = new StringBuilder();
+            bool isValid = TileFinder.IsValidTileForNewSettlement(tile, reason, forGravship: false);
+
+            if (!isValid)
+            {
+                Localized errorMessage = "RimWorldAccess.StartingSite.CannotSettleHere".Loc(reason.ToString());
+                TolkHelper.Speak(errorMessage, SpeechPriority.High);
+                return;
+            }
+
+            // Mirrors Page_SelectStartingSite.CanDoNext's tutor gate (Page_SelectStartingSite.cs:206):
+            // GetActionStringForChoosingTile is private, so it's harvested via reflection rather than
+            // hand-copied, and AllowAction itself is called (Category B) so tutorial-mode behaves
+            // exactly like vanilla's silent no-op when it blocks.
+            string tileActionString = (string)AccessTools.Method(typeof(Page_SelectStartingSite), "GetActionStringForChoosingTile")
+                .Invoke(null, new object[] { tile.Tile });
+            if (!TutorSystem.AllowAction(tileActionString))
+            {
+                return;
+            }
+
+            // Sync game selection state so the game's DoNext picks up our tile
+            WorldNavigationState.SyncSelectionWithGame();
+
+            // Announce confirmation before advancing
+            TolkHelper.Speak("RimWorldAccess.StartingSite.Selected".Loc());
+
+            // Save tile so we can restore it if the user comes back from chargen
+            savedTileForReturn = WorldNavigationState.CurrentSelectedTile;
+
+            // Prevent PostClose from resetting state, which causes the DoWindowContents
+            // Prefix to re-initialize and re-announce during the page transition.
+            advancingToNextPage = true;
+
+            // Call the game's DoNext directly to advance to the next page.
+            // This handles CheckConfirmSettle (proximity warnings) internally.
+            AccessTools.Method(typeof(Page_SelectStartingSite), "DoNext").Invoke(instance, null);
         }
 
         // Reset state when page is opened
@@ -244,8 +145,6 @@ namespace RimWorldAccess
                 StartingSiteContext.Close();
                 WorldScannerState.Reset();
             }
-            hasAnnouncedTitle = false;
-            patchActive = false;
 
             // Choosing a landing site is the player's first time on the world map, so teach the
             // world-map chapter (our corrected WorldCameraMovement) here. It already covers using
@@ -269,153 +168,39 @@ namespace RimWorldAccess
                 WorldNavigationState.Close();
                 StartingSiteContext.Close();
                 WorldScannerState.Reset();
-                hasAnnouncedTitle = false;
             }
-            patchActive = false;
             advancingToNextPage = false;
         }
 
-        // Patch OnAcceptKeyPressed to handle Enter key based on context
+        /// <summary>
+        /// The subtype accept twin, unconditional.
+        /// Page_SelectStartingSite.OnAcceptKeyPressed overrides Page's own
+        /// declaration WITHOUT calling base (vanilla body:
+        /// <c>if (CanDoNext()) DoNext();</c>, no Use(), no route-planner
+        /// guard), so neither the Window-level router twins nor the I1
+        /// Page-level twins ever see it — a subtype-level patch is the only
+        /// interception point (the MessageBox override-twin precedent).
+        ///
+        /// It returns false UNCONDITIONALLY because the retired prefix here
+        /// returned false on EVERY branch — LearningHelperState yield,
+        /// AnyLiveModal/AcceptConsumedThisFrame guard, search-confirm,
+        /// I-menu read, and the validate/announce/DoNext tail (now
+        /// <see cref="ConfirmSiteSelection"/>, invoked by
+        /// StartingSiteScreenScope) — meaning the vanilla body has been fully dead
+        /// under the mod for as long as this screen has been accessible.
+        /// Total suppression is therefore byte parity AND the safety net for
+        /// every frame the scope's claims stand down (learning helper owns
+        /// the keyboard, a live modal masks the page): the deferred
+        /// per-window re-test of Accept gets a FRESH event that main-pass
+        /// consumption cannot reach, and without this blocker it would run
+        /// CanDoNext→DoNext behind the overlay's back. The mouse Next button
+        /// calls CanDoNext/DoNext directly and is unaffected.
+        /// </summary>
         [HarmonyPatch(typeof(Page_SelectStartingSite), "OnAcceptKeyPressed")]
         [HarmonyPrefix]
-        static bool OnAcceptKeyPressed_Prefix(Page_SelectStartingSite __instance)
+        static bool OnAcceptKeyPressed_Prefix()
         {
-            // Block Enter from advancing the page while the Learning Helper overlay is open
-            // (Enter there opens a lesson / activates a button). This override does not call base,
-            // so the base Page.OnAcceptKeyPressed patch can't cover it.
-            if (LearningHelperState.IsActive)
-                return false;
-
-            // Block Enter when a windowless dialog is active or was just closed this frame.
-            // Prevents settlement validation from re-triggering when confirming a Dialog_MessageBox.
-            if (WindowlessDialogState.IsActive || WindowlessDialogState.WasClosedThisFrame)
-            {
-                return false;
-            }
-
-            // If scanner search is active, don't advance page - Enter confirms search
-            if (ScannerSearchState.IsActive)
-            {
-                ScannerSearchState.ConfirmSearch();
-                return false;
-            }
-
-            // If I-menu is open, handle menu interaction only - don't advance page
-            if (StartingSiteContext.IsMenuOpen)
-            {
-                StartingSiteContext.ReadSelectedMenuItem();
-                return false;
-            }
-
-            // Use shared navigation state's tile
-            PlanetTile tile = WorldNavigationState.CurrentSelectedTile;
-            if (!tile.Valid)
-            {
-                TolkHelper.Speak("RimWorldAccess.StartingSite.NoTileSelected".Loc());
-                return false;
-            }
-
-            // Check if tile is valid for settlement
-            StringBuilder reason = new StringBuilder();
-            bool isValid = TileFinder.IsValidTileForNewSettlement(tile, reason, forGravship: false);
-
-            if (!isValid)
-            {
-                Localized errorMessage = "RimWorldAccess.StartingSite.CannotSettleHere".Loc(reason.ToString());
-                TolkHelper.Speak(errorMessage, SpeechPriority.High);
-                return false;
-            }
-
-            // Sync game selection state so the game's DoNext picks up our tile
-            WorldNavigationState.SyncSelectionWithGame();
-
-            // Announce confirmation before advancing
-            TolkHelper.Speak("RimWorldAccess.StartingSite.Selected".Loc());
-
-            // Save tile so we can restore it if the user comes back from chargen
-            savedTileForReturn = WorldNavigationState.CurrentSelectedTile;
-
-            // Prevent PostClose from resetting state, which causes the DoWindowContents
-            // Prefix to re-initialize and re-announce during the page transition.
-            advancingToNextPage = true;
-
-            // Call the game's DoNext directly to advance to the next page.
-            // This handles CheckConfirmSettle (proximity warnings) internally.
-            AccessTools.Method(typeof(Page_SelectStartingSite), "DoNext").Invoke(__instance, null);
-
             return false;
-        }
-
-        // Postfix: Draw help text and menu overlay
-        static void Postfix(Page_SelectStartingSite __instance, Rect rect)
-        {
-            try
-            {
-                if (!patchActive) return;
-
-                bool menuOpen = StartingSiteContext.IsMenuOpen;
-
-                if (menuOpen)
-                {
-                    // Draw menu overlay
-                    Rect menuRect = new Rect(10f, 50f, 700f, 200f);
-                    Widgets.DrawBoxSolid(menuRect, new Color(0.1f, 0.1f, 0.1f, 0.95f));
-
-                    Text.Font = GameFont.Medium;
-                    Text.Anchor = TextAnchor.UpperCenter;
-                    Rect titleRect = new Rect(menuRect.x, menuRect.y + 5f, menuRect.width, 30f);
-                    Widgets.Label(titleRect, "RimWorldAccess.StartingSite.MenuOverlayTitle".Translate());
-
-                    Text.Font = GameFont.Small;
-                    Text.Anchor = TextAnchor.UpperLeft;
-
-                    Rect contentRect = menuRect.ContractedBy(10f);
-                    contentRect.y += 35f;
-                    contentRect.height -= 35f;
-
-                    string currentItem = StartingSiteContext.GetCurrentMenuItemName();
-                    int selectedIndex = StartingSiteContext.SelectedMenuIndex;
-                    int totalItems = StartingSiteContext.MenuItemCount;
-
-                    string menuContent = string.Join("\n", new[]
-                    {
-                        ((string)"RimWorldAccess.StartingSite.MenuOverlaySelected".Translate(currentItem)),
-                        ((string)"RimWorldAccess.StartingSite.MenuOverlayItemPosition".Translate(selectedIndex + 1, totalItems)),
-                        "",
-                        ((string)"RimWorldAccess.StartingSite.MenuOverlayControls".Translate()),
-                        ((string)"RimWorldAccess.StartingSite.MenuOverlayControlNavigate".Translate()),
-                        ((string)"RimWorldAccess.StartingSite.MenuOverlayControlEnter".Translate()),
-                        ((string)"RimWorldAccess.StartingSite.MenuOverlayControlEscape".Translate()),
-                    });
-
-                    Widgets.Label(contentRect, menuContent);
-                    Text.Anchor = TextAnchor.UpperLeft;
-                }
-                else
-                {
-                    // Draw help text at the top of the screen
-                    Rect helpRect = new Rect(10f, 50f, 700f, 80f);
-
-                    Widgets.DrawBoxSolid(helpRect, new Color(0.2f, 0.2f, 0.2f, 0.8f));
-
-                    Text.Font = GameFont.Small;
-                    Text.Anchor = TextAnchor.UpperLeft;
-
-                    string helpText = string.Join("\n", new[]
-                    {
-                        ((string)"RimWorldAccess.StartingSite.HelpOverlayTitle".Translate()),
-                        ((string)"RimWorldAccess.StartingSite.HelpOverlayLine1".Translate()),
-                        ((string)"RimWorldAccess.StartingSite.HelpOverlayLine2".Translate()),
-                    });
-
-                    Widgets.Label(helpRect.ContractedBy(5f), helpText);
-                    Text.Anchor = TextAnchor.UpperLeft;
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Log.Error($"[RimWorld Access] Error in StartingSitePatch Postfix: {ex}");
-            }
         }
     }
 }

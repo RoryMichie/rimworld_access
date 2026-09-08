@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Wave B, package B1 (NodeTreeScope, src/Shell/Screens/NodeTreeScope.Game.cs).
+    Hyperlink DiaOption rows navigate to an info card / faction / research
+    project instead of resolving the tree; ElementRole has no role word for
+    them, so this tag is appended to the Extras tail.
+  -->
+  <RimWorldAccess.UI.NodeTree.HyperlinkTag>Посилання</RimWorldAccess.UI.NodeTree.HyperlinkTag>
+</LanguageData>

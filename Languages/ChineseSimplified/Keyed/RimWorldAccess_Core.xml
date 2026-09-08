@@ -40,18 +40,33 @@
        examples are part of the label — translators should adapt the example
        text (e.g. "3 of 7", "level 2") so it matches how the corresponding
        announcement is phrased in their language. -->
-  <RimWorldAccess.Core.Settings.WrapNavigation.Label>循环导航（从末尾回到开头）</RimWorldAccess.Core.Settings.WrapNavigation.Label>
-  <RimWorldAccess.Core.Settings.AnnouncePosition.Label>播报位置（例如“第 3 项，共 7 项”）</RimWorldAccess.Core.Settings.AnnouncePosition.Label>
+  <RimWorldAccess.Core.Settings.WrapNavigation.Label>循环导航</RimWorldAccess.Core.Settings.WrapNavigation.Label>
   <RimWorldAccess.Core.Settings.ShowPawnActivityOnMap.Label>移动地图光标时显示角色活动</RimWorldAccess.Core.Settings.ShowPawnActivityOnMap.Label>
   <RimWorldAccess.Core.Settings.ShowCoverInfo.Label>为征召和敌对角色显示掩体信息</RimWorldAccess.Core.Settings.ShowCoverInfo.Label>
   <RimWorldAccess.Core.Settings.AnnounceTerrain.Label>移动光标时播报地形</RimWorldAccess.Core.Settings.AnnounceTerrain.Label>
-  <RimWorldAccess.Core.Settings.AnnounceLevels.Label>在树形视图中播报层级（例如“层级 2”）</RimWorldAccess.Core.Settings.AnnounceLevels.Label>
+  <RimWorldAccess.Core.Settings.HoverSpeech.Label>鼠标跟踪</RimWorldAccess.Core.Settings.HoverSpeech.Label>
+  <RimWorldAccess.Core.Settings.HoverSpeech.Desc>移动鼠标时朗读鼠标所指的内容。</RimWorldAccess.Core.Settings.HoverSpeech.Desc>
+  <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Label>鼠标指针跟随键盘光标</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Label>
+  <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>每次移动后将鼠标指针置于键盘光标所在的格子上。游戏中按 {0} 调整。</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>
+  <RimWorldAccess.Core.Settings.ScannerAutoJump.Label>扫描器自动跳转</RimWorldAccess.Core.Settings.ScannerAutoJump.Label>
+  <RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>浏览时光标自动移动到每个扫描器项目。游戏中按 {0} 调整。</RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>
+
+  <!-- Opens the Configure Spoken Announcements screen (a real window, not this panel);
+       see RimWorldAccess_AnnounceConfig.xml for that screen's own strings. -->
+  <RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button>配置语音播报...</RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button>
 
   <!-- SubmenuTreeNavigation is the only checkbox with a tooltip. The label is
-       deliberately whimsical ("Rashad Hates Treeviews") — translators can
+       deliberately whimsical (“Rashad Hates Treeviews”) — translators can
        preserve the joke or replace it with something equivalent in their
        culture as long as it still telegraphs what the setting does. The
        tooltip is the canonical explanation. -->
   <RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Label>Rashad 讨厌树形视图（子菜单式导航）</RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Label>
   <RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Tooltip>改变树形视图的工作方式。当你展开一个类别时，该类别会消失，你只在其条目中导航。按左方向键即可返回。返回时会记住你之前的位置。</RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Tooltip>
+  <RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Label>朗读所选角色的活动</RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Label>
+  <RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Desc>实时朗读所选角色正在做的事情。移动地图光标即可停止朗读。</RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Desc>
+
+  <RimWorldAccess.Core.Settings.ShowWhatsNew.Label>更新后显示更新说明</RimWorldAccess.Core.Settings.ShowWhatsNew.Label>
+  <RimWorldAccess.Core.Settings.ShowWhatsNew.Desc>开启时，RimWorld Access 更新后会在主菜单打开更新说明。关闭时，只会听到模组已更新的简短提示，可随时从菜单打开更新说明。</RimWorldAccess.Core.Settings.ShowWhatsNew.Desc>
+
+  <!-- Table verbosity (docs/table-model.md). -->
 </LanguageData>

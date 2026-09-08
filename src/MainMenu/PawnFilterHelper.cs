@@ -68,42 +68,18 @@ namespace RimWorldAccess
                 });
             }
 
-            // Passion and skill point aggregate filters (still in Skills section)
-            items.Add(new FilterMenuItem
+            // Passion, skill point, and count-only toggles (still in Skills section) — driven by
+            // the shared criteria registry (PawnFilterCriteria.cs) instead of one Add per field.
+            foreach (var criterion in PawnFilter.Criteria)
             {
-                Label = FormatPassionMinLabel(filter),
-                ItemType = FilterItemType.PassionMin
-            });
-
-            items.Add(new FilterMenuItem
-            {
-                Label = FormatPassionMaxLabel(filter),
-                ItemType = FilterItemType.PassionMax
-            });
-
-            items.Add(new FilterMenuItem
-            {
-                Label = FormatSkillPointsMinLabel(filter),
-                ItemType = FilterItemType.SkillPointsMin
-            });
-
-            items.Add(new FilterMenuItem
-            {
-                Label = FormatSkillPointsMaxLabel(filter),
-                ItemType = FilterItemType.SkillPointsMax
-            });
-
-            items.Add(new FilterMenuItem
-            {
-                Label = FormatCountOnlyHighestAttackLabel(filter),
-                ItemType = FilterItemType.CountOnlyHighestAttack
-            });
-
-            items.Add(new FilterMenuItem
-            {
-                Label = FormatCountOnlyPassionSkillsLabel(filter),
-                ItemType = FilterItemType.CountOnlyPassionSkills
-            });
+                if (criterion.Section != FilterSection.Skills) continue;
+                if (!criterion.IsVisible(filter)) continue;
+                items.Add(new FilterMenuItem
+                {
+                    Label = criterion.Format(filter),
+                    ItemType = criterion.ItemType
+                });
+            }
 
             // Traits section
             items.Add(new FilterMenuItem
@@ -124,12 +100,14 @@ namespace RimWorldAccess
                 });
             }
 
-            // Show "Required traits from pool" when optional traits exist
-            if (filter.Traits.Any(t => t.Mode == TraitFilterMode.Optional))
+            // Show "Required traits from pool" when optional traits exist (visibility owned by
+            // the descriptor itself — see RequiredTraitsInPool's registration).
+            var requiredTraitsInPool = PawnFilter.FindCriterion(FilterItemType.RequiredTraitsInPool);
+            if (requiredTraitsInPool != null && requiredTraitsInPool.IsVisible(filter))
             {
                 items.Add(new FilterMenuItem
                 {
-                    Label = FormatRequiredTraitsInPoolLabel(filter),
+                    Label = requiredTraitsInPool.Format(filter),
                     ItemType = FilterItemType.RequiredTraitsInPool
                 });
             }
@@ -159,23 +137,16 @@ namespace RimWorldAccess
                 ItemType = FilterItemType.SectionHeader
             });
 
-            items.Add(new FilterMenuItem
+            foreach (var criterion in PawnFilter.Criteria)
             {
-                Label = FormatAgeMinLabel(filter),
-                ItemType = FilterItemType.AgeMin
-            });
-
-            items.Add(new FilterMenuItem
-            {
-                Label = FormatAgeMaxLabel(filter),
-                ItemType = FilterItemType.AgeMax
-            });
-
-            items.Add(new FilterMenuItem
-            {
-                Label = FormatGenderLabel(filter),
-                ItemType = FilterItemType.Gender
-            });
+                if (criterion.Section != FilterSection.Demographics) continue;
+                if (!criterion.IsVisible(filter)) continue;
+                items.Add(new FilterMenuItem
+                {
+                    Label = criterion.Format(filter),
+                    ItemType = criterion.ItemType
+                });
+            }
 
             // Conditions section
             items.Add(new FilterMenuItem
@@ -184,17 +155,16 @@ namespace RimWorldAccess
                 ItemType = FilterItemType.SectionHeader
             });
 
-            items.Add(new FilterMenuItem
+            foreach (var criterion in PawnFilter.Criteria)
             {
-                Label = FormatHealthLabel(filter),
-                ItemType = FilterItemType.Health
-            });
-
-            items.Add(new FilterMenuItem
-            {
-                Label = FormatWorkLabel(filter),
-                ItemType = FilterItemType.Work
-            });
+                if (criterion.Section != FilterSection.Conditions) continue;
+                if (!criterion.IsVisible(filter)) continue;
+                items.Add(new FilterMenuItem
+                {
+                    Label = criterion.Format(filter),
+                    ItemType = criterion.ItemType
+                });
+            }
 
             // Settings section
             items.Add(new FilterMenuItem
@@ -203,11 +173,16 @@ namespace RimWorldAccess
                 ItemType = FilterItemType.SectionHeader
             });
 
-            items.Add(new FilterMenuItem
+            foreach (var criterion in PawnFilter.Criteria)
             {
-                Label = FormatRerollLimitLabel(filter),
-                ItemType = FilterItemType.RerollLimit
-            });
+                if (criterion.Section != FilterSection.Settings) continue;
+                if (!criterion.IsVisible(filter)) continue;
+                items.Add(new FilterMenuItem
+                {
+                    Label = criterion.Format(filter),
+                    ItemType = criterion.ItemType
+                });
+            }
 
             // Actions section
             items.Add(new FilterMenuItem
@@ -260,6 +235,11 @@ namespace RimWorldAccess
             }
 
             if (totalMale <= 0f || totalFemale <= 0f) return "";
+
+            // Zero commonality = granted by mod/scenario logic, not this roll; "(0.0%)" misreads as unobtainable.
+            if (traitDef.GetGenderSpecificCommonality(Verse.Gender.Male) <= 0f
+                && traitDef.GetGenderSpecificCommonality(Verse.Gender.Female) <= 0f)
+                return "";
 
             float malePct = traitDef.GetGenderSpecificCommonality(Verse.Gender.Male) / totalMale * 100f;
             float femalePct = traitDef.GetGenderSpecificCommonality(Verse.Gender.Female) / totalFemale * 100f;
@@ -411,7 +391,6 @@ namespace RimWorldAccess
             foreach (var existing in filter.Traits)
                 existingTraits.Add(existing.Def.defName + "_" + existing.Degree);
 
-            // Collect required trait defs for conflict checking
             var requiredTraitDefs = filter.Traits
                 .Where(t => t.Mode == TraitFilterMode.Required)
                 .Select(t => t.Def)
@@ -552,59 +531,10 @@ namespace RimWorldAccess
             if (skill.MinLevel > 20) skill.MinLevel = 20;
         }
 
-        public static void AdjustPassion(PawnFilter filter, bool isMin, int direction)
-        {
-            if (isMin)
-            {
-                filter.PassionMin += direction;
-                if (filter.PassionMin < 0) filter.PassionMin = 0;
-                if (filter.PassionMin > 12) filter.PassionMin = 12;
-                if (filter.PassionMin > filter.PassionMax) filter.PassionMax = filter.PassionMin;
-            }
-            else
-            {
-                filter.PassionMax += direction;
-                if (filter.PassionMax < 0) filter.PassionMax = 0;
-                if (filter.PassionMax > 12) filter.PassionMax = 12;
-                if (filter.PassionMax < filter.PassionMin) filter.PassionMin = filter.PassionMax;
-            }
-        }
-
-        public static void AdjustSkillPoints(PawnFilter filter, bool isMin, int direction)
-        {
-            if (isMin)
-            {
-                filter.SkillPointsMin += direction;
-                if (filter.SkillPointsMin < 0) filter.SkillPointsMin = 0;
-                if (filter.SkillPointsMin > 240) filter.SkillPointsMin = 240;
-                if (filter.SkillPointsMin > filter.SkillPointsMax) filter.SkillPointsMax = filter.SkillPointsMin;
-            }
-            else
-            {
-                filter.SkillPointsMax += direction;
-                if (filter.SkillPointsMax < 0) filter.SkillPointsMax = 0;
-                if (filter.SkillPointsMax > 240) filter.SkillPointsMax = 240;
-                if (filter.SkillPointsMax < filter.SkillPointsMin) filter.SkillPointsMin = filter.SkillPointsMax;
-            }
-        }
-
-        public static void AdjustAge(PawnFilter filter, bool isMin, int direction)
-        {
-            if (isMin)
-            {
-                filter.AgeMin += direction;
-                if (filter.AgeMin < 0) filter.AgeMin = 0;
-                if (filter.AgeMin > 120) filter.AgeMin = 120;
-                if (filter.AgeMin > filter.AgeMax) filter.AgeMax = filter.AgeMin;
-            }
-            else
-            {
-                filter.AgeMax += direction;
-                if (filter.AgeMax < 0) filter.AgeMax = 0;
-                if (filter.AgeMax > 120) filter.AgeMax = 120;
-                if (filter.AgeMax < filter.AgeMin) filter.AgeMin = filter.AgeMax;
-            }
-        }
+        // AdjustPassion/AdjustSkillPoints/AdjustAge were retired: RangeFilterCriterion
+        // (PawnFilterCriteria.cs) now owns this exact clamp/cross-update logic generically for
+        // all three min/max pairs, so keeping bespoke per-pair copies here would just be a second,
+        // easy-to-drift implementation of the same behavior.
 
         public static void AdjustRequiredTraitsInPool(PawnFilter filter, int direction)
         {

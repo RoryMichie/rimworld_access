@@ -6,9 +6,7 @@ using Verse;
 
 namespace RimWorldAccess
 {
-    /// <summary>
-    /// Speech priority levels for screen reader output.
-    /// </summary>
+    /// <summary>Speech priority levels for screen reader output.</summary>
     public enum SpeechPriority
     {
         Low,      // Don't interrupt (navigation)
@@ -17,9 +15,8 @@ namespace RimWorldAccess
     }
 
     /// <summary>
-    /// Screen reader integration via the Prism library, with optional Tolk fallback on Windows.
-    /// If a user-supplied Tolk.dll is found in the RimWorld save data folder, Tolk is used instead
-    /// of Prism. This supports Chinese players whose screen readers work with Tolk but not yet Prism.
+    /// Screen reader integration via Prism, with an optional Tolk fallback on Windows: a
+    /// user-supplied Tolk.dll in the RimWorld save data folder takes precedence over Prism.
     /// </summary>
     public static class TolkHelper
     {
@@ -83,13 +80,17 @@ namespace RimWorldAccess
 
         private static bool isInitialized = false;
 
-        /// <summary>
-        /// Initializes the screen reader library.
-        /// On Windows, checks for a user-supplied Tolk.dll first; falls back to Prism.
-        /// On macOS/Linux, uses Prism directly.
-        /// </summary>
+        /// <summary>Initializes the screen reader library: Windows prefers a user-supplied Tolk.dll, else Prism.</summary>
         public static void Initialize()
         {
+            // Initialize always runs on RimWorld's main thread; SpeakInternal's dedupe reads the
+            // main-thread-only Time.frameCount and needs to know which thread that is.
+            mainThreadManagedId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+
+            // SpeechSanitizer is linked game-free into the test project and cannot reference
+            // TolkHelper directly; this delegate is its only route back to the log.
+            SpeechSanitizer.ScrubReporter = ReportScrubbedSpeech;
+
             if (isInitialized)
             {
                 return;
@@ -97,9 +98,7 @@ namespace RimWorldAccess
 
             try
             {
-                // Tolk fallback (Windows only)
-                // Players can place Tolk.dll in the RimWorld save data folder to use Tolk
-                // instead of Prism. This supports screen readers that Prism doesn't yet handle.
+            // A player-supplied Tolk.dll in the save data folder overrides Prism.
                 if (NativeLibraryLoader.IsWindows)
                 {
                     string tolkFolder = Path.Combine(GenFilePaths.SaveDataFolderPath, "RimWorldAccess");
@@ -121,7 +120,6 @@ namespace RimWorldAccess
                     }
                 }
 
-                // Prism initialization (default path)
                 InitializePrism();
             }
             catch (DllNotFoundException ex)
@@ -138,17 +136,14 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Attempts to initialize Tolk from the given folder.
-        /// Returns true on success, false on any failure (caller falls back to Prism).
-        /// </summary>
+        /// <summary>Initializes Tolk from the given folder; false on any failure, leaving Prism as the fallback.</summary>
         private static bool TryInitializeTolk(string tolkFolder, string tolkPath)
         {
             try
             {
                 Log.Message($"[RimWorld Access] Found Tolk.dll, loading Tolk backend");
 
-                // Optionally load NVDA controller client (non-fatal if missing)
+                // NVDA controller client is optional; a missing one is non-fatal.
                 string nvdaPath = Path.Combine(tolkFolder, "nvdaControllerClient64.dll");
                 if (File.Exists(nvdaPath))
                 {
@@ -172,7 +167,6 @@ namespace RimWorldAccess
                     }
                 }
 
-                // Load Tolk.dll
                 tolkHandle = NativeLibraryLoader.LoadLibrary(tolkPath);
                 if (tolkHandle == IntPtr.Zero)
                 {
@@ -182,7 +176,6 @@ namespace RimWorldAccess
                     return false;
                 }
 
-                // Resolve Tolk function pointers
                 tolkLoad = NativeLibraryLoader.GetFunction<Tolk_LoadDelegate>(tolkHandle, "Tolk_Load");
                 tolkUnload = NativeLibraryLoader.GetFunction<Tolk_UnloadDelegate>(tolkHandle, "Tolk_Unload");
                 tolkIsLoaded = NativeLibraryLoader.GetFunction<Tolk_IsLoadedDelegate>(tolkHandle, "Tolk_IsLoaded");
@@ -192,7 +185,6 @@ namespace RimWorldAccess
                 tolkHasBraille = NativeLibraryLoader.GetFunction<Tolk_HasBrailleDelegate>(tolkHandle, "Tolk_HasBraille");
                 tolkTrySAPI = NativeLibraryLoader.GetFunction<Tolk_TrySAPIDelegate>(tolkHandle, "Tolk_TrySAPI");
 
-                // Test NVDA directly first
                 bool nvdaRunning = false;
                 if (nvdaTestIfRunning != null)
                 {
@@ -208,7 +200,6 @@ namespace RimWorldAccess
                     }
                 }
 
-                // Initialize Tolk
                 tolkLoad();
                 tolkTrySAPI(true);
 
@@ -221,7 +212,6 @@ namespace RimWorldAccess
 
                 useTolk = true;
 
-                // Log backend info
                 IntPtr namePtr = tolkDetectScreenReader();
                 string screenReaderName = namePtr != IntPtr.Zero
                     ? Marshal.PtrToStringUni(namePtr)
@@ -234,7 +224,7 @@ namespace RimWorldAccess
                 Log.Message($"[RimWorld Access] Speech support: {hasSpeech}");
                 Log.Message($"[RimWorld Access] Braille support: {hasBraille}");
 
-                // If Tolk detected SAPI but NVDA is actually running, use direct NVDA communication
+                // Tolk sometimes reports SAPI while NVDA is running; talk to NVDA directly then.
                 if (screenReaderName == "SAPI" && nvdaRunning)
                 {
                     Log.Warning("[RimWorld Access] Tolk fell back to SAPI even though NVDA is running.");
@@ -252,9 +242,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Cleans up Tolk resources after a failed initialization attempt.
-        /// </summary>
+        /// <summary>Cleans up Tolk resources after a failed initialization attempt.</summary>
         private static void CleanupTolk()
         {
             useTolk = false;
@@ -284,21 +272,14 @@ namespace RimWorldAccess
             nvdaSpeakText = null;
         }
 
-        /// <summary>
-        /// Initializes the Prism screen reader library (default backend).
-        /// </summary>
+        /// <summary>Initializes the Prism screen reader library, the default backend.</summary>
         private static void InitializePrism()
         {
-            // Get mod folder path
-            // The assembly is in: Mods/RimWorldAccess/Assemblies/rimworld_access.dll
-            // Native libraries are in: Mods/RimWorldAccess/
             string modAssemblyPath = Assembly.GetExecutingAssembly().Location;
             string assemblyFolder = Path.GetDirectoryName(modAssemblyPath);
 
-            // Go up from Assemblies to mod root (one level up)
             string modRoot = Path.GetFullPath(Path.Combine(assemblyFolder, ".."));
 
-            // Resolve platform-specific library name
             string libraryName = NativeLibraryLoader.GetNativeLibraryName("prism");
             string libraryPath = Path.Combine(modRoot, libraryName);
 
@@ -306,14 +287,19 @@ namespace RimWorldAccess
                                   NativeLibraryLoader.IsMacOS ? "macOS" : "Linux";
             Log.Message($"[RimWorld Access] Platform: {platformName}, loading {libraryName} from: {modRoot}");
 
-            // Check if library exists
+            // Must precede the load below; see SimdutfKernelWorkaround.Apply.
+            string pinnedKernel = SimdutfKernelWorkaround.Apply(NativeLibraryLoader.IsWindows);
+            if (pinnedKernel != null)
+            {
+                Log.Message($"[RimWorld Access] AVX-512 CPU detected; set {pinnedKernel}, avoiding Prism's faulty UTF-8 validation kernel");
+            }
+
             if (!File.Exists(libraryPath))
             {
                 Log.Error($"[RimWorld Access] {libraryName} not found at: {libraryPath}");
                 throw new DllNotFoundException($"{libraryName} not found at: {libraryPath}");
             }
 
-            // Load the native library
             prismLibraryHandle = NativeLibraryLoader.LoadLibrary(libraryPath);
             if (prismLibraryHandle == IntPtr.Zero)
             {
@@ -332,13 +318,19 @@ namespace RimWorldAccess
 
             Log.Message($"[RimWorld Access] Loaded {libraryName} successfully");
 
-            // Resolve all Prism function pointers
             PrismNative.LoadFunctions(prismLibraryHandle);
 
-            // Initialize Prism context
             PrismConfig config = PrismNative.prism_config_init();
             Log.Message($"[RimWorld Access] Prism config version: {config.version}");
+
+            IntPtr registry = BuildRegistryWithMacaw();
+            config.registry = registry;
             prismContext = PrismNative.prism_init(ref config);
+            if (registry != IntPtr.Zero)
+            {
+                // prism_init retains the registry; this drops our own reference.
+                PrismNative.prism_registry_release?.Invoke(registry);
+            }
             if (prismContext == IntPtr.Zero)
             {
                 throw new Exception("prism_init returned null context");
@@ -351,7 +343,6 @@ namespace RimWorldAccess
                 throw new Exception("No screen reader or TTS backend available");
             }
 
-            // Initialize the backend
             PrismError initResult = PrismNative.prism_backend_initialize(prismBackend);
             if (initResult != PrismError.Ok && initResult != PrismError.AlreadyInitialized)
             {
@@ -361,7 +352,6 @@ namespace RimWorldAccess
 
             isInitialized = true;
 
-            // Log backend info
             activeBackendName = PrismNative.ReadUtf8(PrismNative.prism_backend_name(prismBackend)) ?? "Unknown";
             ulong features = PrismNative.prism_backend_get_features(prismBackend);
             PrismBackendFeature featureFlags = (PrismBackendFeature)features;
@@ -374,9 +364,54 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Shuts down the screen reader library.
-        /// Should be called during mod cleanup.
+        /// Prism's own backends plus Macaw, from the plugin the macOS reader links at a fixed
+        /// path; it outranks every reader Prism ships and reports itself unsupported while
+        /// Macaw is not running. IntPtr.Zero leaves Prism its default registry.
         /// </summary>
+        private static IntPtr BuildRegistryWithMacaw()
+        {
+            if (!NativeLibraryLoader.IsMacOS
+                || PrismNative.prism_registry_builder_new == null
+                || PrismNative.prism_registry_builder_add_library == null
+                || PrismNative.prism_registry_freeze == null)
+            {
+                return IntPtr.Zero;
+            }
+
+            string pluginPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Library/Application Support/Macaw/prism/libMacawPrismPlugin.dylib");
+            if (!File.Exists(pluginPath))
+            {
+                return IntPtr.Zero;
+            }
+
+            IntPtr builder = PrismNative.prism_registry_builder_new();
+            if (builder == IntPtr.Zero)
+            {
+                return IntPtr.Zero;
+            }
+
+            var (pathHandle, pathPointer) = PrismNative.MarshalUtf8(pluginPath);
+            PrismError loaded;
+            try
+            {
+                loaded = PrismNative.prism_registry_builder_add_library(builder, pathPointer, -1, IntPtr.Zero);
+            }
+            finally
+            {
+                PrismNative.FreeUtf8(pathHandle);
+            }
+
+            // A failed load leaves the builder untouched: the frozen registry is the default set.
+            Log.Message(loaded == PrismError.Ok
+                ? "[RimWorld Access] Macaw Prism plugin loaded"
+                : $"[RimWorld Access] Macaw Prism plugin not loaded: {PrismNative.GetErrorString(loaded)}");
+
+            return PrismNative.prism_registry_freeze(builder);
+        }
+
+        /// <summary>Shuts down the screen reader library; call during mod cleanup.</summary>
         public static void Shutdown()
         {
             if (!isInitialized)
@@ -396,7 +431,6 @@ namespace RimWorldAccess
                     return;
                 }
 
-                // Prism shutdown
                 if (prismBackend != IntPtr.Zero)
                 {
                     PrismNative.prism_backend_free?.Invoke(prismBackend);
@@ -427,9 +461,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Checks if the screen reader backend is initialized and available.
-        /// </summary>
+        /// <summary>Whether the screen reader backend is initialized and available.</summary>
         public static bool IsActive()
         {
             if (!isInitialized)
@@ -453,23 +485,19 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// True when the active backend doesn't handle speech interruption on key press.
-        /// macOS AVSpeechSynthesizer queues speech but never interrupts it;
-        /// VoiceOver and Windows screen readers handle interruption themselves.
+        /// True when the active backend does not interrupt speech on key press: macOS
+        /// AVSpeechSynthesizer queues, while VoiceOver and the Windows screen readers handle
+        /// interruption themselves.
         /// </summary>
         public static bool ShouldInterruptOnKeyPress =>
             isInitialized && !useTolk && activeBackendName == "AVSpeech";
 
-        // Last results of the stop/speak hot paths. Failures are logged only
-        // when the error state changes, so a dead backend doesn't flood the
-        // log with one warning per utterance.
+        // Last results of the stop/speak hot paths. Failures are logged only on a change of
+        // error state, so a dead backend cannot flood the log with one warning per utterance.
         private static PrismError lastStopError = PrismError.Ok;
         private static PrismError lastSpeakError = PrismError.Ok;
 
-        /// <summary>
-        /// Stops any currently playing speech. Used to manually interrupt backends
-        /// that don't interrupt on key press (e.g., AVSpeech on macOS).
-        /// </summary>
+        /// <summary>Stops any playing speech, for backends that do not interrupt on key press themselves.</summary>
         public static void StopSpeech()
         {
             if (!isInitialized || useTolk)
@@ -497,36 +525,41 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Speaks a localized string. This is the preferred entry point: the
-        /// <see cref="Localized"/> type can only be produced via <c>.Loc()</c>
-        /// (which routes through the translation system), so the compiler guarantees
-        /// the text is translatable.
+        /// Speaks a localized string — the preferred entry point. <see cref="Localized"/> can only
+        /// be produced via <c>.Loc()</c>, so the compiler guarantees the text is translatable.
         /// </summary>
-        /// <param name="text">The localized text to speak (e.g. <c>"MyKey".Loc(args)</c>)</param>
-        /// <param name="priority">Speech priority level (determines interruption behavior)</param>
         public static void Speak(Localized text, SpeechPriority priority = SpeechPriority.Normal)
         {
             SpeakInternal(text.SpokenText, priority);
         }
 
         /// <summary>
-        /// Speaks text that is intentionally not a translation key — numbers, proper
-        /// names, or labels already localized by the game (e.g. <c>thing.LabelCap</c>).
-        /// Use sparingly and only for genuine passthrough data; prefer
-        /// <see cref="Speak(Localized, SpeechPriority)"/> for any authored prose.
+        /// Speaks text that is intentionally not a translation key — numbers, proper names, or
+        /// labels the game already localized.
         /// </summary>
-        /// <param name="text">The passthrough text to speak</param>
-        /// <param name="priority">Speech priority level (determines interruption behavior)</param>
         public static void SpeakData(string text, SpeechPriority priority = SpeechPriority.Normal)
         {
             SpeakInternal(text, priority);
         }
 
+        /// <summary>Managed thread id captured by <see cref="Initialize"/>. -1 until then.</summary>
+        private static int mainThreadManagedId = -1;
+
+        /// <summary>Frame <see cref="spokenThisFrame"/> belongs to; -1 before any frame.</summary>
+        private static int dedupeFrame = -1;
+
         /// <summary>
-        /// Core speech implementation shared by all public Speak overloads.
+        /// Every distinct sanitized utterance already spoken during <see cref="dedupeFrame"/>, so
+        /// same-frame repeats can be dropped: those are replacement-churn within one IMGUI pass,
+        /// while a real repeat lands on a later frame. Past
+        /// <see cref="MaxDedupeEntriesPerFrame"/> dedupe is skipped rather than the list grown.
         /// </summary>
-        /// <param name="text">The text to speak</param>
-        /// <param name="priority">Speech priority level (determines interruption behavior)</param>
+        private static readonly System.Collections.Generic.List<string> spokenThisFrame =
+            new System.Collections.Generic.List<string>();
+
+        private const int MaxDedupeEntriesPerFrame = 64;
+
+        /// <summary>Core speech implementation shared by all public Speak overloads.</summary>
         private static void SpeakInternal(string text, SpeechPriority priority = SpeechPriority.Normal)
         {
             if (string.IsNullOrEmpty(text))
@@ -540,18 +573,59 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Sanitize text: strip tags, fix punctuation, collapse whitespace
             text = SpeechSanitizer.Sanitize(text);
             if (string.IsNullOrEmpty(text))
             {
                 return;
             }
 
+            // Dedupe runs before any output, capture buffer, ring, or QA-trace recording: a
+            // dropped duplicate was never spoken, so nothing may see it as having happened. Off
+            // the main thread it is skipped rather than touching Time.frameCount.
+            if (System.Threading.Thread.CurrentThread.ManagedThreadId == mainThreadManagedId)
+            {
+                int frame = UnityEngine.Time.frameCount;
+                if (frame != dedupeFrame)
+                {
+                    dedupeFrame = frame;
+                    spokenThisFrame.Clear();
+                }
+
+                // Membership, not a last-utterance comparison: an interleaved A, B, A, B within
+                // one frame must still catch both repeats.
+                if (spokenThisFrame.Contains(text))
+                {
+                    // Suppression hides real defects, so every drop is visible in the
+                    // diagnostic channels rather than trusted blind.
+#if DEBUG
+                    Log.Message("[RimWorld Access] Speech dropped (same-frame duplicate, frame " + frame + "): " + text);
+#endif
+                    RimWorldAccess.Shell.FlightRecorder.Record("speech-dropped", "same-frame duplicate, frame " + frame + ": " + text);
+                    return;
+                }
+
+                if (spokenThisFrame.Count < MaxDedupeEntriesPerFrame)
+                {
+                    spokenThisFrame.Add(text);
+                }
+            }
+
+#if DEBUG
+            // Observe-only: speech must still reach the real backend below.
+            if (captureBuffer != null)
+            {
+                captureBuffer.Add(text);
+            }
+            // The rolling ring is always recording, independent of the capture buffer, so
+            // ShellDev.RecentSpeech can inspect what was said without a caller having bracketed it.
+            RecordToSpeechRing(text);
+#endif
+            RimWorldAccess.Shell.FlightRecorder.Record("speech", text);
+
             try
             {
                 bool interrupt = priority == SpeechPriority.High;
 
-                // Tolk path (Windows fallback)
                 if (useTolk)
                 {
                     if (useDirectNVDA && nvdaSpeakText != null)
@@ -572,7 +646,6 @@ namespace RimWorldAccess
                     return;
                 }
 
-                // Prism path (default)
                 if (PrismNative.prism_backend_output == null)
                 {
                     Log.Warning("[RimWorld Access] Speak called but Prism is not initialized");
@@ -591,7 +664,7 @@ namespace RimWorldAccess
                     {
                         if (result != PrismError.Ok)
                         {
-                            Log.Warning($"[RimWorld Access] Speech output failed: {PrismNative.GetErrorString(result)}");
+                            Log.Warning($"[RimWorld Access] Speech output failed: {PrismNative.GetErrorString(result)} (text: {DescribeForLog(text)})");
                         }
                         else
                         {
@@ -610,5 +683,171 @@ namespace RimWorldAccess
                 Log.Error($"[RimWorld Access] Error speaking text: {ex.Message}");
             }
         }
+
+        private static readonly object scrubReportLock = new object();
+        private static readonly System.Collections.Generic.HashSet<string> reportedScrubbedText = new System.Collections.Generic.HashSet<string>();
+        private const int MaxScrubReports = 20;
+        private static bool scrubReportsSuppressed = false;
+
+        /// <summary>
+        /// Logs invalid speech text a scrub site had to clean (control characters, lone
+        /// surrogates) so the culprit mod is identifiable. Once per distinct original string,
+        /// capped per app run.
+        /// </summary>
+        internal static void ReportScrubbedSpeech(string reason, string original)
+        {
+            lock (scrubReportLock)
+            {
+                if (scrubReportsSuppressed || !reportedScrubbedText.Add(original))
+                {
+                    return;
+                }
+                if (reportedScrubbedText.Count > MaxScrubReports)
+                {
+                    scrubReportsSuppressed = true;
+                    Log.Warning("[RimWorld Access] Further scrubbed-speech reports suppressed.");
+                    return;
+                }
+                Log.Warning("[RimWorld Access] Scrubbed " + reason + " from speech text: " + DescribeForLog(original));
+            }
+        }
+
+        /// <summary>
+        /// Renders an utterance for a diagnostic log line, escaping non-ASCII and control
+        /// characters so the exact bytes survive a player's pasted log.
+        /// </summary>
+        private static string DescribeForLog(string text)
+        {
+            const int maxChars = 160;
+            var sb = new System.Text.StringBuilder(System.Math.Min(text.Length, maxChars) + 16);
+            sb.Append('"');
+            for (int i = 0; i < text.Length && i < maxChars; i++)
+            {
+                char c = text[i];
+                if (c >= ' ' && c < '\x7F')
+                {
+                    sb.Append(c);
+                }
+                else
+                {
+                    sb.Append("\\u").Append(((int)c).ToString("X4"));
+                }
+            }
+            sb.Append('"');
+            if (text.Length > maxChars)
+            {
+                sb.Append("… (").Append(text.Length).Append(" chars)");
+            }
+            return sb.ToString();
+        }
+
+#if DEBUG
+        #region Dev-bridge capture sink
+
+        /// <summary>Capture buffer; null doubles as the "not capturing" state.</summary>
+        private static System.Collections.Generic.List<string> captureBuffer;
+
+        /// <summary>True while a dev-bridge caller is capturing speech.</summary>
+        public static bool IsCapturing => captureBuffer != null;
+
+        /// <summary>
+        /// Starts capturing every spoken utterance, discarding any buffer left by an unended
+        /// capture. Captured lines are the SANITIZED text. Observe-only: capture never suppresses
+        /// or alters speech.
+        /// </summary>
+        public static void BeginCapture()
+        {
+            captureBuffer = new System.Collections.Generic.List<string>();
+        }
+
+        /// <summary>
+        /// Stops capturing and returns every line recorded since <see cref="BeginCapture"/>, in the
+        /// order spoken; empty when no capture was in progress.
+        /// </summary>
+        public static string[] EndCapture()
+        {
+            if (captureBuffer == null)
+            {
+                return new string[0];
+            }
+
+            string[] captured = captureBuffer.ToArray();
+            captureBuffer = null;
+            return captured;
+        }
+
+        #endregion
+
+        #region Dev-bridge speech ring (rolling utterance history)
+
+        /// <summary>
+        /// One recorded utterance: monotonic sequence number, Unity frame count,
+        /// realtime-since-startup, and the sanitized text.
+        /// </summary>
+        internal readonly struct SpeechRingEntry
+        {
+            public readonly int Seq;
+            public readonly int Frame;
+            public readonly float RealtimeSinceStartup;
+            public readonly string Text;
+
+            public SpeechRingEntry(int seq, int frame, float realtimeSinceStartup, string text)
+            {
+                Seq = seq;
+                Frame = frame;
+                RealtimeSinceStartup = realtimeSinceStartup;
+                Text = text;
+            }
+        }
+
+        private const int SpeechRingCapacity = 200;
+        private static readonly SpeechRingEntry[] speechRing = new SpeechRingEntry[SpeechRingCapacity];
+        private static int speechRingCount;
+        private static int speechRingNext;
+        private static int speechRingTotalRecorded;
+
+        /// <summary>Records one utterance into the rolling ring, independent of the capture sink.</summary>
+        private static void RecordToSpeechRing(string text)
+        {
+            speechRingTotalRecorded++;
+            speechRing[speechRingNext] = new SpeechRingEntry(
+                speechRingTotalRecorded, UnityEngine.Time.frameCount, UnityEngine.Time.realtimeSinceStartup, text);
+            speechRingNext = (speechRingNext + 1) % SpeechRingCapacity;
+            if (speechRingCount < SpeechRingCapacity)
+            {
+                speechRingCount++;
+            }
+        }
+
+        /// <summary>Every entry currently retained, oldest first (newest last).</summary>
+        internal static SpeechRingEntry[] SpeechRingSnapshot()
+        {
+            var result = new SpeechRingEntry[speechRingCount];
+            int start = speechRingCount < SpeechRingCapacity ? 0 : speechRingNext;
+            for (int i = 0; i < speechRingCount; i++)
+            {
+                result[i] = speechRing[(start + i) % SpeechRingCapacity];
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Monotonic count of every utterance ever recorded. Survives
+        /// <see cref="ClearSpeechRing"/>, so a stamp taken before a clear stays meaningful.
+        /// </summary>
+        internal static int SpeechRingTotalRecorded
+        {
+            get { return speechRingTotalRecorded; }
+        }
+
+        /// <summary>Drops every retained entry; the monotonic counter above is untouched.</summary>
+        internal static void ClearSpeechRing()
+        {
+            speechRingCount = 0;
+            speechRingNext = 0;
+        }
+
+        #endregion
+#endif
     }
 }

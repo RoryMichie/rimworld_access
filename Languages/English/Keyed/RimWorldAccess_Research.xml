@@ -69,6 +69,10 @@
   <RimWorldAccess.Research.Detail.DependentsWithCount>Dependents ({0} items)</RimWorldAccess.Research.Detail.DependentsWithCount>
   <RimWorldAccess.Research.Detail.DependentsNone>Dependents (none)</RimWorldAccess.Research.Detail.DependentsNone>
 
+  <!-- Content-source row, mirroring vanilla's DrawContentSource: {0} = mod name,
+       {1} = expansion name (shown only when the mod is a DLC expansion). -->
+  <RimWorldAccess.Research.Detail.ContentSourceWithExpansion>{0}. Part of the {1} expansion.</RimWorldAccess.Research.Detail.ContentSourceWithExpansion>
+
   <!-- Research row inside a category (prereqs / dependents).
        {0} = project label, {1} = cost, {2} = status word. -->
   <RimWorldAccess.Research.Detail.ResearchRow>{0} - cost: {1} {2}</RimWorldAccess.Research.Detail.ResearchRow>
@@ -100,6 +104,9 @@
   <RimWorldAccess.Research.Detail.AnalyzeComplete>Complete</RimWorldAccess.Research.Detail.AnalyzeComplete>
   <RimWorldAccess.Research.Detail.AnalyzeProgress>{0}/{1}</RimWorldAccess.Research.Detail.AnalyzeProgress>
   <RimWorldAccess.Research.Detail.RequiresAnalyzing>Requires analyzing: {0} - {1}</RimWorldAccess.Research.Detail.RequiresAnalyzing>
+  <RimWorldAccess.Research.Detail.AnalyzedThingRow>{0}. {1}.</RimWorldAccess.Research.Detail.AnalyzedThingRow>
+  <RimWorldAccess.Research.Detail.StudiedYes>Studied</RimWorldAccess.Research.Detail.StudiedYes>
+  <RimWorldAccess.Research.Detail.StudiedNo>Not studied</RimWorldAccess.Research.Detail.StudiedNo>
 
   <RimWorldAccess.Research.Detail.GravEngineInspected>Inspected</RimWorldAccess.Research.Detail.GravEngineInspected>
   <RimWorldAccess.Research.Detail.GravEngineNotInspected>Not inspected</RimWorldAccess.Research.Detail.GravEngineNotInspected>
@@ -109,7 +116,17 @@
   <RimWorldAccess.Research.Detail.UnlockCategoryBuilding>Building</RimWorldAccess.Research.Detail.UnlockCategoryBuilding>
   <RimWorldAccess.Research.Detail.UnlockCategoryPlant>Plant</RimWorldAccess.Research.Detail.UnlockCategoryPlant>
   <RimWorldAccess.Research.Detail.UnlockCategoryItem>Item</RimWorldAccess.Research.Detail.UnlockCategoryItem>
-  <RimWorldAccess.Research.Detail.UnlockCategoryRecipe>Recipe</RimWorldAccess.Research.Detail.UnlockCategoryRecipe>
+  <RimWorldAccess.Research.Detail.UnlockCategoryTerrain>Terrain</RimWorldAccess.Research.Detail.UnlockCategoryTerrain>
+  <RimWorldAccess.Research.Detail.UnlockCategorySurgery>Surgery</RimWorldAccess.Research.Detail.UnlockCategorySurgery>
+  <RimWorldAccess.Research.Detail.UnlockCategoryPsychicRitual>Psychic Ritual</RimWorldAccess.Research.Detail.UnlockCategoryPsychicRitual>
+  <RimWorldAccess.Research.Detail.UnlockCategoryWorkType>Work type</RimWorldAccess.Research.Detail.UnlockCategoryWorkType>
+
+  <!-- Unlocks sub-group header, used when a set of unlocked defs also requires other research
+       projects beyond this one (ResearchPrerequisitesUtility.UnlockedDefsGroupedByPrerequisites).
+       {0} = comma-joined "{project} ({status})" list of the other required projects,
+       {1} = number of items in the sub-group. -->
+  <RimWorldAccess.Research.Detail.UnlockedWithHeader>Unlocked with {0} ({1} items)</RimWorldAccess.Research.Detail.UnlockedWithHeader>
+  <RimWorldAccess.Research.Detail.UnlockedWithProjectStatus>{0} ({1})</RimWorldAccess.Research.Detail.UnlockedWithProjectStatus>
 
   <!-- No-info-card message for non-target tree sections. -->
   <RimWorldAccess.Research.Detail.NoInfoCardForSection>No info card for this section</RimWorldAccess.Research.Detail.NoInfoCardForSection>
@@ -120,7 +137,9 @@
   <RimWorldAccess.Research.Desc.ResearchCost>Research Cost: {0}</RimWorldAccess.Research.Desc.ResearchCost>
   <RimWorldAccess.Research.Desc.KnowledgeCost>Knowledge Cost: {0}</RimWorldAccess.Research.Desc.KnowledgeCost>
   <RimWorldAccess.Research.Desc.KnowledgeCategory>Knowledge Category: {0}</RimWorldAccess.Research.Desc.KnowledgeCategory>
-  <RimWorldAccess.Research.Desc.Progress>Progress: {0}%</RimWorldAccess.Research.Desc.Progress>
+  <RimWorldAccess.Research.Desc.TechLevel>Tech level: {0}.</RimWorldAccess.Research.Desc.TechLevel>
+  <RimWorldAccess.Research.Desc.ProgressDetail>Progress: {0} of {1}, {2}.</RimWorldAccess.Research.Desc.ProgressDetail>
+  <RimWorldAccess.Research.Desc.StatusInProgress>Currently being researched.</RimWorldAccess.Research.Desc.StatusInProgress>
   <RimWorldAccess.Research.Desc.StatusCompleted>Status: Completed</RimWorldAccess.Research.Desc.StatusCompleted>
   <RimWorldAccess.Research.Desc.StatusAvailable>Status: Available to research</RimWorldAccess.Research.Desc.StatusAvailable>
   <RimWorldAccess.Research.Desc.StatusLocked>Status: Locked</RimWorldAccess.Research.Desc.StatusLocked>
@@ -130,11 +149,11 @@
   <!-- Research action announcements (start / stop / blocked). -->
   <RimWorldAccess.Research.Action.Stopped>Stopped research on {0}</RimWorldAccess.Research.Action.Stopped>
   <RimWorldAccess.Research.Action.AlreadyCompleted>{0} is already completed</RimWorldAccess.Research.Action.AlreadyCompleted>
-  <RimWorldAccess.Research.Action.MissingPrereqs>Cannot start research: Missing prerequisites - {0}</RimWorldAccess.Research.Action.MissingPrereqs>
-  <RimWorldAccess.Research.Action.NeedTechprints>Cannot start research: Need {0} techprints, only {1} applied</RimWorldAccess.Research.Action.NeedTechprints>
-  <RimWorldAccess.Research.Action.StudyFirst>Cannot start research: Must study required items first</RimWorldAccess.Research.Action.StudyFirst>
+  <RimWorldAccess.Research.Action.Locked>Cannot start research: {0}</RimWorldAccess.Research.Action.Locked>
   <RimWorldAccess.Research.Action.Started>Started research on {0}</RimWorldAccess.Research.Action.Started>
   <RimWorldAccess.Research.Action.StartedReplacing>Started research on {0}. Stopped {1} at {2}% progress.</RimWorldAccess.Research.Action.StartedReplacing>
+  <RimWorldAccess.Research.Action.DebugFinished>Finished {0}.</RimWorldAccess.Research.Action.DebugFinished>
+  <RimWorldAccess.Research.Action.DebugTechprintApplied>Techprint applied. {0} of {1}.</RimWorldAccess.Research.Action.DebugTechprintApplied>
 
   <!-- Missing prerequisite list fragments.
        Unknown: spoken when currentProject is null or no parts collected.

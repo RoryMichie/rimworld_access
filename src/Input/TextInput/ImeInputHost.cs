@@ -5,49 +5,35 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// IME (Input Method Editor) composition funnel for CJK languages (Simplified/Traditional
-    /// Chinese, Japanese, Korean).
+    /// IME composition funnel for the CJK languages. The mod captures text synthetically from
+    /// <c>Event.current.character</c>, which works for direct keyboard layouts but cannot work for
+    /// composition-based input: pinyin keystrokes must be composed through an OS candidate window
+    /// into a real, focused Unity <c>GUI.TextField</c> before a finished character exists at all.
     ///
-    /// The mod captures all text input synthetically — it reads <c>Event.current.character</c>
-    /// and appends to its own buffers (see <see cref="TextInputController"/>,
-    /// <see cref="TypeaheadDispatcher"/>). That works for direct keyboard layouts (one keystroke
-    /// = one finished character, e.g. Latin or Cyrillic), but it cannot work for composition-based
-    /// IME input: pinyin keystrokes have to be composed through an OS candidate window into a real,
-    /// focused Unity <c>GUI.TextField</c> before the finished character exists. With no such field,
-    /// the committed Chinese characters have nowhere to land and only raw Latin letters get through.
+    /// While a text sink is active in a CJK language, this host draws an offscreen focused
+    /// TextField every OnGUI pass and turns on <c>Input.imeCompositionMode</c>. Committed characters
+    /// are harvested by diffing the field's returned string and fed back through the mod's normal
+    /// character routing; the field is purely a commit catcher, never a buffer — its cursor,
+    /// selection and editing are unused.
     ///
-    /// This host bridges that gap. While a text sink is active AND the active game language is a
-    /// CJK/IME language, it draws an offscreen, focused <c>GUI.TextField</c> every OnGUI pass and
-    /// turns on <c>Input.imeCompositionMode</c>. Unity routes IME composition into that hidden
-    /// field; we harvest the committed characters by diffing the field's returned string and feed
-    /// them back through the mod's normal character-routing path. The hidden field is purely a
-    /// "commit catcher" — we never use its cursor, selection, or editing; the authoritative buffer
-    /// stays in the mod's own controllers.
-    ///
-    /// Routing rule (see <see cref="TryRouteKeyDown"/>):
-    ///   - While composing (a candidate window is open): every key belongs to the IME — it
-    ///     navigates candidates, commits, or edits the in-progress pinyin. Route to the field.
-    ///   - While NOT composing: only letter keys begin/continue composition, so only those route
-    ///     to the field. Everything else (digits, space, punctuation, arrows, Enter, hotkeys)
-    ///     keeps its normal path, so cursor review, list navigation, and submit behave exactly as
-    ///     they do for non-IME players.
-    ///
-    /// Gated to CJK languages so direct-layout players (the overwhelming majority) keep their exact
-    /// current code path untouched — no hidden field, no focus management, zero regression surface.
+    /// Routing (<see cref="TryRouteKeyDown"/>): while composing, EVERY key belongs to the IME, which
+    /// uses it to navigate candidates, commit, or edit the pinyin. While not composing, only letter
+    /// keys route to the field, so digits, punctuation, arrows, Enter and hotkeys behave exactly as
+    /// they do for non-IME players. Gated to CJK languages, so a direct-layout player never gets a
+    /// hidden field or focus management at all.
     /// </summary>
     public static class ImeInputHost
     {
-        // Control name + offscreen rect for the hidden funnel field. The field must actually be
-        // drawn (IMGUI is immediate-mode; an undrawn control processes no events) but never needs
-        // to be visible — a screen reader user perceives it only through the OS IME candidate
-        // window, which the player's screen reader reads at the OS level.
+        // The field must actually be drawn — IMGUI is immediate-mode, and an undrawn control
+        // processes no events — but never needs to be visible: the player perceives it only through
+        // the OS candidate window their screen reader already reads.
         private const string FieldName = "RWA_IME_FunnelField";
         private static readonly Rect OffscreenRect = new Rect(-400f, -400f, 200f, 30f);
 
         private static bool active;
-        // Seed string passed into the field. We reset it to empty whenever no composition is in
-        // progress so committed text always appears as a fresh append we can diff out, and the
-        // buffer never grows unbounded. While composing we leave it (the commit is still pending).
+        // Seed string for the field, reset to empty whenever no composition is in progress so a
+        // commit always appears as a fresh append and the buffer never grows unbounded. Left alone
+        // while composing, where the commit is still pending.
         private static string fieldValue = string.Empty;
         private static bool composingLastDraw;
         private static IMECompositionMode savedMode;
@@ -56,19 +42,14 @@ namespace RimWorldAccess
         /// <summary>True while the funnel is engaged (a text sink is active in a CJK language).</summary>
         public static bool IsActive => active;
 
-        /// <summary>
-        /// True if an IME composition was in progress as of the most recent field draw. Callers
-        /// use this to decide whether a key belongs to the IME (composing) or to the mod's own
-        /// handlers (not composing). See the routing rule in the class summary.
-        /// </summary>
+        /// <summary>Whether a composition was in progress at the most recent field draw — the routing rule's own test.</summary>
         public static bool IsComposing => composingLastDraw;
 
         /// <summary>
-        /// Called once per OnGUI pass from the top of the keyboard prefix. Manages the active
-        /// state (toggling <c>Input.imeCompositionMode</c> on the edge) and, on NON-KeyDown passes,
-        /// draws the hidden field so it keeps keyboard focus and its composition state alive between
-        /// keystrokes. KeyDown passes draw via <see cref="TryRouteKeyDown"/> instead, so the field
-        /// is drawn exactly once per pass (drawing it twice in one pass is an IMGUI error).
+        /// Once per OnGUI pass, from the top of the keyboard prefix: manages the active state and,
+        /// on non-KeyDown passes, draws the hidden field so it keeps focus and its composition state
+        /// between keystrokes. KeyDown passes draw through <see cref="TryRouteKeyDown"/> instead, so
+        /// the field is drawn exactly once per pass — twice in one pass is an IMGUI error.
         /// </summary>
         public static void Pump(bool sinkActive, Action<char> onCommitted)
         {
@@ -78,20 +59,17 @@ namespace RimWorldAccess
 
             if (!active) return;
 
-            // Draw ONLY on the layout and repaint passes — never on a KeyDown (TryRouteKeyDown draws
-            // and routes those) and never on an already-consumed event. Drawing the field twice in a
-            // single OnGUI pass is an IMGUI error, which would otherwise happen when another prefix
-            // (e.g. WindowlessDialogInputPatch at VeryHigh) consumes a KeyDown — turning its type to
-            // Used — before this Pump runs in the same pass.
+            // Layout and repaint passes only: TryRouteKeyDown draws the KeyDowns, and an event
+            // another prefix already consumed arrives here as Used, which would otherwise draw the
+            // field a second time in one pass.
             if (Event.current.type == EventType.Layout || Event.current.type == EventType.Repaint)
                 DrawAndHarvest(onCommitted);
         }
 
         /// <summary>
-        /// On a KeyDown pass, decide whether this key belongs to the IME and, if so, draw the hidden
-        /// field to let Unity process it, harvest any committed characters, and return true (the
-        /// caller should then <c>Event.current.Use()</c> and return). Returns false when the key
-        /// should follow its normal path (the caller proceeds with its usual handling).
+        /// Whether this KeyDown belongs to the IME; when it does, the field is drawn so Unity can
+        /// process it and any committed characters are harvested, and the caller should
+        /// <c>Event.current.Use()</c>. False leaves the key on its normal path.
         /// </summary>
         public static bool TryRouteKeyDown(Event evt, Action<char> onCommitted)
         {
@@ -100,15 +78,15 @@ namespace RimWorldAccess
             bool routeToField;
             if (composingLastDraw)
             {
-                // Mid-composition: candidate navigation, commit (Enter/Space), and pinyin editing
-                // (Backspace/arrows) all belong to the IME.
+                // Mid-composition: candidate navigation, commit and pinyin editing all belong to
+                // the IME.
                 routeToField = true;
             }
             else
             {
-                // Not composing: only a letter starts or continues composition. A letter reaches us
-                // either as a letter KeyCode (A-Z) or as the keyCode==None character twin Unity fires
-                // for printable input. A held Ctrl/Alt means it's a shortcut, never composition text.
+                // Not composing: only a letter starts composition, arriving either as a letter
+                // KeyCode or as the keyCode==None character twin Unity fires for printable input. A
+                // held Ctrl or Alt makes it a shortcut, never composition text.
                 bool modified = KeyboardHelper.IsAltHeld || KeyboardHelper.IsCtrlHeld;
                 bool isLetterKeyCode = evt.keyCode >= KeyCode.A && evt.keyCode <= KeyCode.Z;
                 bool isLetterChar = evt.keyCode == KeyCode.None && evt.character != '\0'
@@ -123,16 +101,15 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Draw the offscreen field, force focus to it, and feed any newly-committed characters to
-        /// <paramref name="onCommitted"/>. Updates <see cref="IsComposing"/> from the live IME
-        /// composition string. Must be called inside an OnGUI context.
+        /// Draws the offscreen field, forces focus to it, and feeds newly-committed characters to
+        /// <paramref name="onCommitted"/>, updating <see cref="IsComposing"/> from the live
+        /// composition string. Must run inside an OnGUI context.
         /// </summary>
         public static void DrawAndHarvest(Action<char> onCommitted)
         {
             if (!active) return;
 
-            // Place the OS candidate window at a sane on-screen point. It is irrelevant to a screen
-            // reader user visually, but some platforms misbehave if the composition cursor is off-screen.
+            // Some platforms misbehave when the composition cursor is off-screen.
             Input.compositionCursorPos = new Vector2(100f, 100f);
 
             GUI.SetNextControlName(FieldName);
@@ -142,9 +119,8 @@ namespace RimWorldAccess
             if (GUI.GetNameOfFocusedControl() != FieldName)
                 GUI.FocusControl(FieldName);
 
-            // Committed text appears appended to the field's value (its cursor is always at the end,
-            // since we never move it and reset to empty between commits). The appended slice is the
-            // characters the IME just committed this pass.
+            // Committed text arrives appended, the cursor always being at the end, so the appended
+            // slice is exactly what the IME committed this pass.
             if (newValue.Length > fieldValue.Length)
             {
                 string committed = newValue.Substring(fieldValue.Length);
@@ -157,8 +133,8 @@ namespace RimWorldAccess
             }
 
             composingLastDraw = !string.IsNullOrEmpty(Input.compositionString);
-            // Reset between commits so the next commit reads as a fresh append; keep the value while
-            // composing so we don't disturb the in-progress composition.
+            // Reset between commits so the next reads as a fresh append; kept while composing, so
+            // the in-progress composition is not disturbed.
             fieldValue = composingLastDraw ? newValue : string.Empty;
         }
 
@@ -184,10 +160,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// True when the active game language is composition-based (CJK), where direct
-        /// <c>Event.character</c> capture cannot work and the IME funnel is required. Matched on the
-        /// language's folder name (both the current and legacy ASCII names) so it holds regardless of
-        /// whether the folder uses the native or legacy form.
+        /// Whether the active language is composition-based, where direct <c>Event.character</c>
+        /// capture cannot work. Matched on both the current and legacy folder names, so it holds
+        /// whichever form the folder uses.
         /// </summary>
         internal static bool LanguageUsesIme()
         {

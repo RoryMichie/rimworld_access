@@ -1,38 +1,55 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using Verse;
+using RimWorldAccess.Shell;
 
 namespace RimWorldAccess
 {
+    /// <summary>
+    /// Data and mutation vehicles for the save-a-pawn-filter-preset prompt: a "Save as"
+    /// name slot (row 0) plus one row per existing preset (overwrite targets).
+    ///
+    /// Shares the S1 <see cref="StartingPawnState"/> shape, the same promotion
+    /// <see cref="WindowlessScenarioSaveState"/> had: lifecycle
+    /// (<see cref="Open"/>/<see cref="Close"/>), data (<see cref="ExistingPresets"/>,
+    /// <see cref="CurrentName"/>, <see cref="NameSpec"/>) and the two write vehicles
+    /// (<see cref="SaveNewName"/>, <see cref="SaveToExistingPreset"/>). The browse cursor,
+    /// the jump-to-preset typeahead and the <see cref="TextFieldEditSession"/> itself now
+    /// live on <see cref="RimWorldAccess.Shell.FilterPresetSaveScope"/>, whose shared
+    /// typeahead and row model replace the hand-rolled ones.
+    /// </summary>
     public static class PawnFilterPresetSaveState
     {
         public static bool IsActive { get; private set; }
 
         private static PawnFilter filterToSave;
         private static List<string> existingPresets = new List<string>();
-        private static int selectedIndex = 0;
-        private static bool isTypingName = true;
-        private static readonly TextInputController nameController = new TextInputController();
-        private static readonly TextFieldSpec nameSpec = new TextFieldSpec(
+        private static string currentName = string.Empty;
+
+        // MUTATION-C: MustBeFilename already gates commit on GenText.IsValidFilename
+        // (Verse/GenText.cs L317-324), which itself enforces a 40-char cap; maxLength here
+        // used to hand-pick 64, letting the buffer grow past what MustBeFilename would ever
+        // accept. 40 mirrors that same cap so the field's own limit and its validator agree.
+        public static readonly TextFieldSpec NameSpec = new TextFieldSpec(
             labelKey: "RimWorldAccess.TextInput.LabelFilename",
-            maxLength: 64,
+            maxLength: 40,
             minLength: 1,
             mustBeFilename: true);
+
+        /// <summary>Every saved preset name, in serializer order (the overwrite targets).</summary>
+        public static IReadOnlyList<string> ExistingPresets => existingPresets;
+
+        /// <summary>The "Save as" slot's current typed name.</summary>
+        public static string CurrentName => currentName;
 
         public static void Open(PawnFilter filter)
         {
             filterToSave = filter;
-            // Embedded controller — Up/Down arrows must reach the surrounding list.
-            nameController.Begin("MyPreset", nameSpec, _ => { }, null, replaceOnType: true, modal: false);
-
+            currentName = "MyPreset";
             ReloadPresets();
-
-            selectedIndex = 0;
-            isTypingName = true;
             IsActive = true;
-
-            TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.OpenInstructions".Loc(nameController.CurrentText));
+            // The opening announcement is the scope's own job (FilterPresetSaveScope's
+            // ComposeOpenAnnouncement) — see this class's remarks.
         }
 
         public static void Close()
@@ -40,7 +57,6 @@ namespace RimWorldAccess
             IsActive = false;
             filterToSave = null;
             existingPresets.Clear();
-            nameController.Cancel();
         }
 
         private static void ReloadPresets()
@@ -48,217 +64,73 @@ namespace RimWorldAccess
             existingPresets = PawnFilterPresetSerializer.GetPresetNames();
         }
 
-        private static int TotalCount => existingPresets.Count + 1;
-
-        private static void AnnounceCurrentState()
+        /// <summary>Live buffer -> backing store, called by the scope's own edit session apply.</summary>
+        public static void SetCurrentName(string value)
         {
-            if (selectedIndex == 0)
+            currentName = value ?? string.Empty;
+        }
+
+        /// <summary>Enter-confirm on the name edit (row 0): save the filter under the typed name.</summary>
+        public static void SaveNewName()
+        {
+            string name = currentName;
+            if (string.IsNullOrWhiteSpace(name))
             {
-                TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.SaveAs".Loc(nameController.CurrentText, MenuHelper.FormatPosition(0, TotalCount)));
+                TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.NameEmpty".Loc());
+                return;
             }
-            else if (selectedIndex > 0 && selectedIndex <= existingPresets.Count)
+
+            try
             {
-                string presetName = existingPresets[selectedIndex - 1];
-                TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.Overwrite".Loc(presetName, MenuHelper.FormatPosition(selectedIndex, TotalCount)));
-            }
-        }
-
-        #region Navigation
-
-        private static void SelectNext()
-        {
-            isTypingName = false;
-
-            if (selectedIndex < existingPresets.Count)
-            {
-                selectedIndex++;
-                AnnounceCurrentState();
-            }
-        }
-
-        private static void SelectPrevious()
-        {
-            if (selectedIndex > 0)
-            {
-                selectedIndex--;
-                if (selectedIndex == 0)
-                    isTypingName = true;
-                AnnounceCurrentState();
-            }
-        }
-
-        private static void JumpToFirst()
-        {
-            selectedIndex = 0;
-            isTypingName = true;
-            AnnounceCurrentState();
-        }
-
-        private static void JumpToLast()
-        {
-            selectedIndex = existingPresets.Count;
-            isTypingName = false;
-            AnnounceCurrentState();
-        }
-
-        #endregion
-
-        #region Actions
-
-        private static void SaveSelected()
-        {
-            if (selectedIndex == 0)
-            {
-                string name = nameController.CurrentText;
-                if (string.IsNullOrWhiteSpace(name))
+                int existingIndex = existingPresets.FindIndex(n =>
+                    string.Equals(n, name, StringComparison.OrdinalIgnoreCase));
+                if (existingIndex >= 0)
                 {
-                    TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.NameEmpty".Loc());
-                    return;
-                }
-
-                try
-                {
-                    // Check for existing preset with same name
-                    int existingIndex = existingPresets.FindIndex(n =>
-                        string.Equals(n, name, StringComparison.OrdinalIgnoreCase));
-                    if (existingIndex >= 0)
-                    {
-                        PawnFilterPresetSerializer.OverwritePreset(filterToSave, name, existingIndex);
-                        Close();
-                        TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.PresetOverwritten".Loc(name));
-                    }
-                    else
-                    {
-                        PawnFilterPresetSerializer.SavePreset(filterToSave, name);
-                        Close();
-                        TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.PresetSavedAs".Loc(name));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error($"[RimWorld Access] Error saving preset: {ex}");
-                    TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.ErrorSaving".Loc(ex.Message));
-                }
-            }
-            else if (selectedIndex > 0 && selectedIndex <= existingPresets.Count)
-            {
-                int presetIndex = selectedIndex - 1;
-                string name = existingPresets[presetIndex];
-
-                try
-                {
-                    PawnFilterPresetSerializer.OverwritePreset(filterToSave, name, presetIndex);
+                    PawnFilterPresetSerializer.OverwritePreset(filterToSave, name, existingIndex);
                     Close();
                     TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.PresetOverwritten".Loc(name));
                 }
-                catch (Exception ex)
+                else
                 {
-                    Log.Error($"[RimWorld Access] Error saving preset: {ex}");
-                    TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.ErrorSaving".Loc(ex.Message));
+                    PawnFilterPresetSerializer.SavePreset(filterToSave, name);
+                    Close();
+                    TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.PresetSavedAs".Loc(name));
                 }
             }
-            else
+            catch (Exception ex)
+            {
+                Log.Error($"[RimWorld Access] Error saving preset: {ex}");
+                TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.ErrorSaving".Loc(ex.Message));
+            }
+        }
+
+        /// <summary>Enter on an existing-preset row: overwrite that preset.</summary>
+        public static void SaveToExistingPreset(int index)
+        {
+            if (index < 0 || index >= existingPresets.Count)
             {
                 TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.InvalidSelection".Loc());
+                return;
+            }
+
+            string name = existingPresets[index];
+            try
+            {
+                PawnFilterPresetSerializer.OverwritePreset(filterToSave, name, index);
+                Close();
+                TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.PresetOverwritten".Loc(name));
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[RimWorld Access] Error saving preset: {ex}");
+                TolkHelper.Speak("RimWorldAccess.PawnFilter.PresetSave.ErrorSaving".Loc(ex.Message));
             }
         }
 
-        #endregion
-
-        #region Input Handling
-
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
+        public static void HandleCancel()
         {
-            if (!IsActive) return false;
-
-            // Cursor review: Left/Right (with Shift/Ctrl) let the user audit the preset name
-            // while they're actually typing. When browsing the existing-preset list
-            // (isTypingName == false), arrows aren't used by the state either, so we leave
-            // them untouched rather than steal them for a hidden name cursor move.
-            if (isTypingName && selectedIndex == 0)
-            {
-                if (key == KeyCode.LeftArrow)
-                {
-                    nameController.HandleArrowLeft(shift, ctrl);
-                    return true;
-                }
-                if (key == KeyCode.RightArrow)
-                {
-                    nameController.HandleArrowRight(shift, ctrl);
-                    return true;
-                }
-            }
-
-            switch (key)
-            {
-                case KeyCode.UpArrow:
-                    SelectPrevious();
-                    return true;
-
-                case KeyCode.DownArrow:
-                    SelectNext();
-                    return true;
-
-                case KeyCode.Home:
-                    JumpToFirst();
-                    return true;
-
-                case KeyCode.End:
-                    JumpToLast();
-                    return true;
-
-                case KeyCode.Return:
-                case KeyCode.KeypadEnter:
-                    SaveSelected();
-                    return true;
-
-                case KeyCode.Escape:
-                    Close();
-                    TolkHelper.Speak("RimWorldAccess.UI.Cancelled".Loc());
-                    return true;
-
-                case KeyCode.Backspace:
-                    if (isTypingName && selectedIndex == 0)
-                    {
-                        nameController.HandleBackspace();
-                        return true;
-                    }
-                    break;
-                case KeyCode.C:
-                    if (ctrl && isTypingName && selectedIndex == 0)
-                    {
-                        nameController.HandleCopy();
-                        return true;
-                    }
-                    break;
-                case KeyCode.V:
-                    if (ctrl && isTypingName && selectedIndex == 0)
-                    {
-                        nameController.HandlePaste();
-                        return true;
-                    }
-                    break;
-            }
-
-            return false;
+            Close();
+            TolkHelper.Speak("RimWorldAccess.UI.Cancelled".Loc());
         }
-
-        public static bool HandleCharacterInput(char character)
-        {
-            if (!IsActive) return false;
-
-            if (selectedIndex == 0 && isTypingName)
-            {
-                if (char.IsLetterOrDigit(character) || character == ' ' || character == '-' || character == '_')
-                {
-                    nameController.HandleCharacter(character);
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        #endregion
     }
 }

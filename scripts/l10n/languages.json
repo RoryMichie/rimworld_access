@@ -1,0 +1,84 @@
+{
+  "universal": {
+    "forbidden_chars": {
+      "U+00A0": "no-break space",
+      "U+202F": "narrow no-break space",
+      "U+2009": "thin space",
+      "U+200B": "zero-width space",
+      "U+FEFF": "byte order mark"
+    },
+    "artifact_tags": ["content", "invoke", "function", "parameter", "antml"]
+  },
+  "languages": {
+    "English": {
+      "native": "English",
+      "numcase_allowed": false,
+      "punctuation_allowed": ["…"],
+      "quote_pairs": [["\"", "\""]],
+      "notes": "Source of truth. No DefInjected: English doc text lives inline in Defs/ConceptDefs/. The one em dash (RimWorldAccess.Archonexus.TilePick.OpenInstructions) is a standing warning, not a policy grant."
+    },
+    "SpanishLatin": {
+      "native": "Español(Latinoamérica)",
+      "numcase_allowed": false,
+      "punctuation_allowed": ["…"],
+      "quote_pairs": [["\"", "\""]],
+      "notes": "Default --ref for DefInjected parity: most recently completed full pass. Four Settings *.Desc keys use guillemets inconsistently with the rest of the language; expect 4 warnings until someone normalizes them to ASCII quotes."
+    },
+    "Spanish": {
+      "native": "Español(Castellano)",
+      "numcase_allowed": false,
+      "punctuation_allowed": ["…"],
+      "quote_pairs": [["\"", "\""]],
+      "notes": "Castilian. Cleanest language today: zero warnings."
+    },
+    "French": {
+      "native": "Français",
+      "numcase_allowed": false,
+      "punctuation_allowed": ["…", "—"],
+      "quote_pairs": [["\"", "\""], ["'", "'"]],
+      "notes": "French typography wants NBSP before « » and : — forbidden here, TTS needs plain spaces. Docs quote with ASCII apostrophes, which also serve elision (l'onglet); any quote-span tooling must be boundary-aware."
+    },
+    "Russian": {
+      "native": "Русский",
+      "numcase_allowed": true,
+      "punctuation_allowed": ["…", "—", "–", "«", "»"],
+      "quote_pairs": [["«", "»"]],
+      "notes": "The one language where _numCase is correct: its LanguageWorker supports three forms and the translation uses it 231 times. Guillemets and em dashes are native Russian typography."
+    },
+    "Ukrainian": {
+      "native": "Українська",
+      "numcase_allowed": false,
+      "punctuation_allowed": ["…", "—", "–", "«", "»"],
+      "quote_pairs": [["«", "»"]],
+      "notes": "Slavic but _numCase is FORBIDDEN: the Ukrainian LanguageWorker does not support it and the tag resolves to empty speech. Use the genitive plural flat form. Guillemets and em dashes are native."
+    },
+    "Turkish": {
+      "native": "Türkçe",
+      "numcase_allowed": false,
+      "punctuation_allowed": ["…"],
+      "quote_pairs": [["\"", "\""], ["'", "'"]],
+      "notes": "Turkish attaches case suffixes with an apostrophe (Tab'a, Enter'a). Quote-span tooling must not treat a word-internal apostrophe as a quote delimiter."
+    },
+    "PortugueseBrazilian": {
+      "native": "Português Brasileiro",
+      "numcase_allowed": false,
+      "punctuation_allowed": ["…"],
+      "quote_pairs": [["\"", "\""]],
+      "notes": "Brazilian Portuguese. _numCase is FORBIDDEN: LanguageWorker_Portuguese does not override TotalNumCaseCount (base returns 0) and the game's own translation uses the tag zero times across all six modules; a 3-branch tag resolves to empty speech. The game's Keyed corpus uses ASCII quotes exclusively (90 apostrophes, 70 double quotes, no curly quotes, guillemets, ellipsis character or NBSP). The apostrophe is NOT a quote pair here: Portuguese elision leaves it unpaired (roda d'água, gota d'água). Shares LanguageWorker_Portuguese with the European dialect, but the two are separate languages with no fallback between them and genuinely different registers -- see src/docs/pt-br-glossary.md."
+    },
+    "Portuguese": {
+      "native": "Português",
+      "numcase_allowed": false,
+      "punctuation_allowed": [],
+      "quote_pairs": [["'", "'"]],
+      "notes": "European Portuguese. Register is informal tu with pre-AO90 orthography (selecciona, directo, contacto), matching the game's own Core corpus -- see src/docs/pt-pt-glossary.md. Quotes with ASCII apostrophes, not double quotes (the reverse of Brazilian; the corpus has zero genuine double-quote or guillemet use and no d'agua-style elision, so the apostrophe is unambiguous as a pair). Ellipsis is three literal periods, never the single-character ellipsis (corpus: 47 vs 0). _numCase is FORBIDDEN, same LanguageWorker_Portuguese reason as Brazilian. The game ships EU-PT for Core only, so DLC content falls back to English in-game; the quote manifest carries Portuguese expect-overrides quoting the English labels players actually hear."
+    },
+    "ChineseSimplified": {
+      "native": "简体中文",
+      "numcase_allowed": false,
+      "punctuation_allowed": ["…", "“", "”", "「", "」"],
+      "quote_pairs": [["“", "”"], ["「", "」"]],
+      "notes": "Full-width curly quotes are correct inside prose. Composed fragment joiners stay ASCII \". \" / \", \" / \": \" anyway — TTS needs them as pause boundaries."
+    }
+  }
+}

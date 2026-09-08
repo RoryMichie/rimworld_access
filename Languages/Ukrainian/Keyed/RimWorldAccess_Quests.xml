@@ -41,18 +41,13 @@
 
   <!-- =================================================================
        Quest menu lifecycle (QuestMenuState.Open / Close / OpenAndSelect).
-       OpenInstructions is the one-time orientation message spoken when
-       the menu opens; it is suffixed with the first quest's announcement
-       or the empty-tab message. {0} = first quest announcement, or tab
-       summary, depending on context.
+       Title is the one-shot screen name spoken when the menu opens; the
+       shared screen machinery announces the focused row separately.
        ================================================================= -->
-  <RimWorldAccess.Quests.Menu.OpenInstructions>Меню завдань. Alt+A — прийняти, Alt+D — відхилити. Enter — перегляд деталей завдання за стрілками.</RimWorldAccess.Quests.Menu.OpenInstructions>
   <RimWorldAccess.Quests.Menu.Title>Меню завдань</RimWorldAccess.Quests.Menu.Title>
   <RimWorldAccess.Quests.Menu.Closed>Меню завдань закрито</RimWorldAccess.Quests.Menu.Closed>
   <RimWorldAccess.Quests.Menu.QuestNoLongerAvailable>Завдання більше не доступне</RimWorldAccess.Quests.Menu.QuestNoLongerAvailable>
-  <RimWorldAccess.Quests.Menu.NoQuestsInTab>У цій вкладці немає завдань</RimWorldAccess.Quests.Menu.NoQuestsInTab>
   <RimWorldAccess.Quests.Menu.NoQuestSelected>Завдання не вибрано</RimWorldAccess.Quests.Menu.NoQuestSelected>
-  <RimWorldAccess.Quests.Menu.FailedToActivateButton>Не вдалося активувати кнопку</RimWorldAccess.Quests.Menu.FailedToActivateButton>
 
   <!-- =================================================================
        Quest tabs. Available/Active/Historical (vanilla provides the
@@ -82,7 +77,7 @@
   <RimWorldAccess.Quests.Status.Expired>Прострочене</RimWorldAccess.Quests.Status.Expired>
 
   <!-- =================================================================
-       List-view announcement composition (BuildQuestAnnouncement).
+       List-view row composition (BuildQuestRowLabel).
        NameWithStatus appends a status word to the quest name; the bare
        Name case has no suffix and is spoken directly.
        StarsOne/Many is the difficulty rating; CharitySuffix is appended
@@ -116,9 +111,6 @@
   <RimWorldAccess.Quests.Detail.AcceptedAgo>Прийнято: {0} тому</RimWorldAccess.Quests.Detail.AcceptedAgo>
   <RimWorldAccess.Quests.Detail.Status>Стан: {0}</RimWorldAccess.Quests.Detail.Status>
   <RimWorldAccess.Quests.Detail.Finished>Завершено: {0} тому</RimWorldAccess.Quests.Detail.Finished>
-  <RimWorldAccess.Quests.Detail.StartOfDetails>Початок деталей завдання</RimWorldAccess.Quests.Detail.StartOfDetails>
-  <RimWorldAccess.Quests.Detail.EndOfDetails>Кінець деталей завдання</RimWorldAccess.Quests.Detail.EndOfDetails>
-  <RimWorldAccess.Quests.Detail.OpenFirst>Натисніть Enter, щоб спершу відкрити деталі завдання</RimWorldAccess.Quests.Detail.OpenFirst>
   <!-- "Choose item to inspect" lives in Common.xml as
        RimWorldAccess.InfoCard.ChooseItemToInspect. -->
 
@@ -170,6 +162,7 @@
   <RimWorldAccess.Quests.RewardChoice.Prompt>Виберіть винагороду</RimWorldAccess.Quests.RewardChoice.Prompt>
   <RimWorldAccess.Quests.RewardChoice.NoItemsToInspect>Немає предметів для огляду</RimWorldAccess.Quests.RewardChoice.NoItemsToInspect>
   <RimWorldAccess.Quests.RewardChoice.BackToList>Назад до списку завдань</RimWorldAccess.Quests.RewardChoice.BackToList>
+  <RimWorldAccess.Quests.RewardChoice.ItemWithCount>{0}x {1}</RimWorldAccess.Quests.RewardChoice.ItemWithCount>
 
   <!-- =================================================================
        Reward preferences panel (Tab in the quest list). Toggles
@@ -178,8 +171,6 @@
        label below; relation phrasing is also a key so translators can
        reorder "currently {amount}, {relation}". -->
   <RimWorldAccess.Quests.Pref.Title>Налаштування винагород</RimWorldAccess.Quests.Pref.Title>
-  <RimWorldAccess.Quests.Pref.QuestList>Список завдань</RimWorldAccess.Quests.Pref.QuestList>
-  <RimWorldAccess.Quests.Pref.None>Немає доступних налаштувань винагород</RimWorldAccess.Quests.Pref.None>
   <RimWorldAccess.Quests.Pref.Checked>позначено</RimWorldAccess.Quests.Pref.Checked>
   <RimWorldAccess.Quests.Pref.Unchecked>не позначено</RimWorldAccess.Quests.Pref.Unchecked>
   <!-- Royal-favor row: {0} = faction.Name, {1} = royal favor label
@@ -193,7 +184,6 @@
   <RimWorldAccess.Quests.Pref.RelationPhrase>зараз {0}, {1}</RimWorldAccess.Quests.Pref.RelationPhrase>
   <!-- Pref-row position suffix: {0} = built row label,
        {1} = position string from MenuHelper.FormatPosition. -->
-  <RimWorldAccess.Quests.Pref.RowWithPosition>{0}. {1}</RimWorldAccess.Quests.Pref.RowWithPosition>
 
   <!-- =================================================================
        Reward extraction (QuestRewardHelper). Builds the reward detail
@@ -202,7 +192,6 @@
        helper so each reward item line is visually grouped under its
        header line; the indent is preserved in keys here. -->
   <RimWorldAccess.Quests.Reward.NoRewards>Немає винагород</RimWorldAccess.Quests.Reward.NoRewards>
-  <RimWorldAccess.Quests.Reward.MultipleChoices>Доступно кілька варіантів винагороди</RimWorldAccess.Quests.Reward.MultipleChoices>
   <RimWorldAccess.Quests.Reward.RewardsHeader>Винагороди:</RimWorldAccess.Quests.Reward.RewardsHeader>
   <RimWorldAccess.Quests.Reward.ChoicesHeader>Варіанти винагороди (виберіть один для прийняття):</RimWorldAccess.Quests.Reward.ChoicesHeader>
   <!-- {0} = 1-based choice index. -->
@@ -243,10 +232,9 @@
        ================================================================= -->
   <RimWorldAccess.Notifications.Menu.None>Немає доступних сповіщень</RimWorldAccess.Notifications.Menu.None>
   <RimWorldAccess.Notifications.Menu.Closed>Меню сповіщень закрито</RimWorldAccess.Notifications.Menu.Closed>
-  <RimWorldAccess.Notifications.Menu.NoTargetLocation>Немає доступного місця призначення</RimWorldAccess.Notifications.Menu.NoTargetLocation>
+  <RimWorldAccess.Notifications.Menu.RegionName>Сповіщення</RimWorldAccess.Notifications.Menu.RegionName>
   <RimWorldAccess.Notifications.Menu.TargetNotValid>Місце призначення недійсне</RimWorldAccess.Notifications.Menu.TargetNotValid>
   <RimWorldAccess.Notifications.Menu.FailedToActivateButton>Не вдалося активувати кнопку</RimWorldAccess.Notifications.Menu.FailedToActivateButton>
-  <RimWorldAccess.Notifications.Menu.FailedToJump>Не вдалося перейти до цілі</RimWorldAccess.Notifications.Menu.FailedToJump>
   <RimWorldAccess.Notifications.Menu.OnlyLettersDeletable>Видаляти можна лише листи</RimWorldAccess.Notifications.Menu.OnlyLettersDeletable>
   <RimWorldAccess.Notifications.Menu.CannotDeleteLetter>Неможливо видалити цей лист</RimWorldAccess.Notifications.Menu.CannotDeleteLetter>
 
@@ -271,7 +259,6 @@
   <!-- Action button labels extracted from letters and alerts. -->
   <RimWorldAccess.Notifications.Button.OpenGrowthMoment>Відкрити момент зростання</RimWorldAccess.Notifications.Button.OpenGrowthMoment>
   <RimWorldAccess.Notifications.Button.ViewChoices>Переглянути варіанти</RimWorldAccess.Notifications.Button.ViewChoices>
-  <RimWorldAccess.Notifications.Button.OpenResearch>Відкрити дослідження</RimWorldAccess.Notifications.Button.OpenResearch>
   <RimWorldAccess.Notifications.Button.Activate>Активувати</RimWorldAccess.Notifications.Button.Activate>
   <!-- Single-target jump button: {0} = target description. -->
   <RimWorldAccess.Notifications.Button.JumpTo>Перейти до: {0}</RimWorldAccess.Notifications.Button.JumpTo>

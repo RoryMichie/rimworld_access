@@ -2,23 +2,37 @@ using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using RimWorld;
-using UnityEngine;
 using Verse;
 using Verse.Sound;
+using RimWorldAccess.Shell;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Keyboard accessibility state for Dialog_ChangeDryadCaste.
-    /// Provides flat menu navigation through available dryad castes with typeahead search.
+    /// Data and mutation state for Dialog_ChangeDryadCaste: the dialog's own caste list, its
+    /// opening announcement, and the commit that opens vanilla's confirmation. Navigation,
+    /// typeahead and per-row announcements belong to <see cref="DryadCasteScope"/>'s
+    /// <see cref="ScreenScope"/> chassis, which reads <see cref="AllModes"/> and
+    /// <see cref="DescribeMode"/> from here.
+    ///
+    /// Row descriptions are composed through <see cref="AnnouncementComposer.ComposeFocus"/>
+    /// rather than hand-built strings. Each
+    /// caste maps onto <see cref="ElementRole.RadioButton"/> (a mutually exclusive
+    /// current-caste picker): <see cref="ElementDescription.Selected"/> carries the
+    /// already-selected state instead of the old ad hoc "AlreadySelected" status word, and an
+    /// unmet-requirements caste is <see cref="ElementDescription.Disabled"/> with the specific
+    /// reason (missing memes / missing prior caste) in <see cref="ElementDescription.Extras"/>
+    /// — the same "disabled rows stay navigable and speak their reason" channel every other
+    /// screen in the mod uses, per <see cref="ScreenScope.DescribeActionRow"/>. The old
+    /// meets-all-requirements status word ("available", a literal that was never actually
+    /// localized) is now simply the absence of the Disabled state word, matching how every
+    /// other enabled row in the mod stays silent about being enabled.
     /// </summary>
     public static class DryadCasteState
     {
         private static bool isActive;
         private static Dialog_ChangeDryadCaste currentDialog;
         private static List<GauranlenTreeModeDef> allModes = new List<GauranlenTreeModeDef>();
-        private static int selectedIndex = 0;
-        private static TypeaheadSearchHelper typeaheadHelper = new TypeaheadSearchHelper();
 
         // Cached reflection handles
         private static System.Reflection.FieldInfo selectedModeField;
@@ -31,7 +45,23 @@ namespace RimWorldAccess
         private static System.Reflection.MethodInfo startChangeMethod;
 
         public static bool IsActive => isActive;
-        public static bool HasActiveSearch => typeaheadHelper.HasActiveSearch;
+
+        /// <summary>The dialog's own caste list, in vanilla's own order — the scope's content region.</summary>
+        internal static IReadOnlyList<GauranlenTreeModeDef> AllModes => allModes;
+
+        /// <summary>
+        /// Where the tree's CURRENT caste sits in <see cref="AllModes"/>, or 0 when the dialog
+        /// reports none — the row the scope lands its cursor on when the screen opens.
+        /// </summary>
+        internal static int CurrentModeIndex
+        {
+            get
+            {
+                GauranlenTreeModeDef currentMode = currentModeField?.GetValue(currentDialog) as GauranlenTreeModeDef;
+                int index = currentMode == null ? -1 : allModes.IndexOf(currentMode);
+                return index < 0 ? 0 : index;
+            }
+        }
 
         public static void Open(Dialog_ChangeDryadCaste dialog)
         {
@@ -44,18 +74,6 @@ namespace RimWorldAccess
 
                 currentDialog = dialog;
                 allModes = (allModesField?.GetValue(dialog) as List<GauranlenTreeModeDef>) ?? new List<GauranlenTreeModeDef>();
-                typeaheadHelper.ClearSearch();
-
-                GauranlenTreeModeDef currentMode = currentModeField?.GetValue(currentDialog) as GauranlenTreeModeDef;
-
-                // Seed selected index to the user's actual current caste so the first announcement matches.
-                selectedIndex = 0;
-                if (currentMode != null)
-                {
-                    int idx = allModes.IndexOf(currentMode);
-                    if (idx >= 0) selectedIndex = idx;
-                }
-
                 isActive = true;
 
                 Pawn connectedPawn = connectedPawnField?.GetValue(dialog) as Pawn;
@@ -82,8 +100,6 @@ namespace RimWorldAccess
                         Log.Warning($"[DryadCasteState] Could not read initial intro text: {introEx.Message}");
                     }
                 }
-
-                AnnounceCurrentSelection();
             }
             catch (Exception ex)
             {
@@ -97,175 +113,23 @@ namespace RimWorldAccess
             isActive = false;
             currentDialog = null;
             allModes.Clear();
-            selectedIndex = 0;
-            typeaheadHelper.ClearSearch();
-        }
-
-        public static bool HandleInput(Event ev)
-        {
-            if (!isActive || currentDialog == null)
-                return false;
-
-            if (ev.type != EventType.KeyDown)
-                return false;
-
-            KeyCode key = ev.keyCode;
-
-            // Block Ctrl/Alt-modified keys so host shortcuts don't leak through the modal dialog.
-            if (ev.control || KeyboardHelper.IsAltHeld)
-                return true;
-
-            if (key == KeyCode.Home)
-            {
-                typeaheadHelper.ClearSearch();
-                if (allModes.Count > 0)
-                {
-                    selectedIndex = 0;
-                    AnnounceCurrentSelection();
-                }
-                return true;
-            }
-
-            if (key == KeyCode.End)
-            {
-                typeaheadHelper.ClearSearch();
-                if (allModes.Count > 0)
-                {
-                    selectedIndex = allModes.Count - 1;
-                    AnnounceCurrentSelection();
-                }
-                return true;
-            }
-
-            if (key == KeyCode.Escape)
-            {
-                if (typeaheadHelper.HasActiveSearch)
-                {
-                    typeaheadHelper.ClearSearchAndAnnounce();
-                    AnnounceCurrentSelection();
-                    return true;
-                }
-                currentDialog.Close(doCloseSound: false);
-                return true;
-            }
-
-            if (key == KeyCode.Backspace && typeaheadHelper.HasActiveSearch)
-            {
-                var labels = GetCasteLabels();
-                if (typeaheadHelper.ProcessBackspace(labels, out int newIndex))
-                {
-                    if (newIndex >= 0) selectedIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-                return true;
-            }
-
-            if (key == KeyCode.UpArrow)
-            {
-                if (typeaheadHelper.HasActiveSearch && !typeaheadHelper.HasNoMatches)
-                {
-                    int prev = typeaheadHelper.GetPreviousMatch(selectedIndex);
-                    if (prev >= 0)
-                    {
-                        selectedIndex = prev;
-                        AnnounceWithSearch();
-                    }
-                }
-                else if (allModes.Count > 0)
-                {
-                    selectedIndex = MenuHelper.SelectPrevious(selectedIndex, allModes.Count);
-                    AnnounceCurrentSelection();
-                }
-                return true;
-            }
-
-            if (key == KeyCode.DownArrow)
-            {
-                if (typeaheadHelper.HasActiveSearch && !typeaheadHelper.HasNoMatches)
-                {
-                    int next = typeaheadHelper.GetNextMatch(selectedIndex);
-                    if (next >= 0)
-                    {
-                        selectedIndex = next;
-                        AnnounceWithSearch();
-                    }
-                }
-                else if (allModes.Count > 0)
-                {
-                    selectedIndex = MenuHelper.SelectNext(selectedIndex, allModes.Count);
-                    AnnounceCurrentSelection();
-                }
-                return true;
-            }
-
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                TrySelectCaste();
-                return true;
-            }
-
-            // Typeahead character routing now handled by TypeaheadDispatcher upstream.
-
-            return true; // modal window: consume everything else
         }
 
         /// <summary>
-        /// Layout-aware typeahead character entry; called by <see cref="TypeaheadDispatcher"/>.
+        /// One caste row's datum, read live off
+        /// the dialog's own requirement methods. See this class's header for the
+        /// Role/Selected/Disabled mapping; the scope composes and speaks it.
         /// </summary>
-        public static void HandleTypeahead(char c)
+        internal static ElementDescription DescribeMode(GauranlenTreeModeDef mode)
         {
-            if (!isActive) return;
+            ElementDescription d = new ElementDescription();
+            d.Role = ElementRole.RadioButton;
 
-            var labels = GetCasteLabels();
-            if (typeaheadHelper.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    selectedIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeaheadHelper.SpeakNoMatches();
-            }
-        }
-
-        private static void AnnounceCurrentSelection()
-        {
-            if (allModes.Count == 0 || selectedIndex < 0 || selectedIndex >= allModes.Count)
-                return;
-
-            GauranlenTreeModeDef mode = allModes[selectedIndex];
-            string announcement = FormatModeAnnouncement(mode);
-            string position = MenuHelper.FormatPosition(selectedIndex, allModes.Count);
-
-            string fullText = string.IsNullOrEmpty(position)
-                ? announcement
-                : $"{announcement}, {position}";
-            TolkHelper.SpeakData(fullText, SpeechPriority.Normal);
-        }
-
-        private static void AnnounceWithSearch()
-        {
-            if (allModes.Count == 0 || selectedIndex < 0 || selectedIndex >= allModes.Count)
-                return;
-
-            if (!typeaheadHelper.HasActiveSearch)
-            {
-                AnnounceCurrentSelection();
-                return;
-            }
-
-            GauranlenTreeModeDef mode = allModes[selectedIndex];
-            TolkHelper.SpeakData(
-                $"{FormatModeAnnouncement(mode)}, {typeaheadHelper.CurrentMatchPosition} of {typeaheadHelper.MatchCount} matches for '{typeaheadHelper.SearchBuffer}'");
-        }
-
-        private static string FormatModeAnnouncement(GauranlenTreeModeDef mode)
-        {
             if (mode == null)
-                return "RimWorldAccess.Rituals.DryadCaste.UnknownCaste".Translate();
+            {
+                d.Label = "RimWorldAccess.Rituals.DryadCaste.UnknownCaste".Translate();
+                return d;
+            }
 
             GauranlenTreeModeDef currentMode = currentModeField?.GetValue(currentDialog) as GauranlenTreeModeDef;
             Pawn connectedPawn = connectedPawnField?.GetValue(currentDialog) as Pawn;
@@ -274,30 +138,28 @@ namespace RimWorldAccess
                 && (bool)(meetsMemeRequirementsMethod.Invoke(currentDialog, new object[] { mode }) ?? false);
             bool meetsAll = meetsRequirementsMethod != null
                 && (bool)(meetsRequirementsMethod.Invoke(currentDialog, new object[] { mode }) ?? false);
+            bool isCurrent = mode == currentMode;
 
-            string status;
-            if (mode == currentMode)
-            {
-                status = "AlreadySelected".Translate();
-            }
-            else if (meetsAll)
-            {
-                status = "available";
-            }
-            else if (!meetsMemes)
-            {
-                status = $"{"Locked".Translate()}: {"MissingRequiredMemes".Translate()}";
-            }
-            else if (mode.previousStage != null && currentMode != mode.previousStage)
-            {
-                status = $"{"Locked".Translate()}: {"MissingRequiredCaste".Translate()}";
-            }
-            else
-            {
-                status = "Locked".Translate();
-            }
+            d.Label = mode.LabelCap.ToString();
+            d.Selected = isCurrent;
 
-            var parts = new List<string> { $"{mode.LabelCap}, {status}" };
+            var parts = new List<string>();
+
+            if (!isCurrent && !meetsAll)
+            {
+                d.Disabled = true;
+                if (!meetsMemes)
+                {
+                    parts.Add("MissingRequiredMemes".Translate());
+                }
+                else if (mode.previousStage != null && currentMode != mode.previousStage)
+                {
+                    parts.Add("MissingRequiredCaste".Translate());
+                }
+                // else: locked for some other reason MeetsRequirements checks internally that
+                // this dialog has no more specific vanilla string for — Disabled alone still
+                // speaks, matching the retired bare "Locked" status with no colon detail.
+            }
 
             string description = SanitizeText(mode.Description);
             if (!string.IsNullOrEmpty(description))
@@ -313,8 +175,8 @@ namespace RimWorldAccess
                 foreach (var memeDef in mode.requiredMemes)
                 {
                     bool has = connectedPawn.Ideo.HasMeme(memeDef);
-                    // Short "(missing)" marker — status line already said which overall requirement
-                    // is blocking; this just tags which specific memes are the problem.
+                    // Short "(missing)" marker — the Disabled reason already said which overall
+                    // requirement is blocking; this just tags which specific memes are the problem.
                     memeParts.Add(has
                         ? memeDef.LabelCap.ToString()
                         : $"{memeDef.LabelCap} (missing)");
@@ -347,18 +209,27 @@ namespace RimWorldAccess
                     parts.Add("Stats: " + string.Join(", ", statsLines));
             }
 
-            return string.Join(". ", parts);
+            if (parts.Count > 0)
+            {
+                d.Extras = string.Join(". ", parts);
+            }
+
+            return d;
         }
 
-        private static void TrySelectCaste()
+        /// <summary>
+        /// Enter on a caste row: honors the dialog's own requirement gates and, when they pass,
+        /// opens vanilla's confirmation box exactly as its own Accept button does (mutation
+        /// vehicle A — <c>StartChange</c> runs only from that confirmation's callback).
+        /// </summary>
+        internal static void SelectCaste(GauranlenTreeModeDef mode)
         {
-            if (allModes.Count == 0 || selectedIndex < 0 || selectedIndex >= allModes.Count)
+            if (mode == null)
             {
                 TolkHelper.Speak("RimWorldAccess.Rituals.DryadCaste.NoCasteSelected".Loc());
                 return;
             }
 
-            GauranlenTreeModeDef mode = allModes[selectedIndex];
             GauranlenTreeModeDef currentMode = currentModeField?.GetValue(currentDialog) as GauranlenTreeModeDef;
 
             if (mode == currentMode)
@@ -417,15 +288,7 @@ namespace RimWorldAccess
             });
 
             Find.WindowStack.Add(confirm);
-            // WindowlessDialogState announces the Dialog_MessageBox automatically — no manual Speak needed.
-        }
-
-        private static List<string> GetCasteLabels()
-        {
-            var labels = new List<string>(allModes.Count);
-            foreach (var mode in allModes)
-                labels.Add(mode?.LabelCap.ToString() ?? "");
-            return labels;
+            // MessageBoxScope announces the Dialog_MessageBox automatically — no manual Speak needed.
         }
 
         // Screen readers read "\n" as dead air or literally "newline"; flatten to sentence punctuation.

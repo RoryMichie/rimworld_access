@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Localization guardrail (roadmap D.8).
+Localization guardrail.
 
-The compiler already blocks the most direct leak: TolkHelper.Speak(string) was
-deleted in Phase F.4, so a raw Speak("english") is a hard build error. This lint
-covers the SECOND class the compiler cannot see — player-facing English that is
+The compiler already blocks the most direct leak: TolkHelper.Speak(string) no
+longer exists, so a raw Speak("english") is a hard build error. This lint
+covers the second class the compiler cannot see — player-facing English that is
 returned from a method, assigned to a display field, interpolated, or
 concatenated onto a .Translate() result, and only spoken/shown indirectly.
 
@@ -35,6 +35,7 @@ DISPLAY_FIELDS = (
     "Label", "Tooltip", "Title", "Header", "Hint", "Message", "Announcement",
     "Reason", "DisabledReason", "CantEquipReason", "SuitabilityLine",
     "ExtraInfoLine", "defaultLabel", "defaultDesc", "Description",
+    "ColumnTooltip", "ColumnName", "Value", "Hotkey",
 )
 
 ASSIGN_RE = re.compile(

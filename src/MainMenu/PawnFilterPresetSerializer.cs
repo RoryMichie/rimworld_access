@@ -214,6 +214,46 @@ namespace RimWorldAccess
                 Scribe_Values.Look(ref incapable, "incapable", WorkFilterMode.AllowAll);
             }
 
+            // Single canonical scalar field map, one paired entry per field. Scribe_Values.Look
+            // in ExposeData above still needs individual `ref` fields (C#'s ref constraint means
+            // that loop can't be generalized without risking the on-disk XML shape), but this
+            // collapses the OTHER two hand-kept enumerations — ToPawnFilter's and FromPawnFilter's
+            // field-by-field assignment lines — into one symmetric table so a new field can't drift
+            // out of sync between "load" and "save".
+            private static readonly List<Action<PawnFilter, PresetEntry>> ApplyToFilter = new List<Action<PawnFilter, PresetEntry>>
+            {
+                (f, e) => f.RequiredTraitsInPool = e.poolSize,
+                (f, e) => f.PassionMin = e.passionRangeMin,
+                (f, e) => f.PassionMax = e.passionRangeMax,
+                (f, e) => f.SkillPointsMin = e.skillRangeMin,
+                (f, e) => f.SkillPointsMax = e.skillRangeMax,
+                (f, e) => f.CountOnlyHighestAttack = e.countOnlyHighestAttack,
+                (f, e) => f.CountOnlyPassionSkills = e.countOnlyPassion,
+                (f, e) => f.AgeMin = e.ageRangeMin,
+                (f, e) => f.AgeMax = e.ageRangeMax,
+                (f, e) => f.RerollLimit = e.rerollLimit,
+                (f, e) => f.Gender = (e.gender == Gender.None) ? (Gender?)null : e.gender,
+                (f, e) => f.Health = e.healthCondition,
+                (f, e) => f.Work = e.incapable,
+            };
+
+            private static readonly List<Action<PresetEntry, PawnFilter>> ApplyToEntry = new List<Action<PresetEntry, PawnFilter>>
+            {
+                (e, f) => e.poolSize = f.RequiredTraitsInPool,
+                (e, f) => e.passionRangeMin = f.PassionMin,
+                (e, f) => e.passionRangeMax = f.PassionMax,
+                (e, f) => e.skillRangeMin = f.SkillPointsMin,
+                (e, f) => e.skillRangeMax = f.SkillPointsMax,
+                (e, f) => e.countOnlyHighestAttack = f.CountOnlyHighestAttack,
+                (e, f) => e.countOnlyPassion = f.CountOnlyPassionSkills,
+                (e, f) => e.ageRangeMin = f.AgeMin,
+                (e, f) => e.ageRangeMax = f.AgeMax,
+                (e, f) => e.rerollLimit = f.RerollLimit,
+                (e, f) => e.gender = f.Gender ?? Gender.None,
+                (e, f) => e.healthCondition = f.Health,
+                (e, f) => e.incapable = f.Work,
+            };
+
             public PawnFilter ToPawnFilter()
             {
                 var filter = new PawnFilter();
@@ -253,19 +293,8 @@ namespace RimWorldAccess
                     }
                 }
 
-                filter.RequiredTraitsInPool = poolSize;
-                filter.PassionMin = passionRangeMin;
-                filter.PassionMax = passionRangeMax;
-                filter.SkillPointsMin = skillRangeMin;
-                filter.SkillPointsMax = skillRangeMax;
-                filter.CountOnlyHighestAttack = countOnlyHighestAttack;
-                filter.CountOnlyPassionSkills = countOnlyPassion;
-                filter.AgeMin = ageRangeMin;
-                filter.AgeMax = ageRangeMax;
-                filter.RerollLimit = rerollLimit;
-                filter.Gender = (gender == Gender.None) ? (Gender?)null : gender;
-                filter.Health = healthCondition;
-                filter.Work = incapable;
+                foreach (var apply in ApplyToFilter)
+                    apply(filter, this);
 
                 return filter;
             }
@@ -289,19 +318,8 @@ namespace RimWorldAccess
                     entry.traits.Add(new TraitEntry(tf));
                 }
 
-                entry.poolSize = filter.RequiredTraitsInPool;
-                entry.passionRangeMin = filter.PassionMin;
-                entry.passionRangeMax = filter.PassionMax;
-                entry.skillRangeMin = filter.SkillPointsMin;
-                entry.skillRangeMax = filter.SkillPointsMax;
-                entry.countOnlyHighestAttack = filter.CountOnlyHighestAttack;
-                entry.countOnlyPassion = filter.CountOnlyPassionSkills;
-                entry.ageRangeMin = filter.AgeMin;
-                entry.ageRangeMax = filter.AgeMax;
-                entry.rerollLimit = filter.RerollLimit;
-                entry.gender = filter.Gender ?? Gender.None;
-                entry.healthCondition = filter.Health;
-                entry.incapable = filter.Work;
+                foreach (var apply in ApplyToEntry)
+                    apply(entry, filter);
 
                 return entry;
             }

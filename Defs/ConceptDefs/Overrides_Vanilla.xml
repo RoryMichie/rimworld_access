@@ -29,7 +29,7 @@
   <RimWorldAccess.ConceptHelpOverrideDef>
     <defName>RWA_Ovr_CameraZoom</defName>
     <concept>CameraZoom</concept>
-    <helpText>Adjusting the game's zoom level is not supported by Rimworld Access, because the zoom level has a significant impact on the game's audio and stereo field.</helpText>
+    <helpText>Adjusting the game's zoom level is not supported by RimWorld Access, because the zoom level has a significant impact on the game's audio and stereo field.</helpText>
   </RimWorldAccess.ConceptHelpOverrideDef>
 
   <RimWorldAccess.ConceptHelpOverrideDef>
@@ -143,7 +143,7 @@
   <RimWorldAccess.ConceptHelpOverrideDef>
     <defName>RWA_Ovr_MedicalOperations</defName>
     <concept>MedicalOperations</concept>
-    <helpText>To schedule a medical operation, such as harvesting an organ or installing a prosthetic, open the colonist's inspection tree: put the cursor on them and press Enter, or press Ctrl Alt Enter when they are selected.\n\nExpand the Health category, open Operations with Enter, then choose 'Add operation' to pick from everything available for that pawn.</helpText>
+    <helpText>To schedule a medical operation, such as harvesting an organ or installing a prosthetic, open the colonist's inspection tree: put the cursor on them and press Enter, or press Ctrl Alt Enter when they are selected.\n\nExpand the Health category, open Operations with Enter, then choose 'Add bill' to pick from everything available for that pawn.</helpText>
   </RimWorldAccess.ConceptHelpOverrideDef>
 
   <RimWorldAccess.ConceptHelpOverrideDef>
@@ -181,7 +181,7 @@
     <defName>RWA_Ovr_ClickingMessages</defName>
     <concept>ClickingMessages</concept>
     <label>Messages</label>
-    <helpText>Press L to open the list of current letters and notifications. Arrow through them and press Enter to open one; from its detail view you can move to a 'Jump to' button and press Enter to go where it points.\n\nIn the History Messages archive, reached with F9 then Tab, press Alt J to jump straight to a message's location.</helpText>
+    <helpText>Press L to open the list of current letters and notifications. Arrow through them and press Enter to open one; from its detail view you can move to a 'Jump to location' button and press Enter to go where it points.\n\nIn the History Messages archive, reached with F9 then Tab, press Alt J to jump straight to a message's location.</helpText>
   </RimWorldAccess.ConceptHelpOverrideDef>
 
   <RimWorldAccess.ConceptHelpOverrideDef>

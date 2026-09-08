@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Shell element vocabulary (src/Shell/Elements/). Standard control role and
+    state words, following common Chinese screen reader terminology.
+  -->
+
+  <!-- Role words -->
+  <RimWorldAccess.Shell.Role.Button>按钮</RimWorldAccess.Shell.Role.Button>
+  <RimWorldAccess.Shell.Role.Checkbox>复选框</RimWorldAccess.Shell.Role.Checkbox>
+  <RimWorldAccess.Shell.Role.RadioButton>单选按钮</RimWorldAccess.Shell.Role.RadioButton>
+  <RimWorldAccess.Shell.Role.ComboBox>组合框</RimWorldAccess.Shell.Role.ComboBox>
+  <RimWorldAccess.Shell.Role.Slider>滑块</RimWorldAccess.Shell.Role.Slider>
+  <RimWorldAccess.Shell.Role.Stepper>微调框</RimWorldAccess.Shell.Role.Stepper>
+  <RimWorldAccess.Shell.Role.TextField>编辑框</RimWorldAccess.Shell.Role.TextField>
+  <RimWorldAccess.Shell.Role.Tab>选项卡</RimWorldAccess.Shell.Role.Tab>
+  <RimWorldAccess.Shell.Role.Map>地图</RimWorldAccess.Shell.Role.Map>
+
+  <!-- State words -->
+  <RimWorldAccess.Shell.State.Checked>已勾选</RimWorldAccess.Shell.State.Checked>
+  <RimWorldAccess.Shell.State.Unchecked>未勾选</RimWorldAccess.Shell.State.Unchecked>
+  <RimWorldAccess.Shell.State.PartiallyChecked>部分勾选</RimWorldAccess.Shell.State.PartiallyChecked>
+  <RimWorldAccess.Shell.State.Selected>已选中</RimWorldAccess.Shell.State.Selected>
+  <RimWorldAccess.Shell.State.NotSelected>未选中</RimWorldAccess.Shell.State.NotSelected>
+  <RimWorldAccess.Shell.State.Expanded>已展开</RimWorldAccess.Shell.State.Expanded>
+  <RimWorldAccess.Shell.State.Collapsed>已折叠</RimWorldAccess.Shell.State.Collapsed>
+  <RimWorldAccess.Shell.State.Blank>空白</RimWorldAccess.Shell.State.Blank>
+  <RimWorldAccess.Shell.State.Disabled>已禁用</RimWorldAccess.Shell.State.Disabled>
+  <RimWorldAccess.Shell.State.ReadOnly>只读</RimWorldAccess.Shell.State.ReadOnly>
+  <RimWorldAccess.Shell.State.AtMinimum>已达最小值</RimWorldAccess.Shell.State.AtMinimum>
+  <RimWorldAccess.Shell.State.AtMaximum>已达最大值</RimWorldAccess.Shell.State.AtMaximum>
+  <RimWorldAccess.Shell.State.ColumnHeader>列标题</RimWorldAccess.Shell.State.ColumnHeader>
+  <RimWorldAccess.Shell.State.Sortable>可排序</RimWorldAccess.Shell.State.Sortable>
+  <RimWorldAccess.Shell.State.SortedAscending>已按升序排序</RimWorldAccess.Shell.State.SortedAscending>
+  <RimWorldAccess.Shell.State.SortedDescending>已按降序排序</RimWorldAccess.Shell.State.SortedDescending>
+
+  <!-- ScreenScope shared screen shape (screen-model refactor): the
+       automatic Buttons region name and the empty-region word. -->
+  <RimWorldAccess.Shell.Screen.ActionsRegion>工具栏</RimWorldAccess.Shell.Screen.ActionsRegion>
+  <RimWorldAccess.Shell.Screen.ExtrasRegion>附加控件</RimWorldAccess.Shell.Screen.ExtrasRegion>
+  <RimWorldAccess.Shell.Screen.EmptyRegion>空</RimWorldAccess.Shell.Screen.EmptyRegion>
+
+  <!-- Fail-safe (B1, semantic quality campaign): spoken once when a scope's own model build
+       throws, so the player is told the window went unreadable instead of finding every key
+       (including Escape) silently swallowed. See ScreenScope.RefreshModel. -->
+  <RimWorldAccess.Shell.ScopeFailed>此窗口的屏幕阅读器支持遇到了错误。按 Escape 关闭窗口。</RimWorldAccess.Shell.ScopeFailed>
+
+  <!-- Band label inheritance (C1, semantic quality campaign): an unlabeled twin control that
+       inherited a neighbouring control's caption (BandLabelInheritance/GenericWindowScope).
+       {0} is the inherited label, {1} the 1-based ordinal ("Ideology 2"). -->
+  <RimWorldAccess.Shell.BandOrdinalLabel>{0} {1}</RimWorldAccess.Shell.BandOrdinalLabel>
+
+  <!-- Silent content swap echo (S8, meaning campaign): a captured Button whose click replaced
+       the window's whole page with no dialog, no menu, and no state change on the acted row
+       itself (Colony Manager Redux's "New job" button, which swaps the page to a fresh draft
+       job's settings) — the honest, generic summary a keyboard user gets instead of dead
+       silence. {0} is the new presentation row count. See GenericWindowScope.ResolvePendingStateChange. -->
+  <RimWorldAccess.Shell.ContentChanged>窗口内容已更改。共 {0} 项。</RimWorldAccess.Shell.ContentChanged>
+  <RimWorldAccess.Shell.ContentReordered>项目已重新排序。</RimWorldAccess.Shell.ContentReordered>
+
+  <!-- Enter double-press proceed (DefaultAcceptActionId, S4c): the first Enter on an
+       inert element arms this prompt instead of doing nothing; a second Enter on the
+       same element fires the screen's default/proceed button. {0} is that button's label. -->
+  <RimWorldAccess.Shell.Screen.PressEnterAgain>再次按回车键以激活 {0}。</RimWorldAccess.Shell.Screen.PressEnterAgain>
+
+  <!-- Shift+Enter one-chord proceed (SharedMenuGrammar.ActivateDefault, QA session 5):
+       presses the screen's default/proceed button from anywhere, bypassing the focused
+       control. PressingDefault is spoken BEFORE the button fires because the player
+       chose not to look the button up first; {0} is that button's label. -->
+  <RimWorldAccess.Shell.Screen.PressingDefault>正在按下 {0}。</RimWorldAccess.Shell.Screen.PressingDefault>
+  <RimWorldAccess.Shell.Screen.NoDefaultButton>此屏幕没有默认按钮。</RimWorldAccess.Shell.Screen.NoDefaultButton>
+
+  <!-- Shared reorder grammar (SharedMenuGrammar.ReorderUp/Down/Left/Right,
+       ScreenScope's Ctrl+Up/Down seam): the mod-wide keyboard equivalent of
+       the player's drag-and-drop gesture. MovedBetween/MovedToTop/MovedToBottom
+       name the item's new neighbors ({0}/{1} are neighbor labels, above then
+       below); Moved is the fallback when a neighbor's label cannot be resolved.
+       Whichever phrase is chosen prefixes the standard full item announcement
+       ("Moved between Duster and Parka. Duster, 3 of 7."); CannotReorder is the
+       refusal when the subclass's mutation vehicle vetoes the move. -->
+  <RimWorldAccess.Shell.Screen.Moved>已移动。</RimWorldAccess.Shell.Screen.Moved>
+  <RimWorldAccess.Shell.Screen.MovedBetween>已移动到 {0} 和 {1} 之间。</RimWorldAccess.Shell.Screen.MovedBetween>
+  <RimWorldAccess.Shell.Screen.MovedToTop>已移动到顶部，位于 {0} 之上。</RimWorldAccess.Shell.Screen.MovedToTop>
+  <RimWorldAccess.Shell.Screen.MovedToBottom>已移动到底部，位于 {0} 之下。</RimWorldAccess.Shell.Screen.MovedToBottom>
+  <RimWorldAccess.Shell.Screen.CannotReorder>此项无法移动。</RimWorldAccess.Shell.Screen.CannotReorder>
+
+  <!-- Table regions (docs/table-model.md): the shared table grammar. -->
+  <RimWorldAccess.Shell.Screen.TabCount>{0} 个部分</RimWorldAccess.Shell.Screen.TabCount>
+  <RimWorldAccess.Shell.Screen.SectionPosition>第 {0} 部分，共 {1} 部分</RimWorldAccess.Shell.Screen.SectionPosition>
+  <RimWorldAccess.Shell.Table.RowPosition>第 {0} 行，共 {1} 行</RimWorldAccess.Shell.Table.RowPosition>
+  <RimWorldAccess.Shell.Table.ColumnPosition>第 {0} 列，共 {1} 列</RimWorldAccess.Shell.Table.ColumnPosition>
+  <RimWorldAccess.Shell.Table.Dimensions>表格，{0} 列，{1} 行</RimWorldAccess.Shell.Table.Dimensions>
+  <RimWorldAccess.Shell.Table.SortedBy>已按“{0}”排序，{1}</RimWorldAccess.Shell.Table.SortedBy>
+  <RimWorldAccess.Shell.Table.SortCleared>已清除排序，恢复默认顺序</RimWorldAccess.Shell.Table.SortCleared>
+  <RimWorldAccess.Shell.Table.NotSortable>此列不支持排序</RimWorldAccess.Shell.Table.NotSortable>
+  <RimWorldAccess.Shell.Table.SortHint>按 Enter 排序</RimWorldAccess.Shell.Table.SortHint>
+
+  <!-- Cross-region typeahead (docs/table-model.md section 7): the locating
+       frame spoken after a search jump lands in another region, and the
+       fallback name for unnamed regions on generic screens ({0} is the
+       1-based tab number). -->
+  <RimWorldAccess.Shell.Search.NowAt>当前位于 {0}</RimWorldAccess.Shell.Search.NowAt>
+  <RimWorldAccess.Shell.Search.UnnamedTab>标签页 {0}</RimWorldAccess.Shell.Search.UnnamedTab>
+
+  <!-- Transfer-screen table columns (table-model T3): mod-provided short
+       labels for columns vanilla shows only as icons with hover tooltips. -->
+  <RimWorldAccess.Shell.Table.Transferable.DaysUntilRot>距腐烂天数</RimWorldAccess.Shell.Table.Transferable.DaysUntilRot>
+  <RimWorldAccess.Shell.Table.Transferable.DaysValue>{0} 天</RimWorldAccess.Shell.Table.Transferable.DaysValue>
+  <RimWorldAccess.Shell.Table.Transferable.CanGraze>可放牧</RimWorldAccess.Shell.Table.Transferable.CanGraze>
+
+  <!-- Generic pawn-table tier (table-model T5, GenericPawnTableScope). -->
+  <RimWorldAccess.Shell.Generic.CellNotReadable>值不可用</RimWorldAccess.Shell.Generic.CellNotReadable>
+  <RimWorldAccess.Shell.Generic.Incapable>无能力</RimWorldAccess.Shell.Generic.Incapable>
+  <RimWorldAccess.Shell.Generic.Trained>已训练</RimWorldAccess.Shell.Generic.Trained>
+  <RimWorldAccess.Shell.Generic.HourRange>{0}时至{1}时：{2}</RimWorldAccess.Shell.Generic.HourRange>
+  <RimWorldAccess.Shell.Generic.HourSingle>{0}时：{1}</RimWorldAccess.Shell.Generic.HourSingle>
+  <RimWorldAccess.Shell.Generic.PawnTableRegion>角色表格</RimWorldAccess.Shell.Generic.PawnTableRegion>
+
+  <!-- Shared tree chords (ShellActionInventory.Part7, the "tree"/"filterTree"
+       pseudo-screens). These label the rebinding list entries for every migrated
+       tree screen. -->
+
+  <!--
+    Spoken key names (KeyChordFormat, installed by ShellBootstrap). Chinese
+    keyboards are labelled in English and RimWorld's own zh-Hans corpus writes
+    Shift, Esc, Home and Page Up in English, so those key names keep the Latin
+    form the player reads on the keycap. Only the keys with an established
+    Chinese spoken name (arrows, Enter, Space, the punctuation keys and the
+    numeric keypad) are worded in Chinese. {0} in NumpadDigit is the digit 0 to 9.
+  -->
+  <RimWorldAccess.Shell.Key.Ctrl>Ctrl</RimWorldAccess.Shell.Key.Ctrl>
+  <RimWorldAccess.Shell.Key.Option>Option</RimWorldAccess.Shell.Key.Option>
+  <RimWorldAccess.Shell.Key.Shift>Shift</RimWorldAccess.Shell.Key.Shift>
+  <RimWorldAccess.Shell.Key.Alt>Alt</RimWorldAccess.Shell.Key.Alt>
+
+  <RimWorldAccess.Shell.Key.UpArrow>上箭头</RimWorldAccess.Shell.Key.UpArrow>
+  <RimWorldAccess.Shell.Key.DownArrow>下箭头</RimWorldAccess.Shell.Key.DownArrow>
+  <RimWorldAccess.Shell.Key.LeftArrow>左箭头</RimWorldAccess.Shell.Key.LeftArrow>
+  <RimWorldAccess.Shell.Key.RightArrow>右箭头</RimWorldAccess.Shell.Key.RightArrow>
+  <RimWorldAccess.Shell.Key.Return>回车</RimWorldAccess.Shell.Key.Return>
+  <RimWorldAccess.Shell.Key.PageUp>Page Up</RimWorldAccess.Shell.Key.PageUp>
+  <RimWorldAccess.Shell.Key.PageDown>Page Down</RimWorldAccess.Shell.Key.PageDown>
+  <RimWorldAccess.Shell.Key.Escape>Escape</RimWorldAccess.Shell.Key.Escape>
+  <RimWorldAccess.Shell.Key.Tab>Tab</RimWorldAccess.Shell.Key.Tab>
+  <RimWorldAccess.Shell.Key.Space>空格</RimWorldAccess.Shell.Key.Space>
+  <RimWorldAccess.Shell.Key.Backspace>Backspace</RimWorldAccess.Shell.Key.Backspace>
+  <RimWorldAccess.Shell.Key.Delete>Delete</RimWorldAccess.Shell.Key.Delete>
+  <RimWorldAccess.Shell.Key.Insert>Insert</RimWorldAccess.Shell.Key.Insert>
+  <RimWorldAccess.Shell.Key.Home>Home</RimWorldAccess.Shell.Key.Home>
+  <RimWorldAccess.Shell.Key.End>End</RimWorldAccess.Shell.Key.End>
+  <RimWorldAccess.Shell.Key.BackQuote>反引号</RimWorldAccess.Shell.Key.BackQuote>
+  <RimWorldAccess.Shell.Key.LeftBracket>左方括号</RimWorldAccess.Shell.Key.LeftBracket>
+  <RimWorldAccess.Shell.Key.RightBracket>右方括号</RimWorldAccess.Shell.Key.RightBracket>
+  <RimWorldAccess.Shell.Key.Comma>逗号</RimWorldAccess.Shell.Key.Comma>
+  <RimWorldAccess.Shell.Key.Period>句点</RimWorldAccess.Shell.Key.Period>
+  <RimWorldAccess.Shell.Key.Slash>斜杠</RimWorldAccess.Shell.Key.Slash>
+  <RimWorldAccess.Shell.Key.Minus>减号</RimWorldAccess.Shell.Key.Minus>
+  <RimWorldAccess.Shell.Key.Plus>加号</RimWorldAccess.Shell.Key.Plus>
+  <RimWorldAccess.Shell.Key.Equals>等号</RimWorldAccess.Shell.Key.Equals>
+
+  <RimWorldAccess.Shell.Key.KeypadEnter>小键盘回车</RimWorldAccess.Shell.Key.KeypadEnter>
+  <RimWorldAccess.Shell.Key.KeypadPlus>小键盘加号</RimWorldAccess.Shell.Key.KeypadPlus>
+  <RimWorldAccess.Shell.Key.KeypadMinus>小键盘减号</RimWorldAccess.Shell.Key.KeypadMinus>
+  <RimWorldAccess.Shell.Key.KeypadMultiply>小键盘星号</RimWorldAccess.Shell.Key.KeypadMultiply>
+  <RimWorldAccess.Shell.Key.KeypadDivide>小键盘斜杠</RimWorldAccess.Shell.Key.KeypadDivide>
+  <RimWorldAccess.Shell.Key.KeypadPeriod>小键盘句点</RimWorldAccess.Shell.Key.KeypadPeriod>
+  <RimWorldAccess.Shell.Key.NumpadDigit>小键盘 {0}</RimWorldAccess.Shell.Key.NumpadDigit>
+
+  <!-- Common glyph texture labels (C2, semantic quality campaign,
+       TextureButtonLabels/WidgetCapture.ImageButtonLabel's last-resort tier): a captured
+       icon-only button that resolved to nothing but its raw texture asset name used to
+       speak that name verbatim ("ReorderDown. button."). These are the well-known vanilla
+       TexButton textures a mod is also likely to draw its own equivalent icon with; the
+       key suffix is what TextureButtonLabels.TryGetGlyphKeySuffix returns, reached only by
+       string concatenation in code (never a literal .Translate() call). -->
+  <RimWorldAccess.Shell.Glyph.ReorderUp>上移</RimWorldAccess.Shell.Glyph.ReorderUp>
+  <RimWorldAccess.Shell.Glyph.ReorderDown>下移</RimWorldAccess.Shell.Glyph.ReorderDown>
+  <RimWorldAccess.Shell.Glyph.Plus>添加</RimWorldAccess.Shell.Glyph.Plus>
+  <RimWorldAccess.Shell.Glyph.Minus>移除</RimWorldAccess.Shell.Glyph.Minus>
+  <RimWorldAccess.Shell.Glyph.Delete>删除</RimWorldAccess.Shell.Glyph.Delete>
+  <RimWorldAccess.Shell.Glyph.Close>关闭</RimWorldAccess.Shell.Glyph.Close>
+  <RimWorldAccess.Shell.Glyph.Copy>复制</RimWorldAccess.Shell.Glyph.Copy>
+  <RimWorldAccess.Shell.Glyph.Paste>粘贴</RimWorldAccess.Shell.Glyph.Paste>
+  <RimWorldAccess.Shell.Glyph.Rename>重命名</RimWorldAccess.Shell.Glyph.Rename>
+  <RimWorldAccess.Shell.Glyph.Info>信息</RimWorldAccess.Shell.Glyph.Info>
+  <RimWorldAccess.Shell.Glyph.Drag>拖动把手</RimWorldAccess.Shell.Glyph.Drag>
+  <RimWorldAccess.Shell.Glyph.OpenInspector>打开检查器</RimWorldAccess.Shell.Glyph.OpenInspector>
+  <RimWorldAccess.Shell.Glyph.ToggleLog>切换日志</RimWorldAccess.Shell.Glyph.ToggleLog>
+
+  <RimWorldAccess.Shell.ChooseColor.RegionName>颜色</RimWorldAccess.Shell.ChooseColor.RegionName>
+
+  <RimWorldAccess.Shell.ColorPicker.PaletteRegion>调色板</RimWorldAccess.Shell.ColorPicker.PaletteRegion>
+  <RimWorldAccess.Shell.ColorPicker.AdjustRegion>微调</RimWorldAccess.Shell.ColorPicker.AdjustRegion>
+  <RimWorldAccess.Shell.ColorPicker.ReadbackRegion>当前选择</RimWorldAccess.Shell.ColorPicker.ReadbackRegion>
+  <RimWorldAccess.Shell.SelectXenogerm.RegionName>异种胚芽</RimWorldAccess.Shell.SelectXenogerm.RegionName>
+  <RimWorldAccess.Shell.SelectXenogerm.MoreGenes>以及另外 {0} 个基因</RimWorldAccess.Shell.SelectXenogerm.MoreGenes>
+
+  <!-- Action label keys (Shell.Action.*) are inert until the rebind UI exists — see
+       ShellActionInventory. -->
+</LanguageData>

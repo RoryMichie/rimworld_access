@@ -17,19 +17,9 @@ namespace RimWorldAccess
     /// </summary>
     public static class PortalPatch
     {
-        /// <summary>
-        /// Patch for Dialog_EnterPortal.PostOpen to initialize accessibility state.
-        /// </summary>
-        [HarmonyPatch(typeof(Dialog_EnterPortal))]
-        [HarmonyPatch("PostOpen")]
-        public static class Dialog_EnterPortal_PostOpen_Patch
-        {
-            [HarmonyPostfix]
-            public static void Postfix(Dialog_EnterPortal __instance)
-            {
-                TransportPodLoadingState.Open(__instance);
-            }
-        }
+        // The PostOpen open-state patch is retired: TransportPodLoadingScope
+        // (a ScreenScope) self-constructs from the window via its
+        // ScopeForWindow registration and announces on first focus.
 
         /// <summary>
         /// Patch for Window.PostClose to clean up accessibility state when Dialog_EnterPortal
@@ -74,11 +64,16 @@ namespace RimWorldAccess
                 if (!(__instance is Dialog_EnterPortal))
                     return true;
 
-                // Block the game's Cancel handling when our overlay menus are active.
-                if (QuantityMenuState.IsActive || WindowlessInspectionState.IsActive || StatBreakdownState.IsActive)
-                {
-                    return false;
-                }
+                // NARROWED: the QuantityMenuState/
+                // StatBreakdownState terms are dropped — both are now live modal shell
+                // scopes whose own Cancel claims stamp
+                // ShellFrameStamps.MarkCancelConsumed(), which the general
+                // WindowCancelKeyRouterPatch already consults to block vanilla for that
+                // same frame — this ad hoc check is now redundant for those two.
+                // NARROWED AGAIN: the WindowlessInspectionState term is
+                // dropped too — with inspection stood down BENEATH any window-attached
+                // dialog (InspectionScopeMirror), that term left Escape dead for a
+                // dialog opened from the inspection tree. See LordJobDialogScope.IsLive.
 
                 // Block if typeahead search is active so Escape clears the search instead.
                 if (TransportPodLoadingState.HasActiveTypeahead)
@@ -142,7 +137,7 @@ namespace RimWorldAccess
 
                 Text.Font = GameFont.Tiny;
                 Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(indicatorRect, "Keyboard Mode Active");
+                Widgets.Label(indicatorRect, (string)"RimWorldAccess.Portal.Overlay.KeyboardModeActive".Translate());
 
                 Text.Anchor = TextAnchor.UpperLeft;
                 Text.Font = GameFont.Small;
@@ -153,8 +148,8 @@ namespace RimWorldAccess
                 Text.Font = GameFont.Tiny;
                 Text.Anchor = TextAnchor.UpperLeft;
 
-                string instructions = "Left/Right: Tabs | Up/Down: Items | Enter/Space: Select\n" +
-                                    "Alt+I: Inspect | Alt+S: Confirm | Esc: Cancel";
+                string instructions = (string)"RimWorldAccess.Portal.Overlay.InstructionsLine1".Translate() + "\n" +
+                                    (string)"RimWorldAccess.Portal.Overlay.InstructionsLine2".Translate();
                 Widgets.Label(instructionsRect, instructions);
 
                 Text.Anchor = TextAnchor.UpperLeft;

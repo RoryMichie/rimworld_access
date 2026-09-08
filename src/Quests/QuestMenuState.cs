@@ -2,34 +2,39 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
-using RimWorld.Planet;
 using Verse;
 using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages the windowless quest menu state for keyboard navigation.
-    /// Supports three modes: QuestList, QuestDetail, and RewardPreferences.
+    /// The quest menu's data/mutation backend, behind
+    /// <see cref="RimWorldAccess.Shell.QuestMenuScope"/>, whose three content regions are built from
+    /// the data this class owns: session lifecycle, the tab and dev-mode session fields, every quest
+    /// mutation, and the reward-choice float menu with its item-inspection sub-flow (shared with
+    /// <see cref="RimWorldAccess.Shell.QuestRewardOverlayScope"/> and
+    /// <see cref="RimWorldAccess.Shell.FloatMenuOverlayScope"/>).
     /// </summary>
     public static class QuestMenuState
     {
         private static bool isActive = false;
-        private static List<Quest> currentQuests = new List<Quest>();
-        private static int currentIndex = 0;
         private static QuestsTab currentTab = QuestsTab.Available;
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
 
-        // Mode tracking
-        private static QuestMenuMode currentMode = QuestMenuMode.QuestList;
+        // DEV-mode toggles mirroring MainTabWindow_Quests' embedded dev checkboxes. Reset on every
+        // Open() to match vanilla's per-window-instance defaults.
+        private static bool devShowAll = false;
+        private static bool devShowDebugInfo = false;
 
-        // Detail view
-        private static TwoLevelMenuHelper detailHelper = null;
-        private static List<DetailLine> cachedDetailLines = new List<DetailLine>();
+        /// <summary>
+        /// Effective "show all" state, mirroring MainTabWindow_Quests.DoQuestsList: god mode forces
+        /// it on, non-dev forces it off, otherwise the toggle wins.
+        /// </summary>
+        internal static bool EffectiveShowAll =>
+            DebugSettings.godMode || (Prefs.DevMode && devShowAll);
 
-        // Reward preferences
-        private static List<RewardPrefItem> rewardPrefItems = new List<RewardPrefItem>();
-        private static int rewardPrefIndex = 0;
+        /// <summary>Effective "show debug info" state, mirroring MainTabWindow_Quests.DoDebugInfoToggle's godMode/DevMode gating.</summary>
+        internal static bool EffectiveShowDebugInfo =>
+            DebugSettings.godMode || (Prefs.DevMode && devShowDebugInfo);
 
         // Reward choice float menu
         private static bool hasActiveRewardMenu = false;
@@ -40,66 +45,55 @@ namespace RimWorldAccess
         private static List<(Thing thing, Faction faction)> currentInspectionItems = null;
         private static int savedChoiceIndex = -1;
 
-        private enum QuestsTab
+        internal enum QuestsTab
         {
             Available,
             Active,
             Historical
         }
 
-        private enum QuestMenuMode
-        {
-            QuestList,
-            QuestDetail,
-            RewardPreferences
-        }
-
-        // === Public Properties ===
 
         public static bool IsActive => isActive;
-        public static TypeaheadSearchHelper Typeahead => typeahead;
-        public static int CurrentIndex => currentIndex;
-        public static bool IsInDetailView => detailHelper != null && detailHelper.IsInDetailView;
-        public static bool IsInButtonsSection => detailHelper != null && detailHelper.IsInButtonsSection;
-        public static bool IsInRewardPrefsMode => currentMode == QuestMenuMode.RewardPreferences;
+
+        /// <summary>The currently displayed quest tab; session data QuestMenuScope reads and advances directly.</summary>
+        internal static QuestsTab CurrentTab
+        {
+            get => currentTab;
+            set => currentTab = value;
+        }
+
         public static bool HasActiveRewardMenu => hasActiveRewardMenu;
         public static bool IsInItemInspectionMenu => isInItemInspectionMenu;
 
-        // =====================================================================
-        // Open / Close
-        // =====================================================================
+        /// <summary>
+        /// One-shot hand-off from <see cref="OpenAndSelectQuest"/> to QuestMenuScope's OnFocus: the
+        /// quest to find and select once the scope is live, in place of the normal open
+        /// announcement. Cleared by <see cref="Open"/>, consumed and cleared by the scope.
+        /// </summary>
+        internal static Quest PendingSelectQuest;
 
         /// <summary>
-        /// Opens the quest menu and initializes with the available quests tab.
+        /// Wired once by QuestMenuScope's constructor and fired after any mutation that changes
+        /// which quests are listed. The scope's hook returns focus to the Quests region and
+        /// re-announces the current row.
         /// </summary>
+        internal static Action PostQuestListChangeHook;
+
+        /// <summary>Flips the session live and resets the tab and dev-mode fields; QuestMenuScope.OnFocus speaks the opening announcement.</summary>
         public static void Open()
         {
             isActive = true;
             currentTab = QuestsTab.Available;
-            currentIndex = 0;
-            currentMode = QuestMenuMode.QuestList;
-            typeahead.ClearSearch();
-            cachedDetailLines.Clear();
-            rewardPrefItems.Clear();
-            RefreshQuestList();
-
-            InitializeDetailHelper();
-
-            string openMessage = "RimWorldAccess.Quests.Menu.OpenInstructions".Translate();
-            if (currentQuests.Count > 0)
-            {
-                openMessage += " " + BuildQuestAnnouncement(currentQuests[0]);
-            }
-            else
-            {
-                openMessage += " " + "RimWorldAccess.Quests.Tab.NoQuests".Translate(GetTabName());
-            }
-            TolkHelper.SpeakData(openMessage);
+            devShowAll = false;
+            devShowDebugInfo = false;
+            PendingSelectQuest = null;
         }
 
         /// <summary>
-        /// Opens the quest menu and navigates to a specific quest.
-        /// Called when activating "View Quest" button from a letter.
+        /// Opens the quest menu targeting a specific quest ("View Quest" from a letter). The
+        /// tab-scan, selection and announcement happen in QuestMenuScope.OnFocus via
+        /// <see cref="PendingSelectQuest"/>; this method only runs the "quest is already gone" guard
+        /// (which never sets isActive), the session-field reset, and the tab-window pairing.
         /// </summary>
         public static void OpenAndSelectQuest(Quest quest)
         {
@@ -109,45 +103,15 @@ namespace RimWorldAccess
                 return;
             }
 
-            QuestsTab targetTab = GetTabForQuest(quest);
-
             isActive = true;
-            currentTab = targetTab;
-            currentIndex = 0;
-            currentMode = QuestMenuMode.QuestList;
-            typeahead.ClearSearch();
-            cachedDetailLines.Clear();
-            rewardPrefItems.Clear();
-            RefreshQuestList();
-
-            InitializeDetailHelper();
-
-            int index = currentQuests.FindIndex(q => q == quest);
-            if (index >= 0)
-            {
-                currentIndex = index;
-                TolkHelper.Speak("RimWorldAccess.Quests.Menu.Title".Loc());
-                AnnounceCurrentSelection();
-            }
-            else
-            {
-                foreach (QuestsTab tab in Enum.GetValues(typeof(QuestsTab)))
-                {
-                    currentTab = tab;
-                    RefreshQuestList();
-                    index = currentQuests.FindIndex(q => q == quest);
-                    if (index >= 0)
-                    {
-                        currentIndex = index;
-                        TolkHelper.Speak("RimWorldAccess.Quests.Menu.Title".Loc());
-                        AnnounceCurrentSelection();
-                        return;
-                    }
-                }
-
-                TolkHelper.Speak("RimWorldAccess.Quests.Menu.QuestNoLongerAvailable".Loc());
-                Close();
-            }
+            currentTab = QuestMenuHelper.GetTabForQuest(quest);
+            devShowAll = false;
+            devShowDebugInfo = false;
+            PendingSelectQuest = quest;
+            // Unlike Open(), this opener runs outside the window: without its half of the
+            // MainTabWindowLink pairing, the link's reconcile reads "state active, window closed"
+            // and closes the session again before QuestMenuScope can push.
+            Shell.MainTabWindowLink.EnsureTabOpen(Shell.MainTabWindowLink.Quests);
         }
 
         /// <summary>
@@ -158,375 +122,147 @@ namespace RimWorldAccess
         public static void Close(bool announce = true)
         {
             isActive = false;
-            currentQuests.Clear();
-            typeahead.ClearSearch();
-            currentMode = QuestMenuMode.QuestList;
-            detailHelper?.Reset();
-            cachedDetailLines.Clear();
-            rewardPrefItems.Clear();
             CleanupRewardMenu();
             if (announce)
                 TolkHelper.Speak("RimWorldAccess.Quests.Menu.Closed".Loc());
+            Shell.MainTabWindowLink.CloseTab(Shell.MainTabWindowLink.Quests);
         }
 
-        // =====================================================================
-        // Quest List Navigation
-        // =====================================================================
-
-        public static void SelectNext()
+        /// <summary>Advances or retreats the current tab by one, wrapping. Pure data mutation; QuestMenuScope rebuilds and announces.</summary>
+        public static void AdvanceTab(int direction)
         {
-            if (currentQuests.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.Quests.Menu.NoQuestsInTab".Loc());
-                return;
-            }
-
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                currentIndex = typeahead.GetNextMatch(currentIndex);
-            else
-                currentIndex = MenuHelper.SelectNext(currentIndex, currentQuests.Count);
-            AnnounceCurrentSelection();
+            currentTab = (QuestsTab)(((int)currentTab + direction + 3) % 3);
         }
 
-        public static void SelectPrevious()
+        /// <summary>Accepts <paramref name="quest"/> if available, handling the multi-choice and RequiresAccepter cases.</summary>
+        public static void AcceptQuest(Quest quest)
         {
-            if (currentQuests.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.Quests.Menu.NoQuestsInTab".Loc());
-                return;
-            }
-
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-                currentIndex = typeahead.GetPreviousMatch(currentIndex);
-            else
-                currentIndex = MenuHelper.SelectPrevious(currentIndex, currentQuests.Count);
-            AnnounceCurrentSelection();
-        }
-
-        public static void NextTab()
-        {
-            currentTab = (QuestsTab)(((int)currentTab + 1) % 3);
-            currentIndex = 0;
-            typeahead.ClearSearch();
-            RefreshQuestList();
-            AnnounceTabSwitch();
-        }
-
-        public static void PreviousTab()
-        {
-            currentTab = (QuestsTab)(((int)currentTab + 2) % 3);
-            currentIndex = 0;
-            typeahead.ClearSearch();
-            RefreshQuestList();
-            AnnounceTabSwitch();
-        }
-
-        public static void JumpToFirst()
-        {
-            if (currentQuests.Count == 0)
-                return;
-
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                currentIndex = typeahead.GetFirstMatch();
-            }
-            else
-            {
-                currentIndex = MenuHelper.JumpToFirst();
-                typeahead.ClearSearch();
-            }
-            AnnounceCurrentSelection();
-        }
-
-        public static void JumpToLast()
-        {
-            if (currentQuests.Count == 0)
-                return;
-
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                currentIndex = typeahead.GetLastMatch();
-            }
-            else
-            {
-                currentIndex = MenuHelper.JumpToLast(currentQuests.Count);
-                typeahead.ClearSearch();
-            }
-            AnnounceCurrentSelection();
-        }
-
-        public static void SetCurrentIndex(int index)
-        {
-            if (index >= 0 && index < currentQuests.Count)
-            {
-                currentIndex = index;
-            }
-        }
-
-        // =====================================================================
-        // Detail View
-        // =====================================================================
-
-        /// <summary>
-        /// Enters the detail view for the currently selected quest.
-        /// Replaces the old ViewSelectedQuest() text dump.
-        /// </summary>
-        public static void EnterDetailView()
-        {
-            if (currentQuests.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.Quests.Menu.NoQuestSelected".Loc());
-                return;
-            }
-
-            Quest quest = currentQuests[currentIndex];
-            currentMode = QuestMenuMode.QuestDetail;
-
-            cachedDetailLines = BuildDetailContentLines(quest);
-
-            typeahead.ClearSearch();
-            detailHelper.RefreshButtons();
-            detailHelper.EnterDetailView();
-            detailHelper.AnnounceDetailPosition();
-        }
-
-        public static void SelectNextDetail()
-        {
-            if (detailHelper == null || !detailHelper.IsInDetailView) return;
-            detailHelper.SelectNextDetailPosition();
-        }
-
-        public static void SelectPreviousDetail()
-        {
-            if (detailHelper == null || !detailHelper.IsInDetailView) return;
-            detailHelper.SelectPreviousDetailPosition();
-        }
-
-        public static void SelectNextButton()
-        {
-            detailHelper?.SelectNextButton();
-        }
-
-        public static void SelectPreviousButton()
-        {
-            detailHelper?.SelectPreviousButton();
-        }
-
-        public static void ActivateCurrentButton()
-        {
-            if (detailHelper == null) return;
-            if (detailHelper.ActivateCurrentButton())
-            {
-                var button = detailHelper.GetCurrentButton();
-                if (button != null)
-                {
-                    try
-                    {
-                        button.Action?.Invoke();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning($"[RimWorld Access] Failed to activate quest button: {ex.Message}");
-                        TolkHelper.Speak("RimWorldAccess.Quests.Menu.FailedToActivateButton".Loc());
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Goes back to list view from detail view, or closes the menu if in list view.
-        /// </summary>
-        public static void GoBackToList()
-        {
-            if (detailHelper != null && detailHelper.IsInDetailView)
-            {
-                detailHelper.GoBackToList();
-                currentMode = QuestMenuMode.QuestList;
-                typeahead.ClearSearch();
-                TwoLevelMenuHelper.SpeakReturnToList();
-                AnnounceCurrentSelection();
-            }
-            else
-            {
-                Close();
-            }
-        }
-
-        public static void JumpToDetailStart()
-        {
-            detailHelper?.JumpToDetailStart();
-        }
-
-        public static void JumpToDetailEnd()
-        {
-            detailHelper?.JumpToDetailEnd();
-        }
-
-        /// <summary>
-        /// Opens an info card for the item/faction on the current detail line.
-        /// </summary>
-        public static void OpenInfoCard()
-        {
-            if (detailHelper == null || !detailHelper.IsInDetailView)
-            {
-                InfoCardState.SpeakNoInfoCardAvailable();
-                return;
-            }
-
-            int position = detailHelper.DetailPosition;
-            // Position 0 is header, 1-N are content lines
-            int lineIndex = position - 1;
-
-            if (lineIndex < 0 || lineIndex >= cachedDetailLines.Count)
-            {
-                InfoCardState.SpeakNoInfoCardAvailable();
-                return;
-            }
-
-            DetailLine line = cachedDetailLines[lineIndex];
-
-            if (line.InfoCardThing != null)
-            {
-                Find.WindowStack.Add(new Dialog_InfoCard(line.InfoCardThing));
-                return;
-            }
-
-            if (line.InfoCardFaction != null)
-            {
-                Find.WindowStack.Add(new Dialog_InfoCard(line.InfoCardFaction));
-                return;
-            }
-
-            InfoCardState.SpeakNoInfoCardAvailable();
-        }
-
-        // =====================================================================
-        // Quest Actions (Accept / Dismiss)
-        // =====================================================================
-
-        /// <summary>
-        /// Accepts the currently selected quest if it's available.
-        /// Handles multi-choice and RequiresAccepter scenarios.
-        /// </summary>
-        public static void AcceptQuest()
-        {
-            if (currentQuests.Count == 0 || currentTab != QuestsTab.Available)
+            if (currentTab != QuestsTab.Available)
             {
                 TolkHelper.Speak("RimWorldAccess.Quests.Action.CannotAccept".Loc(), SpeechPriority.High);
                 return;
             }
 
-            Quest selectedQuest = currentQuests[currentIndex];
-
-            if (selectedQuest.State != QuestState.NotYetAccepted)
+            if (quest.State != QuestState.NotYetAccepted)
             {
                 TolkHelper.Speak("RimWorldAccess.Quests.Action.NotAvailableToAccept".Loc(), SpeechPriority.High);
                 return;
             }
 
-            AcceptanceReport canAccept = QuestUtility.CanAcceptQuest(selectedQuest);
+            AcceptanceReport canAccept = QuestUtility.CanAcceptQuest(quest);
             if (!canAccept.Accepted)
             {
                 TolkHelper.Speak("RimWorldAccess.Quests.Action.CannotAcceptReason".Loc(canAccept.Reason), SpeechPriority.High);
                 return;
             }
 
-            // Multi-choice quests open a reward choice float menu
-            if (QuestRewardHelper.HasMultipleChoices(selectedQuest))
+            if (QuestRewardHelper.HasMultipleChoices(quest))
             {
-                OpenRewardChoiceMenu(selectedQuest);
+                OpenRewardChoiceMenu(quest);
                 return;
             }
-
-            // RequiresAccepter needs pawn selection
-            if (selectedQuest.RequiresAccepter)
-            {
-                AcceptQuestWithPawnSelection(selectedQuest, null);
-                return;
-            }
-
-            // Simple accept
-            SoundDefOf.Quest_Accepted.PlayOneShotOnCamera();
-            selectedQuest.Accept(null);
-            TolkHelper.Speak("RimWorldAccess.Quests.Action.AcceptedQuest".Loc(selectedQuest.name.StripTags()));
-
-            if (IsInDetailView)
-            {
-                detailHelper.GoBackToList();
-                currentMode = QuestMenuMode.QuestList;
-            }
-            RefreshQuestList();
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Dismisses or resumes the currently selected quest.
-        /// </summary>
-        public static void ToggleDismissQuest()
-        {
-            if (currentQuests.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.Quests.Menu.NoQuestSelected".Loc());
-                return;
-            }
-
-            Quest selectedQuest = currentQuests[currentIndex];
-
-            if (selectedQuest.Historical)
-            {
-                selectedQuest.hiddenInUI = true;
-                TolkHelper.Speak("RimWorldAccess.Quests.Action.DeletedQuest".Loc(selectedQuest.name.StripTags()));
-                SoundDefOf.Tick_High.PlayOneShotOnCamera();
-            }
-            else
-            {
-                selectedQuest.dismissed = !selectedQuest.dismissed;
-                string actionKey = selectedQuest.dismissed
-                    ? "RimWorldAccess.Quests.Action.DismissedQuest"
-                    : "RimWorldAccess.Quests.Action.ResumedQuest";
-                TolkHelper.Speak(actionKey.Loc(selectedQuest.name.StripTags()));
-                SoundDefOf.Click.PlayOneShotOnCamera();
-            }
-
-            if (IsInDetailView)
-            {
-                detailHelper.GoBackToList();
-                currentMode = QuestMenuMode.QuestList;
-            }
-            RefreshQuestList();
-            AnnounceCurrentSelection();
-        }
-
-        /// <summary>
-        /// Accepts a quest with a specific reward choice selected.
-        /// </summary>
-        private static void AcceptQuestWithChoice(Quest quest, QuestPart_Choice choicePart,
-            QuestPart_Choice.Choice choice)
-        {
-            choicePart.Choose(choice);
 
             if (quest.RequiresAccepter)
             {
-                AcceptQuestWithPawnSelection(quest, choice);
+                AcceptQuestWithPawnSelection(quest, null);
                 return;
             }
 
             SoundDefOf.Quest_Accepted.PlayOneShotOnCamera();
             quest.Accept(null);
-            string rewardDesc = QuestRewardHelper.BuildRewardDescription(choice.rewards);
-            TolkHelper.Speak("RimWorldAccess.Quests.Action.AcceptedWithRewards".Loc(rewardDesc));
-
-            detailHelper?.GoBackToList();
-            currentMode = QuestMenuMode.QuestList;
-            RefreshQuestList();
-            AnnounceCurrentSelection();
+            TolkHelper.Speak("RimWorldAccess.Quests.Action.AcceptedQuest".Loc(quest.name.StripTags()));
+            PostQuestListChangeHook?.Invoke();
         }
 
         /// <summary>
-        /// Opens a pawn selection float menu for RequiresAccepter quests.
-        /// CLOSES QuestMenuState first to prevent priority routing conflicts.
+        /// Dismisses or resumes <paramref name="quest"/>, or deletes it when Historical. Every
+        /// dismiss call site shares this one method, and so the MUTATION-C markers below.
         /// </summary>
-        private static void AcceptQuestWithPawnSelection(Quest quest, QuestPart_Choice.Choice chosenReward)
+        public static void ToggleDismissQuest(Quest quest)
+        {
+            if (quest.Historical)
+            {
+                // MUTATION-C: mirrors MainTabWindow_Quests.DoDismissButton's Historical branch
+                // (decompiled ~513-518) -- vanilla writes hiddenInUI directly with no gated setter.
+                quest.hiddenInUI = true;
+                TolkHelper.Speak("RimWorldAccess.Quests.Action.DeletedQuest".Loc(quest.name.StripTags()));
+                SoundDefOf.Tick_High.PlayOneShotOnCamera();
+            }
+            else
+            {
+                // MUTATION-C: mirrors MainTabWindow_Quests.DoDismissButton's dismissed toggle +
+                // subquest cascade (decompiled ~520-524) -- vanilla writes both fields directly
+                // with no gated setter.
+                quest.dismissed = !quest.dismissed;
+                foreach (Quest subquest in quest.GetSubquests())
+                {
+                    subquest.dismissed = quest.dismissed;
+                }
+                string actionKey = quest.dismissed
+                    ? "RimWorldAccess.Quests.Action.DismissedQuest"
+                    : "RimWorldAccess.Quests.Action.ResumedQuest";
+                TolkHelper.Speak(actionKey.Loc(quest.name.StripTags()));
+                SoundDefOf.Click.PlayOneShotOnCamera();
+            }
+
+            PostQuestListChangeHook?.Invoke();
+        }
+
+        /// <summary>
+        /// Accepts a quest with a specific reward choice. RequiresAccepter quests defer
+        /// <see cref="QuestPart_Choice.Choose"/> until a colonist is confirmed (vanilla's own
+        /// preAcceptAction deferral, MainTabWindow_Quests.cs:1021-1025), so backing out of accepter
+        /// selection leaves the reward choice uncommitted.
+        /// </summary>
+        internal static void AcceptQuestWithChoice(Quest quest, QuestPart_Choice choicePart,
+            QuestPart_Choice.Choice choice)
+        {
+            // Mirrors MainTabWindow_Quests.DoChoices' per-choice RequiresAccepter derivation
+            // (~992-1020): parts belonging exclusively to OTHER, unchosen choices are excluded
+            // first, because Quest.RequiresAccepter scans every part regardless of owner and would
+            // wrongly force accepter selection for a choice whose own parts need none.
+            var remainingParts = new List<QuestPart>(quest.PartsListForReading);
+            foreach (QuestPart_Choice.Choice otherChoice in choicePart.choices)
+            {
+                if (otherChoice == choice)
+                    continue;
+                foreach (QuestPart part in otherChoice.questParts)
+                {
+                    if (!choice.questParts.Contains(part))
+                        remainingParts.Remove(part);
+                }
+            }
+            bool requiresAccepter = remainingParts.Any(p => p.RequiresAccepter);
+
+            if (requiresAccepter)
+            {
+                AcceptQuestWithPawnSelection(quest, () => choicePart.Choose(choice));
+                return;
+            }
+
+            choicePart.Choose(choice);
+            SoundDefOf.Quest_Accepted.PlayOneShotOnCamera();
+            quest.Accept(null);
+            string rewardDesc = QuestRewardHelper.BuildRewardDescription(choice.rewards);
+            TolkHelper.Speak("RimWorldAccess.Quests.Action.AcceptedWithRewards".Loc(rewardDesc));
+
+            PostQuestListChangeHook?.Invoke();
+        }
+
+        /// <summary>
+        /// Opens the pawn-selection float menu for RequiresAccepter quests, closing QuestMenuState
+        /// first to avoid routing conflicts. <paramref name="preAcceptAction"/> runs immediately
+        /// before <see cref="Quest.Accept"/> once a colonist is confirmed and never on back-out,
+        /// mirroring vanilla's own preAcceptAction parameter.
+        /// </summary>
+        // MUTATION-C: the royal-favor confirmation gate below mirrors
+        // MainTabWindow_Quests.AcceptQuestByInterface's requiresAccepter branch (decompiled
+        // ~1356-1447) verbatim -- the accepter float menu and its warning dialog are private UI
+        // with no callable vehicle, so the branch conditions and vanilla translation keys
+        // (RoyalIncapableOfSocial / RoyalWithConceitedTrait / RoyalWithTraitAffectingPsylinkNegatively /
+        // QuestGivesRoyalFavor / WantToContinue / Confirm / GoBack) are copied verbatim, including the
+        // CanPawnAcceptQuest recheck inside the option action.
+        private static void AcceptQuestWithPawnSelection(Quest quest, Action preAcceptAction)
         {
             var eligiblePawns = PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_FreeColonists_NoSuspended
                 .Where(p => QuestUtility.CanPawnAcceptQuest(p, quest))
@@ -552,108 +288,113 @@ namespace RimWorldAccess
 
                 options.Add(new FloatMenuOption(label, () =>
                 {
-                    SoundDefOf.Quest_Accepted.PlayOneShotOnCamera();
-                    quest.Accept(localPawn);
-                    TolkHelper.Speak("RimWorldAccess.Quests.Action.AcceptedWithPawn".Loc(localPawn.LabelShort));
+                    if (!QuestUtility.CanPawnAcceptQuest(localPawn, quest))
+                        return;
+
+                    void AcceptAction()
+                    {
+                        SoundDefOf.Quest_Accepted.PlayOneShotOnCamera();
+                        preAcceptAction?.Invoke();
+                        quest.Accept(localPawn);
+                        TolkHelper.Speak("RimWorldAccess.Quests.Action.AcceptedWithPawn".Loc(localPawn.LabelShort));
+                    }
+
+                    QuestPart_GiveRoyalFavor royalFavorPart = quest.PartsListForReading
+                        .OfType<QuestPart_GiveRoyalFavor>().FirstOrDefault();
+                    if (royalFavorPart != null && royalFavorPart.giveToAccepter)
+                    {
+                        IEnumerable<Trait> conceitedTraits = RoyalTitleUtility.GetConceitedTraits(localPawn);
+                        IEnumerable<Trait> psylinkTraits = RoyalTitleUtility.GetTraitsAffectingPsylinkNegatively(localPawn);
+                        bool totallyDisabled = localPawn.skills.GetSkill(SkillDefOf.Social).TotallyDisabled;
+                        bool hasConceited = conceitedTraits.Any();
+                        bool hurtsPsylink = !localPawn.HasPsylink && psylinkTraits.Any();
+
+                        if (totallyDisabled || hasConceited || hurtsPsylink)
+                        {
+                            NamedArgument pawnArg = localPawn.Named("PAWN");
+                            NamedArgument factionArg = royalFavorPart.faction.Named("FACTION");
+                            TaggedString warningText = "QuestGivesRoyalFavor".Translate(pawnArg, factionArg);
+                            if (totallyDisabled)
+                                warningText += "\n\n" + "RoyalIncapableOfSocial".Translate(pawnArg, factionArg);
+                            if (hasConceited)
+                                warningText += "\n\n" + "RoyalWithConceitedTrait".Translate(pawnArg, factionArg,
+                                    conceitedTraits.Select(t => t.Label).ToCommaList(useAnd: true));
+                            if (hurtsPsylink)
+                                warningText += "\n\n" + "RoyalWithTraitAffectingPsylinkNegatively".Translate(pawnArg, factionArg,
+                                    psylinkTraits.Select(t => t.Label).ToCommaList(useAnd: true));
+                            warningText += "\n\n" + "WantToContinue".Translate();
+
+                            Find.WindowStack.Add(new Dialog_MessageBox(warningText, "Confirm".Translate(), AcceptAction, "GoBack".Translate()));
+                            return;
+                        }
+                    }
+
+                    AcceptAction();
                 }));
             }
 
-            // Close quest menu BEFORE opening float menu to prevent priority routing conflict
+            // Close the quest menu BEFORE opening the float menu, or the two contend for keys.
             Close();
             TolkHelper.Speak("RimWorldAccess.Quests.Action.SelectColonist".Loc());
             WindowlessFloatMenuState.Open(options, false);
         }
 
-        // =====================================================================
-        // Reward Preferences
-        // =====================================================================
+        /// <summary>Builds <paramref name="quest"/>'s dev-mode Buttons-region entries, mirroring MainTabWindow_Quests' embedded dev widgets.</summary>
+        internal static bool DevAcceptButtonVisible(Quest quest) => Prefs.DevMode && quest.State == QuestState.NotYetAccepted;
+        internal static bool DevToggleButtonsVisible => Prefs.DevMode && !DebugSettings.godMode;
 
         /// <summary>
-        /// Toggles between QuestList and RewardPreferences mode.
+        /// Mirrors MainTabWindow_Quests' "DEV: Accept instantly" button (~611-625): picks a random
+        /// reward choice, accepts with a random eligible colonist, and un-dismisses the quest.
         /// </summary>
-        public static void ToggleRewardPreferencesMode()
+        public static void DevAcceptInstantly(Quest quest)
         {
-            if (currentMode == QuestMenuMode.RewardPreferences)
+            SoundDefOf.Quest_Accepted.PlayOneShotOnCamera();
+
+            QuestPart_Choice choicePart = QuestRewardHelper.GetChoicePart(quest);
+            if (choicePart != null && choicePart.choices.Any())
             {
-                currentMode = QuestMenuMode.QuestList;
-                TolkHelper.Speak("RimWorldAccess.Quests.Pref.QuestList".Loc());
-                AnnounceCurrentSelection();
+                choicePart.Choose(choicePart.choices.RandomElement());
             }
-            else
-            {
-                currentMode = QuestMenuMode.RewardPreferences;
-                rewardPrefItems = QuestRewardHelper.GetRewardPreferenceItems();
-                rewardPrefIndex = 0;
 
-                if (rewardPrefItems.Count == 0)
-                {
-                    TolkHelper.Speak("RimWorldAccess.Quests.Pref.None".Loc());
-                    currentMode = QuestMenuMode.QuestList;
-                    return;
-                }
+            quest.Accept(PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_FreeColonists_NoSuspended
+                .Where(p => QuestUtility.CanPawnAcceptQuest(p, quest)).RandomElementWithFallback());
 
-                TolkHelper.Speak("RimWorldAccess.Quests.Pref.Title".Loc());
-                AnnounceRewardPref();
-            }
+            // MUTATION-C: mirrors MainTabWindow_Quests' "DEV: Accept instantly"
+            // dismissed clear (decompiled ~623) -- vanilla writes the field
+            // directly with no gated setter.
+            quest.dismissed = false;
+
+            TolkHelper.Speak("RimWorldAccess.Quests.Action.AcceptedQuest".Loc(quest.name.StripTags()));
+            PostQuestListChangeHook?.Invoke();
         }
 
-        public static void RewardPrefsNext()
+        /// <summary>Toggles the DEV "Show all" filter; the scope's next refresh picks up the new value.</summary>
+        public static void ToggleDevShowAll()
         {
-            if (rewardPrefItems.Count == 0) return;
-            rewardPrefIndex = MenuHelper.SelectNext(rewardPrefIndex, rewardPrefItems.Count);
-            AnnounceRewardPref();
+            devShowAll = !devShowAll;
+            TolkHelper.SpeakData(DevToggleAnnouncement("DEV: Show all", devShowAll));
         }
 
-        public static void RewardPrefsPrevious()
+        /// <summary>Toggles the DEV "Show debug info" filter; the Details region is rebuilt live from the Quests cursor.</summary>
+        public static void ToggleDevShowDebugInfo()
         {
-            if (rewardPrefItems.Count == 0) return;
-            rewardPrefIndex = MenuHelper.SelectPrevious(rewardPrefIndex, rewardPrefItems.Count);
-            AnnounceRewardPref();
+            devShowDebugInfo = !devShowDebugInfo;
+            TolkHelper.SpeakData(DevToggleAnnouncement("DEV: Show debug info", devShowDebugInfo));
         }
 
-        public static void RewardPrefsToggle()
+        private static string DevToggleAnnouncement(string label, bool on)
         {
-            if (rewardPrefItems.Count == 0) return;
-            var item = rewardPrefItems[rewardPrefIndex];
-            QuestRewardHelper.ToggleRewardPreference(item);
-
-            // Refresh to get updated labels
-            rewardPrefItems = QuestRewardHelper.GetRewardPreferenceItems();
-            if (rewardPrefIndex >= rewardPrefItems.Count)
-                rewardPrefIndex = Math.Max(0, rewardPrefItems.Count - 1);
-            AnnounceRewardPref();
+            string state = (on
+                ? "RimWorldAccess.Shell.State.Checked"
+                : "RimWorldAccess.Shell.State.Unchecked").Translate().ToString();
+            return label + ". " + state + ".";
         }
 
-        public static void RewardPrefsJumpToFirst()
-        {
-            if (rewardPrefItems.Count == 0) return;
-            rewardPrefIndex = 0;
-            AnnounceRewardPref();
-        }
+        // The reward-choice float menu and its item-inspection sub-mode, shared with
+        // QuestRewardOverlayScope and FloatMenuOverlayScope.
 
-        public static void RewardPrefsJumpToLast()
-        {
-            if (rewardPrefItems.Count == 0) return;
-            rewardPrefIndex = rewardPrefItems.Count - 1;
-            AnnounceRewardPref();
-        }
-
-        private static void AnnounceRewardPref()
-        {
-            if (rewardPrefItems.Count == 0) return;
-            var item = rewardPrefItems[rewardPrefIndex];
-            string position = MenuHelper.FormatPosition(rewardPrefIndex, rewardPrefItems.Count);
-            TolkHelper.Speak("RimWorldAccess.Quests.Pref.RowWithPosition".Loc(item.Label, position));
-        }
-
-        // =====================================================================
-        // Reward Choice Float Menu
-        // =====================================================================
-
-        /// <summary>
-        /// Opens a float menu listing reward choices for a multi-choice quest.
-        /// QuestMenuState stays active while the float menu is open.
-        /// </summary>
+        /// <summary>Opens a float menu of reward choices for a multi-choice quest; this state stays active while it is open.</summary>
         private static void OpenRewardChoiceMenu(Quest quest)
         {
             QuestPart_Choice choicePart = QuestRewardHelper.GetChoicePart(quest);
@@ -665,7 +406,6 @@ namespace RimWorldAccess
             hasActiveRewardMenu = true;
             isInItemInspectionMenu = false;
 
-            // Build inspectable items for each choice
             choiceInspectables = new List<List<(Thing thing, Faction faction)>>();
             var options = new List<FloatMenuOption>();
 
@@ -676,7 +416,6 @@ namespace RimWorldAccess
                 string rewardDesc = QuestRewardHelper.BuildRewardDescription(choice.rewards);
                 string label = rewardDesc;
 
-                // Build inspectable items for this choice
                 var inspectables = new List<(Thing thing, Faction faction)>();
                 foreach (Reward reward in choice.rewards)
                 {
@@ -705,7 +444,6 @@ namespace RimWorldAccess
 
                 options.Add(new FloatMenuOption(label, () =>
                 {
-                    // Accept with this choice
                     AcceptQuestWithChoice(rewardMenuQuest, choicePart, choice);
                     CleanupRewardMenu();
                 }));
@@ -715,10 +453,7 @@ namespace RimWorldAccess
             WindowlessFloatMenuState.Open(options, false);
         }
 
-        /// <summary>
-        /// Cleans up reward choice float menu state.
-        /// Called when the float menu closes by any means.
-        /// </summary>
+        /// <summary>Clears the reward-choice float-menu state; called however that menu closes.</summary>
         public static void CleanupRewardMenu()
         {
             hasActiveRewardMenu = false;
@@ -730,10 +465,7 @@ namespace RimWorldAccess
             savedChoiceIndex = -1;
         }
 
-        /// <summary>
-        /// Opens an item inspection sub-menu for the currently selected reward choice.
-        /// Called when Alt+I is pressed in the reward choice float menu.
-        /// </summary>
+        /// <summary>Opens the item-inspection sub-menu for the selected reward choice (Alt+I in the reward-choice menu).</summary>
         public static void OpenItemInspectionForCurrentChoice()
         {
             if (choiceInspectables == null) return;
@@ -754,7 +486,7 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Consolidate items by label (e.g., 5 stacks of plasteel → one "375x Plasteel" entry)
+            // Consolidate by label: five stacks of plasteel become one "375x Plasteel" entry.
             var consolidated = new List<(string label, Thing thing, Faction faction)>();
             var grouped = new Dictionary<string, (int totalCount, Thing representative)>();
             var factionEntries = new List<(string label, Faction faction)>();
@@ -785,7 +517,7 @@ namespace RimWorldAccess
                 int count = kvp.Value.totalCount;
                 Thing rep = kvp.Value.representative;
                 string itemName = rep.LabelNoCount.CapitalizeFirst();
-                string itemLabel = count > 1 ? $"{count}x {itemName}" : itemName;
+                string itemLabel = count > 1 ? "RimWorldAccess.Quests.RewardChoice.ItemWithCount".Loc(count, itemName).ToString() : itemName;
                 consolidated.Add((itemLabel, rep, null));
             }
             foreach (var entry in factionEntries)
@@ -793,7 +525,7 @@ namespace RimWorldAccess
                 consolidated.Add((entry.label, null, entry.faction));
             }
 
-            // Re-check after consolidation: single item opens info card directly
+            // Re-checked after consolidation: a single item opens its info card directly.
             if (consolidated.Count == 1)
             {
                 var item = consolidated[0];
@@ -811,11 +543,9 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Set up item inspection state
             savedChoiceIndex = choiceIdx;
             isInItemInspectionMenu = true;
 
-            // Build consolidated inspection items list for InspectCurrentItem
             currentInspectionItems = new List<(Thing thing, Faction faction)>();
             var options = new List<FloatMenuOption>();
             foreach (var entry in consolidated)
@@ -824,16 +554,12 @@ namespace RimWorldAccess
                 options.Add(new FloatMenuOption(entry.label, () => { }));
             }
 
-            // Close current float menu and open item inspection menu
             WindowlessFloatMenuState.Close();
             TolkHelper.Speak("RimWorldAccess.InfoCard.ChooseItemToInspect".Loc());
             WindowlessFloatMenuState.Open(options, false);
         }
 
-        /// <summary>
-        /// Opens an info card for the currently selected item in the inspection sub-menu.
-        /// Called when Enter is pressed in item inspection mode (intercepted before float menu handler).
-        /// </summary>
+        /// <summary>Opens the info card for the selected item in the inspection sub-menu (Enter in item-inspection mode).</summary>
         public static void InspectCurrentItem()
         {
             if (currentInspectionItems == null) return;
@@ -860,24 +586,20 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Returns from item inspection sub-menu to the reward choice float menu.
-        /// Called when Escape is pressed in item inspection mode.
-        /// </summary>
+        /// <summary>Returns from the item-inspection sub-menu to the reward-choice float menu (Escape).</summary>
         public static void ReturnToRewardChoiceMenu()
         {
             isInItemInspectionMenu = false;
             currentInspectionItems = null;
 
-            // Close item inspection float menu
             WindowlessFloatMenuState.Close();
 
-            // Rebuild and re-open choice menu at saved position
+            // Rebuild and re-open the choice menu at the saved position.
             if (rewardMenuQuest == null || rewardChoices == null)
             {
                 CleanupRewardMenu();
                 TolkHelper.Speak("RimWorldAccess.Quests.RewardChoice.BackToList".Loc());
-                AnnounceCurrentSelection();
+                PostQuestListChangeHook?.Invoke();
                 return;
             }
 
@@ -886,7 +608,7 @@ namespace RimWorldAccess
             {
                 CleanupRewardMenu();
                 TolkHelper.Speak("RimWorldAccess.Quests.RewardChoice.BackToList".Loc());
-                AnnounceCurrentSelection();
+                PostQuestListChangeHook?.Invoke();
                 return;
             }
 
@@ -908,549 +630,6 @@ namespace RimWorldAccess
             int restoreIndex = savedChoiceIndex >= 0 && savedChoiceIndex < options.Count
                 ? savedChoiceIndex : 0;
             WindowlessFloatMenuState.Open(options, false, restoreIndex);
-        }
-
-        // =====================================================================
-        // Typeahead Search
-        // =====================================================================
-
-        public static List<string> GetItemLabels()
-        {
-            List<string> labels = new List<string>();
-            foreach (var quest in currentQuests)
-            {
-                labels.Add(quest.name.StripTags());
-            }
-            return labels;
-        }
-
-        public static void AnnounceWithSearch()
-        {
-            if (currentQuests.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.Quests.Tab.NoQuests".Loc(GetTabName()));
-                return;
-            }
-
-            Quest quest = currentQuests[currentIndex];
-            string announcement = BuildQuestAnnouncement(quest);
-
-            if (typeahead.HasActiveSearch)
-            {
-                announcement += typeahead.BuildSearchContextSuffix();
-            }
-
-            TolkHelper.SpeakData(announcement);
-        }
-
-        public static void HandleBackspace()
-        {
-            if (!typeahead.HasActiveSearch)
-                return;
-
-            var labels = GetItemLabels();
-            if (typeahead.ProcessBackspace(labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                    currentIndex = newIndex;
-                AnnounceWithSearch();
-            }
-        }
-
-        public static void HandleTypeahead(char c)
-        {
-            var labels = GetItemLabels();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    currentIndex = newIndex;
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
-        }
-
-        // =====================================================================
-        // Private Helpers
-        // =====================================================================
-
-        private static void InitializeDetailHelper()
-        {
-            detailHelper = new TwoLevelMenuHelper(
-                getContentLineCount: () => cachedDetailLines.Count,
-                populateButtons: PopulateQuestButtons,
-                getHeaderAnnouncement: GetDetailHeaderAnnouncement,
-                getContentLineAnnouncement: (idx) =>
-                    idx >= 0 && idx < cachedDetailLines.Count ? cachedDetailLines[idx].Text : "",
-                endOfItemMessage: "RimWorldAccess.Quests.Detail.EndOfDetails".Translate(),
-                startOfItemMessage: "RimWorldAccess.Quests.Detail.StartOfDetails".Translate(),
-                openFirstMessage: "RimWorldAccess.Quests.Detail.OpenFirst".Translate()
-            );
-        }
-
-        private static string GetDetailHeaderAnnouncement()
-        {
-            if (currentQuests.Count == 0 || currentIndex < 0 || currentIndex >= currentQuests.Count)
-                return "";
-
-            Quest quest = currentQuests[currentIndex];
-            string name = quest.name.StripTags();
-            string statusKey;
-
-            if (quest.State == QuestState.NotYetAccepted) statusKey = "RimWorldAccess.Quests.Status.Available";
-            else if (quest.State == QuestState.Ongoing && !quest.dismissed) statusKey = "RimWorldAccess.Quests.Status.Active";
-            else if (quest.State == QuestState.Ongoing && quest.dismissed) statusKey = "RimWorldAccess.Quests.Status.Dismissed";
-            else if (quest.State == QuestState.EndedSuccess) statusKey = "RimWorldAccess.Quests.Status.Completed";
-            else if (quest.State == QuestState.EndedFailed) statusKey = "RimWorldAccess.Quests.Status.Failed";
-            else statusKey = "RimWorldAccess.Quests.Status.Expired";
-
-            return "RimWorldAccess.Quests.Detail.HeaderStatus".Translate(name, statusKey.Translate());
-        }
-
-        /// <summary>
-        /// Builds the navigable content lines for the detail view.
-        /// </summary>
-        private static List<DetailLine> BuildDetailContentLines(Quest quest)
-        {
-            var lines = new List<DetailLine>();
-
-            // Difficulty
-            int rating = Math.Max(quest.challengeRating, 1);
-            string ratingLine = rating == 1
-                ? "RimWorldAccess.Quests.Detail.DifficultyOne".Translate().ToString()
-                : "RimWorldAccess.Quests.Detail.DifficultyMany".Translate(rating).ToString();
-            if (quest.charity)
-                ratingLine += "RimWorldAccess.Quests.Detail.CharitySuffix".Translate();
-            lines.Add(new DetailLine(ratingLine));
-
-            // Time info
-            if (quest.State == QuestState.NotYetAccepted && quest.TicksUntilExpiry > 0)
-            {
-                lines.Add(new DetailLine("RimWorldAccess.Quests.Detail.ExpiresIn".Translate(
-                    quest.TicksUntilExpiry.ToStringTicksToPeriod()).ToString()));
-            }
-            else if (quest.EverAccepted && !quest.Historical)
-            {
-                lines.Add(new DetailLine("RimWorldAccess.Quests.Detail.AcceptedAgo".Translate(
-                    quest.TicksSinceAccepted.ToStringTicksToPeriod())));
-            }
-            else if (quest.Historical)
-            {
-                string outcomeKey = quest.State == QuestState.EndedSuccess ? "RimWorldAccess.Quests.Status.Completed" :
-                                    quest.State == QuestState.EndedFailed ? "RimWorldAccess.Quests.Status.Failed" :
-                                    "RimWorldAccess.Quests.Status.Expired";
-                lines.Add(new DetailLine("RimWorldAccess.Quests.Detail.Status".Translate(outcomeKey.Translate())));
-                lines.Add(new DetailLine("RimWorldAccess.Quests.Detail.Finished".Translate(
-                    quest.TicksSinceCleanup.ToStringTicksToPeriod())));
-            }
-
-            // Active-quest deadlines from QuestPartActivable parts (matches vanilla MainTabWindow_Quests.DoRightAlignedInfo).
-            // Each part's ExpiryInfoPart is already localized and formatted (e.g. "Ends in 3 days").
-            if (quest.State == QuestState.Ongoing)
-            {
-                foreach (QuestPart part in quest.PartsListForReading)
-                {
-                    if (part is QuestPartActivable activable &&
-                        activable.State == QuestPartState.Enabled &&
-                        !activable.ExpiryInfoPart.NullOrEmpty())
-                    {
-                        lines.Add(new DetailLine(activable.ExpiryInfoPart));
-                    }
-                }
-            }
-
-            // Description (split into individual lines)
-            if (!quest.description.RawText.NullOrEmpty())
-            {
-                string desc = quest.description.Resolve().StripTags();
-                string[] descLines = desc.Split('\n');
-                foreach (string line in descLines)
-                {
-                    string trimmed = line.Trim();
-                    if (!string.IsNullOrEmpty(trimmed))
-                        lines.Add(new DetailLine(trimmed));
-                }
-            }
-
-            // Rewards (with info card targets)
-            var rewardLines = QuestRewardHelper.BuildRewardDetailLines(quest);
-            lines.AddRange(rewardLines);
-
-            return lines;
-        }
-
-        /// <summary>
-        /// Populates the action buttons for the detail view based on quest state.
-        /// </summary>
-        private static void PopulateQuestButtons(List<ButtonInfo> buttons)
-        {
-            if (currentQuests.Count == 0 || currentIndex < 0 || currentIndex >= currentQuests.Count)
-                return;
-
-            Quest quest = currentQuests[currentIndex];
-
-            if (quest.State == QuestState.NotYetAccepted)
-            {
-                AcceptanceReport canAccept = QuestUtility.CanAcceptQuest(quest);
-                QuestPart_Choice choicePart = QuestRewardHelper.GetChoicePart(quest);
-                bool hasMultiChoice = choicePart != null && choicePart.choices.Count >= 2;
-
-                if (hasMultiChoice)
-                {
-                    // One accept button per reward choice
-                    for (int i = 0; i < choicePart.choices.Count; i++)
-                    {
-                        int choiceIdx = i;
-                        string rewardDesc = QuestRewardHelper.BuildRewardDescription(
-                            choicePart.choices[choiceIdx].rewards);
-                        buttons.Add(new ButtonInfo
-                        {
-                            Label = "RimWorldAccess.Quests.Button.AcceptChoice".Translate(choiceIdx + 1, rewardDesc),
-                            Action = () => AcceptQuestWithChoice(quest, choicePart,
-                                choicePart.choices[choiceIdx]),
-                            IsDisabled = !canAccept.Accepted,
-                            DisabledReason = canAccept.Accepted ? null : canAccept.Reason
-                        });
-                    }
-                }
-                else
-                {
-                    // Single accept button with reward description
-                    string acceptLabel = "AcceptButton".Translate();
-                    if (choicePart != null && choicePart.choices.Count == 1)
-                    {
-                        string rewardDesc = QuestRewardHelper.BuildRewardDescription(choicePart.choices[0].rewards);
-                        if (!string.IsNullOrEmpty(rewardDesc))
-                            acceptLabel = "RimWorldAccess.Quests.Button.AcceptWithRewards".Translate(rewardDesc);
-                    }
-                    buttons.Add(new ButtonInfo
-                    {
-                        Label = acceptLabel,
-                        Action = () =>
-                        {
-                            AcceptanceReport report = QuestUtility.CanAcceptQuest(quest);
-                            if (!report.Accepted)
-                            {
-                                TolkHelper.Speak("RimWorldAccess.Quests.Action.CannotAcceptReason".Loc(report.Reason), SpeechPriority.High);
-                                return;
-                            }
-
-                            if (quest.RequiresAccepter)
-                            {
-                                AcceptQuestWithPawnSelection(quest, null);
-                                return;
-                            }
-
-                            SoundDefOf.Quest_Accepted.PlayOneShotOnCamera();
-                            quest.Accept(null);
-                            TolkHelper.Speak("RimWorldAccess.Quests.Action.AcceptedQuest".Loc(quest.name.StripTags()));
-                            detailHelper?.GoBackToList();
-                            currentMode = QuestMenuMode.QuestList;
-                            RefreshQuestList();
-                            AnnounceCurrentSelection();
-                        },
-                        IsDisabled = !canAccept.Accepted,
-                        DisabledReason = canAccept.Accepted ? null : canAccept.Reason
-                    });
-                }
-
-                // Dismiss button for available quests
-                buttons.Add(new ButtonInfo
-                {
-                    Label = "RimWorldAccess.Quests.Button.Dismiss".Translate(),
-                    Action = () =>
-                    {
-                        quest.dismissed = true;
-                        SoundDefOf.Click.PlayOneShotOnCamera();
-                        TolkHelper.Speak("RimWorldAccess.Quests.Action.DismissedQuest".Loc(quest.name.StripTags()));
-                        detailHelper?.GoBackToList();
-                        currentMode = QuestMenuMode.QuestList;
-                        RefreshQuestList();
-                        AnnounceCurrentSelection();
-                    }
-                });
-            }
-            else if (quest.State == QuestState.Ongoing)
-            {
-                buttons.Add(new ButtonInfo
-                {
-                    Label = (quest.dismissed
-                        ? "RimWorldAccess.Quests.Button.Resume"
-                        : "RimWorldAccess.Quests.Button.Dismiss").Translate(),
-                    Action = () =>
-                    {
-                        quest.dismissed = !quest.dismissed;
-                        string actionKey = quest.dismissed
-                            ? "RimWorldAccess.Quests.Action.DismissedQuest"
-                            : "RimWorldAccess.Quests.Action.ResumedQuest";
-                        SoundDefOf.Click.PlayOneShotOnCamera();
-                        TolkHelper.Speak(actionKey.Loc(quest.name.StripTags()));
-                        detailHelper?.GoBackToList();
-                        currentMode = QuestMenuMode.QuestList;
-                        RefreshQuestList();
-                        AnnounceCurrentSelection();
-                    }
-                });
-            }
-            else if (quest.Historical)
-            {
-                buttons.Add(new ButtonInfo
-                {
-                    Label = "RimWorldAccess.Quests.Button.Delete".Translate(),
-                    Action = () =>
-                    {
-                        quest.hiddenInUI = true;
-                        SoundDefOf.Tick_High.PlayOneShotOnCamera();
-                        TolkHelper.Speak("RimWorldAccess.Quests.Action.DeletedQuest".Loc(quest.name.StripTags()));
-                        detailHelper?.GoBackToList();
-                        currentMode = QuestMenuMode.QuestList;
-                        RefreshQuestList();
-                        AnnounceCurrentSelection();
-                    }
-                });
-            }
-
-            // Jump to location buttons
-            var lookTargets = quest.QuestLookTargets.Where(t => CameraJumper.CanJump(t)).ToList();
-            foreach (var target in lookTargets)
-            {
-                GlobalTargetInfo localTarget = target;
-                string targetLabel = localTarget.Label;
-                string buttonLabel = string.IsNullOrEmpty(targetLabel)
-                    ? (string)"RimWorldAccess.Quests.Button.JumpToLocation".Translate()
-                    : (string)"RimWorldAccess.Quests.Button.JumpToTarget".Translate(targetLabel);
-
-                buttons.Add(new ButtonInfo
-                {
-                    Label = buttonLabel,
-                    Action = () =>
-                    {
-                        CameraJumper.TryJumpAndSelect(localTarget);
-                        Close();
-                    }
-                });
-            }
-        }
-
-        private static QuestsTab GetTabForQuest(Quest quest)
-        {
-            if (quest.Historical || quest.dismissed)
-                return QuestsTab.Historical;
-
-            if (quest.State == QuestState.NotYetAccepted)
-                return QuestsTab.Available;
-
-            if (quest.State == QuestState.Ongoing)
-                return QuestsTab.Active;
-
-            return QuestsTab.Historical;
-        }
-
-        private static void RefreshQuestList()
-        {
-            currentQuests.Clear();
-
-            List<Quest> allQuests = Find.QuestManager.questsInDisplayOrder;
-
-            foreach (Quest quest in allQuests)
-            {
-                if (ShouldShowQuest(quest))
-                {
-                    currentQuests.Add(quest);
-                }
-            }
-
-            switch (currentTab)
-            {
-                case QuestsTab.Available:
-                    currentQuests = currentQuests.OrderBy(q => q.TicksUntilExpiry).ToList();
-                    break;
-                case QuestsTab.Active:
-                    currentQuests = currentQuests.OrderBy(q => q.TicksSinceAccepted).ToList();
-                    break;
-                case QuestsTab.Historical:
-                    currentQuests = currentQuests.OrderBy(q => q.TicksSinceCleanup).ToList();
-                    break;
-            }
-
-            if (currentIndex >= currentQuests.Count)
-                currentIndex = Math.Max(0, currentQuests.Count - 1);
-        }
-
-        private static bool ShouldShowQuest(Quest quest)
-        {
-            if (quest.hidden || quest.hiddenInUI)
-                return false;
-
-            switch (currentTab)
-            {
-                case QuestsTab.Available:
-                    return quest.State == QuestState.NotYetAccepted && !quest.dismissed;
-                case QuestsTab.Active:
-                    return quest.State == QuestState.Ongoing && !quest.dismissed;
-                case QuestsTab.Historical:
-                    return quest.Historical || quest.dismissed;
-                default:
-                    return false;
-            }
-        }
-
-        private static void AnnounceTabSwitch()
-        {
-            string tabName = GetTabName();
-            string sentence = currentQuests.Count == 0
-                ? "RimWorldAccess.Quests.Tab.NoQuests".Translate(tabName).ToString()
-                : currentQuests.Count == 1
-                    ? "RimWorldAccess.Quests.Tab.WithCountOne".Translate(tabName).ToString()
-                    : "RimWorldAccess.Quests.Tab.WithCountMany".Translate(tabName, currentQuests.Count).ToString();
-            TolkHelper.SpeakData(sentence);
-
-            if (currentQuests.Count > 0)
-            {
-                AnnounceCurrentSelection();
-            }
-        }
-
-        private static void AnnounceCurrentSelection()
-        {
-            if (currentQuests.Count == 0)
-            {
-                TolkHelper.Speak("RimWorldAccess.Quests.Tab.NoQuests".Loc(GetTabName()));
-                return;
-            }
-
-            Quest quest = currentQuests[currentIndex];
-            string announcement = BuildQuestAnnouncement(quest);
-            TolkHelper.SpeakData(announcement);
-        }
-
-        private static string BuildQuestAnnouncement(Quest quest)
-        {
-            var parts = new List<string>();
-            string name = quest.name.StripTags();
-
-            // Name with status
-            if (quest.dismissed && !quest.Historical)
-                parts.Add("RimWorldAccess.Quests.List.NameWithStatus".Translate(
-                    name, "RimWorldAccess.Quests.Status.Dismissed".Translate()));
-            else if (quest.Historical)
-            {
-                string statusKey;
-                switch (quest.State)
-                {
-                    case QuestState.EndedSuccess:
-                        statusKey = "RimWorldAccess.Quests.Status.Completed";
-                        break;
-                    case QuestState.EndedFailed:
-                        statusKey = "RimWorldAccess.Quests.Status.Failed";
-                        break;
-                    default:
-                        statusKey = "RimWorldAccess.Quests.Status.Expired";
-                        break;
-                }
-                parts.Add("RimWorldAccess.Quests.List.NameWithStatus".Translate(name, statusKey.Translate()));
-            }
-            else
-            {
-                parts.Add(name);
-            }
-
-            // Difficulty
-            int rating = Math.Max(quest.challengeRating, 1);
-            string ratingText = rating == 1
-                ? "RimWorldAccess.Quests.List.StarsOne".Translate().ToString()
-                : "RimWorldAccess.Quests.List.StarsMany".Translate(rating).ToString();
-            if (quest.charity)
-                ratingText += "RimWorldAccess.Quests.List.CharitySuffix".Translate();
-            parts.Add(ratingText);
-
-            // Time info
-            string timeInfo = GetShortTimeInfo(quest);
-            if (!string.IsNullOrEmpty(timeInfo))
-                parts.Add(timeInfo);
-
-            // Description
-            if (!quest.description.RawText.NullOrEmpty())
-            {
-                string desc = quest.description.Resolve().StripTags();
-                // Split on newlines, trim, filter empties, strip trailing periods to avoid ".." when joining
-                var descLines = desc.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-                var cleanLines = new List<string>();
-                foreach (string line in descLines)
-                {
-                    string trimmed = line.Trim();
-                    if (!string.IsNullOrEmpty(trimmed))
-                    {
-                        if (trimmed.EndsWith("."))
-                            trimmed = trimmed.Substring(0, trimmed.Length - 1).TrimEnd();
-                        if (!string.IsNullOrEmpty(trimmed))
-                            cleanLines.Add(trimmed);
-                    }
-                }
-                if (cleanLines.Count > 0)
-                    parts.Add(string.Join(". ", cleanLines));
-            }
-
-            // Rewards
-            string rewardSummary = QuestRewardHelper.BuildCompactRewardSummary(quest);
-            parts.Add("RimWorldAccess.Quests.List.RewardsSummary".Translate(rewardSummary));
-
-            // Position
-            string position = MenuHelper.FormatPosition(currentIndex, currentQuests.Count);
-
-            return string.Join(". ", parts) + ". " + position;
-        }
-
-        private static string GetShortTimeInfo(Quest quest)
-        {
-            if (quest.State == QuestState.NotYetAccepted && quest.TicksUntilExpiry >= 0)
-            {
-                return "RimWorldAccess.Quests.List.ExpiresIn".Translate(
-                    quest.TicksUntilExpiry.ToStringTicksToPeriod(allowSeconds: true, shortForm: true)).ToString();
-            }
-            else if (quest.Historical)
-            {
-                return "RimWorldAccess.Quests.List.AgoOnly".Translate(
-                    quest.TicksSinceCleanup.ToStringTicksToPeriod(allowSeconds: false, shortForm: true));
-            }
-            else if (quest.EverAccepted)
-            {
-                // Active quest with a bad-outcome deadline takes priority over "accepted ago"
-                // (matches vanilla MainTabWindow_Quests.GetShortTimeInfo).
-                foreach (QuestPart part in quest.PartsListForReading)
-                {
-                    if (part is QuestPart_Delay delayPart &&
-                        delayPart.State == QuestPartState.Enabled &&
-                        delayPart.isBad &&
-                        !delayPart.expiryInfoPart.NullOrEmpty())
-                    {
-                        return "QuestExpiresIn".Translate(
-                            delayPart.TicksLeft.ToStringTicksToPeriod(allowSeconds: false, shortForm: true, canUseDecimals: false)).ToString();
-                    }
-                }
-                return (string)"RimWorldAccess.Quests.List.AcceptedAgo".Translate(quest.TicksSinceAccepted.ToStringTicksToPeriod(allowSeconds: false, shortForm: true));
-            }
-
-            return "";
-        }
-
-        private static string GetTabName()
-        {
-            switch (currentTab)
-            {
-                case QuestsTab.Available:
-                    return "RimWorldAccess.Quests.Tab.Available".Translate();
-                case QuestsTab.Active:
-                    return "RimWorldAccess.Quests.Tab.Active".Translate();
-                case QuestsTab.Historical:
-                    return "RimWorldAccess.Quests.Tab.Historical".Translate();
-                default:
-                    return "RimWorldAccess.Quests.Tab.Generic".Translate();
-            }
         }
     }
 }

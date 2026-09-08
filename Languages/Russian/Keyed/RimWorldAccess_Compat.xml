@@ -1,0 +1,944 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimWorldAccess.Compat.Vef.CooldownStatus>На перезарядке, готово через {0}</RimWorldAccess.Compat.Vef.CooldownStatus>
+  <RimWorldAccess.Compat.Vef.AutoCastOn>Автоприменение включено</RimWorldAccess.Compat.Vef.AutoCastOn>
+  <RimWorldAccess.Compat.Vef.AutoCastNowOn>Автоприменение включено</RimWorldAccess.Compat.Vef.AutoCastNowOn>
+  <RimWorldAccess.Compat.Vef.AutoCastNowOff>Автоприменение выключено</RimWorldAccess.Compat.Vef.AutoCastNowOff>
+  <RimWorldAccess.Compat.Vef.EnableAutoCast>Включить автоприменение</RimWorldAccess.Compat.Vef.EnableAutoCast>
+  <RimWorldAccess.Compat.Vef.DisableAutoCast>Выключить автоприменение</RimWorldAccess.Compat.Vef.DisableAutoCast>
+  <RimWorldAccess.Compat.Vef.AlternateAction>Альтернативное действие</RimWorldAccess.Compat.Vef.AlternateAction>
+  <RimWorldAccess.Compat.Mvcf.EnableAutoReload>Включить автоперезарядку</RimWorldAccess.Compat.Mvcf.EnableAutoReload>
+  <RimWorldAccess.Compat.Mvcf.DisableAutoReload>Выключить автоперезарядку</RimWorldAccess.Compat.Mvcf.DisableAutoReload>
+  <RimWorldAccess.Compat.Mvcf.AutoReloadOn>Автоперезарядка включена</RimWorldAccess.Compat.Mvcf.AutoReloadOn>
+  <RimWorldAccess.Compat.Mvcf.AutoReloadOff>Автоперезарядка выключена</RimWorldAccess.Compat.Mvcf.AutoReloadOff>
+  <RimWorldAccess.Compat.Mvcf.EnableAutoUse>Включить автоматическое использование</RimWorldAccess.Compat.Mvcf.EnableAutoUse>
+  <RimWorldAccess.Compat.Mvcf.DisableAutoUse>Выключить автоматическое использование</RimWorldAccess.Compat.Mvcf.DisableAutoUse>
+  <RimWorldAccess.Compat.Mvcf.AutoUseOn>Автоматическое использование включено</RimWorldAccess.Compat.Mvcf.AutoUseOn>
+  <RimWorldAccess.Compat.Mvcf.AutoUseOff>Автоматическое использование выключено</RimWorldAccess.Compat.Mvcf.AutoUseOff>
+  <RimWorldAccess.Compat.Vpe.Psycasts>Пси-способности</RimWorldAccess.Compat.Vpe.Psycasts>
+  <RimWorldAccess.Compat.Vpe.PsyLevel>Уровень псионика: {0}</RimWorldAccess.Compat.Vpe.PsyLevel>
+  <RimWorldAccess.Compat.Vpe.EarnXP>Получайте опыт псионика с помощью медитации.</RimWorldAccess.Compat.Vpe.EarnXP>
+  <RimWorldAccess.Compat.Vpe.XpProgress>Опыт: {0} / {1}</RimWorldAccess.Compat.Vpe.XpProgress>
+  <RimWorldAccess.Compat.Vpe.PointsAvailable>Доступно очков: {0}</RimWorldAccess.Compat.Vpe.PointsAvailable>
+  <RimWorldAccess.Compat.Vpe.SpendPoints>Тратьте очки на открытие новых путей, пси-способностей, объектов для медитации, улучшение характеристик и многое другое.</RimWorldAccess.Compat.Vpe.SpendPoints>
+  <RimWorldAccess.Compat.Vpe.PsycasterStats>Характеристики псионика</RimWorldAccess.Compat.Vpe.PsycasterStats>
+  <RimWorldAccess.Compat.Vpe.UpgradeAction>Улучшить за 1 очко</RimWorldAccess.Compat.Vpe.UpgradeAction>
+  <RimWorldAccess.Compat.Vpe.NotEnoughPoints>Недостаточно доступных очков</RimWorldAccess.Compat.Vpe.NotEnoughPoints>
+  <RimWorldAccess.Compat.Vpe.FocusTypes>Виды объектов для медитации</RimWorldAccess.Compat.Vpe.FocusTypes>
+  <RimWorldAccess.Compat.Vpe.PsysetCustomize>Настройка псинаборов</RimWorldAccess.Compat.Vpe.PsysetCustomize>
+  <RimWorldAccess.Compat.Vpe.PsysetDesc>Псинаборы позволяют группировать изученные пси-способности и переключаться между ними в игре.</RimWorldAccess.Compat.Vpe.PsysetDesc>
+  <RimWorldAccess.Compat.Vpe.Locked>Заблокировано</RimWorldAccess.Compat.Vpe.Locked>
+  <RimWorldAccess.Compat.Vpe.AbilitiesList>Включённые пси-способности</RimWorldAccess.Compat.Vpe.AbilitiesList>
+  <RimWorldAccess.Compat.Vpe.StateUnlocked>: разблокировано</RimWorldAccess.Compat.Vpe.StateUnlocked>
+  <RimWorldAccess.Compat.Vpe.StateCanUnlock>: доступно для разблокировки за 1 очко</RimWorldAccess.Compat.Vpe.StateCanUnlock>
+  <RimWorldAccess.Compat.Vpe.StateLocked>: заблокировано</RimWorldAccess.Compat.Vpe.StateLocked>
+  <RimWorldAccess.Compat.Vpe.StateLearned>: изучено</RimWorldAccess.Compat.Vpe.StateLearned>
+  <RimWorldAccess.Compat.Vpe.StateCanLearn>: доступно для изучения за 1 очко</RimWorldAccess.Compat.Vpe.StateCanLearn>
+  <RimWorldAccess.Compat.Vpe.PathLevel>Уровень пути {0}.</RimWorldAccess.Compat.Vpe.PathLevel>
+  <RimWorldAccess.Compat.Vpe.Requires>Требуется: {0}.</RimWorldAccess.Compat.Vpe.Requires>
+  <RimWorldAccess.Compat.Vpe.PrereqLearned>{0} (изучено)</RimWorldAccess.Compat.Vpe.PrereqLearned>
+  <RimWorldAccess.Compat.Vpe.PrereqNotLearned>{0} (не изучено)</RimWorldAccess.Compat.Vpe.PrereqNotLearned>
+  <RimWorldAccess.Compat.Vpe.NoPsysets>Псинаборы не определены</RimWorldAccess.Compat.Vpe.NoPsysets>
+  <RimWorldAccess.Compat.Vpe.UnlockAction>Разблокировать за 1 очко</RimWorldAccess.Compat.Vpe.UnlockAction>
+  <RimWorldAccess.Compat.Vpe.LearnAction>Изучить за 1 очко</RimWorldAccess.Compat.Vpe.LearnAction>
+  <RimWorldAccess.Compat.Vpe.PsysetEditAction>Изменить пси-способности</RimWorldAccess.Compat.Vpe.PsysetEditAction>
+  <RimWorldAccess.Compat.Vpe.PsysetRenameAction>Переименовать</RimWorldAccess.Compat.Vpe.PsysetRenameAction>
+  <RimWorldAccess.Compat.Vpe.PsysetRemoveAction>Удалить псинабор</RimWorldAccess.Compat.Vpe.PsysetRemoveAction>
+  <RimWorldAccess.Compat.Vpe.PsysetCreateAction>Создать новый псинабор</RimWorldAccess.Compat.Vpe.PsysetCreateAction>
+  <RimWorldAccess.Compat.Vpe.UntitledPsyset>Без названия</RimWorldAccess.Compat.Vpe.UntitledPsyset>
+  <RimWorldAccess.Compat.Vpe.PsysetRemoved>Псинабор {0} удалён.</RimWorldAccess.Compat.Vpe.PsysetRemoved>
+  <RimWorldAccess.Compat.Vpe.PsysetContents>Пси-способности в наборе: {0}.</RimWorldAccess.Compat.Vpe.PsysetContents>
+  <RimWorldAccess.Compat.Vpe.PsysetEmptyContents>В этом наборе пока нет пси-способностей.</RimWorldAccess.Compat.Vpe.PsysetEmptyContents>
+  <RimWorldAccess.Compat.Vpe.PsysetMembersRegion>Пси-способности в этом наборе</RimWorldAccess.Compat.Vpe.PsysetMembersRegion>
+  <RimWorldAccess.Compat.Vpe.PsysetAvailableRegion>Доступные пси-способности</RimWorldAccess.Compat.Vpe.PsysetAvailableRegion>
+  <RimWorldAccess.Compat.Vpe.PsysetAdded>{0} добавлено в набор.</RimWorldAccess.Compat.Vpe.PsysetAdded>
+  <RimWorldAccess.Compat.Vpe.PsysetRemovedFromSet>{0} удалено из набора.</RimWorldAccess.Compat.Vpe.PsysetRemovedFromSet>
+  <RimWorldAccess.Compat.Vpe.PsysetEditorOpen>Редактирование псинабора {0}. Перемещайтесь между пси-способностями в наборе и доступными пси-способностями; нажмите Enter, чтобы добавить или удалить одну.</RimWorldAccess.Compat.Vpe.PsysetEditorOpen>
+  <RimWorldAccess.Compat.Vae.TabAspirations>Стремления</RimWorldAccess.Compat.Vae.TabAspirations>
+  <RimWorldAccess.Compat.Vae.AspirationsProgress>Стремления: выполнено {0} из {1}</RimWorldAccess.Compat.Vae.AspirationsProgress>
+  <RimWorldAccess.Compat.Vae.StateCompleted>: выполнено</RimWorldAccess.Compat.Vae.StateCompleted>
+  <RimWorldAccess.Compat.Vae.ChooseAspirations>Выберите {0} из {1} стремлений</RimWorldAccess.Compat.Vae.ChooseAspirations>
+  <RimWorldAccess.Compat.Vae.AspirationDesc>Стремления — это цели, которых {0} захочет достичь за свою жизнь. Их достижение повышает порог психологического срыва, а если выполнены все стремления, {0} переживёт ещё один момент роста.</RimWorldAccess.Compat.Vae.AspirationDesc>
+  <RimWorldAccess.Compat.Vae.SelectAspirationSingular>Выберите стремление.</RimWorldAccess.Compat.Vae.SelectAspirationSingular>
+  <RimWorldAccess.Compat.Vae.SelectAspirationsPlural>Выберите {0} стремлений.</RimWorldAccess.Compat.Vae.SelectAspirationsPlural>
+  <RimWorldAccess.Compat.Vae.AspirationSelectedFeedback>{0} выбрано. Выбрано {1} из {2} стремлений</RimWorldAccess.Compat.Vae.AspirationSelectedFeedback>
+  <RimWorldAccess.Compat.Vae.AspirationDeselectedFeedback>{0} отменено. Выбрано {1} из {2} стремлений</RimWorldAccess.Compat.Vae.AspirationDeselectedFeedback>
+  <RimWorldAccess.Compat.Vae.AspirationLimitReached>Уже выбрано {0} из {0} стремлений. Сначала отмените выбор одного из них</RimWorldAccess.Compat.Vae.AspirationLimitReached>
+  <RimWorldAccess.Compat.Vae.ArchiveSingular>Получено стремление {0}.</RimWorldAccess.Compat.Vae.ArchiveSingular>
+  <RimWorldAccess.Compat.Vae.ArchivePlural>Получены стремления: {0}.</RimWorldAccess.Compat.Vae.ArchivePlural>
+  <RimWorldAccess.Compat.Vse.ChooseExpertise>Выбрать экспертизу</RimWorldAccess.Compat.Vse.ChooseExpertise>
+  <RimWorldAccess.Compat.Vse.NoExpertiseAvailable>Нет доступных экспертиз</RimWorldAccess.Compat.Vse.NoExpertiseAvailable>
+  <RimWorldAccess.Compat.Vse.ExpertiseRow>Экспертиза: {0}, {1}</RimWorldAccess.Compat.Vse.ExpertiseRow>
+  <RimWorldAccess.Compat.Vse.EffectsPerLevel>За уровень: {0}</RimWorldAccess.Compat.Vse.EffectsPerLevel>
+
+  <!-- Vehicle Framework info card -->
+  <!-- VfInfoCardCompat / InfoCardTreeBuilder: Vehicle Framework replaces the whole
+       info card for a vehicle with its own, which builds the Stats, Health and
+       Records tabs but fills only Stats (its DrawHealthScreen is an empty method and
+       the Records case falls through). The tab titles and every stat row come from
+       VF's own report, so the only string needed here is the one that says a tab a
+       sighted player sees rendered blank really is blank. -->
+  <RimWorldAccess.Compat.Vf.InfoCardTabBlank>Эта вкладка пуста для транспортных средств.</RimWorldAccess.Compat.Vf.InfoCardTabBlank>
+
+  <!-- Vehicle Framework cargo tab -->
+  <RimWorldAccess.Compat.Vf.LoadCargoOpen>Загрузка груза для {0}. Грузоподъёмность {1}.</RimWorldAccess.Compat.Vf.LoadCargoOpen>
+  <RimWorldAccess.Compat.Vf.LoadCargoCancelled>Загрузка груза отменена</RimWorldAccess.Compat.Vf.LoadCargoCancelled>
+  <RimWorldAccess.Compat.Vf.LoadCargoAccepted>Приказ на загрузку груза отдан для {0}</RimWorldAccess.Compat.Vf.LoadCargoAccepted>
+  <RimWorldAccess.Compat.Vf.StashOpen>Диалог «Предметы для взятия». Выберите предметы, которые нужно вынести из транспортных средств перед их укрытием.</RimWorldAccess.Compat.Vf.StashOpen>
+  <RimWorldAccess.Compat.Vf.StashCancelled>Стыковка с караваном отменена.</RimWorldAccess.Compat.Vf.StashCancelled>
+  <RimWorldAccess.Compat.Vf.StashAccepted>Транспортные средства укрыты. Предметы переданы каравану.</RimWorldAccess.Compat.Vf.StashAccepted>
+  <RimWorldAccess.Compat.Vf.StashFailed>Не удалось укрыть транспортные средства.</RimWorldAccess.Compat.Vf.StashFailed>
+  <RimWorldAccess.Compat.Vf.StashArrival>Прибытие через {0_numCase ? день : дня : дней}.</RimWorldAccess.Compat.Vf.StashArrival>
+  <RimWorldAccess.Compat.Vf.StatArrival>Прибытие</RimWorldAccess.Compat.Vf.StatArrival>
+  <RimWorldAccess.Compat.Vf.SeatsOpen>Назначение мест для {0}. Не назначено: {1}, ролей: {2}.</RimWorldAccess.Compat.Vf.SeatsOpen>
+  <RimWorldAccess.Compat.Vf.SeatsColonistsRegion>Поселенцы</RimWorldAccess.Compat.Vf.SeatsColonistsRegion>
+  <RimWorldAccess.Compat.Vf.SeatsRoleNeeds>, нужно ещё {0} для управления</RimWorldAccess.Compat.Vf.SeatsRoleNeeds>
+  <RimWorldAccess.Compat.Vf.SeatsRoleFull>, заполнено</RimWorldAccess.Compat.Vf.SeatsRoleFull>
+  <RimWorldAccess.Compat.Vf.SeatsAlreadyAboard>, уже на борту, высадка через транспортное средство</RimWorldAccess.Compat.Vf.SeatsAlreadyAboard>
+  <RimWorldAccess.Compat.Vf.SeatsAddToRoleOption>Добавить на роль автоматически</RimWorldAccess.Compat.Vf.SeatsAddToRoleOption>
+  <RimWorldAccess.Compat.Vf.SeatsAssignTo>Назначить на {0}, осталось {1}</RimWorldAccess.Compat.Vf.SeatsAssignTo>
+  <RimWorldAccess.Compat.Vf.SeatsAssignedRemaining>{0} назначен на {1}. Осталось мест: {2}.</RimWorldAccess.Compat.Vf.SeatsAssignedRemaining>
+  <RimWorldAccess.Compat.Vf.SeatsRemovedRemaining>{0} снят с {1}. Осталось мест: {2}.</RimWorldAccess.Compat.Vf.SeatsRemovedRemaining>
+  <RimWorldAccess.Compat.Vf.SeatsIncapableForRole>{0} не способен выполнять эту роль.</RimWorldAccess.Compat.Vf.SeatsIncapableForRole>
+  <RimWorldAccess.Compat.Vf.SeatsNoRoleAvailable>Нет доступной роли для назначения.</RimWorldAccess.Compat.Vf.SeatsNoRoleAvailable>
+  <RimWorldAccess.Compat.Vf.SeatsAutoAssignButton>Автозаполнение</RimWorldAccess.Compat.Vf.SeatsAutoAssignButton>
+  <RimWorldAccess.Compat.Vf.SeatsAutoAssigned>Назначено автоматически. Персонажей на местах: {0}.</RimWorldAccess.Compat.Vf.SeatsAutoAssigned>
+  <RimWorldAccess.Compat.Vf.SeatsClearSeatsButton>Очистить</RimWorldAccess.Compat.Vf.SeatsClearSeatsButton>
+  <RimWorldAccess.Compat.Vf.SeatsCleared>Все назначения мест очищены.</RimWorldAccess.Compat.Vf.SeatsCleared>
+  <RimWorldAccess.Compat.Vf.SeatsAssignFailureMessage>Не удалось назначить места. {0}</RimWorldAccess.Compat.Vf.SeatsAssignFailureMessage>
+  <RimWorldAccess.Compat.Vf.SeatsConfirmed>Места подтверждены для {0}.</RimWorldAccess.Compat.Vf.SeatsConfirmed>
+  <RimWorldAccess.Compat.Vf.SeatsDiscarded>Назначения мест не сохранены. Откройте «Назначить места» снова и нажмите «Подтвердить», чтобы сохранить их.</RimWorldAccess.Compat.Vf.SeatsDiscarded>
+  <RimWorldAccess.Compat.Vf.ChargingToggle>Зарядка: {0}</RimWorldAccess.Compat.Vf.ChargingToggle>
+  <RimWorldAccess.Compat.Vf.NoPowerNet>Нет доступной энергосети</RimWorldAccess.Compat.Vf.NoPowerNet>
+  <RimWorldAccess.Compat.Vf.HintAutoRefuelToggleArrows>. Нажмите Enter, чтобы переключить автозаправку, стрелки влево и вправо — чтобы задать целевой уровень топлива</RimWorldAccess.Compat.Vf.HintAutoRefuelToggleArrows>
+  <RimWorldAccess.Compat.Vf.RefuelFromCargo>Заправить из инвентаря</RimWorldAccess.Compat.Vf.RefuelFromCargo>
+  <RimWorldAccess.Compat.Vf.RefuelFromInventoryCount>Заправить {0}x {1}</RimWorldAccess.Compat.Vf.RefuelFromInventoryCount>
+  <RimWorldAccess.Compat.Vf.RegionName>Транспорт</RimWorldAccess.Compat.Vf.RegionName>
+  <RimWorldAccess.Compat.Vf.ColSelected>Выбрано</RimWorldAccess.Compat.Vf.ColSelected>
+  <RimWorldAccess.Compat.Vf.CellSelected>выбрано</RimWorldAccess.Compat.Vf.CellSelected>
+  <RimWorldAccess.Compat.Vf.CellNotSelected>не выбрано</RimWorldAccess.Compat.Vf.CellNotSelected>
+  <RimWorldAccess.Compat.Vf.TipMoveSpeed>Количество клеток, проходимых за 1 день.</RimWorldAccess.Compat.Vf.TipMoveSpeed>
+  <RimWorldAccess.Compat.Vf.VehicleSelected>{0} выбрано для каравана.</RimWorldAccess.Compat.Vf.VehicleSelected>
+  <RimWorldAccess.Compat.Vf.VehicleDeselected>{0} удалено из каравана. Назначения мест очищены.</RimWorldAccess.Compat.Vf.VehicleDeselected>
+  <RimWorldAccess.Compat.Vf.PawnSeatLocked>Назначен на место в {0}. Измените это в строке транспортного средства в разделе «Транспорт».</RimWorldAccess.Compat.Vf.PawnSeatLocked>
+  <RimWorldAccess.Compat.Vf.PawnAboardLocked>Уже на борту транспортного средства. Управляйте через само транспортное средство.</RimWorldAccess.Compat.Vf.PawnAboardLocked>
+  <RimWorldAccess.Compat.Vf.PassengersTab>Персонажи</RimWorldAccess.Compat.Vf.PassengersTab>
+  <RimWorldAccess.Compat.Vf.PassengersRoleSection>{0}, на борту {1} из {2}</RimWorldAccess.Compat.Vf.PassengersRoleSection>
+  <RimWorldAccess.Compat.Vf.PassengersCargoSection>Груз, {0}</RimWorldAccess.Compat.Vf.PassengersCargoSection>
+  <RimWorldAccess.Compat.Vf.PassengersCargo>груз</RimWorldAccess.Compat.Vf.PassengersCargo>
+  <RimWorldAccess.Compat.Vf.PassengersNoneAboard>Никого на борту.</RimWorldAccess.Compat.Vf.PassengersNoneAboard>
+  <RimWorldAccess.Compat.Vf.PassengersDowned>{0}, повержен</RimWorldAccess.Compat.Vf.PassengersDowned>
+  <RimWorldAccess.Compat.Vf.PassengersMoodSection>Настроение и мысли</RimWorldAccess.Compat.Vf.PassengersMoodSection>
+  <RimWorldAccess.Compat.Vf.PassengersMoveTo>Переместить в {0}</RimWorldAccess.Compat.Vf.PassengersMoveTo>
+  <RimWorldAccess.Compat.Vf.PassengersSwapWith>Поменяться местами с {0}, {1}</RimWorldAccess.Compat.Vf.PassengersSwapWith>
+  <RimWorldAccess.Compat.Vf.PassengersMoveToCargo>Переместить в груз</RimWorldAccess.Compat.Vf.PassengersMoveToCargo>
+  <RimWorldAccess.Compat.Vf.PassengersMoved>{0} перемещён в {1}.</RimWorldAccess.Compat.Vf.PassengersMoved>
+  <RimWorldAccess.Compat.Vf.PassengersSwapped>{0} поменялся местами с {1}.</RimWorldAccess.Compat.Vf.PassengersSwapped>
+  <RimWorldAccess.Compat.Vf.UpgradesTab>Улучшения</RimWorldAccess.Compat.Vf.UpgradesTab>
+  <RimWorldAccess.Compat.Vf.UpgradeInProgressSummary>Улучшение в процессе: {0}.</RimWorldAccess.Compat.Vf.UpgradeInProgressSummary>
+  <RimWorldAccess.Compat.Vf.UpgradeNodeSection>{0}, {1}</RimWorldAccess.Compat.Vf.UpgradeNodeSection>
+  <RimWorldAccess.Compat.Vf.UpgradeStateUpgradeInProgress>улучшение в процессе</RimWorldAccess.Compat.Vf.UpgradeStateUpgradeInProgress>
+  <RimWorldAccess.Compat.Vf.UpgradeStateRemovalInProgress>удаление в процессе</RimWorldAccess.Compat.Vf.UpgradeStateRemovalInProgress>
+  <RimWorldAccess.Compat.Vf.UpgradeStateUnlocked>разблокировано</RimWorldAccess.Compat.Vf.UpgradeStateUnlocked>
+  <RimWorldAccess.Compat.Vf.UpgradeStateDisabledBy>отключено из-за {0}</RimWorldAccess.Compat.Vf.UpgradeStateDisabledBy>
+  <RimWorldAccess.Compat.Vf.UpgradeStateRequires>требуется {0}</RimWorldAccess.Compat.Vf.UpgradeStateRequires>
+  <RimWorldAccess.Compat.Vf.UpgradeStateAvailable>доступно</RimWorldAccess.Compat.Vf.UpgradeStateAvailable>
+  <RimWorldAccess.Compat.Vf.UpgradeCostLine>{0}: нужно {1}, есть {2}.</RimWorldAccess.Compat.Vf.UpgradeCostLine>
+  <RimWorldAccess.Compat.Vf.UpgradeCostLineNoMap>{0}: нужно {1}.</RimWorldAccess.Compat.Vf.UpgradeCostLineNoMap>
+  <RimWorldAccess.Compat.Vf.UpgradeIncompatibleWith>Несовместимо с: {0}.</RimWorldAccess.Compat.Vf.UpgradeIncompatibleWith>
+  <RimWorldAccess.Compat.Vf.UpgradeLockedByDependents>Нельзя удалить: последующие улучшения зависят от этого.</RimWorldAccess.Compat.Vf.UpgradeLockedByDependents>
+  <RimWorldAccess.Compat.Vf.UpgradeStarted>Улучшение «{0}» начато. Материалы будут доставлены поселенцами.</RimWorldAccess.Compat.Vf.UpgradeStarted>
+  <RimWorldAccess.Compat.Vf.UpgradeCanceled>Улучшение отменено. Доставленные материалы сброшены.</RimWorldAccess.Compat.Vf.UpgradeCanceled>
+  <RimWorldAccess.Compat.Vf.UpgradeRemovalQueued>Удаление «{0}» поставлено в очередь.</RimWorldAccess.Compat.Vf.UpgradeRemovalQueued>
+  <RimWorldAccess.Compat.Vf.UpgradeCompletedInstant>Улучшение «{0}» завершено.</RimWorldAccess.Compat.Vf.UpgradeCompletedInstant>
+  <RimWorldAccess.Compat.Vf.UpgradeRemovedInstant>Улучшение «{0}» удалено.</RimWorldAccess.Compat.Vf.UpgradeRemovedInstant>
+  <RimWorldAccess.Compat.Vf.UpgradeActionLabel>Улучшить</RimWorldAccess.Compat.Vf.UpgradeActionLabel>
+  <RimWorldAccess.Compat.Vf.RemoveUpgradeActionLabel>Удалить</RimWorldAccess.Compat.Vf.RemoveUpgradeActionLabel>
+  <RimWorldAccess.Compat.Vf.UpgradeDisabledMessage>Недоступно, отключено другим улучшением.</RimWorldAccess.Compat.Vf.UpgradeDisabledMessage>
+  <RimWorldAccess.Compat.Vf.UpgradeMissingPrerequisiteMessage>Отсутствуют необходимые условия.</RimWorldAccess.Compat.Vf.UpgradeMissingPrerequisiteMessage>
+  <RimWorldAccess.Compat.Vf.TurretAmmo>Боеприпасы: {0} из {1}</RimWorldAccess.Compat.Vf.TurretAmmo>
+  <RimWorldAccess.Compat.Vf.TurretAmmoUnlimited>Боеприпасы: неограничены</RimWorldAccess.Compat.Vf.TurretAmmoUnlimited>
+  <RimWorldAccess.Compat.Vf.TurretReloading>Перезарядка: {0}%</RimWorldAccess.Compat.Vf.TurretReloading>
+  <RimWorldAccess.Compat.Vf.TurretOnCooldown>На перезарядке</RimWorldAccess.Compat.Vf.TurretOnCooldown>
+  <RimWorldAccess.Compat.Vf.TurretHeat>Перегрев: {0}%</RimWorldAccess.Compat.Vf.TurretHeat>
+  <RimWorldAccess.Compat.Vf.TurretTargetLocked>Цель захвачена: {0}</RimWorldAccess.Compat.Vf.TurretTargetLocked>
+  <RimWorldAccess.Compat.Vf.TurretFireBlockedCooldown>На перезарядке. Пока нельзя стрелять.</RimWorldAccess.Compat.Vf.TurretFireBlockedCooldown>
+  <RimWorldAccess.Compat.Vf.TurretFireBlockedReloading>Всё ещё перезаряжается.</RimWorldAccess.Compat.Vf.TurretFireBlockedReloading>
+  <RimWorldAccess.Compat.Vf.TurretHaltOption>Остановить турель</RimWorldAccess.Compat.Vf.TurretHaltOption>
+  <RimWorldAccess.Compat.Vf.TurretHalted>Цель сброшена.</RimWorldAccess.Compat.Vf.TurretHalted>
+  <RimWorldAccess.Compat.Vf.TurretUnloadOption>Разрядить {0}</RimWorldAccess.Compat.Vf.TurretUnloadOption>
+  <RimWorldAccess.Compat.Vf.TurretUnloaded>{0} разряжено.</RimWorldAccess.Compat.Vf.TurretUnloaded>
+  <RimWorldAccess.Compat.Vf.TurretReloadOption>Перезарядить</RimWorldAccess.Compat.Vf.TurretReloadOption>
+  <RimWorldAccess.Compat.Vf.TurretReloaded>Перезаряжено. {0} из {1}.</RimWorldAccess.Compat.Vf.TurretReloaded>
+  <RimWorldAccess.Compat.Vf.TurretFireModeOption>Режим огня: {0}</RimWorldAccess.Compat.Vf.TurretFireModeOption>
+  <RimWorldAccess.Compat.Vf.TurretFireModeChanged>Режим огня: {0}.</RimWorldAccess.Compat.Vf.TurretFireModeChanged>
+  <RimWorldAccess.Compat.Vf.TurretAutoTargetOption>Автонаведение: {0}</RimWorldAccess.Compat.Vf.TurretAutoTargetOption>
+  <RimWorldAccess.Compat.Vf.TurretAutoTargetChanged>Автонаведение {0}.</RimWorldAccess.Compat.Vf.TurretAutoTargetChanged>
+  <RimWorldAccess.Compat.Vf.TurretSetQuotaOption>Задать цель автозагрузки</RimWorldAccess.Compat.Vf.TurretSetQuotaOption>
+  <RimWorldAccess.Compat.Vf.TurretSetQuotaLabel>Уровень автоперезарядки задан: {0}.</RimWorldAccess.Compat.Vf.TurretSetQuotaLabel>
+  <RimWorldAccess.Compat.Vf.TurretTargetingStarted>Наведение «{0}». Дальность {1}. Переместите курсор по карте и нажмите Enter, чтобы открыть огонь. Escape для отмены.</RimWorldAccess.Compat.Vf.TurretTargetingStarted>
+  <RimWorldAccess.Compat.Vf.TurretRangeMax>до {0}</RimWorldAccess.Compat.Vf.TurretRangeMax>
+  <RimWorldAccess.Compat.Vf.TurretRangeMinMax>от {0} до {1}</RimWorldAccess.Compat.Vf.TurretRangeMinMax>
+  <RimWorldAccess.Compat.Vf.TurretRangeUnlimited>неограниченная дальность</RimWorldAccess.Compat.Vf.TurretRangeUnlimited>
+  <RimWorldAccess.Compat.Vf.TurretTargetConfirmed>Огонь по {0}.</RimWorldAccess.Compat.Vf.TurretTargetConfirmed>
+  <RimWorldAccess.Compat.Vf.TurretTargetInvalid>Нельзя навестись на эту позицию.</RimWorldAccess.Compat.Vf.TurretTargetInvalid>
+  <RimWorldAccess.Compat.Vf.TurretTargetingCancelled>Наведение отменено.</RimWorldAccess.Compat.Vf.TurretTargetingCancelled>
+  <RimWorldAccess.Compat.Vf.HaulTargetingStarted>Загрузка «{0}». Наведите курсор на персонажа или предмет и нажмите Enter, чтобы загрузить его. Нажмите Escape по завершении.</RimWorldAccess.Compat.Vf.HaulTargetingStarted>
+  <RimWorldAccess.Compat.Vf.HaulTargetConfirmed>{0} выбрано для загрузки.</RimWorldAccess.Compat.Vf.HaulTargetConfirmed>
+  <RimWorldAccess.Compat.Vf.HaulTargetInvalid>Нельзя загрузить эту цель.</RimWorldAccess.Compat.Vf.HaulTargetInvalid>
+  <RimWorldAccess.Compat.Vf.HaulTargetingEnded>Загрузка завершена.</RimWorldAccess.Compat.Vf.HaulTargetingEnded>
+  <RimWorldAccess.Compat.Vf.WorldTargetingStarted>Наведение на карте мира начато. Перемещайтесь по карте мира и нажмите Enter, чтобы задать пункт назначения, затем ещё раз Enter для запуска. Backspace удаляет путевую точку, Escape отменяет.</RimWorldAccess.Compat.Vf.WorldTargetingStarted>
+  <RimWorldAccess.Compat.Vf.WorldTargetingCancelled>Наведение на карте мира отменено.</RimWorldAccess.Compat.Vf.WorldTargetingCancelled>
+  <RimWorldAccess.Compat.Vf.WorldTargetingEnded>Наведение на карте мира завершено.</RimWorldAccess.Compat.Vf.WorldTargetingEnded>
+  <RimWorldAccess.Compat.Vf.WorldWaypointSet>Пункт назначения задан. Нажмите Enter ещё раз для запуска.</RimWorldAccess.Compat.Vf.WorldWaypointSet>
+  <RimWorldAccess.Compat.Vf.WorldWaypointSetWithFuel>Пункт назначения задан. Расход топлива {0}. Нажмите Enter ещё раз для запуска.</RimWorldAccess.Compat.Vf.WorldWaypointSetWithFuel>
+  <RimWorldAccess.Compat.Vf.WorldWaypointRemoved>Путевая точка удалена.</RimWorldAccess.Compat.Vf.WorldWaypointRemoved>
+  <RimWorldAccess.Compat.Vf.WorldNoWaypoint>Нет путевой точки для удаления.</RimWorldAccess.Compat.Vf.WorldNoWaypoint>
+  <RimWorldAccess.Compat.Vf.WorldTargetInvalid>Нельзя навестись на это место.</RimWorldAccess.Compat.Vf.WorldTargetInvalid>
+  <RimWorldAccess.Compat.Vf.WorldTargetLaunched>Пункт назначения подтверждён.</RimWorldAccess.Compat.Vf.WorldTargetLaunched>
+  <RimWorldAccess.Compat.Vf.WorldFuelCost>Расход топлива: {0}.</RimWorldAccess.Compat.Vf.WorldFuelCost>
+  <RimWorldAccess.Compat.Vf.WorldNoDestinationInfo>Здесь нет информации о пункте назначения.</RimWorldAccess.Compat.Vf.WorldNoDestinationInfo>
+  <RimWorldAccess.Compat.Vf.LandingTargetingStarted>Выберите место посадки для {0}. Переместите курсор по карте и нажмите Enter, чтобы приземлиться. Escape для отмены.</RimWorldAccess.Compat.Vf.LandingTargetingStarted>
+  <RimWorldAccess.Compat.Vf.LandingTargetingStartedRotatable>Выберите место посадки для {0}. Переместите курсор по карте и нажмите Enter, чтобы приземлиться. Q и E поворачивают. Escape для отмены.</RimWorldAccess.Compat.Vf.LandingTargetingStartedRotatable>
+  <RimWorldAccess.Compat.Vf.LandingSpotInvalid>Здесь нельзя приземлиться.</RimWorldAccess.Compat.Vf.LandingSpotInvalid>
+  <RimWorldAccess.Compat.Vf.LandingConfirmed>Посадка в {0}.</RimWorldAccess.Compat.Vf.LandingConfirmed>
+  <RimWorldAccess.Compat.Vf.LandingConfirmedObstructed>Посадка в {0}. Место занято, всё находящееся под ним будет раздавлено.</RimWorldAccess.Compat.Vf.LandingConfirmedObstructed>
+  <RimWorldAccess.Compat.Vf.LandingRotationChanged>Ориентация: {0}.</RimWorldAccess.Compat.Vf.LandingRotationChanged>
+  <RimWorldAccess.Compat.Vf.LandingTargetingEnded>Наведение на посадку завершено.</RimWorldAccess.Compat.Vf.LandingTargetingEnded>
+  <RimWorldAccess.Compat.Vf.HealthTab>Здоровье</RimWorldAccess.Compat.Vf.HealthTab>
+  <RimWorldAccess.Compat.Vf.HealthProducedLine>Произведено: {0}.</RimWorldAccess.Compat.Vf.HealthProducedLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentsSection>Компоненты</RimWorldAccess.Compat.Vf.HealthComponentsSection>
+  <RimWorldAccess.Compat.Vf.HealthStatLine>{0}: {1}</RimWorldAccess.Compat.Vf.HealthStatLine>
+  <RimWorldAccess.Compat.Vf.HealthStatBaseLine>Базовое значение: {0}.</RimWorldAccess.Compat.Vf.HealthStatBaseLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentSection>{0}: здоровье {1}</RimWorldAccess.Compat.Vf.HealthComponentSection>
+  <RimWorldAccess.Compat.Vf.HealthComponentHealthLine>Здоровье: {0} из {1}.</RimWorldAccess.Compat.Vf.HealthComponentHealthLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentEfficiencyLine>Эффективность: {0}. Влияет на {1}.</RimWorldAccess.Compat.Vf.HealthComponentEfficiencyLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentEfficiencyNone>Эффективность: неприменимо.</RimWorldAccess.Compat.Vf.HealthComponentEfficiencyNone>
+  <RimWorldAccess.Compat.Vf.HealthComponentArmorLine>{0}: {1}.</RimWorldAccess.Compat.Vf.HealthComponentArmorLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentArmorUpgradedLine>{0}: {1}. Базовый показатель брони: {2}.</RimWorldAccess.Compat.Vf.HealthComponentArmorUpgradedLine>
+  <RimWorldAccess.Compat.Vf.HealthComponentIndicatorLine>Индикатор: {0}.</RimWorldAccess.Compat.Vf.HealthComponentIndicatorLine>
+  <RimWorldAccess.Compat.Vf.CargoTab>Груз</RimWorldAccess.Compat.Vf.CargoTab>
+  <RimWorldAccess.Compat.Vf.CargoDropAllAction>Выбросить всё</RimWorldAccess.Compat.Vf.CargoDropAllAction>
+  <RimWorldAccess.Compat.Vf.CargoMarketValueLine>{0}: {1}.</RimWorldAccess.Compat.Vf.CargoMarketValueLine>
+  <RimWorldAccess.Compat.Vf.CargoMassLine>Масса: {0}.</RimWorldAccess.Compat.Vf.CargoMassLine>
+  <RimWorldAccess.Compat.Vf.CargoHitPointsLine>Прочность: {0} из {1}.</RimWorldAccess.Compat.Vf.CargoHitPointsLine>
+  <RimWorldAccess.Compat.Vf.CargoPendingRow>{0} x{1}, ещё не загружено</RimWorldAccess.Compat.Vf.CargoPendingRow>
+  <RimWorldAccess.Compat.Vf.CargoEmpty>Ничего не хранится.</RimWorldAccess.Compat.Vf.CargoEmpty>
+  <RimWorldAccess.Compat.Vf.CargoDropped>Сброшено: {0}.</RimWorldAccess.Compat.Vf.CargoDropped>
+  <RimWorldAccess.Compat.Vf.CargoDropFailed>Нельзя сбросить {0}.</RimWorldAccess.Compat.Vf.CargoDropFailed>
+  <RimWorldAccess.Compat.Vf.CargoDroppedAll>Весь груз сброшен.</RimWorldAccess.Compat.Vf.CargoDroppedAll>
+  <RimWorldAccess.Compat.Vf.CargoDropAllFailed>Нельзя сбросить груз.</RimWorldAccess.Compat.Vf.CargoDropAllFailed>
+  <RimWorldAccess.Compat.Vf.RenameCategory>Переименовать</RimWorldAccess.Compat.Vf.RenameCategory>
+  <RimWorldAccess.Compat.Vf.RecolorCategory>Перекрасить</RimWorldAccess.Compat.Vf.RecolorCategory>
+  <RimWorldAccess.Compat.Vf.RecolorUnavailable>Перекраска недоступна для этого транспортного средства.</RimWorldAccess.Compat.Vf.RecolorUnavailable>
+  <RimWorldAccess.Compat.Vf.VehicleActionFailed>Действие не выполнено.</RimWorldAccess.Compat.Vf.VehicleActionFailed>
+  <RimWorldAccess.Compat.Vf.RenameOkFallback>Ок</RimWorldAccess.Compat.Vf.RenameOkFallback>
+  <RimWorldAccess.Compat.Vf.RenameRemoveFallback>Удалить имя</RimWorldAccess.Compat.Vf.RenameRemoveFallback>
+  <RimWorldAccess.Compat.Vf.PainterOpen>Покраска «{0}». Доступно узоров: {1}, палитр: 20.</RimWorldAccess.Compat.Vf.PainterOpen>
+  <RimWorldAccess.Compat.Vf.PainterColorsRegion>Цвета</RimWorldAccess.Compat.Vf.PainterColorsRegion>
+  <RimWorldAccess.Compat.Vf.PainterAdjustRegion>Настройка цвета</RimWorldAccess.Compat.Vf.PainterAdjustRegion>
+  <RimWorldAccess.Compat.Vf.PainterPatternsRegion>Узоры</RimWorldAccess.Compat.Vf.PainterPatternsRegion>
+  <RimWorldAccess.Compat.Vf.PainterPalettesRegion>Палитры</RimWorldAccess.Compat.Vf.PainterPalettesRegion>
+  <RimWorldAccess.Compat.Vf.PainterPlacementRegion>Расположение узора</RimWorldAccess.Compat.Vf.PainterPlacementRegion>
+  <RimWorldAccess.Compat.Vf.PainterColorOne>Цвет один</RimWorldAccess.Compat.Vf.PainterColorOne>
+  <RimWorldAccess.Compat.Vf.PainterColorTwo>Цвет два</RimWorldAccess.Compat.Vf.PainterColorTwo>
+  <RimWorldAccess.Compat.Vf.PainterColorThree>Цвет три</RimWorldAccess.Compat.Vf.PainterColorThree>
+  <RimWorldAccess.Compat.Vf.PainterSelectedSuffix>, выбрано</RimWorldAccess.Compat.Vf.PainterSelectedSuffix>
+  <RimWorldAccess.Compat.Vf.PainterSlotSelected>{0} выбрано.</RimWorldAccess.Compat.Vf.PainterSlotSelected>
+  <RimWorldAccess.Compat.Vf.PainterSwapColors>Поменять цвета местами</RimWorldAccess.Compat.Vf.PainterSwapColors>
+  <RimWorldAccess.Compat.Vf.PainterSwapped>Цвета сдвинуты. Теперь цвет один — {0}, цвет два — {1}, цвет три — {2}.</RimWorldAccess.Compat.Vf.PainterSwapped>
+  <RimWorldAccess.Compat.Vf.PainterHexRow>Hex: {0}</RimWorldAccess.Compat.Vf.PainterHexRow>
+  <RimWorldAccess.Compat.Vf.PainterHexFieldLabel>Hex</RimWorldAccess.Compat.Vf.PainterHexFieldLabel>
+  <RimWorldAccess.Compat.Vf.PainterInvalidHex>Недопустимый hex-код цвета.</RimWorldAccess.Compat.Vf.PainterInvalidHex>
+  <RimWorldAccess.Compat.Vf.PainterHue>Тон</RimWorldAccess.Compat.Vf.PainterHue>
+  <RimWorldAccess.Compat.Vf.PainterSaturation>Насыщенность</RimWorldAccess.Compat.Vf.PainterSaturation>
+  <RimWorldAccess.Compat.Vf.PainterBrightness>Яркость</RimWorldAccess.Compat.Vf.PainterBrightness>
+  <RimWorldAccess.Compat.Vf.PainterShowingPatterns>Показаны: узоры</RimWorldAccess.Compat.Vf.PainterShowingPatterns>
+  <RimWorldAccess.Compat.Vf.PainterShowingSkins>Показаны: скины</RimWorldAccess.Compat.Vf.PainterShowingSkins>
+  <RimWorldAccess.Compat.Vf.PainterSourceSwitched>{0}. Доступно: {1}.</RimWorldAccess.Compat.Vf.PainterSourceSwitched>
+  <RimWorldAccess.Compat.Vf.PainterPatternSelected>{0} выбрано.</RimWorldAccess.Compat.Vf.PainterPatternSelected>
+  <RimWorldAccess.Compat.Vf.PainterPaletteRow>Палитра {0}: {1}, {2}, {3}</RimWorldAccess.Compat.Vf.PainterPaletteRow>
+  <RimWorldAccess.Compat.Vf.PainterPaletteApplied>Применена палитра {0}: {1}, {2}, {3}.</RimWorldAccess.Compat.Vf.PainterPaletteApplied>
+  <RimWorldAccess.Compat.Vf.PainterPaletteDeselected>Палитра {0} отменена.</RimWorldAccess.Compat.Vf.PainterPaletteDeselected>
+  <RimWorldAccess.Compat.Vf.PainterSliderUnavailable>{0}: недоступно для этого узора.</RimWorldAccess.Compat.Vf.PainterSliderUnavailable>
+  <RimWorldAccess.Compat.Vf.RoutePlannerOpenerInstructions>Планировщик маршрута транспорта активен. Пробел добавляет путевую точку, Shift+Пробел удаляет путевую точку под курсором, E — время в пути, Escape для выхода.</RimWorldAccess.Compat.Vf.RoutePlannerOpenerInstructions>
+  <RimWorldAccess.Compat.Vf.RoutePlannerWaypointAddedWithEta>Путевая точка {0} добавлена. До цели: {1_numCase ? день : дня : дней}.</RimWorldAccess.Compat.Vf.RoutePlannerWaypointAddedWithEta>
+  <RimWorldAccess.Compat.Vf.RoutePlannerWaypointRemovedWithEta>Путевая точка {0} удалена. Осталось точек: {1}. До цели: {2_numCase ? день : дня : дней}.</RimWorldAccess.Compat.Vf.RoutePlannerWaypointRemovedWithEta>
+  <RimWorldAccess.Compat.Vf.RoutePlannerEta>Расчётное время в пути: {0_numCase ? день : дня : дней}.</RimWorldAccess.Compat.Vf.RoutePlannerEta>
+  <RimWorldAccess.Compat.Vf.RoutePlannerSummary>Путевых точек: {0}. {1}</RimWorldAccess.Compat.Vf.RoutePlannerSummary>
+  <RimWorldAccess.Compat.Vf.SelectorRegionMode>Режим выбора</RimWorldAccess.Compat.Vf.SelectorRegionMode>
+  <RimWorldAccess.Compat.Vf.SelectorRegionVehicles>Транспорт</RimWorldAccess.Compat.Vf.SelectorRegionVehicles>
+  <RimWorldAccess.Compat.Vf.SelectorModeDefs>Выбор типов транспорта</RimWorldAccess.Compat.Vf.SelectorModeDefs>
+  <RimWorldAccess.Compat.Vf.SelectorModeVehicles>Выбор транспорта на карте</RimWorldAccess.Compat.Vf.SelectorModeVehicles>
+  <RimWorldAccess.Compat.Vf.SelectorModeSwitched>{0}. Доступно: {1}.</RimWorldAccess.Compat.Vf.SelectorModeSwitched>
+  <RimWorldAccess.Compat.Vf.SelectorSelected>{0} выбрано.</RimWorldAccess.Compat.Vf.SelectorSelected>
+  <RimWorldAccess.Compat.Vf.SelectorDeselected>{0} отменено.</RimWorldAccess.Compat.Vf.SelectorDeselected>
+  <RimWorldAccess.Compat.Vf.SelectorIncompatibleType>Несовместимо с выбранным типом транспорта.</RimWorldAccess.Compat.Vf.SelectorIncompatibleType>
+  <RimWorldAccess.Compat.Vef.ProcessorTab>Процессы</RimWorldAccess.Compat.Vef.ProcessorTab>
+  <RimWorldAccess.Compat.Vef.ProcessorAddProcessAction>Добавить процесс</RimWorldAccess.Compat.Vef.ProcessorAddProcessAction>
+  <RimWorldAccess.Compat.Vef.ProcessorSettingsAction>Настройки</RimWorldAccess.Compat.Vef.ProcessorSettingsAction>
+  <RimWorldAccess.Compat.Vef.ProcessorCopyAction>Копировать процессы</RimWorldAccess.Compat.Vef.ProcessorCopyAction>
+  <RimWorldAccess.Compat.Vef.ProcessorPasteAction>Вставить процессы</RimWorldAccess.Compat.Vef.ProcessorPasteAction>
+  <RimWorldAccess.Compat.Vef.ProcessorCopied>Процессы скопированы.</RimWorldAccess.Compat.Vef.ProcessorCopied>
+  <RimWorldAccess.Compat.Vef.ProcessorPasted>Процессы вставлены.</RimWorldAccess.Compat.Vef.ProcessorPasted>
+  <RimWorldAccess.Compat.Vef.ProcessorNothingToPaste>Нечего вставить для этого здания.</RimWorldAccess.Compat.Vef.ProcessorNothingToPaste>
+  <RimWorldAccess.Compat.Vef.ProcessorCurrentLine>Текущий процесс: {0}, завершено {1}.</RimWorldAccess.Compat.Vef.ProcessorCurrentLine>
+  <RimWorldAccess.Compat.Vef.ProcessorNoProcess>Нет текущего процесса.</RimWorldAccess.Compat.Vef.ProcessorNoProcess>
+  <RimWorldAccess.Compat.Vef.ProcessorCancelCurrentAction>Отменить текущий процесс</RimWorldAccess.Compat.Vef.ProcessorCancelCurrentAction>
+  <RimWorldAccess.Compat.Vef.ProcessorCancelled>Процесс отменён.</RimWorldAccess.Compat.Vef.ProcessorCancelled>
+  <RimWorldAccess.Compat.Vef.ProcessorRepeatLine>{0}: {1}.</RimWorldAccess.Compat.Vef.ProcessorRepeatLine>
+  <RimWorldAccess.Compat.Vef.ProcessorSuspendedClause>приостановлено</RimWorldAccess.Compat.Vef.ProcessorSuspendedClause>
+  <RimWorldAccess.Compat.Vef.ProcessorInactiveClause>неактивно</RimWorldAccess.Compat.Vef.ProcessorInactiveClause>
+  <RimWorldAccess.Compat.Vef.ProcessorMissingIngredientsClause>не хватает ингредиентов</RimWorldAccess.Compat.Vef.ProcessorMissingIngredientsClause>
+  <RimWorldAccess.Compat.Vef.ProcessorIncreaseAction>Увеличить количество</RimWorldAccess.Compat.Vef.ProcessorIncreaseAction>
+  <RimWorldAccess.Compat.Vef.ProcessorDecreaseAction>Уменьшить количество</RimWorldAccess.Compat.Vef.ProcessorDecreaseAction>
+  <RimWorldAccess.Compat.Vef.ProcessorCountSet>Повтор задан: {0}.</RimWorldAccess.Compat.Vef.ProcessorCountSet>
+  <RimWorldAccess.Compat.Vef.ProcessorQualityAction>Выбрать качество</RimWorldAccess.Compat.Vef.ProcessorQualityAction>
+  <RimWorldAccess.Compat.Vef.ProcessorSuspendAction>Приостановить</RimWorldAccess.Compat.Vef.ProcessorSuspendAction>
+  <RimWorldAccess.Compat.Vef.ProcessorUnsuspendAction>Возобновить</RimWorldAccess.Compat.Vef.ProcessorUnsuspendAction>
+  <RimWorldAccess.Compat.Vef.ProcessorSuspended>Процесс приостановлен.</RimWorldAccess.Compat.Vef.ProcessorSuspended>
+  <RimWorldAccess.Compat.Vef.ProcessorResumed>Процесс возобновлён.</RimWorldAccess.Compat.Vef.ProcessorResumed>
+  <RimWorldAccess.Compat.Vef.ProcessorMoveUpAction>Переместить вверх</RimWorldAccess.Compat.Vef.ProcessorMoveUpAction>
+  <RimWorldAccess.Compat.Vef.ProcessorMoveDownAction>Переместить вниз</RimWorldAccess.Compat.Vef.ProcessorMoveDownAction>
+  <RimWorldAccess.Compat.Vef.ProcessorMovedUp>Перемещено вверх.</RimWorldAccess.Compat.Vef.ProcessorMovedUp>
+  <RimWorldAccess.Compat.Vef.ProcessorMovedDown>Перемещено вниз.</RimWorldAccess.Compat.Vef.ProcessorMovedDown>
+  <RimWorldAccess.Compat.Vef.ProcessorDeleteAction>Удалить процесс</RimWorldAccess.Compat.Vef.ProcessorDeleteAction>
+  <RimWorldAccess.Compat.Vef.ProcessorDeleted>Процесс удалён.</RimWorldAccess.Compat.Vef.ProcessorDeleted>
+  <RimWorldAccess.Compat.Vef.ProcessorActionFailed>Действие не выполнено.</RimWorldAccess.Compat.Vef.ProcessorActionFailed>
+  <RimWorldAccess.Compat.Vef.HireEditorOpen>{0}. Left и Right изменяют количество; нажмите Enter, чтобы ввести точное число.</RimWorldAccess.Compat.Vef.HireEditorOpen>
+  <RimWorldAccess.Compat.Vef.HireTermsRegion>Условия контракта</RimWorldAccess.Compat.Vef.HireTermsRegion>
+  <RimWorldAccess.Compat.Vef.HireFactionLockedRegion>{0}, недоступно, уже выбрана другая компания</RimWorldAccess.Compat.Vef.HireFactionLockedRegion>
+  <RimWorldAccess.Compat.Vef.HireDays>Длительность контракта в днях</RimWorldAccess.Compat.Vef.HireDays>
+  <RimWorldAccess.Compat.Vef.HireBaseCost>Базовая стоимость</RimWorldAccess.Compat.Vef.HireBaseCost>
+  <RimWorldAccess.Compat.Vef.HireRiskMultiplier>Надбавка за риск</RimWorldAccess.Compat.Vef.HireRiskMultiplier>
+  <RimWorldAccess.Compat.Vef.HireTotalPrice>Итоговая цена</RimWorldAccess.Compat.Vef.HireTotalPrice>
+  <RimWorldAccess.Compat.Vef.HireAvailableSilver>Доступно серебра</RimWorldAccess.Compat.Vef.HireAvailableSilver>
+  <RimWorldAccess.Compat.Vef.HireCombatPower>боевая мощь {0}</RimWorldAccess.Compat.Vef.HireCombatPower>
+  <RimWorldAccess.Compat.Vef.HireLockedReason>недоступно, уже выбрана другая компания</RimWorldAccess.Compat.Vef.HireLockedReason>
+  <RimWorldAccess.Compat.Vef.HireRunningTotal>итого {0}</RimWorldAccess.Compat.Vef.HireRunningTotal>
+  <RimWorldAccess.Compat.Vef.HireOverBudget>превышен бюджет</RimWorldAccess.Compat.Vef.HireOverBudget>
+  <RimWorldAccess.Compat.Vef.HireNotEnoughSilver>Недостаточно серебра.</RimWorldAccess.Compat.Vef.HireNotEnoughSilver>
+  <RimWorldAccess.Compat.Vef.ContractsOpen>Доска контрактов. Доступно контрактов: {0}. Перемещайтесь по списку стрелками и нажмите Enter, чтобы выбрать, затем Tab для подробностей.</RimWorldAccess.Compat.Vef.ContractsOpen>
+  <RimWorldAccess.Compat.Vef.ContractsListRegion>Доступные контракты</RimWorldAccess.Compat.Vef.ContractsListRegion>
+  <RimWorldAccess.Compat.Vef.ContractsDetailRegion>Подробности контракта</RimWorldAccess.Compat.Vef.ContractsDetailRegion>
+  <RimWorldAccess.Compat.Vef.ContractsNoSelection>Контракт не выбран.</RimWorldAccess.Compat.Vef.ContractsNoSelection>
+  <RimWorldAccess.Compat.Vef.ContractsSelected>Выбрано: {0}. Строк с подробностями: {1}.</RimWorldAccess.Compat.Vef.ContractsSelected>
+  <RimWorldAccess.Compat.Vef.ContractsFrom>от {0}</RimWorldAccess.Compat.Vef.ContractsFrom>
+  <RimWorldAccess.Compat.Vef.ContractsRewards>Награды: {0}</RimWorldAccess.Compat.Vef.ContractsRewards>
+  <RimWorldAccess.Compat.Vef.ContractsCost>Стоимость: {0}</RimWorldAccess.Compat.Vef.ContractsCost>
+  <RimWorldAccess.Compat.Vef.ContractsRequirement>Требование не выполнено: {0}</RimWorldAccess.Compat.Vef.ContractsRequirement>
+  <RimWorldAccess.Compat.Vef.ContractsInfoCardHint>Нажмите Enter, чтобы открыть карточку сведений.</RimWorldAccess.Compat.Vef.ContractsInfoCardHint>
+  <RimWorldAccess.Compat.Vef.ContractsCannotAccept>Этот контракт сейчас нельзя принять.</RimWorldAccess.Compat.Vef.ContractsCannotAccept>
+  <RimWorldAccess.Compat.Vef.GraphicOpen>Настройка внешнего вида «{0}». Каждая строка — часть внешности; нажмите Enter, чтобы выбрать её вид из списка. Кнопки: рандомизировать, подтвердить или отменить.</RimWorldAccess.Compat.Vef.GraphicOpen>
+  <RimWorldAccess.Compat.Vef.GraphicAppearanceRegion>Внешность</RimWorldAccess.Compat.Vef.GraphicAppearanceRegion>
+  <RimWorldAccess.Compat.Vef.GraphicNameRow>Имя</RimWorldAccess.Compat.Vef.GraphicNameRow>
+  <RimWorldAccess.Compat.Vef.GraphicVariantHint>Enter для выбора из списка.</RimWorldAccess.Compat.Vef.GraphicVariantHint>
+  <RimWorldAccess.Compat.Vef.GraphicRandomize>Рандомизировать</RimWorldAccess.Compat.Vef.GraphicRandomize>
+  <RimWorldAccess.Compat.Vef.GraphicRandomized>Внешность рандомизирована.</RimWorldAccess.Compat.Vef.GraphicRandomized>
+
+  <!-- HospitalityCompat / ModifyNumberGizmoHandler: Hospitality's guest-bed rental fee
+       and vending-machine price/threshold gizmos (Gizmo_GuestBed, Gizmo_VendingMachine,
+       Gizmo_VendingMachineContent). These never call the mod's own translation keys
+       directly (that would build-fail as an unverifiable fake key even though it
+       resolves fine at runtime with Hospitality loaded), so status/title text is
+       composed fresh here from the mod's own numeric values. -->
+  <RimWorldAccess.Compat.Hospitality.BedFeeStatus>Плата за аренду: {0}. Привлекательность: {1}.</RimWorldAccess.Compat.Hospitality.BedFeeStatus>
+  <RimWorldAccess.Compat.Hospitality.VendingPriceStatus>Цена: {0}.</RimWorldAccess.Compat.Hospitality.VendingPriceStatus>
+  <RimWorldAccess.Compat.Hospitality.VendingContentStatus>Порог пустоты: {0}. Содержит: {1}.</RimWorldAccess.Compat.Hospitality.VendingContentStatus>
+  <RimWorldAccess.Compat.Hospitality.BedRentalFeeTitle>Плата за аренду</RimWorldAccess.Compat.Hospitality.BedRentalFeeTitle>
+  <RimWorldAccess.Compat.Hospitality.VendingPriceTitle>Цена</RimWorldAccess.Compat.Hospitality.VendingPriceTitle>
+  <RimWorldAccess.Compat.Hospitality.VendingThresholdTitle>Порог пустоты</RimWorldAccess.Compat.Hospitality.VendingThresholdTitle>
+  <RimWorldAccess.Compat.Hospitality.ResetRentalFee>Сбросить плату за аренду к значению по умолчанию</RimWorldAccess.Compat.Hospitality.ResetRentalFee>
+  <RimWorldAccess.Compat.Hospitality.SetAutoPrice>Установить автоматическую цену</RimWorldAccess.Compat.Hospitality.SetAutoPrice>
+  <RimWorldAccess.Compat.Hospitality.SetThresholdAuto>Установить порог в десять раз больше цены</RimWorldAccess.Compat.Hospitality.SetThresholdAuto>
+  <RimWorldAccess.Compat.Hospitality.RoyalTitlesSatisfied>Соответствует требованиям королевских титулов: {0}.</RimWorldAccess.Compat.Hospitality.RoyalTitlesSatisfied>
+  <RimWorldAccess.Compat.Hospitality.NoRoyalTitlesSatisfied>Эта кровать не соответствует требованиям ни одного королевского титула.</RimWorldAccess.Compat.Hospitality.NoRoyalTitlesSatisfied>
+
+  <!-- CashRegisterCompat: CashRegister's register-radius gizmo (Gizmo_Radius), served
+       by the same ModifyNumberGizmoHandler as the Hospitality keys above. -->
+  <RimWorldAccess.Compat.CashRegister.RadiusStatus>Радиус: {0}. Учитывать помещение: {1}.</RimWorldAccess.Compat.CashRegister.RadiusStatus>
+  <RimWorldAccess.Compat.CashRegister.RadiusTitle>Радиус</RimWorldAccess.Compat.CashRegister.RadiusTitle>
+  <RimWorldAccess.Compat.CashRegister.ToggleIncludeRoom>Переключить учёт помещения</RimWorldAccess.Compat.CashRegister.ToggleIncludeRoom>
+
+  <!-- CashRegisterShiftsAdapter: the Shifts tab's staff/hour scheduling grid,
+       served as a structured tree instead of the tab's own invisible bare
+       GUI.DrawTexture hour cells. Wording baked from CashRegister's own
+       English strings ("TabRegisterShifts" = "Shifts", "TabRegisterShiftsEmpty"
+       = "No one") since those keys cannot be called via Translate() from our
+       C# — see the adapter's class remarks. -->
+  <RimWorldAccess.Compat.CashRegisterShifts.TabName>Смены</RimWorldAccess.Compat.CashRegisterShifts.TabName>
+  <RimWorldAccess.Compat.CashRegisterShifts.ShiftLabel>Смена {0}. {1}. Часы: {2}.</RimWorldAccess.Compat.CashRegisterShifts.ShiftLabel>
+  <RimWorldAccess.Compat.CashRegisterShifts.NoOne>Никто</RimWorldAccess.Compat.CashRegisterShifts.NoOne>
+  <RimWorldAccess.Compat.CashRegisterShifts.HoursNone>нет</RimWorldAccess.Compat.CashRegisterShifts.HoursNone>
+  <RimWorldAccess.Compat.CashRegisterShifts.HoursAllDay>весь день</RimWorldAccess.Compat.CashRegisterShifts.HoursAllDay>
+  <RimWorldAccess.Compat.CashRegisterShifts.HourRangeSpan>{0}–{1}</RimWorldAccess.Compat.CashRegisterShifts.HourRangeSpan>
+  <RimWorldAccess.Compat.CashRegisterShifts.HourSingleSpan>{0}</RimWorldAccess.Compat.CashRegisterShifts.HourSingleSpan>
+  <RimWorldAccess.Compat.CashRegisterShifts.AssignedLine>Назначено: {0}.</RimWorldAccess.Compat.CashRegisterShifts.AssignedLine>
+  <RimWorldAccess.Compat.CashRegisterShifts.AssignStaffAction>Назначить персонал</RimWorldAccess.Compat.CashRegisterShifts.AssignStaffAction>
+  <RimWorldAccess.Compat.CashRegisterShifts.DeleteShiftAction>Удалить смену</RimWorldAccess.Compat.CashRegisterShifts.DeleteShiftAction>
+  <RimWorldAccess.Compat.CashRegisterShifts.AddShiftAction>Добавить смену</RimWorldAccess.Compat.CashRegisterShifts.AddShiftAction>
+  <RimWorldAccess.Compat.CashRegisterShifts.HourRow>Час {0}: {1}</RimWorldAccess.Compat.CashRegisterShifts.HourRow>
+  <RimWorldAccess.Compat.CashRegisterShifts.HourToggled>{0}.</RimWorldAccess.Compat.CashRegisterShifts.HourToggled>
+  <RimWorldAccess.Compat.CashRegisterShifts.ShiftDeleted>Смена удалена.</RimWorldAccess.Compat.CashRegisterShifts.ShiftDeleted>
+  <RimWorldAccess.Compat.CashRegisterShifts.ShiftAdded>Смена добавлена.</RimWorldAccess.Compat.CashRegisterShifts.ShiftAdded>
+  <RimWorldAccess.Compat.CashRegisterShifts.ShiftCapReached>Максимальное количество смен для этого аппарата уже достигнуто: {0_numCase ? смена : смены : смен}.</RimWorldAccess.Compat.CashRegisterShifts.ShiftCapReached>
+  <RimWorldAccess.Compat.CashRegisterShifts.ActionFailed>Действие не удалось.</RimWorldAccess.Compat.CashRegisterShifts.ActionFailed>
+
+  <!-- HospitalityAreaColumnHandler: the Guests table's area-of-accommodation
+       and shopping-area columns. Both null-area words are ours rather than
+       calling either vanilla's or the mod's own Translate() key on their
+       behalf (the mod's own "AreaNoShopping" reads "No shopping",
+       verified against its Languages/English/Keyed/Hospitality.xml). -->
+  <RimWorldAccess.Compat.Hospitality.NoAccommodationArea>Без ограничений</RimWorldAccess.Compat.Hospitality.NoAccommodationArea>
+  <RimWorldAccess.Compat.Hospitality.NoShoppingArea>Без покупок</RimWorldAccess.Compat.Hospitality.NoShoppingArea>
+
+  <!-- JecsAbilityCompat / JecsAbilityCommandHandler: JecsTools' AbilityUser
+       framework (RimWorld of Magic spells and any other mod built on it).
+       CannotCastNow is the generic fallback when TryCastAbility refuses
+       without a reason of its own; Recharging is the live cooldown readout,
+       matching the mod's own gizmo cooldown fill. -->
+  <RimWorldAccess.Compat.JecsAbility.CannotCastNow>Эту способность сейчас нельзя использовать.</RimWorldAccess.Compat.JecsAbility.CannotCastNow>
+  <RimWorldAccess.Compat.JecsAbility.Recharging>Перезарядка, осталось {0_numCase ? секунда : секунды : секунд}.</RimWorldAccess.Compat.JecsAbility.Recharging>
+
+  <!-- RwomClassCardAdapter: RimWorld of Magic's magic/might class card
+       (ITab_Pawn_Magic / ITab_Pawn_Might), read path. The tab's own category
+       label is resolved live from its labelKey (TabRegistry pattern), so no
+       "Magic"/"Might" key lives here. Numeric line items mirror the mod's own
+       English wording (MagicCardUtility.InfoPane/MightCardUtility.InfoPane's
+       mana/stamina tooltip, TM_MCU_* keys) since those keys cannot be called
+       via Translate() from our C# — baked as our own per the CashRegister
+       adapters' precedent. -->
+  <RimWorldAccess.Compat.Rwom.ClassInfoSection>Информация о классе</RimWorldAccess.Compat.Rwom.ClassInfoSection>
+  <RimWorldAccess.Compat.Rwom.GlobalSkillsSection>Общие навыки</RimWorldAccess.Compat.Rwom.GlobalSkillsSection>
+  <RimWorldAccess.Compat.Rwom.LevelRow>Уровень: {0}. {1} из {2} опыта до следующего уровня.</RimWorldAccess.Compat.Rwom.LevelRow>
+  <RimWorldAccess.Compat.Rwom.AbilityPointsRow>Доступно очков способностей: {0}.</RimWorldAccess.Compat.Rwom.AbilityPointsRow>
+  <RimWorldAccess.Compat.Rwom.ManaGainRow>Прирост маны за 5 секунд: {0}.</RimWorldAccess.Compat.Rwom.ManaGainRow>
+  <RimWorldAccess.Compat.Rwom.ManaBaseGain>Базовый прирост маны: {0}.</RimWorldAccess.Compat.Rwom.ManaBaseGain>
+  <RimWorldAccess.Compat.Rwom.ManaBaseRegen>Бонус к восстановлению маны: {0}.</RimWorldAccess.Compat.Rwom.ManaBaseRegen>
+  <RimWorldAccess.Compat.Rwom.ManaSurge>Всплеск маны: +{0}.</RimWorldAccess.Compat.Rwom.ManaSurge>
+  <RimWorldAccess.Compat.Rwom.ManaSyrrium>Бонус сиррия: +{0}.</RimWorldAccess.Compat.Rwom.ManaSyrrium>
+  <RimWorldAccess.Compat.Rwom.ManaModifiedGain>Изменённый прирост маны: {0}.</RimWorldAccess.Compat.Rwom.ManaModifiedGain>
+  <RimWorldAccess.Compat.Rwom.ManaRegenBonus>Бонус к восстановлению энергии: +{0}.</RimWorldAccess.Compat.Rwom.ManaRegenBonus>
+  <RimWorldAccess.Compat.Rwom.ManaWeakness>Слабость к мане: -{0}.</RimWorldAccess.Compat.Rwom.ManaWeakness>
+  <RimWorldAccess.Compat.Rwom.ManaMinionCost>Стоимость приспешника: -{0}.</RimWorldAccess.Compat.Rwom.ManaMinionCost>
+  <RimWorldAccess.Compat.Rwom.ManaSpriteCost>Стоимость духа: -{0}.</RimWorldAccess.Compat.Rwom.ManaSpriteCost>
+  <RimWorldAccess.Compat.Rwom.ManaUndeadCost>Стоимость нежити: -{0}.</RimWorldAccess.Compat.Rwom.ManaUndeadCost>
+  <RimWorldAccess.Compat.Rwom.ManaDrain>Отток маны: -{0}.</RimWorldAccess.Compat.Rwom.ManaDrain>
+  <RimWorldAccess.Compat.Rwom.ManaSickness>Магическая болезнь: -{0}.</RimWorldAccess.Compat.Rwom.ManaSickness>
+  <RimWorldAccess.Compat.Rwom.ManaParacyte>Паразитический отток: -{0}.</RimWorldAccess.Compat.Rwom.ManaParacyte>
+  <RimWorldAccess.Compat.Rwom.ManaNet>Итоговый расход маны: {0}.</RimWorldAccess.Compat.Rwom.ManaNet>
+  <RimWorldAccess.Compat.Rwom.StaminaGainRow>Прирост выносливости за 5 секунд: {0}.</RimWorldAccess.Compat.Rwom.StaminaGainRow>
+  <RimWorldAccess.Compat.Rwom.StaminaBaseGain>Базовый прирост: {0}.</RimWorldAccess.Compat.Rwom.StaminaBaseGain>
+  <RimWorldAccess.Compat.Rwom.StaminaRegenAdjustment>Коррекция восстановления выносливости: {0}.</RimWorldAccess.Compat.Rwom.StaminaRegenAdjustment>
+  <RimWorldAccess.Compat.Rwom.SkillProgressRow>{0}: {1} из {2}.</RimWorldAccess.Compat.Rwom.SkillProgressRow>
+  <RimWorldAccess.Compat.Rwom.PointAvailableToSpend>Доступно очко для траты.</RimWorldAccess.Compat.Rwom.PointAvailableToSpend>
+  <RimWorldAccess.Compat.Rwom.AbilitySkillPointCost>Доступно очко для траты. Стоит {0_numCase ? очко : очка : очков}.</RimWorldAccess.Compat.Rwom.AbilitySkillPointCost>
+  <RimWorldAccess.Compat.Rwom.AbilityTieredState>Уровень {0} из {1}.</RimWorldAccess.Compat.Rwom.AbilityTieredState>
+  <RimWorldAccess.Compat.Rwom.AbilityLevelUpCost>Для повышения уровня нужно {0_numCase ? очко : очка : очков}.</RimWorldAccess.Compat.Rwom.AbilityLevelUpCost>
+  <RimWorldAccess.Compat.Rwom.AbilityLevelUpCostOne>Для повышения уровня нужно 1 очко.</RimWorldAccess.Compat.Rwom.AbilityLevelUpCostOne>
+  <RimWorldAccess.Compat.Rwom.AbilityLearned>Изучено.</RimWorldAccess.Compat.Rwom.AbilityLearned>
+  <RimWorldAccess.Compat.Rwom.AbilityNotLearned>Не изучено. Для изучения нужно {0_numCase ? очко : очка : очков}.</RimWorldAccess.Compat.Rwom.AbilityNotLearned>
+  <RimWorldAccess.Compat.Rwom.AbilityNotLearnedOne>Не изучено. Для изучения нужно 1 очко.</RimWorldAccess.Compat.Rwom.AbilityNotLearnedOne>
+  <RimWorldAccess.Compat.Rwom.AbilityLocked>Заблокировано. Изучите с помощью свитка.</RimWorldAccess.Compat.Rwom.AbilityLocked>
+  <RimWorldAccess.Compat.Rwom.AbilityNextLevelDescription>Следующий уровень: {0}</RimWorldAccess.Compat.Rwom.AbilityNextLevelDescription>
+  <RimWorldAccess.Compat.Rwom.AutocastOn>Автоприменение: вкл.</RimWorldAccess.Compat.Rwom.AutocastOn>
+  <RimWorldAccess.Compat.Rwom.AutocastOff>Автоприменение: выкл.</RimWorldAccess.Compat.Rwom.AutocastOff>
+
+  <!-- RwomClassCardAdapter part D: write-path actions (learn/level-up/skill
+       spend/autocast toggle/god-mode). -->
+  <RimWorldAccess.Compat.Rwom.GodModeLevelUpAction>Повысить уровень класса</RimWorldAccess.Compat.Rwom.GodModeLevelUpAction>
+  <RimWorldAccess.Compat.Rwom.GodModeResetAction>Сбросить класс</RimWorldAccess.Compat.Rwom.GodModeResetAction>
+  <RimWorldAccess.Compat.Rwom.ClassLeveledUp>Уровень {0}.</RimWorldAccess.Compat.Rwom.ClassLeveledUp>
+  <RimWorldAccess.Compat.Rwom.ClassReset>Класс сброшен.</RimWorldAccess.Compat.Rwom.ClassReset>
+  <RimWorldAccess.Compat.Rwom.LearnedAnnounce>{0}: изучено. Осталось {1_numCase ? очко : очка : очков}.</RimWorldAccess.Compat.Rwom.LearnedAnnounce>
+  <RimWorldAccess.Compat.Rwom.LearnedAnnounceOne>{0}: изучено. Осталось 1 очко.</RimWorldAccess.Compat.Rwom.LearnedAnnounceOne>
+  <RimWorldAccess.Compat.Rwom.PointSpentAnnounce>{0}: теперь уровень {1} из {2}. Осталось {3_numCase ? очко : очка : очков}.</RimWorldAccess.Compat.Rwom.PointSpentAnnounce>
+  <RimWorldAccess.Compat.Rwom.PointSpentAnnounceOne>{0}: теперь уровень {1} из {2}. Осталось 1 очко.</RimWorldAccess.Compat.Rwom.PointSpentAnnounceOne>
+  <RimWorldAccess.Compat.Rwom.AutocastToggled>Автоприменение {0} для {1}.</RimWorldAccess.Compat.Rwom.AutocastToggled>
+  <RimWorldAccess.Compat.Rwom.AutocastUnchanged>Автоприменение не изменено, всё ещё {0} для {1}. Повторите через мгновение.</RimWorldAccess.Compat.Rwom.AutocastUnchanged>
+  <RimWorldAccess.Compat.Rwom.NotEnoughPoints>Недостаточно очков.</RimWorldAccess.Compat.Rwom.NotEnoughPoints>
+  <RimWorldAccess.Compat.Rwom.ActionFailed>Действие не удалось.</RimWorldAccess.Compat.Rwom.ActionFailed>
+
+  <!-- RwomGizmoCompat: RimWorld of Magic's autocast toggle reachable from the
+       ability gizmo itself (parity with the map-view right-click checkbox the
+       mod draws; the class card has no autocast UI of its own). -->
+  <RimWorldAccess.Compat.Rwom.AutocastStatusOn>Автоприменение включено.</RimWorldAccess.Compat.Rwom.AutocastStatusOn>
+  <RimWorldAccess.Compat.Rwom.AutocastStatusOff>Автоприменение выключено.</RimWorldAccess.Compat.Rwom.AutocastStatusOff>
+  <RimWorldAccess.Compat.Rwom.ToggleAutocastOn>Включить автоприменение</RimWorldAccess.Compat.Rwom.ToggleAutocastOn>
+  <RimWorldAccess.Compat.Rwom.ToggleAutocastOff>Отключить автоприменение</RimWorldAccess.Compat.Rwom.ToggleAutocastOff>
+  <RimWorldAccess.Compat.Rwom.IncitePassionSelected>{0}: выбрано для «Разжечь страсть».</RimWorldAccess.Compat.Rwom.IncitePassionSelected>
+
+  <!-- RwomGolemTabAdapter: RimWorld of Magic's golem tab (ITab_GolemPawn /
+       ITab_GolemWorkstation). Both tabs share one translated labelKey
+       ("TabGolem"), so the two disambiguated category names live here as our
+       own keys rather than being resolved from the tab live. -->
+  <RimWorldAccess.Compat.Rwom.TabGolemPawn>Голем</RimWorldAccess.Compat.Rwom.TabGolemPawn>
+  <RimWorldAccess.Compat.Rwom.TabGolemWorkstation>Мастерская голема</RimWorldAccess.Compat.Rwom.TabGolemWorkstation>
+  <RimWorldAccess.Compat.Rwom.GolemNoData>Данные о големе недоступны.</RimWorldAccess.Compat.Rwom.GolemNoData>
+  <RimWorldAccess.Compat.Rwom.GolemNameRow>Имя: {0}</RimWorldAccess.Compat.Rwom.GolemNameRow>
+  <RimWorldAccess.Compat.Rwom.GolemMasterRow>Хозяин: {0}</RimWorldAccess.Compat.Rwom.GolemMasterRow>
+  <RimWorldAccess.Compat.Rwom.GolemMasterNone>Нет</RimWorldAccess.Compat.Rwom.GolemMasterNone>
+  <RimWorldAccess.Compat.Rwom.GolemMasterSet>Хозяин назначен: {0}.</RimWorldAccess.Compat.Rwom.GolemMasterSet>
+  <RimWorldAccess.Compat.Rwom.GolemAbilitiesRow>Способности и типы работ</RimWorldAccess.Compat.Rwom.GolemAbilitiesRow>
+  <RimWorldAccess.Compat.Rwom.GolemAreaRow>Доступная область: {0}</RimWorldAccess.Compat.Rwom.GolemAreaRow>
+  <RimWorldAccess.Compat.Rwom.GolemAreaSet>Доступная область изменена на: {0}.</RimWorldAccess.Compat.Rwom.GolemAreaSet>
+  <RimWorldAccess.Compat.Rwom.GolemFollowsMaster>Следует за хозяином</RimWorldAccess.Compat.Rwom.GolemFollowsMaster>
+  <RimWorldAccess.Compat.Rwom.GolemFollowsMasterDrafted>Следует за мобилизованным хозяином</RimWorldAccess.Compat.Rwom.GolemFollowsMasterDrafted>
+  <RimWorldAccess.Compat.Rwom.GolemShowDormantPosition>Показывать позицию покоя</RimWorldAccess.Compat.Rwom.GolemShowDormantPosition>
+  <RimWorldAccess.Compat.Rwom.GolemCheckThreatPath>Проверять путь угрозы</RimWorldAccess.Compat.Rwom.GolemCheckThreatPath>
+  <RimWorldAccess.Compat.Rwom.GolemRemainDormantWhenUpgrading>Оставаться в покое во время улучшения</RimWorldAccess.Compat.Rwom.GolemRemainDormantWhenUpgrading>
+  <RimWorldAccess.Compat.Rwom.GolemUseAbilitiesWhenDormant>Использовать способности в покое</RimWorldAccess.Compat.Rwom.GolemUseAbilitiesWhenDormant>
+  <RimWorldAccess.Compat.Rwom.GolemToggleAnnounce>{0}: {1}.</RimWorldAccess.Compat.Rwom.GolemToggleAnnounce>
+  <RimWorldAccess.Compat.Rwom.GolemThreatRange>Радиус реакции на угрозу</RimWorldAccess.Compat.Rwom.GolemThreatRange>
+  <RimWorldAccess.Compat.Rwom.GolemMinEnergyForAbilities>Минимальный процент энергии для способностей</RimWorldAccess.Compat.Rwom.GolemMinEnergyForAbilities>
+  <RimWorldAccess.Compat.Rwom.GolemRestAt>Отдых при проценте энергии</RimWorldAccess.Compat.Rwom.GolemRestAt>
+  <RimWorldAccess.Compat.Rwom.GolemWakeAt>Пробуждение при проценте энергии</RimWorldAccess.Compat.Rwom.GolemWakeAt>
+  <RimWorldAccess.Compat.Rwom.GolemSliderSet>{0}: установлено {1}.</RimWorldAccess.Compat.Rwom.GolemSliderSet>
+  <RimWorldAccess.Compat.Rwom.GolemUpgradesSection>Улучшения</RimWorldAccess.Compat.Rwom.GolemUpgradesSection>
+  <RimWorldAccess.Compat.Rwom.GolemUpgradeRow>{0}: уровень {1} из {2}.</RimWorldAccess.Compat.Rwom.GolemUpgradeRow>
+  <RimWorldAccess.Compat.Rwom.GolemUpgradeMaxed>Максимум.</RimWorldAccess.Compat.Rwom.GolemUpgradeMaxed>
+  <RimWorldAccess.Compat.Rwom.GolemUpgradeDisabled>Отключено.</RimWorldAccess.Compat.Rwom.GolemUpgradeDisabled>
+
+  <!-- RwomGolemCompat: RimWorld of Magic's golem overview table (window,
+       columns) and its map-view energy status gizmo. Reuses
+       GolemThreatRange/GolemRestAt/GolemWakeAt/GolemMasterNone above, which
+       already carry the exact same wording for the golem tab. -->
+  <RimWorldAccess.Compat.Rwom.GolemEnergyCell>{0} процентов</RimWorldAccess.Compat.Rwom.GolemEnergyCell>
+  <RimWorldAccess.Compat.Rwom.GolemThreatRangeCell>{0}</RimWorldAccess.Compat.Rwom.GolemThreatRangeCell>
+  <RimWorldAccess.Compat.Rwom.GolemPercentCell>{0} процентов</RimWorldAccess.Compat.Rwom.GolemPercentCell>
+  <RimWorldAccess.Compat.Rwom.EnergyStatusLabel>Состояние энергии</RimWorldAccess.Compat.Rwom.EnergyStatusLabel>
+  <RimWorldAccess.Compat.Rwom.EnergyBarFragment>{0}: {1} из {2}.</RimWorldAccess.Compat.Rwom.EnergyBarFragment>
+  <RimWorldAccess.Compat.Rwom.EnergyBarCustomClass>Энергия класса</RimWorldAccess.Compat.Rwom.EnergyBarCustomClass>
+  <RimWorldAccess.Compat.Rwom.EnergyBarPsionic>Псионическая энергия</RimWorldAccess.Compat.Rwom.EnergyBarPsionic>
+  <RimWorldAccess.Compat.Rwom.EnergyBarHate>Ненависть</RimWorldAccess.Compat.Rwom.EnergyBarHate>
+  <RimWorldAccess.Compat.Rwom.EnergyBarChi>Ци</RimWorldAccess.Compat.Rwom.EnergyBarChi>
+  <RimWorldAccess.Compat.Rwom.EnergyBarStamina>Выносливость</RimWorldAccess.Compat.Rwom.EnergyBarStamina>
+  <RimWorldAccess.Compat.Rwom.EnergyBarBlood>Кровь</RimWorldAccess.Compat.Rwom.EnergyBarBlood>
+  <RimWorldAccess.Compat.Rwom.EnergyBarLight>Энергия света</RimWorldAccess.Compat.Rwom.EnergyBarLight>
+  <RimWorldAccess.Compat.Rwom.EnergyBarMana>Мана</RimWorldAccess.Compat.Rwom.EnergyBarMana>
+  <RimWorldAccess.Compat.Rwom.EnergyBarSpirit>Дух</RimWorldAccess.Compat.Rwom.EnergyBarSpirit>
+  <RimWorldAccess.Compat.Rwom.EnergyBarNecrotic>Некротическая энергия</RimWorldAccess.Compat.Rwom.EnergyBarNecrotic>
+
+  <!-- RwomEnchantmentAdapter: RimWorld of Magic's per-item enchantment tab
+       (read-only stat lines, tier suffix, abilities/traits) and the matching
+       gear-tab enchantment rows. TierSuffix's argument is the EnchantmentTier
+       enum's own name lowercased (a runtime value, never a literal key). -->
+  <RimWorldAccess.Compat.Rwom.TabEnchantment>Зачарования</RimWorldAccess.Compat.Rwom.TabEnchantment>
+  <RimWorldAccess.Compat.Rwom.EnchantTierSuffix> Уровень: {0}.</RimWorldAccess.Compat.Rwom.EnchantTierSuffix>
+  <RimWorldAccess.Compat.Rwom.EnchantAbilities>Способности: {0}.</RimWorldAccess.Compat.Rwom.EnchantAbilities>
+  <RimWorldAccess.Compat.Rwom.EnchantTraits>Поглощённые черты: {0}.</RimWorldAccess.Compat.Rwom.EnchantTraits>
+  <RimWorldAccess.Compat.Rwom.GearEnchanted>Зачаровано.</RimWorldAccess.Compat.Rwom.GearEnchanted>
+
+  <!-- JecsGearSlotCompat: JecsTools' CompSlotLoadable gear slots (ships
+       dormant unless that separate assembly is loaded). -->
+  <RimWorldAccess.Compat.Jecs.GearSlot>Слот {0}: {1}</RimWorldAccess.Compat.Jecs.GearSlot>
+  <RimWorldAccess.Compat.Jecs.GearSlotEmpty>Пусто</RimWorldAccess.Compat.Jecs.GearSlotEmpty>
+
+  <!-- HugsLibNewsScope: HugsLib's update-news dialog (Dialog_UpdateFeatures /
+       Dialog_UpdateFeaturesFiltered), which auto-opens whenever an installed
+       HugsLib mod's version advances. -->
+  <RimWorldAccess.Compat.HugsLib.NewsRegion>Новости обновления</RimWorldAccess.Compat.HugsLib.NewsRegion>
+  <RimWorldAccess.Compat.HugsLib.NewsOpened>Новости обновления. {0_numCase ? запись : записи : записей}.</RimWorldAccess.Compat.HugsLib.NewsOpened>
+  <RimWorldAccess.Compat.HugsLib.NewsEntryTitle>{0}, версия {1}</RimWorldAccess.Compat.HugsLib.NewsEntryTitle>
+  <RimWorldAccess.Compat.HugsLib.NewsImage>Изображение.</RimWorldAccess.Compat.HugsLib.NewsImage>
+  <RimWorldAccess.Compat.HugsLib.NewsCaption>Подпись: {0}</RimWorldAccess.Compat.HugsLib.NewsCaption>
+  <RimWorldAccess.Compat.HugsLib.NewsIgnoreToggle>Не показывать новости от {0}</RimWorldAccess.Compat.HugsLib.NewsIgnoreToggle>
+  <RimWorldAccess.Compat.HugsLib.NewsIgnoreConfirmText>Больше не показывать новости обновлений от {0}?</RimWorldAccess.Compat.HugsLib.NewsIgnoreConfirmText>
+  <RimWorldAccess.Compat.HugsLib.NewsIgnoreConfirmTitle>Игнорировать новости мода</RimWorldAccess.Compat.HugsLib.NewsIgnoreConfirmTitle>
+  <RimWorldAccess.Compat.HugsLib.NewsLink>Открыть ссылку: {0}</RimWorldAccess.Compat.HugsLib.NewsLink>
+  <RimWorldAccess.Compat.HugsLib.NewsLinkOpened>Открыто в браузере.</RimWorldAccess.Compat.HugsLib.NewsLinkOpened>
+  <RimWorldAccess.Compat.HugsLib.NewsFilter>Фильтр показанных модов: {0}</RimWorldAccess.Compat.HugsLib.NewsFilter>
+  <RimWorldAccess.Compat.HugsLib.ActionFailed>Действие не удалось.</RimWorldAccess.Compat.HugsLib.ActionFailed>
+
+  <!-- RimTalkChatScope: RimTalk's CustomDialogueWindow ("chat with pawn" box), speech mods
+       campaign S5. {0}/{1} below are already-resolved passthrough strings (pawn LabelShortCap),
+       not authored prose fragments. -->
+  <RimWorldAccess.Compat.RimTalk.CustomDialogue.Opened>{0} говорит с {1}.</RimWorldAccess.Compat.RimTalk.CustomDialogue.Opened>
+  <RimWorldAccess.Compat.RimTalk.CustomDialogue.MessageField>Сообщение</RimWorldAccess.Compat.RimTalk.CustomDialogue.MessageField>
+  <RimWorldAccess.Compat.RimTalk.CustomDialogue.SendFallback>Отправить</RimWorldAccess.Compat.RimTalk.CustomDialogue.SendFallback>
+  <RimWorldAccess.Compat.RimTalk.CustomDialogue.CancelFallback>Отмена</RimWorldAccess.Compat.RimTalk.CustomDialogue.CancelFallback>
+
+  <RimWorldAccess.Compat.RimTalk.OverlayOn>Оверлей RimTalk включён.</RimWorldAccess.Compat.RimTalk.OverlayOn>
+  <RimWorldAccess.Compat.RimTalk.OverlayOff>Оверлей RimTalk отключён.</RimWorldAccess.Compat.RimTalk.OverlayOff>
+
+  <!-- RimTalkPersonaScope: RimTalk's PersonaEditorWindow (persona/chattiness editor), speech
+       mods campaign S6. check_l10n_keys.py only scans OUR OWN Keyed XML, not a Workshop mod's
+       (the VfHealthTabAdapter precedent), so every string this scope speaks is baked into our
+       own keys below even where the English text mirrors RimTalk's own wording verbatim
+       (Title/Instruct/TalkFrequencyDesc/Chattiness/Save/SmartGen/RollGen/Clear) rather than
+       calling RimTalk's own translation keys directly. -->
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.PersonaField>Стиль общения</RimWorldAccess.Compat.RimTalk.PersonaEditor.PersonaField>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.OpenerRow>Изменить стиль общения</RimWorldAccess.Compat.RimTalk.PersonaEditor.OpenerRow>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.GenerationComplete>Генерация завершена.</RimWorldAccess.Compat.RimTalk.PersonaEditor.GenerationComplete>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.Title>Стиль общения: {0}</RimWorldAccess.Compat.RimTalk.PersonaEditor.Title>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.Instruct>Опишите, как этот поселенец говорит и ведёт себя. Для лучшего результата пишите кратко (до 300 символов).</RimWorldAccess.Compat.RimTalk.PersonaEditor.Instruct>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.TalkFrequencyDesc>Определяет, как часто этот персонаж сам начинает разговор. Ответ на чужие реплики происходит всегда, даже при самом низком значении. Это влияет только на частоту, с которой персонаж начинает разговор.</RimWorldAccess.Compat.RimTalk.PersonaEditor.TalkFrequencyDesc>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.Chattiness>Разговорчивость</RimWorldAccess.Compat.RimTalk.PersonaEditor.Chattiness>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.SaveFallback>Сохранить</RimWorldAccess.Compat.RimTalk.PersonaEditor.SaveFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.SmartGenFallback>Умная генерация</RimWorldAccess.Compat.RimTalk.PersonaEditor.SmartGenFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.RollGenFallback>Случайная генерация</RimWorldAccess.Compat.RimTalk.PersonaEditor.RollGenFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.ClearFallback>Очистить</RimWorldAccess.Compat.RimTalk.PersonaEditor.ClearFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.EvolveComplete>Эволюция завершена.</RimWorldAccess.Compat.RimTalk.PersonaEditor.EvolveComplete>
+
+  <!-- RimTalkDebugScope: RimTalk's DebugWindow (the log console: By Time / By Pawn / Talk Requests
+       views, filters, a details panel, stats, and bottom actions), speech mods campaign S8. -->
+  <RimWorldAccess.Compat.RimTalk.Debug.Opened>Окно отладки RimTalk.</RimWorldAccess.Compat.RimTalk.Debug.Opened>
+  <RimWorldAccess.Compat.RimTalk.Debug.FiltersRegionName>Фильтры</RimWorldAccess.Compat.RimTalk.Debug.FiltersRegionName>
+  <RimWorldAccess.Compat.RimTalk.Debug.PawnRequestsRegionName>Запросы персонажей</RimWorldAccess.Compat.RimTalk.Debug.PawnRequestsRegionName>
+  <RimWorldAccess.Compat.RimTalk.Debug.DetailsRegionName>Сведения</RimWorldAccess.Compat.RimTalk.Debug.DetailsRegionName>
+  <RimWorldAccess.Compat.RimTalk.Debug.StatsRegionName>Статистика</RimWorldAccess.Compat.RimTalk.Debug.StatsRegionName>
+  <RimWorldAccess.Compat.RimTalk.Debug.PawnFilterLabel>Фильтр персонажей</RimWorldAccess.Compat.RimTalk.Debug.PawnFilterLabel>
+  <RimWorldAccess.Compat.RimTalk.Debug.TextSearchLabel>Поиск по тексту</RimWorldAccess.Compat.RimTalk.Debug.TextSearchLabel>
+  <RimWorldAccess.Compat.RimTalk.Debug.PawnRequestsHeader>Запросы: {0}</RimWorldAccess.Compat.RimTalk.Debug.PawnRequestsHeader>
+  <RimWorldAccess.Compat.RimTalk.Debug.DetailHeader>{0}, {1}, {2}</RimWorldAccess.Compat.RimTalk.Debug.DetailHeader>
+  <RimWorldAccess.Compat.RimTalk.Debug.DetailHeaderShort>{0}, {1}</RimWorldAccess.Compat.RimTalk.Debug.DetailHeaderShort>
+  <RimWorldAccess.Compat.RimTalk.Debug.EnableFallback>Включить RimTalk</RimWorldAccess.Compat.RimTalk.Debug.EnableFallback>
+  <RimWorldAccess.Compat.RimTalk.Debug.ModSettingsFallback>Настройки мода</RimWorldAccess.Compat.RimTalk.Debug.ModSettingsFallback>
+  <RimWorldAccess.Compat.RimTalk.Debug.ExportFallback>Экспортировать логи</RimWorldAccess.Compat.RimTalk.Debug.ExportFallback>
+  <RimWorldAccess.Compat.RimTalk.Debug.ResetLogsFallback>Сбросить логи</RimWorldAccess.Compat.RimTalk.Debug.ResetLogsFallback>
+
+  <!-- RimTalkTtsVoiceSelectionScope: the TTS addon's per-pawn voice picker (VoiceSelectionWindow),
+       speech mods campaign S10. -->
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceOpenerRow>Выбрать голосовую модель</RimWorldAccess.Compat.RimTalk.TTS.VoiceOpenerRow>
+  <RimWorldAccess.Compat.RimTalk.TTS.ModelIdPrefix>ID модели: {0}</RimWorldAccess.Compat.RimTalk.TTS.ModelIdPrefix>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.Opened>Голос: {0}</RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.Opened>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.CustomLanguageField>Свой язык</RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.CustomLanguageField>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.SaveFallback>Сохранить</RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.SaveFallback>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.CancelFallback>Отмена</RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.CancelFallback>
+
+  <!-- RimTalkTtsVoiceLibraryScope: the TTS addon's Azure/Edge voice reference browser
+       (VoiceLibraryWindow), speech mods campaign S10. -->
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.Opened>Библиотека голосов.</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.Opened>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.FiltersRegionName>Фильтры</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.FiltersRegionName>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.TableRegionName>Голоса</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.TableRegionName>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.GroupHeader>{0} ({1_numCase ? голос : голоса : голосов})</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.GroupHeader>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnName>Название голоса</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnName>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnGender>Пол</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnGender>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnLanguage>Язык</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnLanguage>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnPersonality>Характер</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnPersonality>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnCategory>Категория</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.ColumnCategory>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.SearchLabel>Поиск</RimWorldAccess.Compat.RimTalk.TTS.VoiceLibrary.SearchLabel>
+
+  <!-- RimTalkMemoryMainTabScope: ExpandMemory's "Mind Stream" main tab (per-pawn
+       four-layer memory timeline), speech mods campaign S12. -->
+  <RimWorldAccess.Compat.RimTalk.Memory.Opened>Поток разума.</RimWorldAccess.Compat.RimTalk.Memory.Opened>
+  <RimWorldAccess.Compat.RimTalk.Memory.FiltersRegionName>Фильтры</RimWorldAccess.Compat.RimTalk.Memory.FiltersRegionName>
+  <RimWorldAccess.Compat.RimTalk.Memory.TimelineRegionName>Воспоминания</RimWorldAccess.Compat.RimTalk.Memory.TimelineRegionName>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnInfo>Сведения</RimWorldAccess.Compat.RimTalk.Memory.ColumnInfo>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnContent>Содержимое</RimWorldAccess.Compat.RimTalk.Memory.ColumnContent>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnImportance>Важность</RimWorldAccess.Compat.RimTalk.Memory.ColumnImportance>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnActivity>Активность</RimWorldAccess.Compat.RimTalk.Memory.ColumnActivity>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnSelected>Выбрано</RimWorldAccess.Compat.RimTalk.Memory.ColumnSelected>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnPinned>Закреплено</RimWorldAccess.Compat.RimTalk.Memory.ColumnPinned>
+  <RimWorldAccess.Compat.RimTalk.Memory.ColumnEdit>Изменить</RimWorldAccess.Compat.RimTalk.Memory.ColumnEdit>
+  <RimWorldAccess.Compat.RimTalk.Memory.Selected>выбрано</RimWorldAccess.Compat.RimTalk.Memory.Selected>
+  <RimWorldAccess.Compat.RimTalk.Memory.NotSelected>не выбрано</RimWorldAccess.Compat.RimTalk.Memory.NotSelected>
+  <RimWorldAccess.Compat.RimTalk.Memory.Pinned>закреплено</RimWorldAccess.Compat.RimTalk.Memory.Pinned>
+  <RimWorldAccess.Compat.RimTalk.Memory.NotPinned>не закреплено</RimWorldAccess.Compat.RimTalk.Memory.NotPinned>
+  <RimWorldAccess.Compat.RimTalk.Memory.EditAction>Изменить это воспоминание</RimWorldAccess.Compat.RimTalk.Memory.EditAction>
+  <RimWorldAccess.Compat.RimTalk.Memory.InfoLine>{0}, {1}, {2}</RimWorldAccess.Compat.RimTalk.Memory.InfoLine>
+  <RimWorldAccess.Compat.RimTalk.Memory.InfoLineWithPawn>{0}, {1}, {2}, с {3}</RimWorldAccess.Compat.RimTalk.Memory.InfoLineWithPawn>
+  <RimWorldAccess.Compat.RimTalk.Memory.StatsLabel>Количество воспоминаний</RimWorldAccess.Compat.RimTalk.Memory.StatsLabel>
+  <RimWorldAccess.Compat.RimTalk.Memory.NoPawnSelected>колонист не выбран</RimWorldAccess.Compat.RimTalk.Memory.NoPawnSelected>
+  <RimWorldAccess.Compat.RimTalk.Memory.NoMemoryComponent>у этого персонажа нет компонента памяти</RimWorldAccess.Compat.RimTalk.Memory.NoMemoryComponent>
+  <RimWorldAccess.Compat.RimTalk.Memory.StatsValue>активных {0}, ситуативных {1}, в журнале событий {2}, в архиве {3}</RimWorldAccess.Compat.RimTalk.Memory.StatsValue>
+  <RimWorldAccess.Compat.RimTalk.Memory.FilterAll>Все</RimWorldAccess.Compat.RimTalk.Memory.FilterAll>
+  <RimWorldAccess.Compat.RimTalk.Memory.FilterConversation>Разговор</RimWorldAccess.Compat.RimTalk.Memory.FilterConversation>
+  <RimWorldAccess.Compat.RimTalk.Memory.FilterAction>Действие</RimWorldAccess.Compat.RimTalk.Memory.FilterAction>
+  <RimWorldAccess.Compat.RimTalk.Memory.AddToActive>Добавить воспоминание в активный слой</RimWorldAccess.Compat.RimTalk.Memory.AddToActive>
+  <RimWorldAccess.Compat.RimTalk.Memory.AddToSituational>Добавить воспоминание в ситуативный слой</RimWorldAccess.Compat.RimTalk.Memory.AddToSituational>
+  <RimWorldAccess.Compat.RimTalk.Memory.AddToEventLog>Добавить воспоминание в слой журнала событий</RimWorldAccess.Compat.RimTalk.Memory.AddToEventLog>
+  <RimWorldAccess.Compat.RimTalk.Memory.AddToArchive>Добавить воспоминание в слой архива</RimWorldAccess.Compat.RimTalk.Memory.AddToArchive>
+  <RimWorldAccess.Compat.RimTalk.Memory.PawnSelector>Персонаж: {0}</RimWorldAccess.Compat.RimTalk.Memory.PawnSelector>
+
+  <!-- RimTalkMemoryCompat's read-only "Memories" inspection node (Character
+       category), reading FourLayerMemoryComp directly — speech mods campaign S12. -->
+  <RimWorldAccess.Compat.RimTalk.Memory.MemoriesNode>Воспоминания ({0})</RimWorldAccess.Compat.RimTalk.Memory.MemoriesNode>
+  <RimWorldAccess.Compat.RimTalk.Memory.LayerActive>Активный слой</RimWorldAccess.Compat.RimTalk.Memory.LayerActive>
+  <RimWorldAccess.Compat.RimTalk.Memory.LayerSituational>Ситуативный слой</RimWorldAccess.Compat.RimTalk.Memory.LayerSituational>
+  <RimWorldAccess.Compat.RimTalk.Memory.LayerEventLog>Журнал событий</RimWorldAccess.Compat.RimTalk.Memory.LayerEventLog>
+  <RimWorldAccess.Compat.RimTalk.Memory.LayerArchive>Архив</RimWorldAccess.Compat.RimTalk.Memory.LayerArchive>
+  <RimWorldAccess.Compat.RimTalk.Memory.LayerNode>{0} ({1})</RimWorldAccess.Compat.RimTalk.Memory.LayerNode>
+  <RimWorldAccess.Compat.RimTalk.Memory.MemoryLine>{0}: {1} ({2}, важность {3}, активность {4})</RimWorldAccess.Compat.RimTalk.Memory.MemoryLine>
+  <RimWorldAccess.Compat.RimTalk.Memory.MemoryLineWithPawn>{0}: {1} ({2}, важность {3}, активность {4}, с {5})</RimWorldAccess.Compat.RimTalk.Memory.MemoryLineWithPawn>
+  <RimWorldAccess.Compat.RimTalk.Memory.MemoryLinePinned>{0}, закреплено</RimWorldAccess.Compat.RimTalk.Memory.MemoryLinePinned>
+
+  <!-- RimTalkCommonKnowledgeScope: ExpandMemory's colony-wide Common Knowledge
+       library (Dialog_CommonKnowledge), speech mods campaign S12. -->
+  <RimWorldAccess.Compat.RimTalk.Knowledge.Opened>Общие знания.</RimWorldAccess.Compat.RimTalk.Knowledge.Opened>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.SearchRegionName>Поиск</RimWorldAccess.Compat.RimTalk.Knowledge.SearchRegionName>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.CategoriesRegionName>Категории</RimWorldAccess.Compat.RimTalk.Knowledge.CategoriesRegionName>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.EntriesRegionName>Записи</RimWorldAccess.Compat.RimTalk.Knowledge.EntriesRegionName>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailRegionName>Подробности</RimWorldAccess.Compat.RimTalk.Knowledge.DetailRegionName>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnTag>Тег</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnTag>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnContent>Содержимое</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnContent>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnImportance>Важность</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnImportance>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnEnabled>Включено</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnEnabled>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnSelected>Выбрано</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnSelected>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnExtract>Можно извлечь</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnExtract>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ColumnMatch>Можно сопоставить</RimWorldAccess.Compat.RimTalk.Knowledge.ColumnMatch>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.Yes>да</RimWorldAccess.Compat.RimTalk.Knowledge.Yes>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.No>нет</RimWorldAccess.Compat.RimTalk.Knowledge.No>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.SearchLabel>Поиск</RimWorldAccess.Compat.RimTalk.Knowledge.SearchLabel>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.CategoryRow>{0} ({1})</RimWorldAccess.Compat.RimTalk.Knowledge.CategoryRow>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailEmpty>Выберите запись или создайте новую</RimWorldAccess.Compat.RimTalk.Knowledge.DetailEmpty>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailTag>Тег</RimWorldAccess.Compat.RimTalk.Knowledge.DetailTag>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailCategoryExtra>Категория: {0}</RimWorldAccess.Compat.RimTalk.Knowledge.DetailCategoryExtra>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailImportance>Важность</RimWorldAccess.Compat.RimTalk.Knowledge.DetailImportance>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailStatus>Состояние</RimWorldAccess.Compat.RimTalk.Knowledge.DetailStatus>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.StatusEnabled>Включено</RimWorldAccess.Compat.RimTalk.Knowledge.StatusEnabled>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.StatusDisabled>Отключено</RimWorldAccess.Compat.RimTalk.Knowledge.StatusDisabled>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailVisibility>Видимость</RimWorldAccess.Compat.RimTalk.Knowledge.DetailVisibility>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailContent>Содержимое</RimWorldAccess.Compat.RimTalk.Knowledge.DetailContent>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailExtendedProperties>Дополнительные свойства</RimWorldAccess.Compat.RimTalk.Knowledge.DetailExtendedProperties>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.ExtendedPropertiesValue>можно извлечь: {0}, можно сопоставить: {1}</RimWorldAccess.Compat.RimTalk.Knowledge.ExtendedPropertiesValue>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailMultiCount>Выбрано элементов: {0}</RimWorldAccess.Compat.RimTalk.Knowledge.DetailMultiCount>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailEnabledCount>Включено: {0}</RimWorldAccess.Compat.RimTalk.Knowledge.DetailEnabledCount>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailDisabledCount>Отключено: {0}</RimWorldAccess.Compat.RimTalk.Knowledge.DetailDisabledCount>
+  <RimWorldAccess.Compat.RimTalk.Knowledge.DetailAvgImportance>Средняя важность: {0}</RimWorldAccess.Compat.RimTalk.Knowledge.DetailAvgImportance>
+  <!-- PersonaDirectorCompat / PersonaDirectorBatchScope: PersonaDirector's F12 three-way
+       opener, RimTalkPersonaScope's three extra buttons, and Window_BatchDirector's table,
+       speech mods campaign S13. Most labels reuse PersonaDirector's OWN translate keys
+       directly (RPD_*, vehicle A); these are only the RWA-native strings it has none of. -->
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenNotesFallback>Заметки режиссёра</RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenNotesFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenBatchFallback>Пакетный режиссёр</RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenBatchFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenSettingsFallback>Настройки Persona Director</RimWorldAccess.Compat.RimTalk.PersonaDirector.F12OpenSettingsFallback>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.TextFieldsRegionName>Заметки и поиск</RimWorldAccess.Compat.RimTalk.PersonaDirector.TextFieldsRegionName>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.PawnsRegionName>Персонажи</RimWorldAccess.Compat.RimTalk.PersonaDirector.PawnsRegionName>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.SearchLabel>Поиск</RimWorldAccess.Compat.RimTalk.PersonaDirector.SearchLabel>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.HeaderSelected>Выбрано</RimWorldAccess.Compat.RimTalk.PersonaDirector.HeaderSelected>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.Selected>выбрано</RimWorldAccess.Compat.RimTalk.PersonaDirector.Selected>
+  <RimWorldAccess.Compat.RimTalk.PersonaDirector.NotSelected>не выбрано</RimWorldAccess.Compat.RimTalk.PersonaDirector.NotSelected>
+  <!-- PromptEnhanceCompat / PromptEnhanceAnnouncementScope / PromptEnhanceColorPickerScope:
+       PromptEnhance's "Colony Status" main tab (Overview, task list, day-by-day History
+       reading, Custom Areas) and its color-picker swatch grid, speech mods campaign S14.
+       Most labels reuse the mod's OWN translate keys directly (RTE_*, vehicle A); these are
+       only the RWA-native strings it has none of. -->
+  <RimWorldAccess.Compat.PromptEnhance.Opened>Состояние колонии.</RimWorldAccess.Compat.PromptEnhance.Opened>
+  <RimWorldAccess.Compat.PromptEnhance.OverviewRegionName>Обзор</RimWorldAccess.Compat.PromptEnhance.OverviewRegionName>
+  <RimWorldAccess.Compat.PromptEnhance.TasksRegionName>Задачи</RimWorldAccess.Compat.PromptEnhance.TasksRegionName>
+  <RimWorldAccess.Compat.PromptEnhance.OverviewLabel>Обзор колонии</RimWorldAccess.Compat.PromptEnhance.OverviewLabel>
+  <RimWorldAccess.Compat.PromptEnhance.CategoryAll>Все категории</RimWorldAccess.Compat.PromptEnhance.CategoryAll>
+  <RimWorldAccess.Compat.PromptEnhance.ColumnInfo>Сведения</RimWorldAccess.Compat.PromptEnhance.ColumnInfo>
+  <RimWorldAccess.Compat.PromptEnhance.ColumnStatusCycle>Смена состояния</RimWorldAccess.Compat.PromptEnhance.ColumnStatusCycle>
+  <RimWorldAccess.Compat.PromptEnhance.TaskHeader>{0}. {1}, приоритет {2}, {3}.</RimWorldAccess.Compat.PromptEnhance.TaskHeader>
+  <RimWorldAccess.Compat.PromptEnhance.TaskProgress>Прогресс: {0}.</RimWorldAccess.Compat.PromptEnhance.TaskProgress>
+  <RimWorldAccess.Compat.PromptEnhance.TaskAssigned>Назначено: {0}.</RimWorldAccess.Compat.PromptEnhance.TaskAssigned>
+  <RimWorldAccess.Compat.PromptEnhance.HistoryDetailsLabel>Подробности</RimWorldAccess.Compat.PromptEnhance.HistoryDetailsLabel>
+  <RimWorldAccess.Compat.PromptEnhance.HistoryDate>{0}.</RimWorldAccess.Compat.PromptEnhance.HistoryDate>
+  <RimWorldAccess.Compat.PromptEnhance.AreaStatusEnabled>{0_numCase ? клетка : клетки : клеток}, включено.</RimWorldAccess.Compat.PromptEnhance.AreaStatusEnabled>
+  <RimWorldAccess.Compat.PromptEnhance.AreaStatusDisabled>{0_numCase ? клетка : клетки : клеток}, отключено.</RimWorldAccess.Compat.PromptEnhance.AreaStatusDisabled>
+  <RimWorldAccess.Compat.PromptEnhance.ColorPickerRegionName>Цвета</RimWorldAccess.Compat.PromptEnhance.ColorPickerRegionName>
+  <RimWorldAccess.Compat.PromptEnhance.ColorPickerOpened>Выберите цвет.</RimWorldAccess.Compat.PromptEnhance.ColorPickerOpened>
+
+  <!-- RimTalkLiteratureCompat: the Literature extension's three settings-page debug buttons
+       (Clear Book Cache / Clear Art Cache / Rescan Art/Books) give only Log.Message feedback in
+       the mod itself; these announce completion in the player's own voice, speech mods
+       campaign S15. -->
+  <RimWorldAccess.Compat.Literature.BookCacheCleared>Кэш синопсисов книг очищен: {0_numCase ? запись : записи : записей}.</RimWorldAccess.Compat.Literature.BookCacheCleared>
+  <RimWorldAccess.Compat.Literature.ArtCacheCleared>Кэш описаний произведений искусства очищен: {0_numCase ? запись : записи : записей}.</RimWorldAccess.Compat.Literature.ArtCacheCleared>
+  <RimWorldAccess.Compat.Literature.RescanRequested>Запрошено повторное сканирование карт: {0_numCase ? карта : карты : карт}.</RimWorldAccess.Compat.Literature.RescanRequested>
+
+  <!-- RimworldTogetherChatScope: the multiplayer chat panel (DLG_Chat). -->
+  <RimWorldAccess.Compat.RimworldTogether.Chat.Opened>Чат.</RimWorldAccess.Compat.RimworldTogether.Chat.Opened>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.HistoryRegionName>История</RimWorldAccess.Compat.RimworldTogether.Chat.HistoryRegionName>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.MessageRegionName>Сообщение</RimWorldAccess.Compat.RimworldTogether.Chat.MessageRegionName>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.ToolbarRegionName>Панель кнопок</RimWorldAccess.Compat.RimworldTogether.Chat.ToolbarRegionName>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.MessageFieldCaption>Сообщение чата</RimWorldAccess.Compat.RimworldTogether.Chat.MessageFieldCaption>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.EmptyHistory>Сообщений пока нет.</RimWorldAccess.Compat.RimworldTogether.Chat.EmptyHistory>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.SendLabel>Отправить</RimWorldAccess.Compat.RimworldTogether.Chat.SendLabel>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.ClearLabel>Очистить историю чата</RimWorldAccess.Compat.RimworldTogether.Chat.ClearLabel>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.PinLabel>Закрепить чат на последнем сообщении</RimWorldAccess.Compat.RimworldTogether.Chat.PinLabel>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.SoundsLabel>Воспроизводить звуки чата</RimWorldAccess.Compat.RimworldTogether.Chat.SoundsLabel>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.PlayerCountSingular>{0} игрок в сети.</RimWorldAccess.Compat.RimworldTogether.Chat.PlayerCountSingular>
+  <RimWorldAccess.Compat.RimworldTogether.Chat.PlayerCountPlural>{0_numCase ? игрок : игрока : игроков} в сети.</RimWorldAccess.Compat.RimworldTogether.Chat.PlayerCountPlural>
+
+  <!-- RimworldTogetherToolbarCompat: the mod's icon-only HUD button strip, presented as a
+       pause-menu drill-in list. The buttons ship without labels or tooltips, so these names
+       describe what each one's own click body does. -->
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Options>Настройки мультиплеера</RimWorldAccess.Compat.RimworldTogether.Toolbar.Options>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.OpenChat>Открыть чат</RimWorldAccess.Compat.RimworldTogether.Toolbar.OpenChat>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.CloseChat>Закрыть чат</RimWorldAccess.Compat.RimworldTogether.Toolbar.CloseChat>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Guild>Гильдия</RimWorldAccess.Compat.RimworldTogether.Toolbar.Guild>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Leaderboard>Таблица лидеров</RimWorldAccess.Compat.RimworldTogether.Toolbar.Leaderboard>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Market>Рынок</RimWorldAccess.Compat.RimworldTogether.Toolbar.Market>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.SettlementSearch>Поиск поселений</RimWorldAccess.Compat.RimworldTogether.Toolbar.SettlementSearch>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Admin>Панель администратора</RimWorldAccess.Compat.RimworldTogether.Toolbar.Admin>
+  <RimWorldAccess.Compat.RimworldTogether.Toolbar.Ping>Пинг: {0_numCase ? миллисекунда : миллисекунды : миллисекунд}</RimWorldAccess.Compat.RimworldTogether.Toolbar.Ping>
+
+  <!-- RimworldTogetherBlankButtonCompat: the mod's blank click-handler buttons, named after
+       what a sighted player reads at each spot (a cosmetic twin or the covered vanilla slot). -->
+  <RimWorldAccess.Compat.RimworldTogether.Blank.QuickConnect>Быстрое подключение</RimWorldAccess.Compat.RimworldTogether.Blank.QuickConnect>
+  <RimWorldAccess.Compat.RimworldTogether.Blank.Disconnect>Отключиться</RimWorldAccess.Compat.RimworldTogether.Blank.Disconnect>
+  <RimWorldAccess.Compat.RimworldTogether.Blank.HostWorld>Хостинг мира</RimWorldAccess.Compat.RimworldTogether.Blank.HostWorld>
+
+  <!-- VefPreceptOptionsScope: VEF's searchable picker window, substituted for a plain float
+       menu on long precept lists. Every other line this screen speaks reuses the shared
+       float-menu and search keys. -->
+  <RimWorldAccess.Compat.Vef.PreceptOptions.Opened>Выбор варианта. Доступно {0_numCase ? вариант : варианта : вариантов} для выбора.</RimWorldAccess.Compat.Vef.PreceptOptions.Opened>
+
+  <!-- AllowToolRectDesignationHandler: spoken only when the mod's own area tool emitted no
+       message of its own, so these never double up on the mod's success/failure text. -->
+  <RimWorldAccess.Compat.AllowTool.SelectionAdded>Выбрано {0_numCase ? объект : объекта : объектов}. Всего выбрано: {1_numCase ? объект : объекта : объектов}.</RimWorldAccess.Compat.AllowTool.SelectionAdded>
+  <RimWorldAccess.Compat.AllowTool.AreaApplied>«{0}» применено к {1_numCase ? клетке : клеткам : клеткам}.</RimWorldAccess.Compat.AllowTool.AreaApplied>
+  <RimWorldAccess.Compat.AllowTool.NothingSelected>Ничего не выбрано.</RimWorldAccess.Compat.AllowTool.NothingSelected>
+
+  <RimWorldAccess.Compat.Kau.StripMine.HorizontalSpacing>Горизонтальный интервал</RimWorldAccess.Compat.Kau.StripMine.HorizontalSpacing>
+  <RimWorldAccess.Compat.Kau.StripMine.VerticalSpacing>Вертикальный интервал</RimWorldAccess.Compat.Kau.StripMine.VerticalSpacing>
+  <RimWorldAccess.Compat.Kau.StripMine.HorizontalOffset>Горизонтальное смещение</RimWorldAccess.Compat.Kau.StripMine.HorizontalOffset>
+  <RimWorldAccess.Compat.Kau.StripMine.VerticalOffset>Вертикальное смещение</RimWorldAccess.Compat.Kau.StripMine.VerticalOffset>
+  <RimWorldAccess.Compat.Kau.StripMine.Increase>Увеличить {0}, сейчас {1}</RimWorldAccess.Compat.Kau.StripMine.Increase>
+  <RimWorldAccess.Compat.Kau.StripMine.Decrease>Уменьшить {0}, сейчас {1}</RimWorldAccess.Compat.Kau.StripMine.Decrease>
+  <RimWorldAccess.Compat.Kau.StripMine.ValueNow>{0} {1}.</RimWorldAccess.Compat.Kau.StripMine.ValueNow>
+
+  <RimWorldAccess.Compat.Isekai.XpLine>Опыт {0} из {1}</RimWorldAccess.Compat.Isekai.XpLine>
+  <RimWorldAccess.Compat.Isekai.NoTitle>Титула билда пока нет</RimWorldAccess.Compat.Isekai.NoTitle>
+  <RimWorldAccess.Compat.Isekai.TitleLine>Титул: {0}</RimWorldAccess.Compat.Isekai.TitleLine>
+  <RimWorldAccess.Compat.Isekai.PointsAvailable>Доступно очков характеристик: {0}</RimWorldAccess.Compat.Isekai.PointsAvailable>
+  <RimWorldAccess.Compat.Isekai.AuraRow>Отображение ауры</RimWorldAccess.Compat.Isekai.AuraRow>
+  <RimWorldAccess.Compat.Isekai.NoClass>Класс не назначен. Достигните ранга D на 11 уровне, чтобы выбрать его.</RimWorldAccess.Compat.Isekai.NoClass>
+  <RimWorldAccess.Compat.Isekai.GimmickNotUnlocked>{0}, не разблокировано</RimWorldAccess.Compat.Isekai.GimmickNotUnlocked>
+  <RimWorldAccess.Compat.Isekai.GimmickLine>{0}, ступень {1} из 4, {2}</RimWorldAccess.Compat.Isekai.GimmickLine>
+  <RimWorldAccess.Compat.Isekai.NoWeaponEquipped>Оружие не экипировано</RimWorldAccess.Compat.Isekai.NoWeaponEquipped>
+  <RimWorldAccess.Compat.Isekai.WeaponMasteryLine>Мастерство оружия: {0}, {1}, {2} опыта</RimWorldAccess.Compat.Isekai.WeaponMasteryLine>
+  <RimWorldAccess.Compat.Isekai.OpenCharacterForge>Кузница персонажа (dev)</RimWorldAccess.Compat.Isekai.OpenCharacterForge>
+  <RimWorldAccess.Compat.Isekai.DevAddStatPoints>Добавить 10 очков характеристик (режим бога)</RimWorldAccess.Compat.Isekai.DevAddStatPoints>
+  <RimWorldAccess.Compat.Isekai.DevAddLevel>Добавить 1 уровень (режим бога)</RimWorldAccess.Compat.Isekai.DevAddLevel>
+  <RimWorldAccess.Compat.Isekai.Elite>Элита</RimWorldAccess.Compat.Isekai.Elite>
+  <RimWorldAccess.Compat.Isekai.StatsRegion>Характеристики</RimWorldAccess.Compat.Isekai.StatsRegion>
+  <RimWorldAccess.Compat.Isekai.AffectedRegion>Затронутые показатели</RimWorldAccess.Compat.Isekai.AffectedRegion>
+  <RimWorldAccess.Compat.Isekai.PointsToApply>Очков к применению: {0}</RimWorldAccess.Compat.Isekai.PointsToApply>
+  <RimWorldAccess.Compat.Isekai.PendingValue>{0}, плюс {1} в ожидании</RimWorldAccess.Compat.Isekai.PendingValue>
+  <RimWorldAccess.Compat.Isekai.NothingToApply>Очки ещё не распределены</RimWorldAccess.Compat.Isekai.NothingToApply>
+  <RimWorldAccess.Compat.Isekai.StatWindowOpen>Распределение характеристик: {0}. {1}. Доступно очков: {2}.</RimWorldAccess.Compat.Isekai.StatWindowOpen>
+  <RimWorldAccess.Compat.Isekai.TreeRegion>Узлы созвездия</RimWorldAccess.Compat.Isekai.TreeRegion>
+  <RimWorldAccess.Compat.Isekai.ClassesRegion>Классы</RimWorldAccess.Compat.Isekai.ClassesRegion>
+  <RimWorldAccess.Compat.Isekai.SummaryRegion>Сводка</RimWorldAccess.Compat.Isekai.SummaryRegion>
+  <RimWorldAccess.Compat.Isekai.ClassAssigned>ваш класс</RimWorldAccess.Compat.Isekai.ClassAssigned>
+  <RimWorldAccess.Compat.Isekai.ClassEntered>открыт</RimWorldAccess.Compat.Isekai.ClassEntered>
+  <RimWorldAccess.Compat.Isekai.ClassLocked>заблокирован, нужен звёздный фрагмент</RimWorldAccess.Compat.Isekai.ClassLocked>
+  <RimWorldAccess.Compat.Isekai.NodeAvailable>доступен</RimWorldAccess.Compat.Isekai.NodeAvailable>
+  <RimWorldAccess.Compat.Isekai.NodeAlsoConnects>Также соединён с {0}</RimWorldAccess.Compat.Isekai.NodeAlsoConnects>
+  <RimWorldAccess.Compat.Isekai.NodeUnlocked>Разблокировано: {0}. Осталось очков: {1}.</RimWorldAccess.Compat.Isekai.NodeUnlocked>
+  <RimWorldAccess.Compat.Isekai.CannotUnlock>Нельзя разблокировать {0}: {1}</RimWorldAccess.Compat.Isekai.CannotUnlock>
+  <RimWorldAccess.Compat.Isekai.RespecDone>Сброс выполнен. Доступно очков: {0}.</RimWorldAccess.Compat.Isekai.RespecDone>
+  <RimWorldAccess.Compat.Isekai.TreeWindowOpen>Созвездие: {0}. Класс {1}. Доступно очков: {2}.</RimWorldAccess.Compat.Isekai.TreeWindowOpen>
+  <RimWorldAccess.Compat.Isekai.MasteredRegion>Освоенное оружие, {0}</RimWorldAccess.Compat.Isekai.MasteredRegion>
+  <RimWorldAccess.Compat.Isekai.UnmasteredRegion>Неосвоенное оружие, {0}</RimWorldAccess.Compat.Isekai.UnmasteredRegion>
+  <RimWorldAccess.Compat.Isekai.UnmasteredRow>Мастерства пока нет. Экипируйте и сражайтесь, чтобы получать опыт. {0}</RimWorldAccess.Compat.Isekai.UnmasteredRow>
+  <RimWorldAccess.Compat.Isekai.Equipped>экипировано</RimWorldAccess.Compat.Isekai.Equipped>
+  <RimWorldAccess.Compat.Isekai.MasteredRowMax>{0}, {1} опыта, максимальная ступень</RimWorldAccess.Compat.Isekai.MasteredRowMax>
+  <RimWorldAccess.Compat.Isekai.MasteredRow>{0}, {1} из {2} опыта</RimWorldAccess.Compat.Isekai.MasteredRow>
+  <RimWorldAccess.Compat.Isekai.MasteryBonuses>Шанс попадания плюс {0}%, скорость атаки плюс {1}%, урон плюс {2}%</RimWorldAccess.Compat.Isekai.MasteryBonuses>
+  <RimWorldAccess.Compat.Isekai.MasteryNoBonus>Бонусов пока нет, достигните ступени Ученик</RimWorldAccess.Compat.Isekai.MasteryNoBonus>
+  <RimWorldAccess.Compat.Isekai.WeaponTypeRanged>Дальний бой</RimWorldAccess.Compat.Isekai.WeaponTypeRanged>
+  <RimWorldAccess.Compat.Isekai.WeaponTypeMelee>Ближний бой</RimWorldAccess.Compat.Isekai.WeaponTypeMelee>
+  <RimWorldAccess.Compat.Isekai.EquippedLine>Экипировано: {0}</RimWorldAccess.Compat.Isekai.EquippedLine>
+  <RimWorldAccess.Compat.Isekai.MasteryOpen>Мастерство оружия: {0}. {1}</RimWorldAccess.Compat.Isekai.MasteryOpen>
+  <RimWorldAccess.Compat.Isekai.EquipmentRegion>Снаряжение</RimWorldAccess.Compat.Isekai.EquipmentRegion>
+  <RimWorldAccess.Compat.Isekai.DetailsRegion>Сведения</RimWorldAccess.Compat.Isekai.DetailsRegion>
+  <RimWorldAccess.Compat.Isekai.ActionsRegion>Действия</RimWorldAccess.Compat.Isekai.ActionsRegion>
+  <RimWorldAccess.Compat.Isekai.CostLine>{0}, {1} шт., доступно {2}</RimWorldAccess.Compat.Isekai.CostLine>
+  <RimWorldAccess.Compat.Isekai.ItemOwnedBy>носит {0}</RimWorldAccess.Compat.Isekai.ItemOwnedBy>
+  <RimWorldAccess.Compat.Isekai.ForgeOpen>{0}. Предметов: {1}.</RimWorldAccess.Compat.Isekai.ForgeOpen>
+  <RimWorldAccess.Compat.Isekai.SlotsRegion>Гнёзда рун</RimWorldAccess.Compat.Isekai.SlotsRegion>
+  <RimWorldAccess.Compat.Isekai.RunesRegion>Доступные руны</RimWorldAccess.Compat.Isekai.RunesRegion>
+  <RimWorldAccess.Compat.Isekai.RuneCount>В наличии: {0}</RimWorldAccess.Compat.Isekai.RuneCount>
+  <RimWorldAccess.Compat.Isekai.RuneApplied>{0} применена к {1}.</RimWorldAccess.Compat.Isekai.RuneApplied>
+  <RimWorldAccess.Compat.Isekai.RuneRemoved>{0} удалена.</RimWorldAccess.Compat.Isekai.RuneRemoved>
+  <RimWorldAccess.Compat.Isekai.Rerolled>Перебросано. {0}</RimWorldAccess.Compat.Isekai.Rerolled>
+
+  <!-- AnimalTraitsSpareColumnHandler: Animal Traits System's spare-traits
+       column (shield = protected from auto-slaughter, mark = culled). All
+       wording is ours: the mod ships no language files, so its own keys
+       resolve to raw key names. -->
+  <RimWorldAccess.Compat.AnimalTraits.SpareColumnName>Защита от забоя</RimWorldAccess.Compat.AnimalTraits.SpareColumnName>
+  <RimWorldAccess.Compat.AnimalTraits.Protected>Защищено от забоя</RimWorldAccess.Compat.AnimalTraits.Protected>
+  <RimWorldAccess.Compat.AnimalTraits.MarkedForCull>Помечено к выбраковке</RimWorldAccess.Compat.AnimalTraits.MarkedForCull>
+  <RimWorldAccess.Compat.AnimalTraits.ConfigureSpare>Настроить защищённые черты</RimWorldAccess.Compat.AnimalTraits.ConfigureSpare>
+  <RimWorldAccess.Compat.AnimalTraits.ConfigureCull>Настроить черты для выбраковки</RimWorldAccess.Compat.AnimalTraits.ConfigureCull>
+  <RimWorldAccess.Compat.AnimalTraits.TraitTipEntry>{0}, {1}. {2}</RimWorldAccess.Compat.AnimalTraits.TraitTipEntry>
+  <RimWorldAccess.Compat.AnimalTraits.Positive>положительная</RimWorldAccess.Compat.AnimalTraits.Positive>
+  <RimWorldAccess.Compat.AnimalTraits.Negative>отрицательная</RimWorldAccess.Compat.AnimalTraits.Negative>
+
+  <!-- Simple Sidearms compat. -->
+  <RimWorldAccess.Compat.SimpleSidearms.StatusPrefRanged>Предпочитает дальний бой</RimWorldAccess.Compat.SimpleSidearms.StatusPrefRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.StatusPrefMelee>Предпочитает ближний бой</RimWorldAccess.Compat.SimpleSidearms.StatusPrefMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.StatusPrefGenerated>Предпочитает как при создании</RimWorldAccess.Compat.SimpleSidearms.StatusPrefGenerated>
+  <RimWorldAccess.Compat.SimpleSidearms.StatusPrefSkillRanged>Предпочитает по навыку, сейчас дальний бой</RimWorldAccess.Compat.SimpleSidearms.StatusPrefSkillRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.StatusPrefSkillMelee>Предпочитает по навыку, сейчас ближний бой</RimWorldAccess.Compat.SimpleSidearms.StatusPrefSkillMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.DescCarriedRanged>Дальнобойное: {0}</RimWorldAccess.Compat.SimpleSidearms.DescCarriedRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.DescCarriedMelee>Ближний бой: {0}</RimWorldAccess.Compat.SimpleSidearms.DescCarriedMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.DescMissing>Не хватает: {0}</RimWorldAccess.Compat.SimpleSidearms.DescMissing>
+  <RimWorldAccess.Compat.SimpleSidearms.MissingWithCount>{0}, не хватает {1}</RimWorldAccess.Compat.SimpleSidearms.MissingWithCount>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkEquipped>в руках</RimWorldAccess.Compat.SimpleSidearms.MarkEquipped>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkOffhand>во второй руке</RimWorldAccess.Compat.SimpleSidearms.MarkOffhand>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkForced>принудительно</RimWorldAccess.Compat.SimpleSidearms.MarkForced>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkForcedDrafted>принудительно во время мобилизации</RimWorldAccess.Compat.SimpleSidearms.MarkForcedDrafted>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkDefaultRanged>по умолчанию</RimWorldAccess.Compat.SimpleSidearms.MarkDefaultRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkPreferredMelee>предпочитаемое</RimWorldAccess.Compat.SimpleSidearms.MarkPreferredMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkTool>инструмент</RimWorldAccess.Compat.SimpleSidearms.MarkTool>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkManualUse>только ручное применение</RimWorldAccess.Compat.SimpleSidearms.MarkManualUse>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkEmp>ЭМИ</RimWorldAccess.Compat.SimpleSidearms.MarkEmp>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkDangerous>опасное</RimWorldAccess.Compat.SimpleSidearms.MarkDangerous>
+  <RimWorldAccess.Compat.SimpleSidearms.MarkBlocked>недоступно, {0}</RimWorldAccess.Compat.SimpleSidearms.MarkBlocked>
+  <RimWorldAccess.Compat.SimpleSidearms.DescUnarmedPreferred>Предпочитает безоружный бой</RimWorldAccess.Compat.SimpleSidearms.DescUnarmedPreferred>
+  <RimWorldAccess.Compat.SimpleSidearms.DescUnarmedForced>Безоружный бой принудительно</RimWorldAccess.Compat.SimpleSidearms.DescUnarmedForced>
+  <RimWorldAccess.Compat.SimpleSidearms.DescUnarmedForcedDrafted>Безоружный бой принудительно во время мобилизации</RimWorldAccess.Compat.SimpleSidearms.DescUnarmedForcedDrafted>
+  <RimWorldAccess.Compat.SimpleSidearms.CurrentSuffix>{0}, текущий</RimWorldAccess.Compat.SimpleSidearms.CurrentSuffix>
+  <RimWorldAccess.Compat.SimpleSidearms.OptPreferRanged>Предпочитать дальнобойное оружие</RimWorldAccess.Compat.SimpleSidearms.OptPreferRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.OptPreferSkill>Предпочитать оружие по навыку</RimWorldAccess.Compat.SimpleSidearms.OptPreferSkill>
+  <RimWorldAccess.Compat.SimpleSidearms.OptPreferMelee>Предпочитать оружие ближнего боя</RimWorldAccess.Compat.SimpleSidearms.OptPreferMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.OptForce>Принудительно использовать {0}</RimWorldAccess.Compat.SimpleSidearms.OptForce>
+  <RimWorldAccess.Compat.SimpleSidearms.OptForceDrafted>Принудительно использовать {0} до конца боя</RimWorldAccess.Compat.SimpleSidearms.OptForceDrafted>
+  <RimWorldAccess.Compat.SimpleSidearms.OptRemember>Запомнить {0} как запасное оружие</RimWorldAccess.Compat.SimpleSidearms.OptRemember>
+  <RimWorldAccess.Compat.SimpleSidearms.OptSetDefaultRanged>Сделать {0} дальнобойным оружием по умолчанию</RimWorldAccess.Compat.SimpleSidearms.OptSetDefaultRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.OptSetPreferredMelee>Сделать {0} предпочитаемым оружием ближнего боя</RimWorldAccess.Compat.SimpleSidearms.OptSetPreferredMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.OptStopForcing>Больше не навязывать {0}</RimWorldAccess.Compat.SimpleSidearms.OptStopForcing>
+  <RimWorldAccess.Compat.SimpleSidearms.OptUnsetDefaultRanged>Убрать {0} из дальнобойного оружия по умолчанию</RimWorldAccess.Compat.SimpleSidearms.OptUnsetDefaultRanged>
+  <RimWorldAccess.Compat.SimpleSidearms.OptUnsetPreferredMelee>Убрать {0} из предпочитаемого оружия ближнего боя</RimWorldAccess.Compat.SimpleSidearms.OptUnsetPreferredMelee>
+  <RimWorldAccess.Compat.SimpleSidearms.OptDrop>Бросить {0}</RimWorldAccess.Compat.SimpleSidearms.OptDrop>
+  <RimWorldAccess.Compat.SimpleSidearms.OptDropForget>Бросить и забыть {0}</RimWorldAccess.Compat.SimpleSidearms.OptDropForget>
+  <RimWorldAccess.Compat.SimpleSidearms.OptForget>Забыть {0}</RimWorldAccess.Compat.SimpleSidearms.OptForget>
+  <RimWorldAccess.Compat.SimpleSidearms.OptForceUnarmed>Принудительно драться без оружия</RimWorldAccess.Compat.SimpleSidearms.OptForceUnarmed>
+  <RimWorldAccess.Compat.SimpleSidearms.OptForceUnarmedDrafted>Принудительно драться без оружия до конца боя</RimWorldAccess.Compat.SimpleSidearms.OptForceUnarmedDrafted>
+  <RimWorldAccess.Compat.SimpleSidearms.OptPreferUnarmed>Сделать безоружный бой предпочитаемым вариантом ближнего боя</RimWorldAccess.Compat.SimpleSidearms.OptPreferUnarmed>
+  <RimWorldAccess.Compat.SimpleSidearms.OptStopForcingUnarmed>Больше не навязывать безоружный бой</RimWorldAccess.Compat.SimpleSidearms.OptStopForcingUnarmed>
+  <RimWorldAccess.Compat.SimpleSidearms.OptUnsetPreferUnarmed>Убрать безоружный бой из предпочитаемых</RimWorldAccess.Compat.SimpleSidearms.OptUnsetPreferUnarmed>
+  <RimWorldAccess.Compat.SimpleSidearms.OptEquipOffhand>Взять {0} во вторую руку</RimWorldAccess.Compat.SimpleSidearms.OptEquipOffhand>
+  <RimWorldAccess.Compat.SimpleSidearms.OptUnequipOffhand>Убрать {0} из второй руки</RimWorldAccess.Compat.SimpleSidearms.OptUnequipOffhand>
+  <RimWorldAccess.Compat.SimpleSidearms.OptOpenSettings>Открыть настройки Simple Sidearms</RimWorldAccess.Compat.SimpleSidearms.OptOpenSettings>
+  <RimWorldAccess.Compat.SimpleSidearms.CurveRow>Кривая шанса подобрать оружие после потери, {0} точек</RimWorldAccess.Compat.SimpleSidearms.CurveRow>
+  <RimWorldAccess.Compat.SimpleSidearms.OptCurveSet>Задать точку {0}, сейчас {1} процентов</RimWorldAccess.Compat.SimpleSidearms.OptCurveSet>
+  <RimWorldAccess.Compat.SimpleSidearms.OptCurveRemove>Удалить точку {0}, {1} процентов</RimWorldAccess.Compat.SimpleSidearms.OptCurveRemove>
+  <RimWorldAccess.Compat.SimpleSidearms.OptCurveAdd>Добавить точку</RimWorldAccess.Compat.SimpleSidearms.OptCurveAdd>
+  <RimWorldAccess.Compat.SimpleSidearms.CurveXPrompt>Положение точки: {0}</RimWorldAccess.Compat.SimpleSidearms.CurveXPrompt>
+  <RimWorldAccess.Compat.SimpleSidearms.CurveYPrompt>Значение точки {0}: {1} процентов</RimWorldAccess.Compat.SimpleSidearms.CurveYPrompt>
+  <RimWorldAccess.Compat.RimTalk.CustomDialogue.RegionName>Чат</RimWorldAccess.Compat.RimTalk.CustomDialogue.RegionName>
+  <RimWorldAccess.Compat.RimTalk.PersonaEditor.RegionName>Редактор персоны</RimWorldAccess.Compat.RimTalk.PersonaEditor.RegionName>
+  <RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.RegionName>Голоса</RimWorldAccess.Compat.RimTalk.TTS.VoiceSelection.RegionName>
+  <RimWorldAccess.Compat.Vfet.EthosLockRow>Блокировка этоса</RimWorldAccess.Compat.Vfet.EthosLockRow>
+  <RimWorldAccess.Compat.Vfet.EthosEditHint>Нажмите Enter для редактирования.</RimWorldAccess.Compat.Vfet.EthosEditHint>
+  <RimWorldAccess.Compat.Vfet.Unlocked>разблокировано</RimWorldAccess.Compat.Vfet.Unlocked>
+  <RimWorldAccess.Compat.Vfet.Locked>заблокировано</RimWorldAccess.Compat.Vfet.Locked>
+  <RimWorldAccess.Compat.Vfet.NoPoints>Нет доступных очков краеугольных камней.</RimWorldAccess.Compat.Vfet.NoPoints>
+  <RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>{0} разблокировано. Осталось очков: {1}.</RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>
+  <RimWorldAccess.Compat.Pe.RoleRegion>{0}, назначено {1} из {2}</RimWorldAccess.Compat.Pe.RoleRegion>
+  <RimWorldAccess.Compat.Pe.AssignedElsewhere>назначен как {0}</RimWorldAccess.Compat.Pe.AssignedElsewhere>
+  <RimWorldAccess.Compat.Pe.CannotAssign>Не удаётся назначить {0} как {1}.</RimWorldAccess.Compat.Pe.CannotAssign>
+  <RimWorldAccess.Compat.Pe.TeacherFragment>преподаёт {0}</RimWorldAccess.Compat.Pe.TeacherFragment>
+  <RimWorldAccess.Compat.Pe.ClassSpeedFragment>скорость занятий {0}</RimWorldAccess.Compat.Pe.ClassSpeedFragment>
+  <RimWorldAccess.Compat.Pe.JumpToTeacher>Перейти к учителю {0}</RimWorldAccess.Compat.Pe.JumpToTeacher>
+  <RimWorldAccess.Compat.Pe.JumpToLearningBoard>Перейти к учебной доске</RimWorldAccess.Compat.Pe.JumpToLearningBoard>
+  <RimWorldAccess.Compat.Pe.ProficiencyLine>{0}: {1}, уровень {2} из {3}.</RimWorldAccess.Compat.Pe.ProficiencyLine>
+  <RimWorldAccess.Compat.Wq.PointsProgress>{0} из {1} очков персонажа</RimWorldAccess.Compat.Wq.PointsProgress>
+  <RimWorldAccess.Compat.Wq.RewardsRegion>Награды</RimWorldAccess.Compat.Wq.RewardsRegion>
+  <RimWorldAccess.Compat.Wq.PawnRowHint>Нажмите Enter, чтобы открыть его желания.</RimWorldAccess.Compat.Wq.PawnRowHint>
+  <RimWorldAccess.Compat.Wq.RarityCommon>обычная</RimWorldAccess.Compat.Wq.RarityCommon>
+  <RimWorldAccess.Compat.Wq.RarityUncommon>необычная</RimWorldAccess.Compat.Wq.RarityUncommon>
+  <RimWorldAccess.Compat.Wq.RarityRare>редкая</RimWorldAccess.Compat.Wq.RarityRare>
+  <RimWorldAccess.Compat.Wq.RarityLegendary>легендарная</RimWorldAccess.Compat.Wq.RarityLegendary>
+
+  <!-- Rjw: the pseudo-button designations gizmo (src/Compat/Rjw/). -->
+  <RimWorldAccess.Compat.Rjw.DesignationsLabel>Назначения RJW</RimWorldAccess.Compat.Rjw.DesignationsLabel>
+</LanguageData>

@@ -8,13 +8,13 @@ namespace RimWorldAccess
 {
     /// <summary>
     /// Confirmation dialog for shelf linking when items are already in different groups.
-    /// Uses Dialog_MessageBox for proper accessibility via MessageBoxAccessibilityPatch.
+    /// Uses Dialog_MessageBox for proper accessibility via MessageBoxScope (the real-window focus scope).
     /// </summary>
     public static class ShelfLinkingConfirmDialog
     {
         /// <summary>
         /// Shows a confirmation dialog for already-linked items using Dialog_MessageBox.
-        /// The dialog is automatically accessible via MessageBoxAccessibilityPatch.
+        /// The dialog is automatically accessible via MessageBoxScope (the real-window focus scope).
         /// </summary>
         /// <param name="alreadyLinked">List of items already in different groups</param>
         /// <param name="onYes">Action to execute if user confirms</param>

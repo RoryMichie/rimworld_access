@@ -1,22 +1,26 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
+using HarmonyLib;
 using Verse;
 using RimWorld;
-using UnityEngine;
+using RimWorldAccess.Shell;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages a tabbed accessible interface for the growth moment dialog.
-    /// Tab 1 (Info): Growth summary, flavor text, work types, nickname changes.
-    /// Tab 2 (Passions): Skill passion selection (only if passions offered, tiers 4-8).
-    /// Tab 3 (Traits): Trait selection with full descriptions.
-    /// Tab/Shift+Tab switches between tabs. Alt+S confirms choices.
+    /// Builds the tab content for the growth moment dialog, which
+    /// <see cref="RimWorldAccess.Shell.GrowthMomentScope"/> presents as one content region per
+    /// tab: Info, Passions (tiers 4-8 only), Traits, Aspirations (Vanilla Aspirations Expanded
+    /// compat, see VaeCompat), then the letter's read-only Character and Health side panels.
+    /// Cursors, typeahead and announcement plumbing belong to the scope; the data builders,
+    /// choice mutations, radio-group settle rule and per-tab Describe live here.
     /// </summary>
     public static class GrowthMomentState
     {
-        private enum Tab { Info, Passions, Traits }
+        private enum Tab { Info, Passions, Traits, Aspirations, Character, Health }
 
         private class PassionItem
         {
@@ -40,39 +44,68 @@ namespace RimWorldAccess
         private static Window dialog;
         private static bool isArchiveView;
 
-        // Tab management
+        // The tabs this letter offers, in draw order; the index IS the scope's content-region index.
         private static List<Tab> availableTabs = new List<Tab>();
-        private static int currentTabIndex = 0;
 
-        // Info tab
         private static string[] infoLines;
-        private static int infoIndex = 0;
 
-        // Passions tab
+        // The letter.ShowInfoTabs side panels, flattened to read-only lines like the Info tab.
+        private static string[] characterLines;
+        private static string[] healthLines;
+
         private static List<PassionItem> passionItems = new List<PassionItem>();
-        private static int passionIndex = 0;
-        private static TypeaheadSearchHelper passionTypeahead = new TypeaheadSearchHelper();
 
-        // Traits tab
         private static List<TraitItem> traitItems = new List<TraitItem>();
-        private static int traitIndex = 0;
-        private static TypeaheadSearchHelper traitTypeahead = new TypeaheadSearchHelper();
 
-        // Selection tracking
-        private static List<SkillDef> selectedPassions = new List<SkillDef>();
-        private static Trait selectedTrait;
+        private static List<VaeCompat.AspirationChoice> aspirationItems = new List<VaeCompat.AspirationChoice>();
+        private static int aspirationGainsCount = 0;
 
-        public static bool IsActive => isActive;
+        // The open dialog owns the selection. Bound to the declaring type so the fields still
+        // resolve when the live instance is VAE's subclass.
+        private static readonly FieldInfo ChosenPassionsField =
+            AccessTools.Field(typeof(Dialog_GrowthMomentChoices), "chosenPassions");
+        private static readonly FieldInfo ChosenTraitField =
+            AccessTools.Field(typeof(Dialog_GrowthMomentChoices), "chosenTrait");
 
-        private static bool HasChoicesToMake()
+        /// <summary>
+        /// The dialog's own <c>chosenPassions</c>, mutated in place so the drawn checkboxes and radio
+        /// dots follow the keyboard selection. A throwaway empty list when no dialog is open, never
+        /// an editable session, since the archive view draws no choices.
+        /// </summary>
+        // MUTATION-C: mirrors the chosenPassions writes Dialog_GrowthMomentChoices' own passion
+        // checkbox and radio branches perform (DrawPassionChoices :266-285); the writes are
+        // inline in those widget branches, so no A or B vehicle exists.
+        private static List<SkillDef> SelectedPassions =>
+            (dialog is Dialog_GrowthMomentChoices ? ChosenPassionsField?.GetValue(dialog) as List<SkillDef> : null)
+            ?? new List<SkillDef>();
+
+        /// <summary>The <see cref="SelectedPassions"/> counterpart over <c>chosenTrait</c>.</summary>
+        private static Trait SelectedTrait
         {
-            return !isArchiveView && (passionItems.Count > 0 || traitItems.Count > 0);
+            get => dialog is Dialog_GrowthMomentChoices ? ChosenTraitField?.GetValue(dialog) as Trait : null;
+            // MUTATION-C: mirrors the chosenTrait write Dialog_GrowthMomentChoices' own trait
+            // radios perform (DrawTraitChoices :223-234); same inline-branch shape as above.
+            set { if (dialog is Dialog_GrowthMomentChoices) ChosenTraitField?.SetValue(dialog, value); }
         }
 
         /// <summary>
-        /// Opens the growth moment accessible interface.
-        /// Extracts data from the letter, builds tabs, reads info aloud, then focuses first selection tab.
+        /// VAE's aspirations dialog owns its in-progress selection as vanilla owns the two above.
+        /// Empty when the open dialog is not VAE's, which is also when the tab is absent.
         /// </summary>
+        private static IList SelectedAspirations =>
+            VaeCompat.TryGetChosenAspirations(dialog, out IList chosen) ? chosen : new List<object>();
+
+        public static bool IsActive => isActive;
+
+        /// <summary>True for a letter being re-read from the archive: every row is read-only and vanilla draws no Later button.</summary>
+        internal static bool IsArchiveView => isArchiveView;
+
+        private static bool HasChoicesToMake()
+        {
+            return !isArchiveView && (passionItems.Count > 0 || traitItems.Count > 0 || aspirationItems.Count > 0);
+        }
+
+        /// <summary>Extracts the letter's data and builds the tabs.</summary>
         public static void Open(ChoiceLetter_GrowthMoment growthLetter, Window growthDialog)
         {
             if (growthLetter == null || growthDialog == null)
@@ -86,43 +119,17 @@ namespace RimWorldAccess
             isArchiveView = letter.ArchiveView;
             isActive = true;
 
-            // Reset selections
-            selectedPassions.Clear();
-            selectedTrait = null;
-
-            // Build tab content
-            BuildInfoLines();
+            // Aspirations must build before Info: BuildInfoLines reads the aspiration fields to
+            // decide whether to append the explainer line.
             BuildPassionItems();
             BuildTraitItems();
+            BuildAspirationItems();
+            BuildInfoLines();
+            BuildCharacterAndHealthLines();
             BuildAvailableTabs();
-
-            // Reset indices
-            infoIndex = 0;
-            passionIndex = 0;
-            traitIndex = 0;
-            passionTypeahead.ClearSearch();
-            traitTypeahead.ClearSearch();
-
-            // Announce opening with full info
-            AnnounceOpening();
-
-            // Auto-focus first selection tab (skip Info)
-            if (!isArchiveView && availableTabs.Count > 1)
-            {
-                currentTabIndex = 1;
-                AnnounceTabSwitch();
-                AnnounceCurrentItem();
-            }
-            else
-            {
-                currentTabIndex = 0;
-                AnnounceCurrentItem();
-            }
         }
 
-        /// <summary>
-        /// Closes the growth moment state.
-        /// </summary>
+        /// <summary>Closes the growth moment state.</summary>
         public static void Close()
         {
             isActive = false;
@@ -130,319 +137,198 @@ namespace RimWorldAccess
             dialog = null;
             passionItems.Clear();
             traitItems.Clear();
-            selectedPassions.Clear();
-            selectedTrait = null;
+            aspirationItems.Clear();
+            aspirationGainsCount = 0;
             infoLines = null;
+            characterLines = null;
+            healthLines = null;
             availableTabs.Clear();
-            passionTypeahead.ClearSearch();
-            traitTypeahead.ClearSearch();
+        }
+
+        /// <summary>The tabs this letter offers: the scope's content regions, one per tab.</summary>
+        internal static int TabCount => availableTabs.Count;
+
+        /// <summary>
+        /// One tab's region name: vanilla's own tab label plus, on a choice tab of a live letter,
+        /// the "choose n of m" line. The region frame spends its Extras slot on the row under the
+        /// cursor, so the choice count rides the name instead.
+        /// </summary>
+        internal static string TabName(int region)
+        {
+            if (region < 0 || region >= availableTabs.Count) return "";
+            Tab tab = availableTabs[region];
+            string name = GetTabName(tab);
+            if (isArchiveView) return name;
+            switch (tab)
+            {
+                case Tab.Passions:
+                    return name + ". " + (letter.passionGainsCount == 1
+                        ? "RimWorldAccess.Biotech.GrowthMoment.ChooseOne".Translate()
+                        : "RimWorldAccess.Biotech.GrowthMoment.ChooseNOfM".Translate(letter.passionGainsCount, passionItems.Count));
+                case Tab.Traits:
+                    return name + ". " + "RimWorldAccess.Biotech.GrowthMoment.ChooseOne".Translate();
+                case Tab.Aspirations:
+                    return name + ". " + (aspirationGainsCount == 1
+                        ? "RimWorldAccess.Biotech.GrowthMoment.ChooseOne".Translate()
+                        : "RimWorldAccess.Biotech.GrowthMoment.ChooseNOfM".Translate(aspirationGainsCount, aspirationItems.Count));
+                default:
+                    return name;
+            }
+        }
+
+        /// <summary>Whether a tab joins the typeahead search space; false for the plain-text, no-selection tabs.</summary>
+        internal static bool TabSearchable(int region)
+        {
+            if (region < 0 || region >= availableTabs.Count) return false;
+            Tab tab = availableTabs[region];
+            return tab == Tab.Passions || tab == Tab.Traits || tab == Tab.Aspirations;
+        }
+
+        internal static int RowCount(int region)
+        {
+            if (region < 0 || region >= availableTabs.Count) return 0;
+            switch (availableTabs[region])
+            {
+                case Tab.Info: return infoLines?.Length ?? 0;
+                case Tab.Passions: return passionItems.Count;
+                case Tab.Traits: return traitItems.Count;
+                case Tab.Aspirations: return aspirationItems.Count;
+                case Tab.Character: return characterLines?.Length ?? 0;
+                case Tab.Health: return healthLines?.Length ?? 0;
+                default: return 0;
+            }
         }
 
         /// <summary>
-        /// Handles all keyboard input for the growth moment state.
+        /// The tab to land on when the screen opens: the first selection tab, so the player arrives
+        /// where the choice is. The archive view, and a letter with nothing but Info, stays on Info.
         /// </summary>
-        /// <returns>True if input was handled.</returns>
-        public static bool HandleInput(KeyCode key, bool shift, bool ctrl, bool alt)
-        {
-            if (!isActive)
-                return false;
-
-            if (Event.current.type != EventType.KeyDown)
-                return false;
-
-            // Alt+S: Confirm choices
-            if (key == KeyCode.S && alt && !ctrl && !shift)
-            {
-                if (!isArchiveView)
-                    ConfirmChoices();
-                return true;
-            }
-
-            // Tab / Shift+Tab: switch tabs
-            if (key == KeyCode.Tab && !ctrl && !alt)
-            {
-                SwitchTab(!shift);
-                return true;
-            }
-
-            // Home - jump to first
-            if (key == KeyCode.Home && !ctrl && !alt)
-            {
-                JumpToFirst();
-                return true;
-            }
-
-            // End - jump to last
-            if (key == KeyCode.End && !ctrl && !alt)
-            {
-                JumpToLast();
-                return true;
-            }
-
-            // Escape
-            if (key == KeyCode.Escape)
-            {
-                var typeahead = GetCurrentTypeahead();
-                if (typeahead != null && typeahead.HasActiveSearch)
-                {
-                    typeahead.ClearSearchAndAnnounce();
-                    AnnounceCurrentItem();
-                    return true;
-                }
-
-                if (isArchiveView)
-                {
-                    CloseDialog();
-                    return true;
-                }
-
-                PostponeChoices();
-                return true;
-            }
-
-            // Up arrow
-            if (key == KeyCode.UpArrow)
-            {
-                SelectPrevious();
-                return true;
-            }
-
-            // Down arrow
-            if (key == KeyCode.DownArrow)
-            {
-                SelectNext();
-                return true;
-            }
-
-            // Enter / Space - toggle selection
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter || key == KeyCode.Space)
-            {
-                ToggleSelection();
-                return true;
-            }
-
-            // Backspace for search
-            if (key == KeyCode.Backspace)
-            {
-                var typeahead = GetCurrentTypeahead();
-                if (typeahead != null && typeahead.HasActiveSearch)
-                {
-                    var labels = GetCurrentLabels();
-                    if (typeahead.ProcessBackspace(labels, out int newIndex))
-                    {
-                        if (newIndex >= 0)
-                            SetCurrentIndex(newIndex);
-                        AnnounceWithSearch();
-                    }
-                    return true;
-                }
-                return false;
-            }
-
-            // Typeahead characters (passion and trait tabs only)
-            Tab currentTab = availableTabs[currentTabIndex];
-            if (currentTab != Tab.Info)
-            {
-                bool isLetter = key >= KeyCode.A && key <= KeyCode.Z;
-                bool isNumber = key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9;
-
-                if ((isLetter || isNumber) && !alt)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        internal static int InitialRegion => !isArchiveView && availableTabs.Count > 1 ? 1 : 0;
 
         /// <summary>
-        /// Public entry point for the unified typeahead dispatcher.
+        /// The vanilla object one row was built from, for the focus ring: its <see cref="SkillDef"/>
+        /// on Passions, its <see cref="Trait"/> on Traits. Null everywhere vanilla draws no listing
+        /// rows, the archive view included.
         /// </summary>
-        public static void HandleTypeahead(char c)
+        internal static object RowObject(int region, int index)
         {
-            if (!IsActive) return;
-            var typeahead = GetCurrentTypeahead();
-            var labels = GetCurrentLabels();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
+            if (!isActive || isArchiveView || region < 0 || region >= availableTabs.Count)
+                return null;
+            switch (availableTabs[region])
             {
-                if (newIndex >= 0)
-                {
-                    SetCurrentIndex(newIndex);
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
+                case Tab.Passions:
+                    return index >= 0 && index < passionItems.Count ? passionItems[index].Skill : null;
+                case Tab.Traits:
+                    if (index < 0 || index >= traitItems.Count)
+                        return null;
+                    TraitItem trait = traitItems[index];
+                    return trait.IsNoTrait ? ChoiceLetter_GrowthMoment.NoTrait : trait.TraitOption;
+                default:
+                    return null;
             }
         }
 
-        // ========== Tab Switching ==========
-
-        private static void SwitchTab(bool forward)
+        /// <summary>Escape closes the archive view, or postpones a live choice.</summary>
+        public static void HandleCancel()
         {
-            if (availableTabs.Count <= 1)
+            if (isArchiveView)
             {
-                TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.OnlyOneTab".Translate());
+                CloseDialog();
                 return;
             }
 
-            var typeahead = GetCurrentTypeahead();
-            typeahead?.ClearSearch();
+            PostponeChoices();
+        }
 
-            if (forward)
+        /// <summary>Alt+S confirm; a no-op in the archive view.</summary>
+        public static void HandleConfirmKey()
+        {
+            if (!isArchiveView)
+                ConfirmChoices();
+        }
+
+        /// <summary>
+        /// Vanilla's own OK button as a Buttons-region row: it commits a live letter's choices and
+        /// merely closes an archived one, whose choices were applied when it was first answered.
+        /// </summary>
+        internal static void HandleOkButton()
+        {
+            if (isArchiveView)
             {
-                currentTabIndex++;
-                if (currentTabIndex >= availableTabs.Count)
+                CloseDialog();
+                return;
+            }
+            ConfirmChoices();
+        }
+
+        /// <summary>Vanilla's own "Later" button, which the archive view does not draw; the path Escape takes.</summary>
+        internal static void HandleLaterButton()
+        {
+            PostponeChoices();
+        }
+
+        /// <summary>
+        /// The radio-group contract: landing on a single-choice row selects it, no Enter needed.
+        /// Runs from OnCursorSettled BEFORE the row announcement composes, so the row is spoken
+        /// already selected, and stays silent because the announcement carries the state.
+        ///
+        /// Only rows the announcements present as RadioButtons qualify — the Passions and
+        /// Aspirations tabs when the letter offers exactly ONE pick, and the always-single Traits
+        /// tab — because a checkbox must never flip just because the cursor arrived. The archive
+        /// view selects nothing, and every selection stays staged until
+        /// <see cref="ConfirmChoices"/>.
+        /// </summary>
+        internal static void SettleRow(int region, int index)
+        {
+            if (isArchiveView || letter == null || region < 0 || region >= availableTabs.Count)
+                return;
+
+            switch (availableTabs[region])
+            {
+                case Tab.Passions:
                 {
-                    if (RimWorldAccessMod_Settings.Settings?.WrapNavigation == true)
-                        currentTabIndex = 0;
-                    else
-                        currentTabIndex = availableTabs.Count - 1;
+                    if (letter.passionGainsCount != 1 || index < 0 || index >= passionItems.Count)
+                        return;
+                    SkillDef skill = passionItems[index].Skill;
+                    List<SkillDef> chosen = SelectedPassions;
+                    if (chosen.Count == 1 && chosen[0] == skill)
+                        return;
+                    chosen.Clear();
+                    chosen.Add(skill);
+                    return;
+                }
+                case Tab.Traits:
+                {
+                    if (index < 0 || index >= traitItems.Count)
+                        return;
+                    TraitItem item = traitItems[index];
+                    SelectedTrait = item.IsNoTrait ? ChoiceLetter_GrowthMoment.NoTrait : item.TraitOption;
+                    return;
+                }
+                case Tab.Aspirations:
+                {
+                    if (aspirationGainsCount != 1 || index < 0 || index >= aspirationItems.Count)
+                        return;
+                    object def = aspirationItems[index].Def;
+                    IList chosen = SelectedAspirations;
+                    if (chosen.Count == 1 && ReferenceEquals(chosen[0], def))
+                        return;
+                    chosen.Clear();
+                    chosen.Add(def);
+                    return;
                 }
             }
-            else
-            {
-                currentTabIndex--;
-                if (currentTabIndex < 0)
-                {
-                    if (RimWorldAccessMod_Settings.Settings?.WrapNavigation == true)
-                        currentTabIndex = availableTabs.Count - 1;
-                    else
-                        currentTabIndex = 0;
-                }
-            }
-
-            AnnounceTabSwitch();
-            AnnounceCurrentItem();
         }
 
-        private static void AnnounceTabSwitch()
+        /// <summary>
+        /// Enter/Space toggles the focused passion/trait/aspiration, or on Info confirms when there
+        /// is nothing left to choose. The Character/Health side panels have nothing to activate.
+        /// </summary>
+        internal static void ActivateRow(int region, int index)
         {
-            Tab tab = availableTabs[currentTabIndex];
-            string tabName = GetTabName(tab);
-            string position = MenuHelper.FormatPosition(currentTabIndex, availableTabs.Count);
-            string positionSuffix = string.IsNullOrEmpty(position) ? "" : $". {position}";
-
-            if (tab == Tab.Passions && !isArchiveView)
-            {
-                TaggedString chooseText = letter.passionGainsCount == 1
-                    ? "RimWorldAccess.Biotech.GrowthMoment.ChooseOne".Translate()
-                    : "RimWorldAccess.Biotech.GrowthMoment.ChooseNOfM".Translate(letter.passionGainsCount, passionItems.Count);
-                TolkHelper.SpeakData($"{tabName}. {chooseText}{positionSuffix}");
-            }
-            else if (tab == Tab.Traits && !isArchiveView)
-            {
-                string chooseText = "RimWorldAccess.Biotech.GrowthMoment.ChooseOne".Translate();
-                TolkHelper.SpeakData($"{tabName}. {chooseText}{positionSuffix}");
-            }
-            else
-            {
-                TolkHelper.SpeakData($"{tabName}{positionSuffix}");
-            }
-        }
-
-        // ========== Navigation ==========
-
-        private static void SelectNext()
-        {
-            Tab tab = availableTabs[currentTabIndex];
-            switch (tab)
-            {
-                case Tab.Info:
-                    if (infoLines != null && infoLines.Length > 0)
-                        infoIndex = MenuHelper.SelectNext(infoIndex, infoLines.Length);
-                    break;
-                case Tab.Passions:
-                    if (passionItems.Count > 0)
-                        passionIndex = (passionTypeahead.HasActiveSearch && !passionTypeahead.HasNoMatches)
-                            ? passionTypeahead.GetNextMatch(passionIndex)
-                            : MenuHelper.SelectNext(passionIndex, passionItems.Count);
-                    break;
-                case Tab.Traits:
-                    if (traitItems.Count > 0)
-                        traitIndex = (traitTypeahead.HasActiveSearch && !traitTypeahead.HasNoMatches)
-                            ? traitTypeahead.GetNextMatch(traitIndex)
-                            : MenuHelper.SelectNext(traitIndex, traitItems.Count);
-                    break;
-            }
-            AnnounceCurrentItem();
-        }
-
-        private static void SelectPrevious()
-        {
-            Tab tab = availableTabs[currentTabIndex];
-            switch (tab)
-            {
-                case Tab.Info:
-                    if (infoLines != null && infoLines.Length > 0)
-                        infoIndex = MenuHelper.SelectPrevious(infoIndex, infoLines.Length);
-                    break;
-                case Tab.Passions:
-                    if (passionItems.Count > 0)
-                        passionIndex = (passionTypeahead.HasActiveSearch && !passionTypeahead.HasNoMatches)
-                            ? passionTypeahead.GetPreviousMatch(passionIndex)
-                            : MenuHelper.SelectPrevious(passionIndex, passionItems.Count);
-                    break;
-                case Tab.Traits:
-                    if (traitItems.Count > 0)
-                        traitIndex = (traitTypeahead.HasActiveSearch && !traitTypeahead.HasNoMatches)
-                            ? traitTypeahead.GetPreviousMatch(traitIndex)
-                            : MenuHelper.SelectPrevious(traitIndex, traitItems.Count);
-                    break;
-            }
-            AnnounceCurrentItem();
-        }
-
-        private static void JumpToFirst()
-        {
-            Tab tab = availableTabs[currentTabIndex];
-            switch (tab)
-            {
-                case Tab.Info:
-                    infoIndex = MenuHelper.JumpToFirst();
-                    break;
-                case Tab.Passions:
-                    passionIndex = (passionTypeahead.HasActiveSearch && !passionTypeahead.HasNoMatches)
-                        ? passionTypeahead.GetFirstMatch()
-                        : MenuHelper.JumpToFirst();
-                    break;
-                case Tab.Traits:
-                    traitIndex = (traitTypeahead.HasActiveSearch && !traitTypeahead.HasNoMatches)
-                        ? traitTypeahead.GetFirstMatch()
-                        : MenuHelper.JumpToFirst();
-                    break;
-            }
-            AnnounceCurrentItem();
-        }
-
-        private static void JumpToLast()
-        {
-            Tab tab = availableTabs[currentTabIndex];
-            switch (tab)
-            {
-                case Tab.Info:
-                    infoIndex = MenuHelper.JumpToLast(infoLines?.Length ?? 0);
-                    break;
-                case Tab.Passions:
-                    passionIndex = (passionTypeahead.HasActiveSearch && !passionTypeahead.HasNoMatches)
-                        ? passionTypeahead.GetLastMatch()
-                        : MenuHelper.JumpToLast(passionItems.Count);
-                    break;
-                case Tab.Traits:
-                    traitIndex = (traitTypeahead.HasActiveSearch && !traitTypeahead.HasNoMatches)
-                        ? traitTypeahead.GetLastMatch()
-                        : MenuHelper.JumpToLast(traitItems.Count);
-                    break;
-            }
-            AnnounceCurrentItem();
-        }
-
-        // ========== Selection ==========
-
-        private static void ToggleSelection()
-        {
-            Tab tab = availableTabs[currentTabIndex];
+            if (region < 0 || region >= availableTabs.Count)
+                return;
+            Tab tab = availableTabs[region];
 
             if (tab == Tab.Info)
             {
@@ -458,50 +344,88 @@ namespace RimWorldAccess
             }
 
             if (tab == Tab.Passions)
-                TogglePassion();
+                TogglePassion(index);
             else if (tab == Tab.Traits)
-                SelectTrait();
+                SelectTrait(index);
+            else if (tab == Tab.Aspirations)
+                ToggleAspiration(index);
         }
 
-        private static void TogglePassion()
+        private static void TogglePassion(int passionIndex)
         {
             if (passionIndex < 0 || passionIndex >= passionItems.Count)
                 return;
 
             PassionItem item = passionItems[passionIndex];
+            List<SkillDef> chosen = SelectedPassions;
 
             if (letter.passionGainsCount == 1)
             {
-                // Radio button mode: select this one, deselect any other
-                selectedPassions.Clear();
-                selectedPassions.Add(item.Skill);
+                chosen.Clear();
+                chosen.Add(item.Skill);
                 TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.PassionSelectedFeedback".Translate(
-                    item.Label, selectedPassions.Count, letter.passionGainsCount));
+                    item.Label, chosen.Count, letter.passionGainsCount));
             }
             else
             {
-                // Checkbox mode: toggle
-                if (selectedPassions.Contains(item.Skill))
+                if (chosen.Contains(item.Skill))
                 {
-                    selectedPassions.Remove(item.Skill);
+                    chosen.Remove(item.Skill);
                     TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.PassionDeselectedFeedback".Translate(
-                        item.Label, selectedPassions.Count, letter.passionGainsCount));
+                        item.Label, chosen.Count, letter.passionGainsCount));
                 }
                 else
                 {
-                    if (selectedPassions.Count >= letter.passionGainsCount)
+                    if (chosen.Count >= letter.passionGainsCount)
                     {
                         TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.PassionLimitReached".Translate(letter.passionGainsCount));
                         return;
                     }
-                    selectedPassions.Add(item.Skill);
+                    chosen.Add(item.Skill);
                     TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.PassionSelectedFeedback".Translate(
-                        item.Label, selectedPassions.Count, letter.passionGainsCount));
+                        item.Label, chosen.Count, letter.passionGainsCount));
                 }
             }
         }
 
-        private static void SelectTrait()
+        private static void ToggleAspiration(int aspirationIndex)
+        {
+            if (aspirationIndex < 0 || aspirationIndex >= aspirationItems.Count)
+                return;
+
+            VaeCompat.AspirationChoice item = aspirationItems[aspirationIndex];
+            IList chosen = SelectedAspirations;
+
+            if (aspirationGainsCount == 1)
+            {
+                chosen.Clear();
+                chosen.Add(item.Def);
+                TolkHelper.SpeakData("RimWorldAccess.Compat.Vae.AspirationSelectedFeedback".Translate(
+                    item.Label, chosen.Count, aspirationGainsCount));
+            }
+            else
+            {
+                if (chosen.Contains(item.Def))
+                {
+                    chosen.Remove(item.Def);
+                    TolkHelper.SpeakData("RimWorldAccess.Compat.Vae.AspirationDeselectedFeedback".Translate(
+                        item.Label, chosen.Count, aspirationGainsCount));
+                }
+                else
+                {
+                    if (chosen.Count >= aspirationGainsCount)
+                    {
+                        TolkHelper.SpeakData("RimWorldAccess.Compat.Vae.AspirationLimitReached".Translate(aspirationGainsCount));
+                        return;
+                    }
+                    chosen.Add(item.Def);
+                    TolkHelper.SpeakData("RimWorldAccess.Compat.Vae.AspirationSelectedFeedback".Translate(
+                        item.Label, chosen.Count, aspirationGainsCount));
+                }
+            }
+        }
+
+        private static void SelectTrait(int traitIndex)
         {
             if (traitIndex < 0 || traitIndex >= traitItems.Count)
                 return;
@@ -510,25 +434,23 @@ namespace RimWorldAccess
 
             if (item.IsNoTrait)
             {
-                selectedTrait = ChoiceLetter_GrowthMoment.NoTrait;
+                SelectedTrait = ChoiceLetter_GrowthMoment.NoTrait;
                 TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.NoTraitSelected".Translate());
             }
             else
             {
-                selectedTrait = item.TraitOption;
+                SelectedTrait = item.TraitOption;
                 TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.TraitSelected".Translate(item.Label));
             }
         }
-
-        // ========== Confirm / Postpone ==========
 
         private static void ConfirmChoices()
         {
             if (isArchiveView)
                 return;
 
-            // Validate passions
-            if (!letter.passionChoices.NullOrEmpty() && selectedPassions.Count != letter.passionGainsCount)
+            List<SkillDef> chosenPassions = SelectedPassions;
+            if (!letter.passionChoices.NullOrEmpty() && chosenPassions.Count != letter.passionGainsCount)
             {
                 if (letter.passionGainsCount == 1)
                     TolkHelper.Speak("SelectPassionSingular".Loc(), SpeechPriority.High);
@@ -537,41 +459,54 @@ namespace RimWorldAccess
                 return;
             }
 
-            // Validate traits
-            if (!letter.traitChoices.NullOrEmpty() && selectedTrait == null)
+            Trait chosenTrait = SelectedTrait;
+            if (!letter.traitChoices.NullOrEmpty() && chosenTrait == null)
             {
                 TolkHelper.Speak("SelectATrait".Loc(), SpeechPriority.High);
                 return;
             }
 
-            // Save references before closing — TryRemove triggers our PostClose patch
-            // which calls Close() and nulls out letter/dialog
+            // Mirrors Dialog_GrowthMomentChoices_Aspirations.CanCloseOverride's aspiration clause.
+            IList chosenAspirations = SelectedAspirations;
+            if (aspirationItems.Count > 0 && chosenAspirations.Count != aspirationGainsCount)
+            {
+                if (aspirationGainsCount == 1)
+                    TolkHelper.Speak("RimWorldAccess.Compat.Vae.SelectAspirationSingular".Loc(), SpeechPriority.High);
+                else
+                    TolkHelper.Speak("RimWorldAccess.Compat.Vae.SelectAspirationsPlural".Loc(aspirationGainsCount), SpeechPriority.High);
+                return;
+            }
+
+            // Save references first: TryRemove trips the PostClose patch, which nulls letter/dialog.
             string pawnName = letter.pawn?.LabelShort ?? "RimWorldAccess.Biotech.GrowthMoment.PawnFallback".Translate().ToString();
             var letterRef = letter;
             var dialogRef = dialog;
 
-            // Apply choices
-            letterRef.MakeChoices(selectedPassions, selectedTrait);
+            // VAE's own OK button calls MakeAspirationChoices before MakeChoices unconditionally
+            // whenever the letter is its aspirations letter; mirrored in the same order.
+            if (VaeCompat.IsAspirationLetter(letterRef))
+                VaeCompat.ApplyAspirationChoices(letterRef, chosenAspirations);
+            letterRef.MakeChoices(chosenPassions, chosenTrait);
 
-            // Close our state first so PostClose patch won't double-close
             Close();
 
-            // Now close the dialog window and remove the letter
             if (dialogRef != null)
-                Find.WindowStack.TryRemove(dialogRef, doCloseSound: false);
+                Find.WindowStack.TryRemove(dialogRef);
             Find.LetterStack.RemoveLetter(letterRef);
 
             TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.Confirmed".Translate(pawnName));
         }
 
+        // MUTATION-C: mirrors Dialog_GrowthMomentChoices's "Later" button handler
+        // (:104-114) exactly — it never calls MakeChoices, regardless of whether
+        // there are outstanding choices; it either rejects (ShouldAutomaticallyOpenLetter)
+        // or Close()s, always leaving the letter revisitable. The prior version here
+        // force-committed via ConfirmChoices() when nothing was left to choose, which
+        // has no vanilla counterpart and permanently resolved a letter "Later" would
+        // have left open (ChoiceLetter_GrowthMoment.cs's growthPoints/canGainGrowthPoints
+        // reset only happens inside MakeChoices, :196-197).
         private static void PostponeChoices()
         {
-            if (!HasChoicesToMake())
-            {
-                ConfirmChoices();
-                return;
-            }
-
             if (letter.ShouldAutomaticallyOpenLetter)
             {
                 TolkHelper.Speak("MessageCannotPostponeGrowthMoment".Loc(letter.pawn.Named("PAWN")), SpeechPriority.High);
@@ -585,28 +520,25 @@ namespace RimWorldAccess
         {
             var dialogRef = dialog;
 
-            // Close our state first so PostClose patch won't double-close
             Close();
 
             if (dialogRef != null)
-                Find.WindowStack.TryRemove(dialogRef, doCloseSound: false);
+                Find.WindowStack.TryRemove(dialogRef);
 
             TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.Postponed".Translate());
         }
 
-        // ========== Announcements ==========
-
-        private static void AnnounceOpening()
+        /// <summary>
+        /// The screen's opening text: every Info line, then the how-to lines. The landing tab and
+        /// the focused row are not folded in; the chassis speaks both right after this.
+        /// </summary>
+        internal static string BuildOpeningText()
         {
             if (letter == null)
-                return;
-
-            string pawnName = letter.pawn?.LabelShort ?? "RimWorldAccess.Biotech.GrowthMoment.PawnFallback".Translate().ToString();
-            int age = letter.pawn?.ageTracker?.AgeBiologicalYears ?? 0;
+                return null;
 
             var parts = new List<string>();
 
-            // Read all info lines
             if (infoLines != null)
             {
                 foreach (string line in infoLines)
@@ -615,7 +547,6 @@ namespace RimWorldAccess
                 }
             }
 
-            // Navigation instructions
             if (!isArchiveView)
             {
                 if (!HasChoicesToMake())
@@ -635,119 +566,103 @@ namespace RimWorldAccess
                     {
                         parts.Add("RimWorldAccess.Biotech.GrowthMoment.ChooseTraitOnly".Translate(tabCount));
                     }
+
+                    if (aspirationItems.Count > 0)
+                    {
+                        parts.Add("RimWorldAccess.Compat.Vae.ChooseAspirations".Translate(
+                            aspirationGainsCount, aspirationItems.Count));
+                    }
                 }
             }
 
-            TolkHelper.SpeakData(string.Join(". ", parts));
+            return string.Join(". ", parts);
         }
 
-        private static void AnnounceCurrentItem()
+        /// <summary>
+        /// One row of one tab. Position is the chassis's to fill; each per-tab builder sets only its
+        /// own Label/Role/Selected/Extras.
+        /// </summary>
+        internal static ElementDescription DescribeRow(int region, int index)
         {
-            Tab tab = availableTabs[currentTabIndex];
-
-            switch (tab)
+            if (region < 0 || region >= availableTabs.Count)
+                return new ElementDescription();
+            switch (availableTabs[region])
             {
-                case Tab.Info:
-                    AnnounceInfoItem();
-                    break;
-                case Tab.Passions:
-                    AnnouncePassionItem();
-                    break;
-                case Tab.Traits:
-                    AnnounceTraitItem();
-                    break;
+                case Tab.Passions: return DescribePassionItem(index);
+                case Tab.Traits: return DescribeTraitItem(index);
+                case Tab.Aspirations: return DescribeAspirationItem(index);
+                case Tab.Character: return DescribeLine(characterLines, index);
+                case Tab.Health: return DescribeLine(healthLines, index);
+                default: return DescribeLine(infoLines, index);
             }
         }
 
-        private static void AnnounceInfoItem()
+        /// <summary>A read-only prose line, shared by the Info tab and the two side panels.</summary>
+        private static ElementDescription DescribeLine(string[] lines, int index)
         {
-            if (infoLines == null || infoLines.Length == 0)
-            {
-                TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.NoInformation".Translate());
-                return;
-            }
-
-            if (infoIndex < 0 || infoIndex >= infoLines.Length)
-                return;
-
-            string line = infoLines[infoIndex];
-            string position = MenuHelper.FormatPosition(infoIndex, infoLines.Length);
-            string positionSuffix = string.IsNullOrEmpty(position) ? "" : $". {position}";
-
-            TolkHelper.SpeakData($"{line}{positionSuffix}");
+            var d = new ElementDescription();
+            if (lines == null || index < 0 || index >= lines.Length)
+                return d;
+            d.Label = lines[index];
+            d.ReadOnly = true;
+            return d;
         }
 
-        private static void AnnouncePassionItem()
+        /// <summary>
+        /// RadioButton when the letter offers exactly one passion slot, Checkbox when it offers
+        /// several, matching the mutation the row performs. Selected, not Check, carries the state
+        /// so the spoken word is the same whichever role applies; Extras is the current-to-new
+        /// passion transition alone.
+        /// </summary>
+        private static ElementDescription DescribePassionItem(int index)
         {
-            if (passionItems.Count == 0)
-            {
-                TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.NoPassions".Translate());
-                return;
-            }
+            var d = new ElementDescription();
+            if (index < 0 || index >= passionItems.Count)
+                return d;
 
-            if (passionIndex < 0 || passionIndex >= passionItems.Count)
-                return;
-
-            PassionItem item = passionItems[passionIndex];
-            bool isSelected = selectedPassions.Contains(item.Skill);
-            TaggedString selectedText = isSelected
-                ? "RimWorldAccess.Biotech.GrowthMoment.PassionSelectedStatus".Translate()
-                : "RimWorldAccess.Biotech.GrowthMoment.PassionNotSelectedStatus".Translate();
+            PassionItem item = passionItems[index];
             string currentName = GetPassionName(item.CurrentPassion);
             string newName = GetPassionName(item.NewPassion);
-            string position = MenuHelper.FormatPosition(passionIndex, passionItems.Count);
-            string positionSuffix = string.IsNullOrEmpty(position) ? "" : $". {position}";
 
-            TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.PassionTransition".Translate(
-                item.Label, currentName, newName, selectedText) + positionSuffix);
+            d.Label = item.Label;
+            d.Role = letter.passionGainsCount == 1 ? ElementRole.RadioButton : ElementRole.Checkbox;
+            d.Selected = SelectedPassions.Contains(item.Skill);
+            d.Extras = "RimWorldAccess.Biotech.GrowthMoment.PassionTransitionDetail".Translate(currentName, newName);
+            return d;
         }
 
-        private static void AnnounceTraitItem()
+        /// <summary>Always exactly one trait choice, so always a RadioButton row.</summary>
+        private static ElementDescription DescribeTraitItem(int index)
         {
-            if (traitItems.Count == 0)
-            {
-                TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.NoTraits".Translate());
-                return;
-            }
+            var d = new ElementDescription();
+            if (index < 0 || index >= traitItems.Count)
+                return d;
 
-            if (traitIndex < 0 || traitIndex >= traitItems.Count)
-                return;
-
-            TraitItem item = traitItems[traitIndex];
-            bool isSelected;
-            if (item.IsNoTrait)
-                isSelected = selectedTrait == ChoiceLetter_GrowthMoment.NoTrait;
-            else
-                isSelected = selectedTrait == item.TraitOption;
-
-            TaggedString selectedText = isSelected
-                ? "RimWorldAccess.Biotech.GrowthMoment.PassionSelectedStatus".Translate()
-                : "RimWorldAccess.Biotech.GrowthMoment.PassionNotSelectedStatus".Translate();
-            string position = MenuHelper.FormatPosition(traitIndex, traitItems.Count);
-            string positionSuffix = string.IsNullOrEmpty(position) ? "" : $". {position}";
-
-            if (!string.IsNullOrEmpty(item.Description))
-                TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.TraitWithDesc".Translate(
-                    item.Label, item.Description, selectedText) + positionSuffix);
-            else
-                TolkHelper.SpeakData("RimWorldAccess.Biotech.GrowthMoment.TraitWithoutDesc".Translate(
-                    item.Label, selectedText) + positionSuffix);
+            TraitItem item = traitItems[index];
+            Trait chosen = SelectedTrait;
+            d.Label = item.Label;
+            d.Role = ElementRole.RadioButton;
+            d.Selected = item.IsNoTrait
+                ? chosen == ChoiceLetter_GrowthMoment.NoTrait
+                : chosen == item.TraitOption;
+            d.Extras = item.Description;
+            return d;
         }
 
-        private static void AnnounceWithSearch()
+        /// <summary>The same radio-vs-checkbox split as <see cref="DescribePassionItem"/>, keyed off the gains count.</summary>
+        private static ElementDescription DescribeAspirationItem(int index)
         {
-            Tab tab = availableTabs[currentTabIndex];
-            TypeaheadSearchHelper typeahead = GetCurrentTypeahead();
+            var d = new ElementDescription();
+            if (index < 0 || index >= aspirationItems.Count)
+                return d;
 
-            // Get base announcement
-            AnnounceCurrentItem();
-
-            // Append search context if we have it - but since AnnounceCurrentItem already spoke,
-            // we need to combine them. For now, just announce the current item.
-            // The typeahead match feedback is handled by the search helper itself.
+            VaeCompat.AspirationChoice item = aspirationItems[index];
+            d.Label = item.Label;
+            d.Role = aspirationGainsCount == 1 ? ElementRole.RadioButton : ElementRole.Checkbox;
+            d.Selected = SelectedAspirations.Contains(item.Def);
+            d.Extras = item.Details;
+            return d;
         }
-
-        // ========== Data Building ==========
 
         private static void BuildInfoLines()
         {
@@ -765,13 +680,11 @@ namespace RimWorldAccess
                 }
             }
 
-            // Add growth tier info
             if (letter.growthTier >= 0)
             {
                 lines.Add("RimWorldAccess.Biotech.GrowthMoment.GrowthTier".Translate(letter.growthTier));
             }
 
-            // Add nickname change info
             if (letter.pawn?.Name != null && letter.oldName != null && letter.pawn.Name != letter.oldName)
             {
                 string oldFull = letter.oldName.ToStringFull;
@@ -780,7 +693,12 @@ namespace RimWorldAccess
                     StripTags(oldFull), StripTags(newShort)));
             }
 
-            // Archive view: add chosen passion/trait info
+            // The explainer VAE's dialog draws under the aspiration choice list.
+            if (!isArchiveView && aspirationItems.Count > 0)
+            {
+                lines.Add(StripTags("RimWorldAccess.Compat.Vae.AspirationDesc".Translate(letter.pawn.NameShortColored)));
+            }
+
             if (isArchiveView)
             {
                 if (!letter.chosenPassions.NullOrEmpty())
@@ -795,6 +713,15 @@ namespace RimWorldAccess
                         ? "RimWorldAccess.Biotech.GrowthMoment.NoTraitChosen".Translate().ToString()
                         : letter.chosenTrait.LabelCap;
                     lines.Add("RimWorldAccess.Biotech.GrowthMoment.ChosenTrait".Translate(traitLabel));
+                }
+
+                // Mirrors Dialog_GrowthMomentChoices_Aspirations' own archive-view line.
+                List<string> chosenAspirationLabels = VaeCompat.GetChosenAspirationLabels(letter);
+                if (chosenAspirationLabels != null)
+                {
+                    lines.Add(chosenAspirationLabels.Count == 1
+                        ? "RimWorldAccess.Compat.Vae.ArchiveSingular".Translate(chosenAspirationLabels[0])
+                        : "RimWorldAccess.Compat.Vae.ArchivePlural".Translate(string.Join(", ", chosenAspirationLabels)));
                 }
             }
 
@@ -836,11 +763,13 @@ namespace RimWorldAccess
                 string description = "";
                 try
                 {
-                    description = StripTags(trait.TipString(letter.pawn));
+                    // Trait.TipString builds a multi-line tooltip and StripTags only removes HTML
+                    // tags, so flatten the embedded newlines into sentence breaks before speech.
+                    description = StripTags(trait.TipString(letter.pawn))
+                        .Replace("\r", "").Replace("\n\n", ". ").Replace("\n", ". ").Trim();
                 }
                 catch
                 {
-                    // TipString can throw if pawn state is unexpected
                 }
 
                 traitItems.Add(new TraitItem
@@ -852,7 +781,6 @@ namespace RimWorldAccess
                 });
             }
 
-            // Add "No trait" option if applicable
             if (letter.noTraitOptionShown)
             {
                 string noTraitLabel = "BirthdayNoTraitChoice".Translate();
@@ -873,6 +801,55 @@ namespace RimWorldAccess
             }
         }
 
+        /// <summary>Builds the Aspirations tab content from a VAE aspirations letter, if any.</summary>
+        private static void BuildAspirationItems()
+        {
+            aspirationItems.Clear();
+            aspirationGainsCount = 0;
+
+            if (isArchiveView)
+                return;
+
+            if (VaeCompat.TryGetAspirationChoices(letter, out List<VaeCompat.AspirationChoice> choices, out int gains))
+            {
+                aspirationItems.AddRange(choices);
+                aspirationGainsCount = gains;
+            }
+        }
+
+        /// <summary>
+        /// Builds the Character/Health tab content from the same tree adapters the pawn's real
+        /// inspect tabs use, read-only to match the side panel's non-interactive display. Each
+        /// adapter's top-level child Labels already self-fold their full subtree, so reading them
+        /// flat one per line loses nothing against vanilla's own card drawing.
+        /// </summary>
+        private static void BuildCharacterAndHealthLines()
+        {
+            characterLines = null;
+            healthLines = null;
+
+            Pawn pawn = letter.pawn;
+            if (isArchiveView || pawn == null || !letter.ShowInfoTabs)
+                return;
+
+            characterLines = BuildCategoryLines(pawn, new PawnCharacterAdapter());
+            healthLines = BuildCategoryLines(pawn, new PawnHealthAdapter());
+        }
+
+        private static string[] BuildCategoryLines(Pawn pawn, InspectNodeAdapter adapter)
+        {
+            var categoryItem = new InspectionTreeItem
+            {
+                Type = InspectionTreeItem.ItemType.Category,
+                Label = adapter.CategoryKey,
+                IndentLevel = 0,
+                IsExpandable = true,
+                IsExpanded = true
+            };
+            adapter.BuildChildren(categoryItem, pawn, InspectionMode.ReadOnly);
+            return categoryItem.Children.Select(c => c.Label).ToArray();
+        }
+
         private static void BuildAvailableTabs()
         {
             availableTabs.Clear();
@@ -885,12 +862,19 @@ namespace RimWorldAccess
 
                 if (traitItems.Count > 0)
                     availableTabs.Add(Tab.Traits);
+
+                if (aspirationItems.Count > 0)
+                    availableTabs.Add(Tab.Aspirations);
+
+                // Mirrors letter.ShowInfoTabs: the side panels only appear alongside an actual
+                // passion/trait choice, never on their own.
+                if (letter.ShowInfoTabs)
+                {
+                    availableTabs.Add(Tab.Character);
+                    availableTabs.Add(Tab.Health);
+                }
             }
         }
-
-        // ========== Helpers ==========
-
-        private static Tab CurrentTab => availableTabs.Count > 0 ? availableTabs[currentTabIndex] : Tab.Info;
 
         private static string GetTabName(Tab tab)
         {
@@ -899,6 +883,10 @@ namespace RimWorldAccess
                 case Tab.Info: return "RimWorldAccess.Biotech.GrowthMoment.TabInfo".Translate();
                 case Tab.Passions: return "RimWorldAccess.Biotech.GrowthMoment.TabPassions".Translate();
                 case Tab.Traits: return "RimWorldAccess.Biotech.GrowthMoment.TabTraits".Translate();
+                case Tab.Aspirations: return "RimWorldAccess.Compat.Vae.TabAspirations".Translate();
+                // Vanilla's own TabRecord labels for these two panels.
+                case Tab.Character: return "TabCharacter".Translate();
+                case Tab.Health: return "TabHealth".Translate();
                 default: return "RimWorldAccess.Biotech.GrowthMoment.TabUnknown".Translate();
             }
         }
@@ -911,47 +899,6 @@ namespace RimWorldAccess
                 case Passion.Minor: return "RimWorldAccess.Biotech.GrowthMoment.PassionMinor".Translate();
                 case Passion.Major: return "RimWorldAccess.Biotech.GrowthMoment.PassionMajor".Translate();
                 default: return passion.ToString();
-            }
-        }
-
-        private static TypeaheadSearchHelper GetCurrentTypeahead()
-        {
-            Tab tab = availableTabs[currentTabIndex];
-            switch (tab)
-            {
-                case Tab.Passions: return passionTypeahead;
-                case Tab.Traits: return traitTypeahead;
-                default: return null;
-            }
-        }
-
-        private static List<string> GetCurrentLabels()
-        {
-            Tab tab = availableTabs[currentTabIndex];
-            switch (tab)
-            {
-                case Tab.Passions:
-                    return passionItems.Select(p => p.Label).ToList();
-                case Tab.Traits:
-                    return traitItems.Select(t => t.Label).ToList();
-                default:
-                    return new List<string>();
-            }
-        }
-
-        private static void SetCurrentIndex(int index)
-        {
-            Tab tab = availableTabs[currentTabIndex];
-            switch (tab)
-            {
-                case Tab.Passions:
-                    if (index >= 0 && index < passionItems.Count)
-                        passionIndex = index;
-                    break;
-                case Tab.Traits:
-                    if (index >= 0 && index < traitItems.Count)
-                        traitIndex = index;
-                    break;
             }
         }
 

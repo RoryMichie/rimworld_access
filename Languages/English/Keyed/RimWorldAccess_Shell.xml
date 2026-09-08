@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!--
+    Shell element vocabulary (src/Shell/Elements/, blueprint section 4.5).
+    The standard control words spoken for every focusable item mod-wide:
+    "checkbox, checked" instead of a per-screen sentence. Spoken by
+    TranslatedShellVocabulary through AnnouncementComposer; the words follow
+    established screen reader terminology so users recognize them from every
+    other application. Roles with no key here (menu item, tree item, table
+    cell) are deliberately silent. Position and level phrases reuse
+    RimWorldAccess.Menu.Position / RimWorldAccess.Menu.LevelSuffix.
+  -->
+
+  <!-- Role words -->
+  <RimWorldAccess.Shell.Role.Button>button</RimWorldAccess.Shell.Role.Button>
+  <RimWorldAccess.Shell.Role.Checkbox>checkbox</RimWorldAccess.Shell.Role.Checkbox>
+  <RimWorldAccess.Shell.Role.RadioButton>radio button</RimWorldAccess.Shell.Role.RadioButton>
+  <RimWorldAccess.Shell.Role.ComboBox>combo box</RimWorldAccess.Shell.Role.ComboBox>
+  <RimWorldAccess.Shell.Role.Slider>slider</RimWorldAccess.Shell.Role.Slider>
+  <RimWorldAccess.Shell.Role.Stepper>spin box</RimWorldAccess.Shell.Role.Stepper>
+  <RimWorldAccess.Shell.Role.TextField>edit box</RimWorldAccess.Shell.Role.TextField>
+  <RimWorldAccess.Shell.Role.Tab>tab</RimWorldAccess.Shell.Role.Tab>
+  <RimWorldAccess.Shell.Role.Map>map</RimWorldAccess.Shell.Role.Map>
+
+  <!-- State words -->
+  <RimWorldAccess.Shell.State.Checked>checked</RimWorldAccess.Shell.State.Checked>
+  <RimWorldAccess.Shell.State.Unchecked>not checked</RimWorldAccess.Shell.State.Unchecked>
+  <RimWorldAccess.Shell.State.PartiallyChecked>partially checked</RimWorldAccess.Shell.State.PartiallyChecked>
+  <RimWorldAccess.Shell.State.Selected>selected</RimWorldAccess.Shell.State.Selected>
+  <RimWorldAccess.Shell.State.NotSelected>not selected</RimWorldAccess.Shell.State.NotSelected>
+  <RimWorldAccess.Shell.State.Expanded>expanded</RimWorldAccess.Shell.State.Expanded>
+  <RimWorldAccess.Shell.State.Collapsed>collapsed</RimWorldAccess.Shell.State.Collapsed>
+  <RimWorldAccess.Shell.State.Blank>blank</RimWorldAccess.Shell.State.Blank>
+  <RimWorldAccess.Shell.State.Disabled>disabled</RimWorldAccess.Shell.State.Disabled>
+  <RimWorldAccess.Shell.State.ReadOnly>read only</RimWorldAccess.Shell.State.ReadOnly>
+  <RimWorldAccess.Shell.State.AtMinimum>at minimum</RimWorldAccess.Shell.State.AtMinimum>
+  <RimWorldAccess.Shell.State.AtMaximum>at maximum</RimWorldAccess.Shell.State.AtMaximum>
+  <RimWorldAccess.Shell.State.ColumnHeader>column header</RimWorldAccess.Shell.State.ColumnHeader>
+  <RimWorldAccess.Shell.State.Sortable>sortable</RimWorldAccess.Shell.State.Sortable>
+  <RimWorldAccess.Shell.State.SortedAscending>sorted ascending</RimWorldAccess.Shell.State.SortedAscending>
+  <RimWorldAccess.Shell.State.SortedDescending>sorted descending</RimWorldAccess.Shell.State.SortedDescending>
+
+  <!-- ScreenScope shared screen shape (screen-model refactor): the
+       automatic Toolbar region name and the empty-region word. -->
+  <RimWorldAccess.Shell.Screen.ActionsRegion>Toolbar</RimWorldAccess.Shell.Screen.ActionsRegion>
+  <RimWorldAccess.Shell.Screen.ExtrasRegion>Additional controls</RimWorldAccess.Shell.Screen.ExtrasRegion>
+  <RimWorldAccess.Shell.Screen.EmptyRegion>empty</RimWorldAccess.Shell.Screen.EmptyRegion>
+
+  <!-- Fail-safe (B1, semantic quality campaign): spoken once when a scope's own model build
+       throws, so the player is told the window went unreadable instead of finding every key
+       (including Escape) silently swallowed. See ScreenScope.RefreshModel. -->
+  <RimWorldAccess.Shell.ScopeFailed>This window's screen reader support hit an error. Press Escape to close the window.</RimWorldAccess.Shell.ScopeFailed>
+
+  <!-- Band label inheritance (C1, semantic quality campaign): an unlabeled twin control that
+       inherited a neighbouring control's caption (BandLabelInheritance/GenericWindowScope).
+       {0} is the inherited label, {1} the 1-based ordinal ("Ideology 2"). -->
+  <RimWorldAccess.Shell.BandOrdinalLabel>{0} {1}</RimWorldAccess.Shell.BandOrdinalLabel>
+
+  <!-- Silent content swap echo (S8, meaning campaign): a captured Button whose click replaced
+       the window's whole page with no dialog, no menu, and no state change on the acted row
+       itself (Colony Manager Redux's "New job" button, which swaps the page to a fresh draft
+       job's settings) — the honest, generic summary a keyboard user gets instead of dead
+       silence. {0} is the new presentation row count. See GenericWindowScope.ResolvePendingStateChange. -->
+  <RimWorldAccess.Shell.ContentChanged>Window content changed. {0} items.</RimWorldAccess.Shell.ContentChanged>
+  <RimWorldAccess.Shell.ContentReordered>Items reordered.</RimWorldAccess.Shell.ContentReordered>
+
+  <!-- Enter double-press proceed (DefaultAcceptActionId, S4c): the first Enter on an
+       inert element arms this prompt instead of doing nothing; a second Enter on the
+       same element fires the screen's default/proceed button. {0} is that button's label. -->
+  <RimWorldAccess.Shell.Screen.PressEnterAgain>Press Enter again to activate {0}.</RimWorldAccess.Shell.Screen.PressEnterAgain>
+
+  <!-- Shift+Enter one-chord proceed (SharedMenuGrammar.ActivateDefault, QA session 5):
+       presses the screen's default/proceed button from anywhere, bypassing the focused
+       control. PressingDefault is spoken BEFORE the button fires because the player
+       chose not to look the button up first; {0} is that button's label. -->
+  <RimWorldAccess.Shell.Screen.PressingDefault>Pressing {0}.</RimWorldAccess.Shell.Screen.PressingDefault>
+  <RimWorldAccess.Shell.Screen.NoDefaultButton>This screen has no default button.</RimWorldAccess.Shell.Screen.NoDefaultButton>
+
+  <!-- Shared reorder grammar (SharedMenuGrammar.ReorderUp/Down/Left/Right,
+       ScreenScope's Ctrl+Up/Down seam): the mod-wide keyboard equivalent of
+       the player's drag-and-drop gesture. MovedBetween/MovedToTop/MovedToBottom
+       name the item's new neighbors ({0}/{1} are neighbor labels, above then
+       below); Moved is the fallback when a neighbor's label cannot be resolved.
+       Whichever phrase is chosen prefixes the standard full item announcement
+       ("Moved between Duster and Parka. Duster, 3 of 7."); CannotReorder is the
+       refusal when the subclass's mutation vehicle vetoes the move. -->
+  <RimWorldAccess.Shell.Screen.Moved>Moved.</RimWorldAccess.Shell.Screen.Moved>
+  <RimWorldAccess.Shell.Screen.MovedBetween>Moved between {0} and {1}.</RimWorldAccess.Shell.Screen.MovedBetween>
+  <RimWorldAccess.Shell.Screen.MovedToTop>Moved to top, above {0}.</RimWorldAccess.Shell.Screen.MovedToTop>
+  <RimWorldAccess.Shell.Screen.MovedToBottom>Moved to bottom, below {0}.</RimWorldAccess.Shell.Screen.MovedToBottom>
+  <RimWorldAccess.Shell.Screen.CannotReorder>This item cannot be moved.</RimWorldAccess.Shell.Screen.CannotReorder>
+
+  <!-- Table regions (docs/table-model.md): the shared table grammar spoken
+       by AnnouncementComposer.ComposeCell for every table in the mod.
+       {0}/{1} in the position phrases are 1-based (the header row is row 1). -->
+  <RimWorldAccess.Shell.Screen.TabCount>{0} sections</RimWorldAccess.Shell.Screen.TabCount>
+  <RimWorldAccess.Shell.Screen.SectionPosition>section {0} of {1}</RimWorldAccess.Shell.Screen.SectionPosition>
+  <RimWorldAccess.Shell.Table.RowPosition>row {0} of {1}</RimWorldAccess.Shell.Table.RowPosition>
+  <RimWorldAccess.Shell.Table.ColumnPosition>column {0} of {1}</RimWorldAccess.Shell.Table.ColumnPosition>
+  <RimWorldAccess.Shell.Table.Dimensions>table, {0} columns, {1} rows</RimWorldAccess.Shell.Table.Dimensions>
+  <RimWorldAccess.Shell.Table.SortedBy>Sorted by {0}, {1}</RimWorldAccess.Shell.Table.SortedBy>
+  <RimWorldAccess.Shell.Table.SortCleared>Sort cleared, default order</RimWorldAccess.Shell.Table.SortCleared>
+  <RimWorldAccess.Shell.Table.NotSortable>This column cannot sort</RimWorldAccess.Shell.Table.NotSortable>
+  <RimWorldAccess.Shell.Table.SortHint>Enter sorts</RimWorldAccess.Shell.Table.SortHint>
+
+  <!-- Cross-region typeahead (docs/table-model.md section 7): the locating
+       frame spoken after a search jump lands in another region, and the
+       fallback name for unnamed regions on generic screens ({0} is the
+       1-based tab number). -->
+  <RimWorldAccess.Shell.Search.NowAt>Now at {0}</RimWorldAccess.Shell.Search.NowAt>
+  <RimWorldAccess.Shell.Search.UnnamedTab>tab {0}</RimWorldAccess.Shell.Search.UnnamedTab>
+
+  <!-- Transfer-screen table columns (table-model T3, TransferableTableColumns).
+       Vanilla shows these columns as icons with hover tooltips and has no short
+       text labels for them, so the mod provides its own. DaysValue's {0} is a
+       decimal day count (e.g. "3.5"); CanGraze replaces vanilla's grazing icon
+       in the foraged-food column for animals that graze. -->
+  <RimWorldAccess.Shell.Table.Transferable.DaysUntilRot>Days until rot</RimWorldAccess.Shell.Table.Transferable.DaysUntilRot>
+  <RimWorldAccess.Shell.Table.Transferable.DaysValue>{0} days</RimWorldAccess.Shell.Table.Transferable.DaysValue>
+  <RimWorldAccess.Shell.Table.Transferable.CanGraze>Can graze</RimWorldAccess.Shell.Table.Transferable.CanGraze>
+
+  <!-- Generic pawn-table tier (table-model T5, GenericPawnTableScope).
+       CellNotReadable is the honest fallback for an unknown mod column's
+       cell; Incapable mirrors the work tab's disabled-work meaning; Trained
+       marks a completed animal training. HourRange/HourSingle format a
+       timetable cell's contiguous segments: hour params are 0-23, the last
+       param is the assignment label. PawnTableRegion names a pawn table
+       whose main button carries no label. -->
+  <RimWorldAccess.Shell.Generic.CellNotReadable>value not available</RimWorldAccess.Shell.Generic.CellNotReadable>
+  <RimWorldAccess.Shell.Generic.Incapable>incapable</RimWorldAccess.Shell.Generic.Incapable>
+  <RimWorldAccess.Shell.Generic.Trained>trained</RimWorldAccess.Shell.Generic.Trained>
+  <RimWorldAccess.Shell.Generic.HourRange>{0} to {1}: {2}</RimWorldAccess.Shell.Generic.HourRange>
+  <RimWorldAccess.Shell.Generic.HourSingle>{0}: {1}</RimWorldAccess.Shell.Generic.HourSingle>
+  <RimWorldAccess.Shell.Generic.PawnTableRegion>Pawn table</RimWorldAccess.Shell.Generic.PawnTableRegion>
+  <!-- Dev-mode debug-action context menus embedded in the research menu and
+       entity codex (RightBracket). Only meaningful with dev mode enabled. -->
+  <!-- Dev-mode context menus embedded in the styling station, ideos tab, and
+       factions tab (RightBracket). Only meaningful with dev mode enabled. On the
+       styling station RightBracket is also "reset all", so its menu leads with
+       Reset. -->
+  <!-- Save/load file lists (RightBracket): the interact and delete actions the
+       sighted player reads on the focused row's own two buttons. -->
+
+  <!-- Shared tree chords (ShellActionInventory.Part7, the "tree"/"filterTree"
+       pseudo-screens). These label the rebinding list entries for every migrated
+       tree screen. -->
+
+  <!-- Shared big-text reader (TextBufferScope): section jumps inside one block of text. -->
+
+  <!--
+    Spoken key names (KeyChordFormat, installed by ShellBootstrap). These are
+    words a screen reader reads aloud inside a sentence ("press Alt plus Page
+    Down"), not text drawn on screen, so they belong to the mod's spoken
+    vocabulary and get translated like every other spoken word. The key suffix
+    is the Unity KeyCode enum name so a binding traces to its key mechanically.
+    Keys with no entry here keep the humanized enum name, which is already
+    correct for letters, digits and the function row: those are never worded.
+    Ctrl and Option are the two modifier words the platform chooses between
+    (macOS substitutes Option for Ctrl); NumpadDigit formats the ten numeric
+    keypad keys, where {0} is the digit 0 to 9.
+  -->
+  <RimWorldAccess.Shell.Key.Ctrl>Ctrl</RimWorldAccess.Shell.Key.Ctrl>
+  <RimWorldAccess.Shell.Key.Option>Option</RimWorldAccess.Shell.Key.Option>
+  <RimWorldAccess.Shell.Key.Shift>Shift</RimWorldAccess.Shell.Key.Shift>
+  <RimWorldAccess.Shell.Key.Alt>Alt</RimWorldAccess.Shell.Key.Alt>
+
+  <RimWorldAccess.Shell.Key.UpArrow>Up Arrow</RimWorldAccess.Shell.Key.UpArrow>
+  <RimWorldAccess.Shell.Key.DownArrow>Down Arrow</RimWorldAccess.Shell.Key.DownArrow>
+  <RimWorldAccess.Shell.Key.LeftArrow>Left Arrow</RimWorldAccess.Shell.Key.LeftArrow>
+  <RimWorldAccess.Shell.Key.RightArrow>Right Arrow</RimWorldAccess.Shell.Key.RightArrow>
+  <RimWorldAccess.Shell.Key.Return>Enter</RimWorldAccess.Shell.Key.Return>
+  <RimWorldAccess.Shell.Key.PageUp>Page Up</RimWorldAccess.Shell.Key.PageUp>
+  <RimWorldAccess.Shell.Key.PageDown>Page Down</RimWorldAccess.Shell.Key.PageDown>
+  <RimWorldAccess.Shell.Key.Escape>Escape</RimWorldAccess.Shell.Key.Escape>
+  <RimWorldAccess.Shell.Key.Tab>Tab</RimWorldAccess.Shell.Key.Tab>
+  <RimWorldAccess.Shell.Key.Space>Space</RimWorldAccess.Shell.Key.Space>
+  <RimWorldAccess.Shell.Key.Backspace>Backspace</RimWorldAccess.Shell.Key.Backspace>
+  <RimWorldAccess.Shell.Key.Delete>Delete</RimWorldAccess.Shell.Key.Delete>
+  <RimWorldAccess.Shell.Key.Insert>Insert</RimWorldAccess.Shell.Key.Insert>
+  <RimWorldAccess.Shell.Key.Home>Home</RimWorldAccess.Shell.Key.Home>
+  <RimWorldAccess.Shell.Key.End>End</RimWorldAccess.Shell.Key.End>
+  <RimWorldAccess.Shell.Key.BackQuote>Backtick</RimWorldAccess.Shell.Key.BackQuote>
+  <RimWorldAccess.Shell.Key.LeftBracket>Left Bracket</RimWorldAccess.Shell.Key.LeftBracket>
+  <RimWorldAccess.Shell.Key.RightBracket>Right Bracket</RimWorldAccess.Shell.Key.RightBracket>
+  <RimWorldAccess.Shell.Key.Comma>Comma</RimWorldAccess.Shell.Key.Comma>
+  <RimWorldAccess.Shell.Key.Period>Period</RimWorldAccess.Shell.Key.Period>
+  <RimWorldAccess.Shell.Key.Slash>Slash</RimWorldAccess.Shell.Key.Slash>
+  <RimWorldAccess.Shell.Key.Minus>Minus</RimWorldAccess.Shell.Key.Minus>
+  <RimWorldAccess.Shell.Key.Plus>Plus</RimWorldAccess.Shell.Key.Plus>
+  <RimWorldAccess.Shell.Key.Equals>Equals</RimWorldAccess.Shell.Key.Equals>
+
+  <RimWorldAccess.Shell.Key.KeypadEnter>Numpad Enter</RimWorldAccess.Shell.Key.KeypadEnter>
+  <RimWorldAccess.Shell.Key.KeypadPlus>Numpad Plus</RimWorldAccess.Shell.Key.KeypadPlus>
+  <RimWorldAccess.Shell.Key.KeypadMinus>Numpad Minus</RimWorldAccess.Shell.Key.KeypadMinus>
+  <RimWorldAccess.Shell.Key.KeypadMultiply>Numpad Star</RimWorldAccess.Shell.Key.KeypadMultiply>
+  <RimWorldAccess.Shell.Key.KeypadDivide>Numpad Slash</RimWorldAccess.Shell.Key.KeypadDivide>
+  <RimWorldAccess.Shell.Key.KeypadPeriod>Numpad Period</RimWorldAccess.Shell.Key.KeypadPeriod>
+  <RimWorldAccess.Shell.Key.NumpadDigit>Numpad {0}</RimWorldAccess.Shell.Key.NumpadDigit>
+
+  <!-- Common glyph texture labels (C2, semantic quality campaign,
+       TextureButtonLabels/WidgetCapture.ImageButtonLabel's last-resort tier): a captured
+       icon-only button that resolved to nothing but its raw texture asset name used to
+       speak that name verbatim ("ReorderDown. button."). These are the well-known vanilla
+       TexButton textures a mod is also likely to draw its own equivalent icon with; the
+       key suffix is what TextureButtonLabels.TryGetGlyphKeySuffix returns, reached only by
+       string concatenation in code (never a literal .Translate() call). -->
+  <RimWorldAccess.Shell.Glyph.ReorderUp>Move up</RimWorldAccess.Shell.Glyph.ReorderUp>
+  <RimWorldAccess.Shell.Glyph.ReorderDown>Move down</RimWorldAccess.Shell.Glyph.ReorderDown>
+  <RimWorldAccess.Shell.Glyph.Plus>Add</RimWorldAccess.Shell.Glyph.Plus>
+  <RimWorldAccess.Shell.Glyph.Minus>Remove</RimWorldAccess.Shell.Glyph.Minus>
+  <RimWorldAccess.Shell.Glyph.Delete>Delete</RimWorldAccess.Shell.Glyph.Delete>
+  <RimWorldAccess.Shell.Glyph.Close>Close</RimWorldAccess.Shell.Glyph.Close>
+  <RimWorldAccess.Shell.Glyph.Copy>Copy</RimWorldAccess.Shell.Glyph.Copy>
+  <RimWorldAccess.Shell.Glyph.Paste>Paste</RimWorldAccess.Shell.Glyph.Paste>
+  <RimWorldAccess.Shell.Glyph.Rename>Rename</RimWorldAccess.Shell.Glyph.Rename>
+  <RimWorldAccess.Shell.Glyph.Info>Info</RimWorldAccess.Shell.Glyph.Info>
+  <RimWorldAccess.Shell.Glyph.Drag>Drag handle</RimWorldAccess.Shell.Glyph.Drag>
+  <RimWorldAccess.Shell.Glyph.OpenInspector>Open inspector</RimWorldAccess.Shell.Glyph.OpenInspector>
+  <RimWorldAccess.Shell.Glyph.ToggleLog>Toggle log</RimWorldAccess.Shell.Glyph.ToggleLog>
+
+  <!-- Coverage-gaps packet: Dialog_ChooseColor / Dialog_SelectXenogerm. -->
+  <RimWorldAccess.Shell.ChooseColor.RegionName>Colors</RimWorldAccess.Shell.ChooseColor.RegionName>
+
+  <!-- The vanilla color-picker family (allowed-area and glower pickers): region names for
+       ColorPickerScope. -->
+  <RimWorldAccess.Shell.ColorPicker.PaletteRegion>Color palette</RimWorldAccess.Shell.ColorPicker.PaletteRegion>
+  <RimWorldAccess.Shell.ColorPicker.AdjustRegion>Fine adjustment</RimWorldAccess.Shell.ColorPicker.AdjustRegion>
+  <RimWorldAccess.Shell.ColorPicker.ReadbackRegion>Current selection</RimWorldAccess.Shell.ColorPicker.ReadbackRegion>
+  <RimWorldAccess.Shell.SelectXenogerm.RegionName>Xenogerms</RimWorldAccess.Shell.SelectXenogerm.RegionName>
+  <RimWorldAccess.Shell.SelectXenogerm.MoreGenes>and {0} more genes</RimWorldAccess.Shell.SelectXenogerm.MoreGenes>
+
+  <!-- Action label keys (Shell.Action.*) are inert until the rebind UI exists — see
+       ShellActionInventory. -->
+</LanguageData>

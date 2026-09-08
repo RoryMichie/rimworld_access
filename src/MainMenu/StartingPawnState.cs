@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -14,763 +13,96 @@ namespace RimWorldAccess
         Wanderer
     }
 
+    /// <summary>
+    /// Lifecycle flag + mutation vehicles for the starting-pawn editor, shared by both hosts
+    /// (Page_ConfigureStartingPawns / Dialog_ChooseNewWanderers). All keyboard navigation and
+    /// row presentation now live in <see cref="RimWorldAccess.Shell.StartingPawnScreenScope"/>;
+    /// this class keeps only what the
+    /// scope has no business owning itself: the IsActive/Context flags other systems gate on
+    /// (PawnFilterState, RerollState, StartingSiteScreenScope, StartingPawnHelper's tree shape), and
+    /// the pawn-mutation methods the scope's rows call into.
+    ///
+    /// The following no longer exist: the TreeNavigationHelper field and every
+    /// tree-nav wrapper (TreeNavigatePrevious/Next/ExpandOrDrillDown/CollapseOrDrillUp/Home/End/
+    /// Reannounce/ExpandAllSiblings/SearchBackspace/Typeahead), ToggleTab/OnTeamSkillsTab (Team
+    /// Skills is now a plain content region, no separate sub-mode), HandleConfirm/HandleCancel
+    /// (Enter/Escape are scope-claimed directly now), SwitchPawn/TryJumpToRelatedPawn/
+    /// FindPawnNode*/CollapsePawnNode/GetAllNodes/SaveTreePosition/RestoreTreePosition (their
+    /// position-preserving logic is reimplemented against the scope's own flat row model, which
+    /// this class has no way to see), and RebuildTree (the scope calls
+    /// StartingPawnHelper.BuildTree directly and flattens it itself).
+    /// </summary>
     public static class StartingPawnState
     {
-        private static TreeNavigationHelper treeNav = new TreeNavigationHelper("PawnSelection");
         private static bool isActive = false;
-        private static int openedOnFrame = -1;
         private static bool awaitingRenameRebuild = false;
-        private static string lastAnnouncedSection = null;
-
-        // Two-tab shell (parity with the vanilla character screen's Team Skills panel):
-        // tab 1 is the pawn tree, tab 2 is a read-only team skill summary. Tab toggles.
-        private enum PawnTab { Pawns, TeamSkills }
-        private static PawnTab currentTab = PawnTab.Pawns;
-        private static List<string> teamSkillRows = new List<string>();
-        private static int teamSkillIndex = 0;
-        private static readonly TypeaheadSearchHelper teamSkillTypeahead = new TypeaheadSearchHelper();
 
         public static bool IsActive => isActive;
-        public static bool HasActiveSearch => treeNav.HasActiveSearch;
 
-        /// <summary>
-        /// Clears any active typeahead search and re-announces the current item.
-        /// Called from StartingPawnDoBackBlockPatch as a fallback when Escape would
-        /// otherwise show the discard-confirm dialog while the user only meant to
-        /// cancel their typeahead search.
-        /// </summary>
-        public static void ClearActiveSearch()
-        {
-            if (!treeNav.HasActiveSearch) return;
-            treeNav.Typeahead.ClearSearchAndAnnounce();
-            treeNav.ReannounceCurrentItem();
-        }
         public static PawnEditorContext Context { get; private set; } = PawnEditorContext.GameStart;
 
-        static StartingPawnState()
-        {
-            treeNav.FormatItemAnnouncement = FormatItemAnnouncement;
-            treeNav.FormatSearchAnnouncement = FormatSearchAnnouncement;
-            treeNav.AnnounceChildCounts = false;
-        }
+        public static bool IsWandererContext => Context == PawnEditorContext.Wanderer;
 
         public static void Open(PawnEditorContext context = PawnEditorContext.GameStart)
         {
             Context = context;
             isActive = true;
-            openedOnFrame = Time.frameCount;
-            lastAnnouncedSection = null;
-            currentTab = PawnTab.Pawns;
-            teamSkillTypeahead.ClearSearch();
-
-            RebuildTree();
-
-            var visibleItems = treeNav.VisibleItems;
-            if (visibleItems.Count > 0)
-            {
-                // Select first pawn (skip group header if present)
-                for (int i = 0; i < visibleItems.Count; i++)
-                {
-                    var ptd = StartingPawnHelper.GetPawnData(visibleItems[i]);
-                    if (ptd != null && ptd.NodeType == PawnNodeType.Pawn)
-                    {
-                        treeNav.SetSelectedIndex(i);
-                        break;
-                    }
-                }
-                Localized title = context == PawnEditorContext.Wanderer
-                    ? "RimWorldAccess.StartingPawn.WandererTitle".Loc("ChooseNewWanderers".Translate())
-                    : "CreateCharacters".Loc();
-                TolkHelper.Speak(title);
-                treeNav.ReannounceCurrentItem();
-            }
         }
 
         public static void Close()
         {
             isActive = false;
             awaitingRenameRebuild = false;
-            lastAnnouncedSection = null;
-            currentTab = PawnTab.Pawns;
-            teamSkillTypeahead.ClearSearch();
-            treeNav.Reset();
         }
 
+        /// <summary>Called by the rename dialog's PreOpen equivalent (RenamePawnAt) so a pending rebuild is armed.</summary>
         public static void CheckPendingRenameRebuild()
         {
-            if (awaitingRenameRebuild && !WindowlessDialogState.IsActive)
+            if (awaitingRenameRebuild && !Find.WindowStack.IsOpen<Dialog_NamePawn>())
             {
                 awaitingRenameRebuild = false;
-                RebuildTree();
-                treeNav.ReannounceCurrentItem();
+                Shell.StartingPawnScreenScope.Active?.RefreshAndReannounceAfterExternalChange();
             }
         }
 
+        /// <summary>The pawn index Page_ConfigureStartingPawns.curPawnIndex / Dialog_ChooseNewWanderers.curPawnIndex must mirror, so the portrait/skills area renders the pawn the scope's cursor rests on.</summary>
         public static int GetSelectedPawnIndex()
         {
-            var item = treeNav.SelectedItem;
-            if (item == null) return 0;
-            var ptd = StartingPawnHelper.GetPawnData(item);
-            if (ptd != null && ptd.PawnIndex >= 0)
-                return ptd.PawnIndex;
-            return 0;
+            return Shell.StartingPawnScreenScope.Active?.CurrentPawnIndex ?? 0;
         }
 
-        private static void RebuildTree()
-        {
-            // Save expansion state. Walk the full tree rather than VisibleItems
-            // because "Rashad Hates Treeviews" submenu mode hides expanded
-            // parents from the flat list.
-            var expandedPawns = new Dictionary<int, HashSet<PawnCategoryType>>();
-            if (treeNav.RootItem != null)
-            {
-                foreach (var pawnItem in GetAllNodes(treeNav.RootItem))
-                {
-                    var ptd = StartingPawnHelper.GetPawnData(pawnItem);
-                    if (ptd == null) continue;
-                    if (ptd.NodeType != PawnNodeType.Pawn || !pawnItem.IsExpanded || ptd.PawnIndex < 0)
-                        continue;
-                    var expandedCats = new HashSet<PawnCategoryType>();
-                    foreach (var child in pawnItem.Children)
-                    {
-                        var childPtd = StartingPawnHelper.GetPawnData(child);
-                        if (childPtd != null && child.IsExpanded && childPtd.CategoryType.HasValue)
-                            expandedCats.Add(childPtd.CategoryType.Value);
-                    }
-                    expandedPawns[ptd.PawnIndex] = expandedCats;
-                }
-            }
-
-            var root = StartingPawnHelper.BuildTree();
-            int savedIndex = treeNav.SelectedIndex;
-            treeNav.Initialize(root, savedIndex);
-
-            // Restore expansion state across the full tree.
-            foreach (var node in GetAllNodes(root))
-            {
-                var ptd = StartingPawnHelper.GetPawnData(node);
-                if (ptd == null) continue;
-                if (ptd.NodeType == PawnNodeType.Pawn && expandedPawns.ContainsKey(ptd.PawnIndex))
-                {
-                    node.IsExpanded = true;
-                }
-                else if (ptd.NodeType == PawnNodeType.Category && ptd.CategoryType.HasValue && node.Parent != null)
-                {
-                    var parentPtd = StartingPawnHelper.GetPawnData(node.Parent);
-                    if (parentPtd != null
-                        && expandedPawns.TryGetValue(parentPtd.PawnIndex, out var cats)
-                        && cats.Contains(ptd.CategoryType.Value))
-                    {
-                        node.IsExpanded = true;
-                    }
-                }
-            }
-            treeNav.RebuildVisibleList();
-
-            // Clamp selection
-            if (treeNav.SelectedIndex >= treeNav.Count)
-                treeNav.SetSelectedIndex(Math.Max(0, treeNav.Count - 1));
-        }
-
-        public static void RebuildAndAnnounce()
-        {
-            RebuildTree();
-            treeNav.ReannounceCurrentItem();
-        }
-
-        // ===== INPUT HANDLING =====
-
-        public static bool HandleInput(Event ev)
-        {
-            if (!isActive || ev.type != EventType.KeyDown) return false;
-            if (treeNav.Count == 0) return false;
-
-            KeyCode key = ev.keyCode;
-            bool ctrl = ev.control;
-
-            // Tab / Shift+Tab: flip between the Characters tree and the Team Skills summary.
-            // Team Skills is a multi-pawn concept, so it only exists at game start.
-            if (key == KeyCode.Tab && Context == PawnEditorContext.GameStart && !ctrl && !KeyboardHelper.IsAltHeld)
-            {
-                ToggleTab();
-                return true;
-            }
-
-            // The Team Skills tab is a read-only summary with its own flat navigation.
-            if (currentTab == PawnTab.TeamSkills)
-                return HandleTeamSkillsInput(ev);
-
-            // --- Pre-intercept custom keys before delegating to treeNav ---
-
-            // Alt+F: Open filter editor
-            if (KeyboardHelper.IsAltHeld && key == KeyCode.F)
-            {
-                PawnFilterState.Open();
-                return true;
-            }
-
-            // Alt+R: Randomize
-            if (KeyboardHelper.IsAltHeld && key == KeyCode.R)
-            {
-                RandomizeCurrentPawn();
-                return true;
-            }
-
-            // Alt+N: Rename
-            if (KeyboardHelper.IsAltHeld && key == KeyCode.N)
-            {
-                RenameCurrentPawn();
-                return true;
-            }
-
-            // Alt+I: Open info card
-            if (KeyboardHelper.IsAltHeld && key == KeyCode.I)
-            {
-                OpenInfoCard();
-                return true;
-            }
-
-            // Alt+A: Add pawn (wanderer only)
-            if (KeyboardHelper.IsAltHeld && key == KeyCode.A && Context == PawnEditorContext.Wanderer)
-            {
-                AddWandererPawn();
-                return true;
-            }
-
-            // Delete: Remove current pawn (wanderer only)
-            if (key == KeyCode.Delete && Context == PawnEditorContext.Wanderer)
-            {
-                RemoveWandererPawn();
-                return true;
-            }
-
-            // Ctrl+Up/Down: Reorder
-            if (ctrl && key == KeyCode.UpArrow)
-            {
-                ReorderCurrentPawn(-1);
-                return true;
-            }
-            if (ctrl && key == KeyCode.DownArrow)
-            {
-                ReorderCurrentPawn(1);
-                return true;
-            }
-
-            // Page Up/Down: Switch pawn preserving position
-            if (key == KeyCode.PageUp)
-            {
-                SwitchPawn(-1);
-                return true;
-            }
-            if (key == KeyCode.PageDown)
-            {
-                SwitchPawn(1);
-                return true;
-            }
-
-            // ] Right bracket: Context menu
-            if (key == KeyCode.RightBracket)
-            {
-                OpenContextMenu();
-                return true;
-            }
-
-            // Enter: Confirm (context-dependent) — override treeNav's default toggle
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                if (Time.frameCount <= openedOnFrame + 1)
-                    return true; // Consume but ignore — key repeat from prior screen
-                // On a relation row, Enter jumps to that pawn instead of confirming.
-                if (TryJumpToRelatedPawn())
-                    return true;
-                if (Context == PawnEditorContext.Wanderer)
-                    ConfirmWanderers();
-                else
-                    ConfirmStartGame();
-                return true;
-            }
-
-            // Escape: Clear search / close wanderer / else fall through.
-            // When falling through, the game's Page.DoBottomButtons will call DoBack
-            // from InnerWindowOnGUI (before our UnifiedKeyboardPatch can consume the
-            // event reliably). StartingPawnDoBackBlockPatch intercepts that call and
-            // invokes StartingPawnState.RequestBackConfirm() to show the confirm dialog.
-            if (key == KeyCode.Escape)
-            {
-                if (treeNav.HasActiveSearch)
-                {
-                    treeNav.Typeahead.ClearSearchAndAnnounce();
-                    treeNav.ReannounceCurrentItem();
-                    return true;
-                }
-                if (Context == PawnEditorContext.Wanderer)
-                {
-                    WandererPatch.CloseDialog();
-                    return true;
-                }
-                return false;
-            }
-
-            // Delegate all standard tree navigation to treeNav
-            // (Up/Down, Left/Right, Home/End, *, Space, typeahead, Backspace)
-            return treeNav.HandleInput(ev);
-        }
-
-        /// <summary>
-        /// Finds the index of an item in the visible items list.
-        /// IReadOnlyList does not have IndexOf, so we use a loop.
-        /// </summary>
-        private static int FindVisibleIndex(InspectionTreeItem target)
-        {
-            var items = treeNav.VisibleItems;
-            for (int i = 0; i < items.Count; i++)
-            {
-                if (ReferenceEquals(items[i], target))
-                    return i;
-            }
-            return -1;
-        }
-
-        // ===== PAGE UP/DOWN: SWITCH PAWN =====
-
-        private static void SwitchPawn(int direction)
-        {
-            treeNav.Typeahead.ClearSearch();
-
-            // Find current pawn index
-            int currentPawnIdx = GetCurrentPawnIndex();
-            if (currentPawnIdx < 0) return;
-
-            // Save position within current pawn
-            var position = SaveTreePosition();
-
-            // Find all pawn nodes
-            var pawnNodes = new List<InspectionTreeItem>();
-            foreach (var item in treeNav.VisibleItems)
-            {
-                var ptd = StartingPawnHelper.GetPawnData(item);
-                if (ptd != null && ptd.NodeType == PawnNodeType.Pawn)
-                    pawnNodes.Add(item);
-            }
-            // Also check collapsed pawns from root children
-            if (treeNav.RootItem != null)
-            {
-                foreach (var child in treeNav.RootItem.Children)
-                {
-                    var ptd = StartingPawnHelper.GetPawnData(child);
-                    if (ptd != null && ptd.NodeType == PawnNodeType.Pawn && !pawnNodes.Contains(child))
-                        pawnNodes.Add(child);
-                }
-                // Sort by PawnIndex for consistent ordering
-                pawnNodes.Sort((a, b) =>
-                {
-                    var pa = StartingPawnHelper.GetPawnData(a);
-                    var pb = StartingPawnHelper.GetPawnData(b);
-                    return (pa?.PawnIndex ?? 0).CompareTo(pb?.PawnIndex ?? 0);
-                });
-            }
-
-            // Find current pawn position in pawn list
-            int pawnListIdx = -1;
-            for (int i = 0; i < pawnNodes.Count; i++)
-            {
-                var ptd = StartingPawnHelper.GetPawnData(pawnNodes[i]);
-                if (ptd != null && ptd.PawnIndex == currentPawnIdx)
-                {
-                    pawnListIdx = i;
-                    break;
-                }
-            }
-            if (pawnListIdx < 0) return;
-
-            // Calculate target
-            int targetPawnListIdx = pawnListIdx + direction;
-            if (targetPawnListIdx < 0 || targetPawnListIdx >= pawnNodes.Count)
-            {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                return;
-            }
-
-            var targetPawn = pawnNodes[targetPawnListIdx];
-
-            // Expand target pawn if source was expanded
-            if (position.WasExpanded && !targetPawn.IsExpanded)
-            {
-                targetPawn.IsExpanded = true;
-                treeNav.RebuildVisibleList();
-            }
-
-            // Restore position
-            RestoreTreePosition(targetPawn, position);
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            treeNav.ReannounceCurrentItem();
-        }
-
-        private static int GetCurrentPawnIndex()
-        {
-            var item = treeNav.SelectedItem;
-            if (item == null) return -1;
-
-            // Walk up to find the pawn node
-            var current = item;
-            while (current != null)
-            {
-                var ptd = StartingPawnHelper.GetPawnData(current);
-                if (ptd != null && ptd.NodeType == PawnNodeType.Pawn)
-                    return ptd.PawnIndex;
-                current = current.Parent;
-            }
-
-            // If on a group header, find the nearest pawn
-            return -1;
-        }
-
-        private static TreePosition SaveTreePosition()
-        {
-            var current = treeNav.SelectedItem;
-            if (current == null) return TreePosition.Default;
-
-            var position = TreePosition.Default;
-            var currentPtd = StartingPawnHelper.GetPawnData(current);
-
-            // Check if we're on a pawn node
-            if (currentPtd != null && currentPtd.NodeType == PawnNodeType.Pawn)
-            {
-                position.WasExpanded = current.IsExpanded;
-                return position;
-            }
-
-            // Walk up to find category and pawn
-            var item = current;
-            while (item != null)
-            {
-                var ptd = StartingPawnHelper.GetPawnData(item);
-                if (ptd == null) { item = item.Parent; continue; }
-
-                if (ptd.NodeType == PawnNodeType.Category && ptd.CategoryType.HasValue)
-                {
-                    position.Category = ptd.CategoryType;
-                    position.WasCategoryExpanded = item.IsExpanded;
-
-                    // Find item index within category
-                    if (currentPtd != null && currentPtd.NodeType == PawnNodeType.Leaf)
-                    {
-                        position.ItemIndex = item.Children.IndexOf(current);
-                    }
-                    else
-                    {
-                        position.ItemIndex = -1; // On the category node itself
-                    }
-                }
-                if (ptd.NodeType == PawnNodeType.Pawn)
-                {
-                    position.WasExpanded = item.IsExpanded;
-                    break;
-                }
-                item = item.Parent;
-            }
-
-            return position;
-        }
-
-        private static void RestoreTreePosition(InspectionTreeItem targetPawn, TreePosition position)
-        {
-            if (!position.Category.HasValue)
-            {
-                // Navigate to the pawn node itself
-                int idx = FindVisibleIndex(targetPawn);
-                if (idx >= 0) treeNav.SetSelectedIndex(idx);
-                return;
-            }
-
-            // Find matching category
-            InspectionTreeItem targetCategory = null;
-            foreach (var child in targetPawn.Children)
-            {
-                var ptd = StartingPawnHelper.GetPawnData(child);
-                if (ptd != null && ptd.CategoryType == position.Category)
-                {
-                    targetCategory = child;
-                    break;
-                }
-            }
-
-            if (targetCategory == null)
-            {
-                // Category doesn't exist on target, land on pawn
-                int idx = FindVisibleIndex(targetPawn);
-                if (idx >= 0) treeNav.SetSelectedIndex(idx);
-                return;
-            }
-
-            // Ensure the pawn itself is expanded so the category/leaf is reachable.
-            // Matters in submenu mode, where an unexpanded pawn hides its entire subtree.
-            if (!targetPawn.IsExpanded)
-            {
-                targetPawn.IsExpanded = true;
-                treeNav.RebuildVisibleList();
-            }
-
-            if (position.ItemIndex < 0)
-            {
-                // Was on the category node itself, preserve its expand/collapse state
-                targetCategory.IsExpanded = position.WasCategoryExpanded;
-                treeNav.RebuildVisibleList();
-                int idx = FindVisibleIndex(targetCategory);
-                if (idx >= 0) treeNav.SetSelectedIndex(idx);
-                return;
-            }
-
-            // Was on a leaf, expand category and navigate
-            targetCategory.IsExpanded = true;
-            treeNav.RebuildVisibleList();
-
-            // Clamp item index
-            int clampedIdx = Math.Min(position.ItemIndex, targetCategory.Children.Count - 1);
-            if (clampedIdx >= 0 && clampedIdx < targetCategory.Children.Count)
-            {
-                int idx = FindVisibleIndex(targetCategory.Children[clampedIdx]);
-                if (idx >= 0)
-                    treeNav.SetSelectedIndex(idx);
-                else
-                {
-                    idx = FindVisibleIndex(targetCategory);
-                    if (idx >= 0) treeNav.SetSelectedIndex(idx);
-                }
-            }
-            else
-            {
-                int idx = FindVisibleIndex(targetCategory);
-                if (idx >= 0) treeNav.SetSelectedIndex(idx);
-            }
-        }
-
-        // ===== TAB SWITCHING + RELATIONS JUMP =====
-
-        private static void ToggleTab()
-        {
-            if (Context != PawnEditorContext.GameStart)
-                return;
-
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-
-            if (currentTab == PawnTab.Pawns)
-            {
-                currentTab = PawnTab.TeamSkills;
-                teamSkillRows = StartingPawnHelper.BuildTeamSkillSummary();
-                teamSkillIndex = 0;
-                teamSkillTypeahead.ClearSearch();
-                TolkHelper.Speak("TeamSkills".Loc());
-                AnnounceTeamSkillRow();
-            }
-            else
-            {
-                currentTab = PawnTab.Pawns;
-                teamSkillTypeahead.ClearSearch();
-                lastAnnouncedSection = null; // re-announce the section for context on return
-                TolkHelper.Speak("CreateCharacters".Loc());
-                treeNav.ReannounceCurrentItem();
-            }
-        }
-
-        private static bool HandleTeamSkillsInput(Event ev)
-        {
-            KeyCode key = ev.keyCode;
-            int count = teamSkillRows?.Count ?? 0;
-
-            if (key == KeyCode.UpArrow)
-            {
-                if (count > 0) { teamSkillIndex = MenuHelper.SelectPrevious(teamSkillIndex, count); AnnounceTeamSkillRow(); }
-                return true;
-            }
-            if (key == KeyCode.DownArrow)
-            {
-                if (count > 0) { teamSkillIndex = MenuHelper.SelectNext(teamSkillIndex, count); AnnounceTeamSkillRow(); }
-                return true;
-            }
-            if (key == KeyCode.Home)
-            {
-                if (count > 0) { teamSkillIndex = 0; AnnounceTeamSkillRow(); }
-                return true;
-            }
-            if (key == KeyCode.End)
-            {
-                if (count > 0) { teamSkillIndex = count - 1; AnnounceTeamSkillRow(); }
-                return true;
-            }
-            if (key == KeyCode.Escape)
-            {
-                if (teamSkillTypeahead.HasActiveSearch)
-                {
-                    teamSkillTypeahead.ClearSearch();
-                    AnnounceTeamSkillRow();
-                    return true;
-                }
-                // Escape always leaves the screen (back-confirm) — consistent across both tabs.
-                return false;
-            }
-            if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                if (Time.frameCount <= openedOnFrame + 1)
-                    return true;
-                ConfirmStartGame();
-                return true;
-            }
-
-            // Typeahead by skill name.
-            if (!ev.control && !KeyboardHelper.IsAltHeld)
-            {
-                char c = ev.character;
-                if (c != '\0' && char.IsLetterOrDigit(c) && count > 0)
-                {
-                    if (teamSkillTypeahead.ProcessCharacterInput(c, teamSkillRows, out int newIndex) && newIndex >= 0)
-                    {
-                        teamSkillIndex = newIndex;
-                        AnnounceTeamSkillRow();
-                    }
-                    else
-                    {
-                        SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    }
-                    return true;
-                }
-            }
-
-            return true; // read-only tab: consume all other keys
-        }
-
-        private static void AnnounceTeamSkillRow()
-        {
-            if (teamSkillRows == null || teamSkillRows.Count == 0)
-            {
-                TolkHelper.Speak("None".Loc());
-                return;
-            }
-            if (teamSkillIndex < 0 || teamSkillIndex >= teamSkillRows.Count)
-                teamSkillIndex = 0;
-
-            string ann = teamSkillRows[teamSkillIndex];
-            string pos = MenuHelper.FormatPosition(teamSkillIndex, teamSkillRows.Count);
-            if (!string.IsNullOrEmpty(pos))
-                ann += $" ({pos})";
-            TolkHelper.SpeakData(ann);
-        }
-
-        /// <summary>
-        /// If the cursor is on a relation leaf, jump to the related pawn's top-level node
-        /// (collapsed) and read its full summary — the same as arrowing to that pawn.
-        /// Returns true if the keystroke was handled as a jump.
-        /// </summary>
-        private static bool TryJumpToRelatedPawn()
-        {
-            var item = treeNav.SelectedItem;
-            var ptd = StartingPawnHelper.GetPawnData(item);
-            if (ptd == null || ptd.NodeType != PawnNodeType.Leaf || ptd.CategoryType != PawnCategoryType.Relations)
-                return false;
-            if (!(ptd.DomainData is Pawn target))
-                return false;
-
-            var pawns = Find.GameInitData?.startingAndOptionalPawns;
-            int targetIdx = pawns?.IndexOf(target) ?? -1;
-            if (targetIdx < 0)
-            {
-                // Defensive: the everSeenByPlayer filter normally guarantees a roster pawn.
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                return true;
-            }
-
-            JumpToPawnNode(targetIdx);
-            return true;
-        }
-
-        private static void JumpToPawnNode(int targetPawnIdx)
-        {
-            treeNav.Typeahead.ClearSearch();
-
-            // Collapse the pawn we're leaving so we land in a clean top-level list.
-            int sourcePawnIdx = GetCurrentPawnIndex();
-            if (sourcePawnIdx >= 0 && sourcePawnIdx != targetPawnIdx)
-            {
-                var sourceNode = FindPawnNode(sourcePawnIdx);
-                CollapsePawnNode(sourceNode);
-            }
-
-            var targetNode = FindPawnNode(targetPawnIdx);
-            if (targetNode == null)
-                return;
-
-            // Land on the collapsed top-level node so its full collapsed summary is read.
-            CollapsePawnNode(targetNode);
-            treeNav.RebuildVisibleList();
-
-            int idx = FindVisibleIndex(targetNode);
-            if (idx >= 0)
-                treeNav.SetSelectedIndex(idx);
-
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            treeNav.ReannounceCurrentItem();
-        }
-
-        private static void CollapsePawnNode(InspectionTreeItem pawnNode)
-        {
-            if (pawnNode == null) return;
-            pawnNode.IsExpanded = false;
-            foreach (var category in pawnNode.Children)
-                category.IsExpanded = false;
-        }
-
-        // ===== ACTIONS =====
-
-        private static int rerollPawnIdx = -1;
-        private static TreePosition rerollSavedPosition;
-
-        private static void RandomizeCurrentPawn()
-        {
-            RandomizePawnAt(GetCurrentPawnIndex());
-        }
+        // ===== ACTIONS (mutation vehicles the scope's rows call into) =====
 
         public static void RandomizePawnAt(int pawnIdx)
         {
             if (pawnIdx < 0) return;
 
-            // Save position so user returns to same logical location after reroll
-            rerollPawnIdx = pawnIdx;
-            rerollSavedPosition = SaveTreePosition();
-
-            // If filters are active, PawnFilterRandomizePatch routes the call
-            // into RerollState, which owns tree rebuild, position restore, and
-            // announcement via OnRerollComplete (synchronously on first-attempt
-            // match, otherwise across frames). Don't duplicate that work here.
+            // If filters are active, PawnFilterRandomizePatch routes the call into RerollState,
+            // which owns the batch loop and finishes via StartingPawnState.OnRerollComplete
+            // (synchronously on first-attempt match, otherwise across frames). Don't duplicate
+            // that work here.
             bool filtersActive = PawnFilterData.HasActiveFilters();
             StartingPawnUtility.RandomizePawn(pawnIdx);
             if (filtersActive)
                 return;
 
-            // No filters active or immediate match — finalize now
             SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            RebuildTree();
-            RestoreRerollPosition();
 
             string randomizeAnnouncement = "Randomize".Translate();
             if (PawnFilterData.HasActiveFilters())
             {
-                if (PawnFilterData.LastRerollSucceeded)
-                    randomizeAnnouncement = "RimWorldAccess.StartingPawn.RandomizeWithMatch".Translate(randomizeAnnouncement, PawnFilterData.LastRerollAttempts);
-                else
-                    randomizeAnnouncement = "RimWorldAccess.StartingPawn.RandomizeNoMatch".Translate(randomizeAnnouncement, PawnFilterData.LastRerollAttempts);
+                randomizeAnnouncement = PawnFilterData.LastRerollSucceeded
+                    ? "RimWorldAccess.StartingPawn.RandomizeWithMatch".Translate(randomizeAnnouncement, PawnFilterData.LastRerollAttempts)
+                    : "RimWorldAccess.StartingPawn.RandomizeNoMatch".Translate(randomizeAnnouncement, PawnFilterData.LastRerollAttempts);
             }
-
             TolkHelper.SpeakData(randomizeAnnouncement);
-            // Tree rebuild + cursor restore re-announces the pawn's collapsed label,
-            // which now carries age, gender, traits, and top skills inline.
-            treeNav.ReannounceCurrentItem();
+            Shell.StartingPawnScreenScope.Active?.RefreshAndReannounceAfterExternalChange();
         }
 
+        /// <summary>Called by RerollState once its batch (synchronous or spread across frames) finishes.</summary>
         public static void OnRerollComplete(bool success, int attempts, bool cancelled)
         {
             SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            RebuildTree();
-            RestoreRerollPosition();
 
             string announcement;
             if (cancelled)
@@ -781,66 +113,7 @@ namespace RimWorldAccess
                 announcement = "RimWorldAccess.StartingPawn.RerollNoMatch".Translate(attempts);
 
             TolkHelper.SpeakData(announcement);
-            // Tree rebuild + cursor restore re-announces the pawn's collapsed label,
-            // which now carries age, gender, traits, and top skills inline.
-            treeNav.ReannounceCurrentItem();
-        }
-
-        private static void RestoreRerollPosition()
-        {
-            if (rerollPawnIdx < 0) return;
-            var pawnNode = FindPawnNode(rerollPawnIdx);
-            if (pawnNode != null)
-                RestoreTreePosition(pawnNode, rerollSavedPosition);
-            rerollPawnIdx = -1;
-        }
-
-        // Walk the full tree (not just VisibleItems). In submenu mode
-        // ("Rashad Hates Treeviews"), expanded parents are hidden from the
-        // flat visible list, so scanning VisibleItems would miss a pawn node
-        // whose children are currently the ones visible.
-        private static InspectionTreeItem FindPawnNode(int pawnIdx)
-        {
-            var root = treeNav.RootItem;
-            if (root == null) return null;
-            foreach (var child in root.Children)
-            {
-                var found = FindPawnNodeRecursive(child, pawnIdx);
-                if (found != null) return found;
-            }
-            return null;
-        }
-
-        private static InspectionTreeItem FindPawnNodeRecursive(InspectionTreeItem node, int pawnIdx)
-        {
-            var ptd = StartingPawnHelper.GetPawnData(node);
-            if (ptd != null && ptd.NodeType == PawnNodeType.Pawn && ptd.PawnIndex == pawnIdx)
-                return node;
-            foreach (var child in node.Children)
-            {
-                var found = FindPawnNodeRecursive(child, pawnIdx);
-                if (found != null) return found;
-            }
-            return null;
-        }
-
-        private static IEnumerable<InspectionTreeItem> GetAllNodes(InspectionTreeItem root)
-        {
-            if (root == null) yield break;
-            var stack = new Stack<InspectionTreeItem>();
-            stack.Push(root);
-            while (stack.Count > 0)
-            {
-                var node = stack.Pop();
-                yield return node;
-                foreach (var child in node.Children)
-                    stack.Push(child);
-            }
-        }
-
-        private static void RenameCurrentPawn()
-        {
-            RenamePawnAt(GetCurrentPawnIndex());
+            Shell.StartingPawnScreenScope.Active?.RefreshAndReannounceAfterExternalChange();
         }
 
         public static void RenamePawnAt(int pawnIdx)
@@ -855,102 +128,117 @@ namespace RimWorldAccess
             Find.WindowStack.Add(new Dialog_NamePawn(pawn, allFields, allFields, null));
         }
 
-        private static void ReorderCurrentPawn(int direction)
+        /// <summary>
+        /// Reorders pawnIdx by direction (matches Page_ConfigureStartingPawns.DrawPawnList's
+        /// ReorderableWidget.NewGroup callback, Page_ConfigureStartingPawns.cs:196-211): the
+        /// whole reorder is gated on TutorSystem.AllowAction, and Notify_Event fires the same
+        /// two hooks vanilla's drag-reorder fires. Returns the composed neighbor-context
+        /// announcement and the pawn's new index on success; the caller (the scope) owns
+        /// repositioning its own cursor and the structural re-announce.
+        /// </summary>
+        public static bool ReorderPawnAt(int pawnIdx, int direction, out string announcement, out int newIndex)
         {
-            int currentPawnIdx = GetCurrentPawnIndex();
-            if (currentPawnIdx < 0) return;
+            announcement = null;
+            newIndex = pawnIdx;
 
             var pawns = Find.GameInitData.startingAndOptionalPawns;
-            int targetIdx = currentPawnIdx + direction;
-
+            int targetIdx = pawnIdx + direction;
             if (targetIdx < 0 || targetIdx >= pawns.Count)
             {
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                return;
+                return false;
             }
-
-            // Swap pawns in the list
-            var temp = pawns[currentPawnIdx];
-            pawns[currentPawnIdx] = pawns[targetIdx];
-            pawns[targetIdx] = temp;
-
-            // Also reorder the generation requests
-            StartingPawnUtility.ReorderRequests(currentPawnIdx, targetIdx);
-
-            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            RebuildTree();
-
-            // Navigate to the swapped pawn's new position
-            foreach (var item in treeNav.VisibleItems)
-            {
-                var ptd = StartingPawnHelper.GetPawnData(item);
-                if (ptd != null && ptd.NodeType == PawnNodeType.Pawn && ptd.PawnIndex == targetIdx)
-                {
-                    treeNav.SetSelectedIndex(FindVisibleIndex(item));
-                    break;
-                }
-            }
-
-            // Announce what happened with neighbor context
-            var movedPawn = pawns[targetIdx];
-            string movedName = movedPawn.LabelShort;
+            if (!TutorSystem.AllowAction("ReorderPawn")) return false;
 
             int startingCount = StartingPawnHelper.GetStartingPawnCount();
-            bool crossedBoundary = (currentPawnIdx < startingCount) != (targetIdx < startingCount);
 
-            var announceParts = new List<string>();
-            announceParts.Add(movedName);
+            var temp = pawns[pawnIdx];
+            pawns[pawnIdx] = pawns[targetIdx];
+            pawns[targetIdx] = temp;
 
+            StartingPawnUtility.ReorderRequests(pawnIdx, targetIdx);
+
+            TutorSystem.Notify_Event("ReorderPawn");
+            if (targetIdx < startingCount && pawnIdx >= startingCount)
+            {
+                TutorSystem.Notify_Event("ReorderPawnOptionalToStarting");
+            }
+
+            SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
+
+            var movedPawn = pawns[targetIdx];
+            string movedName = movedPawn.LabelShort;
+            bool crossedBoundary = (pawnIdx < startingCount) != (targetIdx < startingCount);
+
+            var parts = new List<string> { movedName };
             if (crossedBoundary)
             {
                 string group = targetIdx < startingCount
                     ? "StartingPawnsSelected".Translate()
                     : "StartingPawnsLeftBehind".Translate();
-                announceParts.Add(group);
+                parts.Add(group);
             }
-
-            // Add neighbor context
             string prevName = targetIdx > 0 ? pawns[targetIdx - 1].LabelShort : null;
             string nextName = targetIdx < pawns.Count - 1 ? pawns[targetIdx + 1].LabelShort : null;
-
             if (prevName != null && nextName != null)
-                announceParts.Add("RimWorldAccess.StartingPawn.NeighborBetween".Translate(prevName, nextName));
+                parts.Add("RimWorldAccess.StartingPawn.NeighborBetween".Translate(prevName, nextName));
             else if (prevName != null)
-                announceParts.Add("RimWorldAccess.StartingPawn.NeighborAfter".Translate(prevName));
+                parts.Add("RimWorldAccess.StartingPawn.NeighborAfter".Translate(prevName));
             else if (nextName != null)
-                announceParts.Add("RimWorldAccess.StartingPawn.NeighborBefore".Translate(nextName));
+                parts.Add("RimWorldAccess.StartingPawn.NeighborBefore".Translate(nextName));
 
-            TolkHelper.SpeakData(string.Join(", ", announceParts));
-            treeNav.ReannounceCurrentItem();
+            announcement = string.Join(", ", parts);
+            newIndex = targetIdx;
+            return true;
         }
 
-        private static void OpenContextMenu()
+        public static void OpenContextMenuFor(int pawnIndex, Action rebuildCallback)
         {
             try
             {
-                int pawnIdx = GetCurrentPawnIndex();
-                if (pawnIdx < 0)
+                if (pawnIndex < 0)
                 {
                     TolkHelper.Speak("RimWorldAccess.StartingPawn.NoPawnSelected".Loc());
                     return;
                 }
 
-                var options = StartingPawnHelper.GetContextMenuOptions(pawnIdx, () => RebuildAndAnnounce());
+                var options = PawnContextMenuBuilder.GetContextMenuOptions(pawnIndex, rebuildCallback);
                 if (options.Count > 0)
                 {
                     WindowlessFloatMenuState.Open(options, colonistOrders: false);
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                Log.Error($"[RimWorld Access] Error in OpenContextMenu: {ex}");
+                Log.Error($"[RimWorld Access] Error in OpenContextMenuFor: {ex}");
             }
         }
 
-        private static void ConfirmStartGame()
+        /// <summary>Escape's confirmation on the GameStart host (kept from the pre-retrofit UX — see the scope's class remarks for why this deliberately deviates from the generic flag+guard-twin shape).</summary>
+        public static void RequestBackConfirm()
         {
-            // Validate before showing confirmation — CanDoNext() checks names, work types, etc.
-            // It also posts Messages to the game's message system if validation fails.
+            if (Find.WindowStack.WindowOfType<Dialog_MessageBox>() != null) return;
+
+            if (Event.current != null && Event.current.type == EventType.KeyDown)
+                Event.current.Use();
+
+            string message = "RimWorldAccess.StartingPawn.GoBackConfirm".Translate();
+            Action confirm = () => StartingPawnPatch.DoBack();
+            Find.WindowStack.Add(new Dialog_MessageBox(
+                message,
+                buttonAText: "RimWorldAccess.StartingPawn.GoBackContinue".Translate(),
+                buttonAAction: confirm,
+                buttonBText: "RimWorldAccess.StartingPawn.GoBackCancel".Translate(),
+                buttonBAction: null,
+                title: null,
+                buttonADestructive: true,
+                acceptAction: confirm,
+                cancelAction: delegate { }));
+        }
+
+        /// <summary>The "Start" button's confirmation (kept from the pre-retrofit UX).</summary>
+        public static void ConfirmStartGame()
+        {
             if (!StartingPawnPatch.CanDoNext())
                 return;
 
@@ -969,39 +257,10 @@ namespace RimWorldAccess
                 destructive: false));
         }
 
-        /// <summary>
-        /// Called from StartingPawnDoBackBlockPatch when the game tries to DoBack
-        /// on our page from any source other than our own confirmed dialog.
-        /// Shows a confirmation dialog; OK runs DoBack, Cancel keeps the page.
-        /// </summary>
-        public static void RequestBackConfirm()
-        {
-            // If a confirm dialog is already open (double-Escape), let the dialog's
-            // own cancel handler deal with it.
-            if (WindowlessDialogState.IsActive) return;
-
-            // Consume the triggering Escape event so the dialog we're about to open
-            // doesn't immediately catch the same Cancel press and close itself.
-            if (Event.current != null && Event.current.type == EventType.KeyDown)
-                Event.current.Use();
-
-            string message = "RimWorldAccess.StartingPawn.GoBackConfirm".Translate();
-            Action confirm = () => StartingPawnPatch.DoBack();
-            Find.WindowStack.Add(new Dialog_MessageBox(
-                message,
-                buttonAText: "RimWorldAccess.StartingPawn.GoBackContinue".Translate(),
-                buttonAAction: confirm,
-                buttonBText: "RimWorldAccess.StartingPawn.GoBackCancel".Translate(),
-                buttonBAction: null,
-                title: null,
-                buttonADestructive: true,
-                acceptAction: confirm,
-                cancelAction: delegate { }));
-        }
-
         // ===== WANDERER-SPECIFIC ACTIONS =====
 
-        private static void ConfirmWanderers()
+        /// <summary>The wanderer "Confirm" button's confirmation (kept from the pre-retrofit UX).</summary>
+        public static void ConfirmWandererStart()
         {
             var pawns = Find.GameInitData.startingAndOptionalPawns;
             var names = new List<string>();
@@ -1017,199 +276,44 @@ namespace RimWorldAccess
                 destructive: false));
         }
 
-        private static void AddWandererPawn()
+        public static bool AddWandererPawn(out string announcement)
         {
+            announcement = null;
             var pawns = Find.GameInitData.startingAndOptionalPawns;
+            // Mirrors vanilla's add-button gate (decompiled Dialog_ChooseNewWanderers.cs:125,
+            // DrawPawnList's StartingAndOptionalPawns.Count < 6).
             if (pawns.Count >= 6)
             {
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
                 TolkHelper.Speak("RimWorldAccess.StartingPawn.MaximumPawns".Loc(6));
-                return;
+                return false;
             }
 
             WandererPatch.AddPawn();
-            RebuildTree();
-
-            // Navigate to the newly added pawn (last pawn node)
-            for (int i = treeNav.Count - 1; i >= 0; i--)
-            {
-                var ptd = StartingPawnHelper.GetPawnData(treeNav.VisibleItems[i]);
-                if (ptd != null && ptd.NodeType == PawnNodeType.Pawn)
-                {
-                    treeNav.SetSelectedIndex(i);
-                    break;
-                }
-            }
-
             SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            TolkHelper.Speak("RimWorldAccess.StartingPawn.PawnAdded".Loc());
-            treeNav.ReannounceCurrentItem();
+            announcement = (string)"RimWorldAccess.StartingPawn.PawnAdded".Translate();
+            return true;
         }
 
-        private static void RemoveWandererPawn()
+        public static bool RemoveWandererPawn(int pawnIdx, out string announcement)
         {
-            int pawnIdx = GetCurrentPawnIndex();
-            if (pawnIdx < 0) return;
-
+            announcement = null;
             var pawns = Find.GameInitData.startingAndOptionalPawns;
+            if (pawnIdx < 0 || pawnIdx >= pawns.Count) return false;
+            // Mirrors vanilla's delete-button gate (decompiled
+            // Dialog_ChooseNewWanderers.cs:153, DoPawnRow's Count > 1).
             if (pawns.Count <= 1)
             {
                 SoundDefOf.ClickReject.PlayOneShotOnCamera();
                 TolkHelper.Speak("RimWorldAccess.StartingPawn.MinimumPawns".Loc(1));
-                return;
+                return false;
             }
 
             string removedName = pawns[pawnIdx].LabelShort;
             WandererPatch.RemovePawn(pawnIdx);
-            RebuildTree();
-
-            // Clamp selection
-            if (treeNav.SelectedIndex >= treeNav.Count)
-                treeNav.SetSelectedIndex(Math.Max(0, treeNav.Count - 1));
-
             SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-            TolkHelper.Speak("RimWorldAccess.StartingPawn.PawnRemoved".Loc(removedName));
-            treeNav.ReannounceCurrentItem();
-        }
-
-        // ===== ANNOUNCEMENTS =====
-
-        private static string FormatItemAnnouncement(InspectionTreeItem item)
-        {
-            var ptd = StartingPawnHelper.GetPawnData(item);
-            if (ptd == null)
-            {
-                // Fallback for items without PawnTreeData
-                return treeNav.DefaultFormatItemAnnouncement(item);
-            }
-
-            var (position, total) = treeNav.GetSiblingPosition(item);
-            string positionPart = MenuHelper.FormatPosition(position - 1, total);
-
-            string announcement;
-
-            switch (ptd.NodeType)
-            {
-                case PawnNodeType.Pawn:
-                    string pawnState = TreeNavigationHelper.GetExpansionStateWord(item);
-                    announcement = "RimWorldAccess.StartingPawn.PawnLabelWithState".Translate(item.Label, pawnState);
-                    if (!string.IsNullOrEmpty(positionPart))
-                        announcement += "RimWorldAccess.StartingPawn.PositionParenSuffix".Translate(positionPart);
-                    announcement += MenuHelper.GetLevelSuffix("PawnSelection", item.IndentLevel, skipLevelOne: false);
-                    if (HasInfoCard(item)) announcement += "RimWorldAccess.InfoCard.Inspectable".Translate();
-                    break;
-
-                case PawnNodeType.Category:
-                    if (!item.IsExpandable)
-                    {
-                        // Non-expandable categories (e.g. "Traits: None") — treat as plain item
-                        announcement = item.Label;
-                    }
-                    else
-                    {
-                        string catState = TreeNavigationHelper.GetExpansionStateWord(item);
-                        if (!item.IsExpanded)
-                        {
-                            string summary = StartingPawnHelper.GetCategorySummary(item);
-                            if (!string.IsNullOrEmpty(summary))
-                                announcement = "RimWorldAccess.StartingPawn.CategoryWithSummary".Translate(item.Label, summary, catState);
-                            else
-                                announcement = "RimWorldAccess.StartingPawn.CategoryLabelWithState".Translate(item.Label, catState);
-                        }
-                        else
-                        {
-                            announcement = "RimWorldAccess.StartingPawn.CategoryLabelWithState".Translate(item.Label, catState);
-                        }
-                    }
-                    if (!string.IsNullOrEmpty(positionPart))
-                        announcement += "RimWorldAccess.StartingPawn.PositionParenSuffix".Translate(positionPart);
-                    announcement += MenuHelper.GetLevelSuffix("PawnSelection", item.IndentLevel, skipLevelOne: false);
-                    break;
-
-                default: // Leaf
-                    announcement = item.Label;
-                    if (!string.IsNullOrEmpty(item.Tooltip))
-                    {
-                        // Replace newlines with sentence breaks for natural screen reader pauses
-                        string spokenTooltip = item.Tooltip
-                            .Replace("\r\n", "\n")
-                            .Replace("\n\n", ". ")
-                            .Replace("\n", ". ")
-                            .Trim();
-                        announcement += ". " + spokenTooltip;
-                    }
-                    if (!string.IsNullOrEmpty(positionPart))
-                        announcement += "RimWorldAccess.StartingPawn.PositionParenSuffix".Translate(positionPart);
-                    announcement += MenuHelper.GetLevelSuffix("PawnSelection", item.IndentLevel, skipLevelOne: false);
-                    if (HasInfoCard(item)) announcement += "RimWorldAccess.InfoCard.Inspectable".Translate();
-                    break;
-            }
-
-            // Prepend "Selected / Left behind" section name when crossing the
-            // boundary (info-card style). Section lives on the pawn node's
-            // Description; leaves/categories inherit via their pawn ancestor.
-            string sectionName = GetSectionForItem(item);
-            if (!string.IsNullOrEmpty(sectionName) && sectionName != lastAnnouncedSection)
-            {
-                announcement = "RimWorldAccess.StartingPawn.SectionPrefix".Translate(sectionName, announcement);
-                lastAnnouncedSection = sectionName;
-            }
-            else if (string.IsNullOrEmpty(sectionName))
-            {
-                lastAnnouncedSection = null;
-            }
-
-            return announcement;
-        }
-
-        private static string GetSectionForItem(InspectionTreeItem item)
-        {
-            var walk = item;
-            while (walk != null)
-            {
-                if (!string.IsNullOrEmpty(walk.Description))
-                    return walk.Description;
-                walk = walk.Parent;
-            }
-            return null;
-        }
-
-        private static string FormatSearchAnnouncement(InspectionTreeItem item, TypeaheadSearchHelper typeahead)
-        {
-            return typeahead.BuildItemAnnouncement(item.Label);
-        }
-
-        private static bool HasInfoCard(InspectionTreeItem item)
-        {
-            var ptd = StartingPawnHelper.GetPawnData(item);
-            if (ptd == null) return false;
-
-            if (ptd.NodeType == PawnNodeType.Leaf)
-            {
-                if (ptd.DomainData is ThingDefCount || ptd.DomainData is XenotypeDef)
-                    return true;
-            }
-            return false;
-        }
-
-        private static void OpenInfoCard()
-        {
-            var item = treeNav.SelectedItem;
-            if (item == null) return;
-
-            if (!HasInfoCard(item))
-            {
-                InfoCardState.SpeakNoInfoCardAvailable();
-                return;
-            }
-
-            var ptd = StartingPawnHelper.GetPawnData(item);
-            if (ptd == null) return;
-
-            if (ptd.DomainData is ThingDefCount tdc)
-                Find.WindowStack.Add(new Dialog_InfoCard(tdc.ThingDef));
-            else if (ptd.DomainData is XenotypeDef xenotype)
-                Find.WindowStack.Add(new Dialog_InfoCard(xenotype));
+            announcement = (string)"RimWorldAccess.StartingPawn.PawnRemoved".Translate(removedName);
+            return true;
         }
     }
 }

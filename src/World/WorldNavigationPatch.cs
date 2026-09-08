@@ -1,5 +1,4 @@
 using HarmonyLib;
-using UnityEngine;
 using RimWorld;
 using RimWorld.Planet;
 using Verse;
@@ -7,9 +6,45 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Harmony patch for WorldInterface.HandleLowPriorityInput to add keyboard navigation for world map.
-    /// Intercepts arrow key input to navigate between world tiles.
-    /// Automatically opens/closes world navigation state when entering/leaving world view.
+    /// Harmony patch for WorldInterface.HandleLowPriorityInput — now LIFECYCLE-ONLY. This
+    /// method used to be a genuine input side door (arrows, the world scanner, caravan
+    /// keys, C/']'/Enter/
+    /// Escape); the execution-order proof (see the class doc comment on
+    /// WorldScope.Nav.Game.cs) is that vanilla calls
+    /// <c>WorldInterface.HandleLowPriorityInput</c> AFTER
+    /// <c>UIRoot.UIRootOnGUI</c> returns (decompiled UIRoot_Play.cs:26/54) — the
+    /// same method the shell dispatcher patches, at a HIGHER Harmony priority
+    /// than this file's own prefix. Every
+    /// branch this Prefix used to run therefore only ever saw whatever nothing
+    /// upstream had already consumed: arrows and the C/']' handoffs were the
+    /// only ones actually still live (verified branch by branch),
+    /// and all three are WorldScope claims now (arrows: world.cursor.*;
+    /// C: world.formCaravan; ']':
+    /// world.caravanOrders — see WorldScope.Nav.Game.cs). Every other branch
+    /// (world scanner PageUp/Down/Home/End/Alt+J, I, digits, Enter, Escape)
+    /// was already dead code, shadowed by an earlier-running UKP rung, and is
+    /// deleted rather than migrated.
+    ///
+    /// What remains is the SOLE lifecycle trigger for
+    /// <see cref="WorldNavigationState"/>.Open()/Close() and
+    /// <see cref="WorldScannerState"/>.Reset() — the isWorldView transition
+    /// edge, unchanged byte-for-byte. Nothing else currently opens or closes
+    /// world navigation state, so this Prefix cannot be deleted even though
+    /// its input-handling role is gone.
+    ///
+    /// The visual half (a Postfix drawing the selected tile) is retired. Vanilla already draws the
+    /// keyboard selection: <see cref="WorldNavigationState"/>.SyncSelectionWithGame writes
+    /// <c>Find.WorldSelector.SelectedTile</c> on every arrow press (WorldNavigationState.cs:317-321),
+    /// and
+    /// <c>WorldDrawLayer_SelectedTile.Tile</c> reads exactly that property
+    /// (decompiled RimWorld.Planet/WorldDrawLayer_SelectedTile.cs:8) while its
+    /// base <c>WorldDrawLayer_SingleTile.ShouldRegenerate</c> regenerates the
+    /// hex mesh whenever <c>Tile != lastDrawnPlanetTile</c> (decompiled
+    /// RimWorld.Planet/WorldDrawLayer_SingleTile.cs:18-28) — so the game's own
+    /// highlight follows the keyboard cursor with no help from this patch. The
+    /// deleted Postfix was a caption panel: it printed
+    /// <see cref="WorldInfoHelper"/>.GetTileSummary, the screen reader's own
+    /// sentence, on screen, which this mod's caption-panel ban forbids outright.
     /// </summary>
     [HarmonyPatch(typeof(WorldInterface))]
     [HarmonyPatch("HandleLowPriorityInput")]
@@ -18,7 +53,9 @@ namespace RimWorldAccess
         private static bool lastFrameWasWorldView = false;
 
         /// <summary>
-        /// Prefix patch that intercepts keyboard input for world map navigation.
+        /// Prefix patch: detects the isWorldView open/close transition and
+        /// drives WorldNavigationState/WorldScannerState's lifecycle. No
+        /// longer touches Event.current — see the class doc comment.
         /// </summary>
         [HarmonyPrefix]
         [HarmonyPriority(Priority.High)]
@@ -46,271 +83,6 @@ namespace RimWorldAccess
             }
 
             lastFrameWasWorldView = isWorldView;
-
-            // If any accessibility menu is active, don't intercept input - let UnifiedKeyboardPatch handle it
-            if (KeyboardHelper.IsAnyAccessibilityMenuActive())
-                return;
-
-            // Only process input if in world view and state is active
-            if (!isWorldView || !WorldNavigationState.IsActive)
-                return;
-
-            // Skip world navigation input if caravan formation dialog is active
-            // (the dialog handles its own input via CaravanFormationPatch)
-            // BUT allow navigation when choosing destination
-            if (CaravanFormationState.IsActive && !CaravanFormationState.IsChoosingDestination)
-                return;
-
-            // Only process keyboard events
-            if (Event.current.type != EventType.KeyDown)
-                return;
-
-            KeyCode key = Event.current.keyCode;
-            key = KeyboardHelper.RemapCharacterToKeyCode(key);
-
-            // Skip if no actual key
-            if (key == KeyCode.None)
-                return;
-
-            // Check for modifier keys
-            bool shift = Event.current.shift;
-            bool ctrl = Event.current.control;
-            bool alt = KeyboardHelper.IsAltHeld;
-
-            // Note: CaravanInspectState input is handled by UnifiedKeyboardPatch at priority 0
-
-            // Handle arrow key navigation
-            if (key == KeyCode.UpArrow || key == KeyCode.DownArrow ||
-                key == KeyCode.LeftArrow || key == KeyCode.RightArrow)
-            {
-                WorldNavigationState.HandleArrowKey(key);
-                Event.current.Use();
-                return;
-            }
-
-            // ===== World Scanner Controls (Page Up/Down) =====
-            // Page Down: Next item in current category
-            if (key == KeyCode.PageDown && !shift && !alt)
-            {
-                if (ctrl)
-                    WorldScannerState.NextCategory();
-                else
-                    WorldScannerState.NextItem();
-                Event.current.Use();
-                return;
-            }
-
-            // Page Up: Previous item in current category
-            if (key == KeyCode.PageUp && !shift && !alt)
-            {
-                if (ctrl)
-                    WorldScannerState.PreviousCategory();
-                else
-                    WorldScannerState.PreviousItem();
-                Event.current.Use();
-                return;
-            }
-
-            // Home: Jump to scanner item OR home settlement (Alt+Home for home)
-            if (key == KeyCode.Home && !shift && !ctrl)
-            {
-                if (alt)
-                    WorldNavigationState.JumpToHome();
-                else
-                    WorldScannerState.JumpToCurrent(manual: true);
-                Event.current.Use();
-                return;
-            }
-
-            // End: Read scanner distance/direction OR jump to caravan (Alt+End for caravan)
-            if (key == KeyCode.End && !shift && !ctrl)
-            {
-                if (alt)
-                    WorldNavigationState.JumpToNearestCaravan();
-                else
-                    WorldScannerState.ReadDistanceAndDirection();
-                Event.current.Use();
-                return;
-            }
-
-            // Alt+J: Toggle auto-jump mode for scanner
-            if (key == KeyCode.J && alt && !shift && !ctrl)
-            {
-                WorldScannerState.ToggleAutoJumpMode();
-                Event.current.Use();
-                return;
-            }
-
-            // Note: Comma and Period keys for caravan cycling are handled in UnifiedKeyboardPatch
-            // at a higher priority to prevent colonist selection from intercepting them
-
-            // Handle I key - show caravan inspect (if caravan selected) or read detailed tile information
-            if (key == KeyCode.I && !shift && !ctrl && !alt)
-            {
-                Caravan selectedCaravan = WorldNavigationState.GetSelectedCaravan();
-                if (selectedCaravan != null)
-                {
-                    WorldNavigationState.ShowCaravanInspect();
-                }
-                else
-                {
-                    WorldNavigationState.ReadDetailedTileInfo();
-                }
-                Event.current.Use();
-                return;
-            }
-
-            // Handle number keys 1-5 for categorized tile information
-            if (!shift && !ctrl && !alt)
-            {
-                int category = 0;
-                if (key == KeyCode.Alpha1 || key == KeyCode.Keypad1) category = 1;
-                else if (key == KeyCode.Alpha2 || key == KeyCode.Keypad2) category = 2;
-                else if (key == KeyCode.Alpha3 || key == KeyCode.Keypad3) category = 3;
-                else if (key == KeyCode.Alpha4 || key == KeyCode.Keypad4) category = 4;
-                else if (key == KeyCode.Alpha5 || key == KeyCode.Keypad5) category = 5;
-
-                if (category > 0)
-                {
-                    WorldNavigationState.AnnounceTileInfoCategory(category);
-                    Event.current.Use();
-                    return;
-                }
-            }
-
-            // Handle C key - form caravan at selected settlement
-            if (key == KeyCode.C && !shift && !ctrl && !alt)
-            {
-                WorldNavigationState.FormCaravanAtSelectedSettlement();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle ] key - give orders to selected caravan
-            if (key == KeyCode.RightBracket && !shift
-                && (!ctrl || KeyboardHelper.WasCharacterRemapped)
-                && (!alt || KeyboardHelper.WasCharacterRemapped))
-            {
-                WorldNavigationState.GiveCaravanOrders();
-                Event.current.Use();
-                return;
-            }
-
-            // Handle Enter key - set caravan destination, inspect caravan, or enter settlement
-            if ((key == KeyCode.Return || key == KeyCode.KeypadEnter) && !shift && !ctrl && !alt)
-            {
-                if (CaravanFormationState.IsChoosingDestination)
-                {
-                    CaravanFormationState.SetDestination(WorldNavigationState.CurrentSelectedTile);
-                    Event.current.Use();
-                    return;
-                }
-
-                // Open world object selection/inspection at current tile
-                PlanetTile currentTile = WorldNavigationState.CurrentSelectedTile;
-                if (currentTile.Valid)
-                {
-                    WorldObjectSelectionState.Open(currentTile);
-                    Event.current.Use();
-                    return;
-                }
-            }
-
-            // Handle Escape key - close caravan inspect, cancel destination selection, or let RimWorld handle it
-            if (key == KeyCode.Escape)
-            {
-                if (CaravanFormationState.IsChoosingDestination)
-                {
-                    CaravanFormationState.CancelDestinationSelection();
-                    Event.current.Use();
-                    return;
-                }
-                else if (WorldObjectSelectionState.IsActive)
-                {
-                    WorldObjectSelectionState.Close();
-                    TolkHelper.Speak("RimWorldAccess.WorldObject.SelectionClosed".Loc());
-                    Event.current.Use();
-                    return;
-                }
-                else if (CaravanInspectState.IsActive)
-                {
-                    CaravanInspectState.Close();
-                    Event.current.Use();
-                    return;
-                }
-                // Otherwise, let RimWorld's default behavior handle it (return to map)
-            }
-        }
-
-        /// <summary>
-        /// Postfix patch to draw visual highlight on selected tile.
-        /// </summary>
-        [HarmonyPostfix]
-        public static void Postfix()
-        {
-            // Only draw if world navigation is active
-            if (!WorldNavigationState.IsActive || !WorldNavigationState.IsInitialized)
-                return;
-
-            PlanetTile selectedTile = WorldNavigationState.CurrentSelectedTile;
-            if (!selectedTile.Valid)
-                return;
-
-            // Draw highlight using RimWorld's world renderer
-            // The game's WorldSelector already handles drawing selection highlights,
-            // so we just need to ensure our tile is selected in the game's system
-            // (which is already done in WorldNavigationState)
-
-            // For additional visual feedback, we could draw text overlay
-            DrawTileInfoOverlay(selectedTile);
-        }
-
-        /// <summary>
-        /// Draws an overlay showing current tile information at the top of the screen.
-        /// </summary>
-        private static void DrawTileInfoOverlay(PlanetTile tile)
-        {
-            if (!tile.Valid)
-                return;
-
-            // Get screen dimensions
-            float screenWidth = UI.screenWidth;
-
-            // Create overlay rect (top-center of screen)
-            float overlayWidth = 600f;
-            float overlayHeight = 80f;
-            float overlayX = (screenWidth - overlayWidth) / 2f;
-            float overlayY = 20f;
-
-            Rect overlayRect = new Rect(overlayX, overlayY, overlayWidth, overlayHeight);
-
-            // Draw semi-transparent background
-            Color backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.85f);
-            Widgets.DrawBoxSolid(overlayRect, backgroundColor);
-
-            // Draw border
-            Color borderColor = new Color(0.5f, 0.7f, 1.0f, 1.0f);
-            Widgets.DrawBox(overlayRect, 2);
-
-            // Draw text
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.MiddleCenter;
-
-            // Get tile info
-            string tileInfo = WorldInfoHelper.GetTileSummary(tile);
-            string instructions = "Arrows: Navigate | PgUp/Dn: Scan Items | Ctrl+PgUp/Dn: Categories | Alt+Home: Home | Alt+End: Caravan | I: Details | C: Form | ]: Orders";
-
-            Rect infoRect = new Rect(overlayX, overlayY + 15f, overlayWidth, 30f);
-            Rect instructionsRect = new Rect(overlayX, overlayY + 45f, overlayWidth, 25f);
-
-            Widgets.Label(infoRect, tileInfo);
-
-            Text.Font = GameFont.Tiny;
-            Widgets.Label(instructionsRect, instructions);
-
-            // Reset text settings
-            Text.Anchor = TextAnchor.UpperLeft;
-            Text.Font = GameFont.Small;
         }
     }
 }

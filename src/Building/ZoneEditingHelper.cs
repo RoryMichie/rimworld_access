@@ -6,26 +6,18 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Handles zone manipulation and region detection for ViewingModeState.
-    /// Contains methods for toggling zone cells, checking connectivity,
-    /// detecting disconnected regions, and managing zone references.
+    /// Zone manipulation and region detection for ViewingModeState: toggling zone cells, checking
+    /// connectivity, detecting disconnected regions, and keeping zone references fresh.
     /// </summary>
     public static class ZoneEditingHelper
     {
         #region Zone Cell Operations
 
         /// <summary>
-        /// Toggles a zone cell at the current cursor position.
-        /// If the cell IS part of the zone, removes it (with connectivity check to prevent splits).
-        /// If the cell is NOT part of the zone, adds it to the targetZone.
-        /// Uses targetZone to prevent creating new zones - cells can only be added adjacent to the target.
+        /// Toggles the zone cell under the cursor: a cell in a zone is removed (refused if that
+        /// would split the zone), a cell outside one is added to <paramref name="targetZone"/>.
+        /// Adds go only adjacent to the target, so no new zone is ever created here.
         /// </summary>
-        /// <param name="targetZone">The target zone being edited</param>
-        /// <param name="activeDesignator">The active zone designator</param>
-        /// <param name="createdZones">Set of zones that have been created/modified</param>
-        /// <param name="originalZoneCells">Original zone cells (for shrink mode re-adding)</param>
-        /// <param name="isDeleteDesignator">Whether this is a delete/shrink operation</param>
-        /// <returns>A result containing the outcome and any zone reference changes</returns>
         public static ZoneEditResult ToggleZoneCellAtCursor(
             ref Zone targetZone,
             Designator activeDesignator,
@@ -40,26 +32,19 @@ namespace RimWorldAccess
             }
 
             IntVec3 cursorPos = MapNavigationState.CurrentCursorPosition;
-
-            // Check if there's a zone at the cursor position
             Zone zoneAtCursor = map.zoneManager.ZoneAt(cursorPos);
 
             if (zoneAtCursor != null)
             {
-                // Cell IS part of a zone - try to remove it
                 return TryRemoveZoneCell(zoneAtCursor, cursorPos, map, ref targetZone, createdZones, originalZoneCells, isDeleteDesignator);
             }
             else
             {
-                // Cell is NOT part of a zone - try to add it to targetZone
                 return TryAddZoneCell(cursorPos, map, targetZone, activeDesignator, createdZones, originalZoneCells, isDeleteDesignator);
             }
         }
 
-        /// <summary>
-        /// Attempts to remove a cell from a zone, checking for connectivity first.
-        /// In expand mode, prevents removing cells that existed before expansion.
-        /// </summary>
+        /// <summary>Removes a cell from a zone, refusing a disconnect and, in expand mode, any cell that predates the expansion.</summary>
         private static ZoneEditResult TryRemoveZoneCell(
             Zone zoneAtCursor,
             IntVec3 cursorPos,
@@ -69,31 +54,27 @@ namespace RimWorldAccess
             HashSet<IntVec3> originalZoneCells,
             bool isDeleteDesignator)
         {
-            // In expand mode (not delete designator), prevent removing cells that existed before expansion
-            // Only cells added during this session can be removed
+            // Expand mode may only take back cells added during this session.
             if (!isDeleteDesignator && originalZoneCells != null && originalZoneCells.Contains(cursorPos))
             {
                 return new ZoneEditResult(false, "RimWorldAccess.Building.Zone.CannotRemoveOriginalCell".Translate(), SpeechPriority.Normal);
             }
 
-            // Check if we can safely remove it
             if (WouldDisconnectZone(zoneAtCursor, cursorPos, map))
             {
                 return new ZoneEditResult(false, "RimWorldAccess.Building.Zone.WouldDisconnect".Translate(), SpeechPriority.Normal);
             }
 
-            // Safe to remove
             try
             {
                 string zoneName = zoneAtCursor.label ?? (string)"RimWorldAccess.Building.Zone.FallbackName".Translate();
                 zoneAtCursor.RemoveCell(cursorPos);
 
-                // Check if the zone still exists after removal (RimWorld deletes zones with no cells)
+                // RimWorld deletes a zone once its last cell goes.
                 bool zoneStillExists = map.zoneManager.AllZones.Contains(zoneAtCursor);
 
                 if (zoneStillExists)
                 {
-                    // Zone still exists - track that we modified it
                     if (!createdZones.Contains(zoneAtCursor))
                     {
                         createdZones.Add(zoneAtCursor);
@@ -102,10 +83,8 @@ namespace RimWorldAccess
                 }
                 else
                 {
-                    // Zone was deleted (had no remaining cells) - remove stale reference
                     createdZones.Remove(zoneAtCursor);
 
-                    // If the deleted zone was our targetZone, pick another from createdZones if available
                     if (targetZone == zoneAtCursor)
                     {
                         targetZone = createdZones.FirstOrDefault();
@@ -121,9 +100,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Attempts to add a cell to the target zone.
-        /// </summary>
+        /// <summary>Adds a cell to the target zone, honoring the mode's own eligibility rules.</summary>
         private static ZoneEditResult TryAddZoneCell(
             IntVec3 cursorPos,
             Map map,
@@ -133,13 +110,11 @@ namespace RimWorldAccess
             HashSet<IntVec3> originalZoneCells,
             bool isDeleteDesignator)
         {
-            // Validate we have a target zone to add to
             if (targetZone == null)
             {
                 return new ZoneEditResult(false, "RimWorldAccess.Building.Zone.NoZoneSelectedForEditing".Translate(), SpeechPriority.Normal);
             }
 
-            // Check if cell is already in a different zone
             Zone existingZone = map.zoneManager.ZoneAt(cursorPos);
             if (existingZone != null)
             {
@@ -149,9 +124,8 @@ namespace RimWorldAccess
                     return new ZoneEditResult(false, "RimWorldAccess.Building.Zone.CellInOtherZone".Translate(existingZone.label), SpeechPriority.Normal);
             }
 
-            // For shrink mode, only allow re-adding cells that were originally in the zone
-            // In shrink mode, activeDesignator is Designator_ZoneDelete, so we can't use
-            // Designator_ZoneAdd validation - just add the cell directly
+            // Shrink mode may only re-add cells the zone originally held, and its designator is
+            // Designator_ZoneDelete, so Designator_ZoneAdd's validation is unavailable here.
             if (isDeleteDesignator)
             {
                 if (!originalZoneCells.Contains(cursorPos))
@@ -159,8 +133,7 @@ namespace RimWorldAccess
                     return new ZoneEditResult(false, "RimWorldAccess.Building.Zone.CellNotPartOfOriginal".Translate(), SpeechPriority.Normal);
                 }
 
-                // Check that the cell is adjacent to the current zone
-                // This prevents re-adding disconnected cells that were originally part of the zone
+                // Adjacency stops a disconnected original cell coming back on its own.
                 bool isAdjacentForShrink = false;
                 for (int i = 0; i < 4; i++)
                 {
@@ -176,12 +149,10 @@ namespace RimWorldAccess
                     return new ZoneEditResult(false, "RimWorldAccess.Building.Zone.CellMustBeAdjacent".Translate(), SpeechPriority.Normal);
                 }
 
-                // All shrink mode checks passed - add the cell directly to targetZone
                 try
                 {
                     targetZone.AddCell(cursorPos);
 
-                    // Track that we modified this zone
                     if (!createdZones.Contains(targetZone))
                     {
                         createdZones.Add(targetZone);
@@ -197,14 +168,13 @@ namespace RimWorldAccess
                 }
             }
 
-            // Non-shrink mode: Validate we have a ZoneAdd designator for expanding
             var zoneDesignator = activeDesignator as Designator_ZoneAdd;
             if (zoneDesignator == null)
             {
                 return new ZoneEditResult(false, "RimWorldAccess.Building.Zone.NoZoneAtLocation".Translate(), SpeechPriority.Normal);
             }
 
-            // Check zone-type requirements (soil fertility for growing zones, etc.)
+            // Zone-type requirements: soil fertility for growing zones, and so on.
             AcceptanceReport report = zoneDesignator.CanDesignateCell(cursorPos);
             if (!report.Accepted)
             {
@@ -212,7 +182,7 @@ namespace RimWorldAccess
                 return new ZoneEditResult(false, reason, SpeechPriority.Normal);
             }
 
-            // Check contiguity - cell must be cardinal adjacent to targetZone
+            // Contiguity: the cell must be cardinally adjacent to targetZone.
             bool isAdjacent = false;
             for (int i = 0; i < 4; i++)
             {
@@ -231,10 +201,8 @@ namespace RimWorldAccess
 
             try
             {
-                // All checks passed - add the cell directly to targetZone
                 targetZone.AddCell(cursorPos);
 
-                // Track that we modified this zone
                 if (!createdZones.Contains(targetZone))
                 {
                     createdZones.Add(targetZone);
@@ -255,23 +223,17 @@ namespace RimWorldAccess
         #region Connectivity Detection
 
         /// <summary>
-        /// Checks if removing a cell would disconnect the zone into separate parts.
-        /// Uses flood-fill to verify all remaining cells are still reachable from each other.
+        /// True when removing <paramref name="cellToRemove"/> would split the zone into
+        /// unreachable parts, decided by flood-filling the remaining cells.
         /// </summary>
-        /// <param name="zone">The zone to check</param>
-        /// <param name="cellToRemove">The cell that would be removed</param>
-        /// <param name="map">The current map</param>
-        /// <returns>True if removing the cell would disconnect the zone, false if safe to remove</returns>
         public static bool WouldDisconnectZone(Zone zone, IntVec3 cellToRemove, Map map)
         {
-            // Get all cells except the one we're removing
             var remainingCells = new HashSet<IntVec3>(zone.Cells);
             remainingCells.Remove(cellToRemove);
 
             if (remainingCells.Count == 0)
-                return false; // Removing last cell is fine (zone will be deleted)
+                return false; // Removing the last cell just deletes the zone.
 
-            // Flood-fill from first remaining cell to find all connected cells
             var visited = new HashSet<IntVec3>();
             var queue = new Queue<IntVec3>();
             var startCell = remainingCells.First();
@@ -282,7 +244,6 @@ namespace RimWorldAccess
             while (queue.Count > 0)
             {
                 var current = queue.Dequeue();
-                // Check cardinal neighbors (N, E, S, W)
                 foreach (var dir in GenAdj.CardinalDirections)
                 {
                     var neighbor = current + dir;
@@ -294,31 +255,25 @@ namespace RimWorldAccess
                 }
             }
 
-            // If we couldn't visit all remaining cells, removing this cell would disconnect the zone
             return visited.Count < remainingCells.Count;
         }
 
         /// <summary>
-        /// Counts the number of disconnected regions among a set of cells using flood fill.
-        /// This helps determine if zone placement will result in multiple separate zones.
+        /// Disconnected regions among a set of cells, by flood fill: 1 means a placement stays one
+        /// zone, 2 or more means it will be split.
         /// </summary>
-        /// <param name="cells">The cells to analyze for contiguity</param>
-        /// <returns>The number of disconnected regions (1 = fully contiguous, 2+ = will be split)</returns>
         public static int CountDisconnectedRegions(List<IntVec3> cells)
         {
             if (cells == null || cells.Count == 0)
                 return 0;
 
-            // Build a set for efficient lookup
             var remainingCells = new HashSet<IntVec3>(cells);
             int regionCount = 0;
 
-            // Keep flood filling until all cells are processed
             while (remainingCells.Count > 0)
             {
                 regionCount++;
 
-                // Start a new region from any remaining cell
                 IntVec3 startCell = default;
                 foreach (var cell in remainingCells)
                 {
@@ -326,7 +281,6 @@ namespace RimWorldAccess
                     break;
                 }
 
-                // Flood fill to find all connected cells in this region
                 var queue = new Queue<IntVec3>();
                 queue.Enqueue(startCell);
                 remainingCells.Remove(startCell);
@@ -335,12 +289,10 @@ namespace RimWorldAccess
                 {
                     IntVec3 current = queue.Dequeue();
 
-                    // Check all 4 cardinal neighbors
                     foreach (IntVec3 offset in GenAdj.CardinalDirections)
                     {
                         IntVec3 neighbor = current + offset;
 
-                        // If this neighbor is in our remaining cells, it's connected
                         if (remainingCells.Contains(neighbor))
                         {
                             remainingCells.Remove(neighbor);
@@ -358,13 +310,9 @@ namespace RimWorldAccess
         #region Zone Collection and Cleanup
 
         /// <summary>
-        /// Collects the unique zones that were created/expanded by zone placement.
-        /// Call this after DesignateMultiCell to find what zones contain our cells.
-        /// Also sets targetZone to the first zone found for editing operations.
+        /// Collects the unique zones a placement created or expanded, for calling after
+        /// DesignateMultiCell, and points <paramref name="targetZone"/> at the first one found.
         /// </summary>
-        /// <param name="placedCells">The cells that were designated for zoning</param>
-        /// <param name="createdZones">Set to add found zones to</param>
-        /// <param name="targetZone">Reference to set to the first zone found</param>
         public static void CollectCreatedZones(List<IntVec3> placedCells, HashSet<Zone> createdZones, ref Zone targetZone)
         {
             Map map = Find.CurrentMap;
@@ -377,7 +325,6 @@ namespace RimWorldAccess
                 if (zone != null)
                 {
                     createdZones.Add(zone);
-                    // Set targetZone to the first zone found (for editing operations)
                     if (targetZone == null)
                     {
                         targetZone = zone;
@@ -386,38 +333,24 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Removes stale zone references from a zone collection.
-        /// RimWorld deletes zones when their last cell is removed, so we need to
-        /// clean up our tracking to avoid referencing deleted zones.
-        /// </summary>
-        /// <param name="createdZones">The set of zones to clean up</param>
+        /// <summary>Drops references to zones RimWorld already deleted when their last cell went.</summary>
         public static void CleanupStaleZoneReferences(HashSet<Zone> createdZones)
         {
             Map map = Find.CurrentMap;
             if (map?.zoneManager == null)
                 return;
 
-            // Remove zones that no longer exist in the game
             createdZones.RemoveWhere(zone => !map.zoneManager.AllZones.Contains(zone));
         }
 
-        /// <summary>
-        /// Gets the zone at the specified cell position.
-        /// </summary>
-        /// <param name="cell">The cell position to check</param>
-        /// <returns>The zone at the cell, or null if no zone exists there</returns>
+        /// <summary>The zone at a cell, or null when there is none.</summary>
         public static Zone GetZoneAtCell(IntVec3 cell)
         {
             Map map = Find.CurrentMap;
             return map?.zoneManager?.ZoneAt(cell);
         }
 
-        /// <summary>
-        /// Gets the cells belonging to a zone.
-        /// </summary>
-        /// <param name="zone">The zone to get cells from</param>
-        /// <returns>A list of cells in the zone</returns>
+        /// <summary>The cells belonging to a zone; empty for null.</summary>
         public static List<IntVec3> GetZoneCells(Zone zone)
         {
             if (zone == null)
@@ -429,21 +362,17 @@ namespace RimWorldAccess
         #endregion
     }
 
-    /// <summary>
-    /// Result of a zone edit operation (add/remove cell).
-    /// </summary>
+    /// <summary>Result of a zone edit operation.</summary>
     public class ZoneEditResult
     {
-        /// <summary>Whether the operation was successful.</summary>
         public bool Success { get; }
 
-        /// <summary>Message to announce to the user.</summary>
+        /// <summary>Already-resolved text to announce.</summary>
         public string Message { get; }
 
-        /// <summary>Priority for the announcement.</summary>
         public SpeechPriority Priority { get; }
 
-        /// <summary>Whether a zone was deleted as a result of this operation.</summary>
+        /// <summary>Whether the operation left the zone with no cells, deleting it.</summary>
         public bool ZoneDeleted { get; }
 
         public ZoneEditResult(bool success, string message, SpeechPriority priority, bool zoneDeleted = false)

@@ -65,22 +65,20 @@
   <RimWorldAccess.Tree.AllAlreadyExpanded>Todos los elementos ya están ampliados</RimWorldAccess.Tree.AllAlreadyExpanded>
   <RimWorldAccess.Tree.NoneToExpand>Ningún elemento ampliable</RimWorldAccess.Tree.NoneToExpand>
 
-  <!-- Two-level menu (src/UI/TwoLevelMenuHelper.cs).
-       Used by quest, history, notification, and mod-list menus.
-       ButtonAnnouncement/Disabled: {0} = button label, {1} = position suffix.
-       ButtonDisabled/Reason: {0} = button label, {1} = reason. -->
+  <!-- Two-level menu (src/UI/TwoLevelMenuHelper.cs). Used by the mod-list detail view,
+       notifications, and the History Graph sub-tab. ButtonAnnouncement/Disabled and
+       ButtonDisabled/Reason retired (Task 8 packet H): button focus now speaks through
+       the composer's own Button role + Disabled state, and the disabled-activation
+       refusal reuses the shared RimWorldAccess.Shell.GenericWindow.Disabled key. -->
   <RimWorldAccess.TwoLevel.BackToList>Volver a la lista</RimWorldAccess.TwoLevel.BackToList>
   <RimWorldAccess.TwoLevel.BackToListWithSuffix>Volver a la lista. {0}</RimWorldAccess.TwoLevel.BackToListWithSuffix>
-  <RimWorldAccess.TwoLevel.ButtonAnnouncement>{0}. Botón. {1}</RimWorldAccess.TwoLevel.ButtonAnnouncement>
-  <RimWorldAccess.TwoLevel.ButtonAnnouncementDisabled>{0} (desactivado). Botón. {1}</RimWorldAccess.TwoLevel.ButtonAnnouncementDisabled>
-  <RimWorldAccess.TwoLevel.ButtonDisabled>{0} está desactivado</RimWorldAccess.TwoLevel.ButtonDisabled>
-  <RimWorldAccess.TwoLevel.ButtonDisabledReason>{0} está desactivado: {1}</RimWorldAccess.TwoLevel.ButtonDisabledReason>
 
   <!-- Menu formatting (src/UI/MenuHelper.cs).
        Position: {0} = 1-based index, {1} = total.
        LevelSuffix: {0} = indent level (1-based), appended to item announcements.
        CannotPaintColumn: tabular menus when a column cannot be paint-copied. -->
   <RimWorldAccess.Menu.Position>{0} de {1}</RimWorldAccess.Menu.Position>
+  <RimWorldAccess.Menu.TabPosition>pestaña {0} de {1}</RimWorldAccess.Menu.TabPosition>
   <RimWorldAccess.Menu.LevelSuffix> nivel {0}</RimWorldAccess.Menu.LevelSuffix>
   <RimWorldAccess.Menu.CannotPaintColumn>No se puede pintar esta columna</RimWorldAccess.Menu.CannotPaintColumn>
 
@@ -125,4 +123,8 @@
   <RimWorldAccess.Common.SortAscending>ascendente</RimWorldAccess.Common.SortAscending>
   <RimWorldAccess.Common.SortDescending>descendente</RimWorldAccess.Common.SortDescending>
   <RimWorldAccess.Common.RenameLabeled>Renombrar {0}</RimWorldAccess.Common.RenameLabeled>
+
+  <!-- Where a row dragged with the mouse would land. {0} = 1-based position,
+       {1} = number of rows in the list being reordered. -->
+  <RimWorldAccess.Common.Drag.ReorderPosition>Posición {0} de {1}</RimWorldAccess.Common.Drag.ReorderPosition>
 </LanguageData>

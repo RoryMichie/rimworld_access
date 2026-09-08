@@ -4,7 +4,7 @@
     World module strings (src/World/). Covers the world map, settlements,
     caravan formation/split, route planning (waypoint editor for caravan
     travel), gear-equip menu (pawn-side equip/swap from Caravan Inspect),
-    settlement and quest browsers, world scanner (mirrors Map.Scanner's
+    world scanner (mirrors Map.Scanner's
     category structure), caravan multi-select, layer switching, and the
     stat-breakdown overlay.
 
@@ -18,7 +18,6 @@
       - CaravanQuantityHelper.cs       (per-stack quantity adjust feedback)
       - CaravanFormationPatch.cs / SplitCaravanPatch.cs / CaravanAnnouncementHelper.cs
       - GearEquipMenuState.cs          (equip-this-item picker)
-      - QuestLocationsBrowserState.cs / SettlementBrowserState.cs
       - StatBreakdownState.cs          (Alt+I breakdown overlay)
       - RoutePlannerState.cs           (caravan waypoint planner)
       - WorldNavigationPatch.cs / WorldObjectSelectionState.cs
@@ -91,19 +90,21 @@
   <RimWorldAccess.Caravan.Form.CannotReformEnemiesPresent>有敌人在场时无法重组远行队</RimWorldAccess.Caravan.Form.CannotReformEnemiesPresent>
   <RimWorldAccess.Caravan.Form.CannotReformAtThisTime>此时无法重组远行队</RimWorldAccess.Caravan.Form.CannotReformAtThisTime>
   <RimWorldAccess.Caravan.Form.OpeningReformation>正在打开远行队重组对话框</RimWorldAccess.Caravan.Form.OpeningReformation>
-  <RimWorldAccess.Caravan.Form.NoFormationDialog>没有可用的远行队组建对话框</RimWorldAccess.Caravan.Form.NoFormationDialog>
   <RimWorldAccess.Caravan.Form.OpenInstructions>已打开组建远行队对话框。Tab 查看摘要，Alt+I 查看，Alt+S 派遣。</RimWorldAccess.Caravan.Form.OpenInstructions>
-  <RimWorldAccess.Caravan.Form.TabHeader>{0} 选项卡，{1} 项</RimWorldAccess.Caravan.Form.TabHeader>
-  <RimWorldAccess.Caravan.Form.NoItemsInTab>此选项卡中没有物品</RimWorldAccess.Caravan.Form.NoItemsInTab>
-  <RimWorldAccess.Caravan.Form.ReturnedToTab>已返回 {0} 选项卡</RimWorldAccess.Caravan.Form.ReturnedToTab>
-  <RimWorldAccess.Caravan.Form.SummaryViewWithHint>摘要视图。上下键浏览数据，Alt+I 查看明细。Tab 返回。</RimWorldAccess.Caravan.Form.SummaryViewWithHint>
-  <RimWorldAccess.Caravan.Form.SummaryView>摘要视图。</RimWorldAccess.Caravan.Form.SummaryView>
-  <RimWorldAccess.Caravan.Form.NoSummaryData>没有摘要数据</RimWorldAccess.Caravan.Form.NoSummaryData>
-  <RimWorldAccess.Caravan.Form.SummaryNoCaravanData>没有可用的远行队数据</RimWorldAccess.Caravan.Form.SummaryNoCaravanData>
+  <RimWorldAccess.Caravan.Form.RouteStillNeeded>尚未选择目的地。请先激活 {0} 按钮选择目的地，然后再派遣。</RimWorldAccess.Caravan.Form.RouteStillNeeded>
+  <RimWorldAccess.Caravan.Form.SummaryRegionName>概要</RimWorldAccess.Caravan.Form.SummaryRegionName>
   <RimWorldAccess.Caravan.Form.SummaryDestination>目的地: {0}</RimWorldAccess.Caravan.Form.SummaryDestination>
   <RimWorldAccess.Caravan.Form.SummaryDestinationWithEta>目的地: {0}, 预计抵达: {1} 天</RimWorldAccess.Caravan.Form.SummaryDestinationWithEta>
   <RimWorldAccess.Caravan.Form.SummaryDestinationNotSet>目的地: 未设置</RimWorldAccess.Caravan.Form.SummaryDestinationNotSet>
   <RimWorldAccess.Caravan.Form.SummaryStatsUnavailable>数据不可用</RimWorldAccess.Caravan.Form.SummaryStatsUnavailable>
+
+  <!-- =================================================================
+       Caravan drug policy assignment (CaravanDrugPoliciesScope.Game.cs,
+       Dialog_AssignCaravanDrugPolicies). Everything else this screen
+       speaks reuses vanilla's own keys (AssignDrugPolicies,
+       ManageDrugPolicies, CloseButton).
+       ================================================================= -->
+  <RimWorldAccess.Caravan.DrugPolicies.PawnsRegion>角色</RimWorldAccess.Caravan.DrugPolicies.PawnsRegion>
 
   <!-- =================================================================
        Caravan stat formatter (CaravanStatFormatter).
@@ -134,16 +135,7 @@
   <RimWorldAccess.Stat.ForagingPerDayWithTypeWithDesc>远行采集量: {0} ({1}) /天. {2}</RimWorldAccess.Stat.ForagingPerDayWithTypeWithDesc>
   <RimWorldAccess.Stat.Visibility>可见度: {0}</RimWorldAccess.Stat.Visibility>
   <RimWorldAccess.Stat.VisibilityWithDesc>可见度: {0}. {1}</RimWorldAccess.Stat.VisibilityWithDesc>
-  <RimWorldAccess.Caravan.Form.ItemPosition>{0}. {1}</RimWorldAccess.Caravan.Form.ItemPosition>
   <RimWorldAccess.Caravan.Form.NoDialog>没有可用对话框</RimWorldAccess.Caravan.Form.NoDialog>
-  <RimWorldAccess.Caravan.Form.ChoosingDestination>正在选择远行队目的地。使用方向键浏览世界地图，回车键选择目的地，或按 Escape 取消。</RimWorldAccess.Caravan.Form.ChoosingDestination>
-  <RimWorldAccess.Caravan.Form.FailedRoutePlanner>无法打开路线规划器: {0}</RimWorldAccess.Caravan.Form.FailedRoutePlanner>
-  <RimWorldAccess.Caravan.Form.InvalidDestination>无效的目的地地块</RimWorldAccess.Caravan.Form.InvalidDestination>
-  <RimWorldAccess.Caravan.Form.FailedAccessNotifyChoseRoute>无法访问 Notify_ChoseRoute 方法</RimWorldAccess.Caravan.Form.FailedAccessNotifyChoseRoute>
-  <RimWorldAccess.Caravan.Form.DestinationSet>目的地已设为 {0}。</RimWorldAccess.Caravan.Form.DestinationSet>
-  <RimWorldAccess.Caravan.Form.FailedSetDestination>无法设置目的地: {0}</RimWorldAccess.Caravan.Form.FailedSetDestination>
-  <RimWorldAccess.Caravan.Form.DestinationCancelled>已取消选择目的地。正在返回组建远行队对话框。</RimWorldAccess.Caravan.Form.DestinationCancelled>
-  <RimWorldAccess.Caravan.Form.FailedCancelDestination>无法取消目的地选择: {0}</RimWorldAccess.Caravan.Form.FailedCancelDestination>
   <RimWorldAccess.Caravan.Form.FailedSendCaravan>无法派遣远行队: {0}</RimWorldAccess.Caravan.Form.FailedSendCaravan>
   <RimWorldAccess.Caravan.Form.SelectionsReset>选择已重置</RimWorldAccess.Caravan.Form.SelectionsReset>
   <RimWorldAccess.Caravan.Form.FailedReset>重置失败: {0}</RimWorldAccess.Caravan.Form.FailedReset>
@@ -166,21 +158,11 @@
        {0} = tab name, {1} = item count, {2} = stat value,
        {3} = caravan name, {4} = position fragment.
        ================================================================= -->
-  <RimWorldAccess.Caravan.Split.NoDialog>没有可用的拆分远行队对话框</RimWorldAccess.Caravan.Split.NoDialog>
   <RimWorldAccess.Caravan.Split.OpenInstructions>已打开拆分远行队对话框。Tab 查看摘要，Alt+I 查看，Alt+S 拆分。</RimWorldAccess.Caravan.Split.OpenInstructions>
-  <RimWorldAccess.Caravan.Split.TabHeader>{0} 选项卡，{1} 项</RimWorldAccess.Caravan.Split.TabHeader>
-  <RimWorldAccess.Caravan.Split.BottomEdge>底部。{0}. 第 {1} 项，共 {2} 项</RimWorldAccess.Caravan.Split.BottomEdge>
-  <RimWorldAccess.Caravan.Split.TopEdge>顶部。{0}. 第 {1} 项，共 {2} 项</RimWorldAccess.Caravan.Split.TopEdge>
-  <RimWorldAccess.Caravan.Split.NoItemsInTab>此选项卡中没有物品</RimWorldAccess.Caravan.Split.NoItemsInTab>
-  <RimWorldAccess.Caravan.Split.ReturnedToTab>已返回 {0} 选项卡</RimWorldAccess.Caravan.Split.ReturnedToTab>
-  <RimWorldAccess.Caravan.Split.SummaryViewWithHint>摘要视图。上下键浏览数据，左右键切换远行队，Alt+I 查看明细。Tab 返回。</RimWorldAccess.Caravan.Split.SummaryViewWithHint>
-  <RimWorldAccess.Caravan.Split.SummaryView>摘要视图。</RimWorldAccess.Caravan.Split.SummaryView>
-  <RimWorldAccess.Caravan.Split.NoCaravanData>没有可用的远行队数据</RimWorldAccess.Caravan.Split.NoCaravanData>
+  <RimWorldAccess.Caravan.Split.SummaryRegionName>概要</RimWorldAccess.Caravan.Split.SummaryRegionName>
   <RimWorldAccess.Caravan.Split.NewCaravanLabel>新远行队</RimWorldAccess.Caravan.Split.NewCaravanLabel>
   <RimWorldAccess.Caravan.Split.OriginalCaravanLabel>原远行队</RimWorldAccess.Caravan.Split.OriginalCaravanLabel>
   <RimWorldAccess.Caravan.Split.UnknownStatValue>未知</RimWorldAccess.Caravan.Split.UnknownStatValue>
-  <RimWorldAccess.Caravan.Split.StatPosition>{0}. 第 {1} 项，共 {2} 项</RimWorldAccess.Caravan.Split.StatPosition>
-  <RimWorldAccess.Caravan.Split.StatCaravanPosition>{0}. {1}, 第 {2} 项，共 {3} 项</RimWorldAccess.Caravan.Split.StatCaravanPosition>
   <RimWorldAccess.Caravan.Split.NoDialogAvailable>没有可用对话框</RimWorldAccess.Caravan.Split.NoDialogAvailable>
   <RimWorldAccess.Caravan.Split.SplitSuccessfully>远行队拆分成功</RimWorldAccess.Caravan.Split.SplitSuccessfully>
   <RimWorldAccess.Caravan.Split.FailedToSplit>无法拆分远行队: {0}</RimWorldAccess.Caravan.Split.FailedToSplit>
@@ -204,6 +186,8 @@
   <RimWorldAccess.Caravan.Inspect.NoSkillsForItem>此物品没有可用的技能信息</RimWorldAccess.Caravan.Inspect.NoSkillsForItem>
   <RimWorldAccess.Caravan.Inspect.NoActionAvailable>没有可用操作</RimWorldAccess.Caravan.Inspect.NoActionAvailable>
   <RimWorldAccess.Caravan.Inspect.NoBreakdown>没有可用明细</RimWorldAccess.Caravan.Inspect.NoBreakdown>
+  <!-- Name of the caravan inspect tree's single navigable area, spoken on Tab. -->
+  <RimWorldAccess.Caravan.Inspect.RegionName>远行队</RimWorldAccess.Caravan.Inspect.RegionName>
 
   <!-- Caravan inspect treeview (CaravanInspectState): category labels, stat
        labels, stat values, and Alt+I stat-breakdown tooltips. Spoken while
@@ -216,9 +200,7 @@
   <RimWorldAccess.Caravan.Inspect.NotAvailable>不适用</RimWorldAccess.Caravan.Inspect.NotAvailable>
   <RimWorldAccess.Caravan.Inspect.CategoryCaravanStatus>远行队状态</RimWorldAccess.Caravan.Inspect.CategoryCaravanStatus>
   <RimWorldAccess.Caravan.Inspect.CategoryPawns>角色 ({0})</RimWorldAccess.Caravan.Inspect.CategoryPawns>
-  <RimWorldAccess.Caravan.Inspect.CategoryColonists>殖民者 ({0})</RimWorldAccess.Caravan.Inspect.CategoryColonists>
-  <RimWorldAccess.Caravan.Inspect.CategoryPrisoners>囚犯 ({0})</RimWorldAccess.Caravan.Inspect.CategoryPrisoners>
-  <RimWorldAccess.Caravan.Inspect.CategoryAnimals>动物 ({0})</RimWorldAccess.Caravan.Inspect.CategoryAnimals>
+  <RimWorldAccess.Caravan.Inspect.SectionWithCount>{0} ({1})</RimWorldAccess.Caravan.Inspect.SectionWithCount>
   <RimWorldAccess.Caravan.Inspect.CategoryGear>装备 ({0} 项)</RimWorldAccess.Caravan.Inspect.CategoryGear>
   <RimWorldAccess.Caravan.Inspect.CategoryItems>物品 ({0})</RimWorldAccess.Caravan.Inspect.CategoryItems>
   <RimWorldAccess.Caravan.Inspect.CategoryItemsEmpty>物品 (空)</RimWorldAccess.Caravan.Inspect.CategoryItemsEmpty>
@@ -306,8 +288,6 @@
   <RimWorldAccess.Caravan.Announce.XAvailable>{0} 可用</RimWorldAccess.Caravan.Announce.XAvailable>
   <RimWorldAccess.Caravan.Announce.Wielding>(手持 {0})</RimWorldAccess.Caravan.Announce.Wielding>
   <RimWorldAccess.Caravan.Announce.Checked>已勾选</RimWorldAccess.Caravan.Announce.Checked>
-  <RimWorldAccess.Caravan.Announce.MassKg>载重: {0} 千克</RimWorldAccess.Caravan.Announce.MassKg>
-  <RimWorldAccess.Caravan.Announce.SearchMatch>'{0}' 匹配第 {1} 项，共 {2} 项</RimWorldAccess.Caravan.Announce.SearchMatch>
 
   <!-- =================================================================
        Gear-equip menu (GearEquipMenuState).
@@ -328,7 +308,6 @@
   <RimWorldAccess.Gear.FailedToEquip>装备物品失败</RimWorldAccess.Gear.FailedToEquip>
   <RimWorldAccess.Gear.CannotRemoveLockedApparel>无法移除已锁定的衣物</RimWorldAccess.Gear.CannotRemoveLockedApparel>
   <RimWorldAccess.Gear.CannotRemoveLockedFromPawn>无法从 {1} 身上移除已锁定的衣物 {0}</RimWorldAccess.Gear.CannotRemoveLockedFromPawn>
-  <RimWorldAccess.Gear.LabelPosition>{0}. {1}</RimWorldAccess.Gear.LabelPosition>
   <RimWorldAccess.Gear.UnequipToInventory>卸下至物品栏</RimWorldAccess.Gear.UnequipToInventory>
   <RimWorldAccess.Gear.PawnCantEquip>{0} (无法装备: {1})</RimWorldAccess.Gear.PawnCantEquip>
   <RimWorldAccess.Gear.PawnWithCurrent>{0} ({1})</RimWorldAccess.Gear.PawnWithCurrent>
@@ -336,55 +315,16 @@
   <RimWorldAccess.Gear.ActionEquip>装备</RimWorldAccess.Gear.ActionEquip>
 
   <!-- =================================================================
-       Quest locations browser (QuestLocationsBrowserState).
-       List of tiles flagged by quests; J key opens it from the world
-       map. {0} = filter or position.
-       ================================================================= -->
-  <RimWorldAccess.QuestBrowser.QuestSystemUnavailable>任务系统不可用</RimWorldAccess.QuestBrowser.QuestSystemUnavailable>
-  <RimWorldAccess.QuestBrowser.NoQuestLocationsFound>未找到任务地点</RimWorldAccess.QuestBrowser.NoQuestLocationsFound>
-  <RimWorldAccess.QuestBrowser.Closed>已关闭任务地点浏览器</RimWorldAccess.QuestBrowser.Closed>
-  <RimWorldAccess.QuestBrowser.NoQuestLocationsAvailable>没有可用的任务地点</RimWorldAccess.QuestBrowser.NoQuestLocationsAvailable>
-  <RimWorldAccess.QuestBrowser.NoQuestLocationSelected>未选择任务地点</RimWorldAccess.QuestBrowser.NoQuestLocationSelected>
-  <RimWorldAccess.QuestBrowser.UnknownLocation>未知地点</RimWorldAccess.QuestBrowser.UnknownLocation>
-  <RimWorldAccess.QuestBrowser.LocationAnnouncement>{0} - {1}, {2} 格. {3}. {4}</RimWorldAccess.QuestBrowser.LocationAnnouncement>
-
-  <!-- =================================================================
-       Settlement browser (SettlementBrowserState).
-       Filterable settlement list (Friendly / Hostile / Neutral / Player).
-       {0} = filter name, {1} = match count.
-       ================================================================= -->
-  <RimWorldAccess.SettlementBrowser.WorldObjectsUnavailable>世界对象不可用</RimWorldAccess.SettlementBrowser.WorldObjectsUnavailable>
-  <RimWorldAccess.SettlementBrowser.NoSettlementsFound>未找到定居点</RimWorldAccess.SettlementBrowser.NoSettlementsFound>
-  <RimWorldAccess.SettlementBrowser.Closed>已关闭定居点浏览器</RimWorldAccess.SettlementBrowser.Closed>
-  <RimWorldAccess.SettlementBrowser.NoSettlementsMatchFilter>没有定居点符合此筛选条件</RimWorldAccess.SettlementBrowser.NoSettlementsMatchFilter>
-  <RimWorldAccess.SettlementBrowser.NoSettlementsAvailable>没有可用的定居点</RimWorldAccess.SettlementBrowser.NoSettlementsAvailable>
-  <RimWorldAccess.SettlementBrowser.NoSettlementSelected>未选择定居点</RimWorldAccess.SettlementBrowser.NoSettlementSelected>
-  <RimWorldAccess.SettlementBrowser.FilterCount>{0}, 找到 {1} 个</RimWorldAccess.SettlementBrowser.FilterCount>
-  <RimWorldAccess.SettlementBrowser.FilterPlayer>玩家定居点</RimWorldAccess.SettlementBrowser.FilterPlayer>
-  <RimWorldAccess.SettlementBrowser.FilterAllied>盟友定居点</RimWorldAccess.SettlementBrowser.FilterAllied>
-  <RimWorldAccess.SettlementBrowser.FilterNeutral>中立定居点</RimWorldAccess.SettlementBrowser.FilterNeutral>
-  <RimWorldAccess.SettlementBrowser.FilterHostile>敌对定居点</RimWorldAccess.SettlementBrowser.FilterHostile>
-  <RimWorldAccess.SettlementBrowser.FilterAll>全部定居点</RimWorldAccess.SettlementBrowser.FilterAll>
-  <RimWorldAccess.SettlementBrowser.FilterUnknown>未知筛选条件</RimWorldAccess.SettlementBrowser.FilterUnknown>
-  <RimWorldAccess.SettlementBrowser.RelationshipUnknown>未知</RimWorldAccess.SettlementBrowser.RelationshipUnknown>
-  <RimWorldAccess.SettlementBrowser.RelationshipPlayer>玩家</RimWorldAccess.SettlementBrowser.RelationshipPlayer>
-  <RimWorldAccess.SettlementBrowser.RelationshipHostile>敌对</RimWorldAccess.SettlementBrowser.RelationshipHostile>
-  <RimWorldAccess.SettlementBrowser.SettlementAnnouncement>{0}, {1}, {2}, {3} 格. {4}</RimWorldAccess.SettlementBrowser.SettlementAnnouncement>
-  <RimWorldAccess.SettlementBrowser.SearchAnnouncement>{0}: {1}, {2}, {3}, {4} 格</RimWorldAccess.SettlementBrowser.SearchAnnouncement>
-  <RimWorldAccess.SettlementBrowser.SearchInfo>'{0}' 匹配第 {1} 项，共 {2} 项</RimWorldAccess.SettlementBrowser.SearchInfo>
-
-  <!-- =================================================================
        Stat-breakdown overlay (StatBreakdownState).
        Tree of stat factors opened by Alt+I from a summary stat row.
-       {0} = stat name, {1} = factor count, {2} = suffix.
+       {0} = stat name, {1} = factor count. Header vs. HeaderTreeview is
+       chosen in C# by whether any factor is expandable.
        ================================================================= -->
   <RimWorldAccess.StatBreakdown.NoBreakdownFor>{0} 没有可用明细</RimWorldAccess.StatBreakdown.NoBreakdownFor>
   <RimWorldAccess.StatBreakdown.NoFactorsFor>{0} 没有明细因素</RimWorldAccess.StatBreakdown.NoFactorsFor>
-  <RimWorldAccess.StatBreakdown.HeaderWithSuffix>{0} 明细 ({1} 项因素){2}.</RimWorldAccess.StatBreakdown.HeaderWithSuffix>
+  <RimWorldAccess.StatBreakdown.Header>{0} 明细 ({1} 项因素)。</RimWorldAccess.StatBreakdown.Header>
+  <RimWorldAccess.StatBreakdown.HeaderTreeview>{0} 明细 ({1} 项因素) 树形视图。</RimWorldAccess.StatBreakdown.HeaderTreeview>
   <RimWorldAccess.StatBreakdown.Closed>已关闭明细</RimWorldAccess.StatBreakdown.Closed>
-  <RimWorldAccess.StatBreakdown.NotExpandable>不可展开</RimWorldAccess.StatBreakdown.NotExpandable>
-  <RimWorldAccess.StatBreakdown.AlreadyExpanded>已展开</RimWorldAccess.StatBreakdown.AlreadyExpanded>
-  <RimWorldAccess.StatBreakdown.TreeviewSuffix> 树形视图</RimWorldAccess.StatBreakdown.TreeviewSuffix>
 
   <!-- =================================================================
        Route planner (RoutePlannerState).
@@ -427,7 +367,8 @@
        Mirrors Map scanner pattern - same category structure,
        PgUp/PgDn for items inside categories, etc. {0} = layer,
        {1} = direction noun, {2} = distance, {3} = category name,
-       {4} = item count, {5} = position.
+       {4} = position. Category/SubcategoryAnnouncement are headings only:
+       the first item of the new category speaks right after each one.
        ================================================================= -->
   <RimWorldAccess.WorldScanner.AutoJumpEnabled>自动跳转模式已启用</RimWorldAccess.WorldScanner.AutoJumpEnabled>
   <RimWorldAccess.WorldScanner.AutoJumpDisabled>自动跳转模式已禁用</RimWorldAccess.WorldScanner.AutoJumpDisabled>
@@ -438,8 +379,8 @@
   <RimWorldAccess.WorldScanner.NoInstancesToNavigate>没有可导航的实例</RimWorldAccess.WorldScanner.NoInstancesToNavigate>
   <RimWorldAccess.WorldScanner.SwitchedToLayer>已切换到 {0} 图层。</RimWorldAccess.WorldScanner.SwitchedToLayer>
   <RimWorldAccess.WorldScanner.DirectionDistance>{0}, {1} 格</RimWorldAccess.WorldScanner.DirectionDistance>
-  <RimWorldAccess.WorldScanner.CategoryAnnouncement>{0}, {1} 项. 第 {2} 类，共 {3} 类</RimWorldAccess.WorldScanner.CategoryAnnouncement>
-  <RimWorldAccess.WorldScanner.SubcategoryAnnouncement>{0}, {1} 项. 第 {2} 个子类别，共 {3} 个</RimWorldAccess.WorldScanner.SubcategoryAnnouncement>
+  <RimWorldAccess.WorldScanner.CategoryAnnouncement>{0}，{1} 项。</RimWorldAccess.WorldScanner.CategoryAnnouncement>
+  <RimWorldAccess.WorldScanner.SubcategoryAnnouncement>{0}，{1} 项。</RimWorldAccess.WorldScanner.SubcategoryAnnouncement>
 
   <!-- =================================================================
        World object inspect (WorldObjectSelectionState + WorldNavigationPatch).
@@ -546,9 +487,8 @@
        destination name; the *Verb variants take the infinitive phrase
        like "enter Mikaelville". -->
   <RimWorldAccess.World.Caravan.SuffixActiveTo> 前往 {0}</RimWorldAccess.World.Caravan.SuffixActiveTo>
-  <RimWorldAccess.World.Caravan.SuffixActiveVerb>, 前往 {0}</RimWorldAccess.World.Caravan.SuffixActiveVerb>
   <RimWorldAccess.World.Caravan.SuffixPausedSeparate>. 前往 {0}</RimWorldAccess.World.Caravan.SuffixPausedSeparate>
-  <RimWorldAccess.World.Caravan.SuffixPausedVerb>, 将 {0}</RimWorldAccess.World.Caravan.SuffixPausedVerb>
+  <RimWorldAccess.World.Caravan.SuffixReport>. {0}</RimWorldAccess.World.Caravan.SuffixReport>
 
   <!-- Caravan path announcement (GetCaravanPathAnnouncement). Used
        when a caravan's planned path passes through (or terminates at)
@@ -664,7 +604,6 @@
   <RimWorldAccess.World.River.Bends.Inline>从 {0} 弯向 {1}</RimWorldAccess.World.River.Bends.Inline>
   <RimWorldAccess.World.River.Confluence.Inline>汇流处: {0}</RimWorldAccess.World.River.Confluence.Inline>
 
-
   <!-- World scanner readout, categories, directions, sizes (src/World/WorldScannerState.cs). -->
   <RimWorldAccess.WorldScanner.SizeApprox>约 {0} 格</RimWorldAccess.WorldScanner.SizeApprox>
   <RimWorldAccess.WorldScanner.SizeTiles>{0} 格</RimWorldAccess.WorldScanner.SizeTiles>
@@ -765,4 +704,9 @@
   <RimWorldAccess.Stat.VisibilityUnknown>可见度: 未知</RimWorldAccess.Stat.VisibilityUnknown>
   <RimWorldAccess.World.JumpedTilesDirection>向{1}跳转了 {0} 格</RimWorldAccess.World.JumpedTilesDirection>
   <RimWorldAccess.World.JumpedTiles>跳转了 {0} 格</RimWorldAccess.World.JumpedTiles>
+
+  <RimWorldAccess.World.Drag.SelectExtent>占屏幕 {0}% 乘 {1}%</RimWorldAccess.World.Drag.SelectExtent>
+
+  <RimWorldAccess.World.Selection.Multiple>已选择 {0} 个</RimWorldAccess.World.Selection.Multiple>
+  <RimWorldAccess.World.Selection.Cleared>选择已清除</RimWorldAccess.World.Selection.Cleared>
 </LanguageData>

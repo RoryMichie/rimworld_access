@@ -40,12 +40,20 @@
        examples are part of the label — translators should adapt the example
        text (e.g. "3 of 7", "level 2") so it matches how the corresponding
        announcement is phrased in their language. -->
-  <RimWorldAccess.Core.Settings.WrapNavigation.Label>Циклічна навігація (з кінця на початок)</RimWorldAccess.Core.Settings.WrapNavigation.Label>
-  <RimWorldAccess.Core.Settings.AnnouncePosition.Label>Озвучувати позицію (наприклад, «3 з 7»)</RimWorldAccess.Core.Settings.AnnouncePosition.Label>
+  <RimWorldAccess.Core.Settings.WrapNavigation.Label>Циклічна навігація</RimWorldAccess.Core.Settings.WrapNavigation.Label>
   <RimWorldAccess.Core.Settings.ShowPawnActivityOnMap.Label>Показувати діяльність персонажа під час руху курсора по мапі</RimWorldAccess.Core.Settings.ShowPawnActivityOnMap.Label>
   <RimWorldAccess.Core.Settings.ShowCoverInfo.Label>Показувати дані про укриття для персонажів у бойовому режимі та ворогів</RimWorldAccess.Core.Settings.ShowCoverInfo.Label>
   <RimWorldAccess.Core.Settings.AnnounceTerrain.Label>Озвучувати поверхню під час руху курсора</RimWorldAccess.Core.Settings.AnnounceTerrain.Label>
-  <RimWorldAccess.Core.Settings.AnnounceLevels.Label>Озвучувати рівні глибини в деревоподібних списках (наприклад, «рівень 2»)</RimWorldAccess.Core.Settings.AnnounceLevels.Label>
+  <RimWorldAccess.Core.Settings.HoverSpeech.Label>Відстеження миші</RimWorldAccess.Core.Settings.HoverSpeech.Label>
+  <RimWorldAccess.Core.Settings.HoverSpeech.Desc>Озвучує те, над чим знаходиться миша, під час її переміщення.</RimWorldAccess.Core.Settings.HoverSpeech.Desc>
+  <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Label>Вказівник миші слідує за курсором клавіатури</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Label>
+  <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>Розміщує вказівник миші на клітинці клавіатурного курсора після кожного переміщення. {0} — змінити у грі.</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>
+  <RimWorldAccess.Core.Settings.ScannerAutoJump.Label>Автоперехід сканера</RimWorldAccess.Core.Settings.ScannerAutoJump.Label>
+  <RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>Переміщує курсор до кожного елемента сканера під час навігації. {0} — змінити у грі.</RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>
+
+  <!-- Opens the Configure Spoken Announcements screen (a real window, not this panel);
+       see RimWorldAccess_AnnounceConfig.xml for that screen's own strings. -->
+  <RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button>Налаштувати озвучені оголошення...</RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button>
 
   <!-- SubmenuTreeNavigation is the only checkbox with a tooltip. The label is
        deliberately whimsical ("Rashad Hates Treeviews") — translators can
@@ -54,4 +62,12 @@
        tooltip is the canonical explanation. -->
   <RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Label>Рашад ненавидить деревоподібні списки (навігація у стилі підменю)</RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Label>
   <RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Tooltip>Змінює роботу деревоподібних списків. Коли ви розгортаєте категорію, вона зникає, і ви переходите лише між її елементами. Натисніть стрілку вліво, щоб повернутися назад. Ваша позиція запам'ятовується, коли ви повертаєтеся.</RimWorldAccess.Core.Settings.SubmenuTreeNavigation.Tooltip>
+
+  <RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Label>Озвучувати діяльність вибраного персонажа</RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Label>
+  <RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Desc>Озвучує в реальному часі, чим зайнятий вибраний персонаж. Переміщення курсора мапи припиняє озвучення.</RimWorldAccess.Core.Settings.AnnounceSelectedPawnActivity.Desc>
+
+  <RimWorldAccess.Core.Settings.ShowWhatsNew.Label>Показувати повідомлення «Що нового» після оновлення</RimWorldAccess.Core.Settings.ShowWhatsNew.Label>
+  <RimWorldAccess.Core.Settings.ShowWhatsNew.Desc>Якщо ввімкнено, повідомлення «Що нового» відкривається в головному меню після оновлення RimWorld Access. Якщо вимкнено, ви почуєте лише коротке повідомлення про оновлення мода і зможете відкрити «Що нового» з меню в будь-який час.</RimWorldAccess.Core.Settings.ShowWhatsNew.Desc>
+
+  <!-- Table verbosity (docs/table-model.md). -->
 </LanguageData>

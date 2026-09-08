@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RWA_GizmoEngage.label>按钮：攻击目标</RWA_GizmoEngage.label>
+  <RWA_GizmoSeekDestroy.label>按钮：搜索歼灭</RWA_GizmoSeekDestroy.label>
+  <RWA_GizmoCombatPolicy.label>按钮：战斗方针</RWA_GizmoCombatPolicy.label>
+  <RWA_GizmoPause.label>按钮：暂停自动化</RWA_GizmoPause.label>
+  <RWA_GizmoHuntAnimals.label>按钮：猎杀动物</RWA_GizmoHuntAnimals.label>
+  <RWA_GizmoAutocastAll.label>按钮：全部自动施放</RWA_GizmoAutocastAll.label>
+  <RWA_GizmoPatrol.label>按钮：巡逻</RWA_GizmoPatrol.label>
+</LanguageData>

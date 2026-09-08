@@ -121,10 +121,7 @@
        ========================================================= -->
 
   <!-- Open guards. -->
-  <RimWorldAccess.TransportPods.Loading.NoDialog>Диалог загрузки недоступен</RimWorldAccess.TransportPods.Loading.NoDialog>
   <RimWorldAccess.TransportPods.Loading.ReflectionFailed>Доступность загрузки транспортных капсул недоступна из-за обновления игры. Пожалуйста, проверьте наличие обновлений мода.</RimWorldAccess.TransportPods.Loading.ReflectionFailed>
-  <RimWorldAccess.TransportPods.Loading.NoPortalDialog>Диалог портала недоступен</RimWorldAccess.TransportPods.Loading.NoPortalDialog>
-  <RimWorldAccess.TransportPods.Loading.PortalReflectionFailed>Доступность загрузки портала недоступна из-за обновления игры. Пожалуйста, проверьте наличие обновлений мода.</RimWorldAccess.TransportPods.Loading.PortalReflectionFailed>
 
   <!-- Entry announcement. One/Many split so translators control pod/pods
        agreement; the pod-noun key is inlined into the sentence so word order
@@ -134,12 +131,8 @@
   <RimWorldAccess.TransportPods.Loading.OpenAnnouncementMany>Загрузка транспортных капсул. {0_numCase ? капсула : капсулы : капсул}, вместимость {1} кг. Влево/Вправо для вкладок, Enter для изменения.</RimWorldAccess.TransportPods.Loading.OpenAnnouncementMany>
 
   <!-- Tab navigation. -->
-  <RimWorldAccess.TransportPods.Loading.TabPawns>Персонажи</RimWorldAccess.TransportPods.Loading.TabPawns>
-  <RimWorldAccess.TransportPods.Loading.TabItems>Предметы</RimWorldAccess.TransportPods.Loading.TabItems>
-  <RimWorldAccess.TransportPods.Loading.ReturnedToTab>Возврат к вкладке: {0}</RimWorldAccess.TransportPods.Loading.ReturnedToTab>
 
   <!-- Shared empty-tab feedback (spoken in multiple navigation paths). -->
-  <RimWorldAccess.TransportPods.Loading.NoItemsInTab>В этой вкладке нет предметов</RimWorldAccess.TransportPods.Loading.NoItemsInTab>
 
   <!-- Activation and quantity actions. {0} = item label. -->
   <RimWorldAccess.TransportPods.Loading.ItemChecked>{0}: отмечено</RimWorldAccess.TransportPods.Loading.ItemChecked>
@@ -148,7 +141,6 @@
 
   <!-- Inspect results. -->
   <RimWorldAccess.TransportPods.Loading.NoItemToInspect>Нет предмета для обзора</RimWorldAccess.TransportPods.Loading.NoItemToInspect>
-  <RimWorldAccess.TransportPods.Loading.CannotInspectItem>Невозможно осмотреть этот предмет</RimWorldAccess.TransportPods.Loading.CannotInspectItem>
 
   <!-- Delete/remove guard. -->
   <RimWorldAccess.TransportPods.Loading.AlreadyAtZero>Уже на нуле</RimWorldAccess.TransportPods.Loading.AlreadyAtZero>
@@ -159,20 +151,12 @@
   <!-- Mass summary (Tab key / AnnounceMassSummary).
        Composed from MassLine + one of OverloadedStatus/RemainingStatus.
        {0} = current usage, {1} = capacity, {2} = status clause. -->
-  <RimWorldAccess.TransportPods.Loading.MassSummary>Масса: {0} из {1} кг. {2}</RimWorldAccess.TransportPods.Loading.MassSummary>
-  <RimWorldAccess.TransportPods.Loading.MassOverloaded>ПЕРЕГРУЗ на {0} кг</RimWorldAccess.TransportPods.Loading.MassOverloaded>
-  <RimWorldAccess.TransportPods.Loading.MassRemaining>осталось {0} кг</RimWorldAccess.TransportPods.Loading.MassRemaining>
 
   <!-- Summary view (Tab toggle). Empty/error states come next. -->
-  <RimWorldAccess.TransportPods.Loading.NoSummaryForDialog>Для этого диалога нет сводки</RimWorldAccess.TransportPods.Loading.NoSummaryForDialog>
-  <RimWorldAccess.TransportPods.Loading.SummaryEntry>Режим сводки. Вверх/Вниз для перехода по характеристикам. Tab для возврата.</RimWorldAccess.TransportPods.Loading.SummaryEntry>
-  <RimWorldAccess.TransportPods.Loading.SummaryNoData>Нет данных</RimWorldAccess.TransportPods.Loading.SummaryNoData>
   <RimWorldAccess.TransportPods.Loading.SummaryNoTransporters>Нет транспортов</RimWorldAccess.TransportPods.Loading.SummaryNoTransporters>
   <RimWorldAccess.TransportPods.Loading.SummaryStatsUnavailable>Характеристики недоступны</RimWorldAccess.TransportPods.Loading.SummaryStatsUnavailable>
-  <RimWorldAccess.TransportPods.Loading.SummaryNoSummary>Нет данных сводки</RimWorldAccess.TransportPods.Loading.SummaryNoSummary>
 
   <!-- Summary item format ({item}. {position}). {0} = stat line, {1} = position. -->
-  <RimWorldAccess.TransportPods.Loading.SummaryItemAnnouncement>{0}. {1}</RimWorldAccess.TransportPods.Loading.SummaryItemAnnouncement>
 
   <!-- Stat-breakdown view (Alt+I in summary mode). NoBreakdown is spoken when
        the selected stat has no cached explanation (e.g. Food).
@@ -216,5 +200,8 @@
   <RimWorldAccess.TransportPods.Portal.FallbackEnter>Загрузить портал</RimWorldAccess.TransportPods.Portal.FallbackEnter>
   <RimWorldAccess.TransportPods.Portal.FallbackLoading>Загрузка</RimWorldAccess.TransportPods.Portal.FallbackLoading>
   <!-- Localization guardrail (D.8) sweep — previously hardcoded English. -->
-  <RimWorldAccess.TransportPods.Loading.TabSummary>вкладка {0}, {1_numCase ? предмет : предмета : предметов}</RimWorldAccess.TransportPods.Loading.TabSummary>
+
+  <!-- Region name for the stats section (screen-model refactor: the old
+       Tab-key Summary view is now a region cycled with Tab/Shift+Tab). -->
+  <RimWorldAccess.TransportPods.Loading.SummaryTab>Сводка</RimWorldAccess.TransportPods.Loading.SummaryTab>
 </LanguageData>

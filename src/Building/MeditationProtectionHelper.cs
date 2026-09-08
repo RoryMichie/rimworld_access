@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Reflection;
-using HarmonyLib;
 using RimWorld;
 using Verse;
 
@@ -14,9 +12,6 @@ namespace RimWorldAccess
 
     public static class MeditationProtectionHelper
     {
-        private static readonly FieldInfo placingRotField =
-            AccessTools.Field(typeof(Designator_Place), "placingRot");
-
         public static bool IsArtificialBuilding(ThingDef def, Faction faction)
         {
             if (def == null || faction == null)
@@ -29,11 +24,7 @@ namespace RimWorldAccess
             if (designator is Designator_Place placeDesignator &&
                 placeDesignator.PlacingDef is ThingDef thingDef)
             {
-                Rot4 rotation = Rot4.North;
-                if (placingRotField != null)
-                {
-                    rotation = (Rot4)placingRotField.GetValue(placeDesignator);
-                }
+                Rot4 rotation = BuildingReflection.GetPlacingRot(placeDesignator);
                 return (thingDef, rotation);
             }
             return (null, Rot4.North);

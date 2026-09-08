@@ -2,16 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
-using UnityEngine;
+using RimWorld.Planet;
 using Verse;
 using Verse.Sound;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages keyboard navigation state for Dialog_InfoCard.
-    /// Provides tree-based navigation through Stats, Character, Health, Records, and Permits tabs.
-    /// Uses TreeNavigationHelper for standard treeview keyboard navigation.
+    /// The data facade for Dialog_InfoCard's accessible tree (Stats, Character, Health, Records,
+    /// Permits): the dialog lifecycle, the nested-card save stack, the multi-hyperlink float-menu
+    /// ownership flag, and the statics the rest of the mod calls. Keyboard navigation, typeahead
+    /// and announcement composition live in <see cref="Shell.InfoCardScope"/>.
+    /// The tree ROOT lives here because the Window.PostOpen patch builds it before the
+    /// WindowStack.Add postfix has attached a scope to hold it; the scope seeds itself from
+    /// <see cref="CurrentTreeRoot"/> in OnPush and owns the cursor from then on. Every later tree
+    /// operation reaches the live instance through <c>Shell.InfoCardScope.Live</c>, which resolves
+    /// <see cref="CurrentDialog"/>, so a nested card's close restores the OUTER card's tree.
     /// </summary>
     public static class InfoCardState
     {
@@ -19,10 +25,19 @@ namespace RimWorldAccess
 
         private static Dialog_InfoCard currentDialog = null;
 
-        private static TreeNavigationHelper treeNav = new TreeNavigationHelper("InfoCard");
-        public static TypeaheadSearchHelper Typeahead => treeNav.Typeahead;
+        // Seeds for the live scope, which owns the cursor once it is pushed.
+        private static InspectionTreeItem currentRoot = null;
+        private static int currentIndex = 0;
 
-        // State stack for nested info card support
+        /// <summary>The card the state currently tracks, so the scope registry can resolve the live instance.</summary>
+        internal static Dialog_InfoCard CurrentDialog => currentDialog;
+
+        /// <summary>Seed tree root for <c>InfoCardScope.OnPush</c>.</summary>
+        internal static InspectionTreeItem CurrentTreeRoot => currentRoot;
+
+        /// <summary>Seed cursor index for <c>InfoCardScope.OnPush</c>.</summary>
+        internal static int CurrentTreeIndex => currentIndex;
+
         private class SavedCardState
         {
             public Dialog_InfoCard dialog;
@@ -31,34 +46,45 @@ namespace RimWorldAccess
         }
         private static Stack<SavedCardState> cardStack = new Stack<SavedCardState>();
 
-        // Flag to prevent PostClose from interfering when CloseInfoCard is driving
+        // Keeps PostClose out of the way while CloseInfoCard is driving.
         private static bool closingFromAccessibility = false;
 
-        // Tracks the last announced section name for section boundary announcements
-        private static string lastAnnouncedSection = null;
-
-        // Tracks whether InfoCardState opened the current float menu (for multi-hyperlink selection).
-        // When true, InfoCardState delegates input to the float menu instead of handling it.
-        // When false, a float menu from another context (e.g., recipe selection) is active
-        // and InfoCardState should handle its own input normally.
+        // Whether this state opened the current float menu; a menu from another context must keep
+        // handling its own input.
         private static bool ownsFloatMenu = false;
+
+        /// <summary>
+        /// Whether the open windowless float menu is the card's own multi-hyperlink picker. Read
+        /// only by FloatMenuOverlayScope's Cancel claim, so the picker's Escape announces the
+        /// info-card "returning to card" wording rather than the generic one. That claim pairs the
+        /// flag with WindowlessFloatMenuState.IsActive, so a value outliving the menu is inert.
+        /// </summary>
+        internal static bool OwnsFloatMenu => ownsFloatMenu;
+
+        /// <summary>Clears the ownsFloatMenu flag once the picker closes through the scope's Escape claim.</summary>
+        internal static void ReleaseFloatMenu()
+        {
+            ownsFloatMenu = false;
+        }
+
         public static bool IsClosingFromAccessibility => closingFromAccessibility;
         public static bool HasSavedState => cardStack.Count > 0;
 
-        static InfoCardState()
+        /// <summary>
+        /// Hands the current tree root to the live scope if one is attached yet. Open() runs from
+        /// Window.PostOpen, which vanilla calls before the WindowStack.Add postfix attaches the
+        /// scope, so a null here is normal: OnPush seeds itself.
+        /// </summary>
+        private static void ApplyTreeToScope()
         {
-            treeNav.FormatItemAnnouncement = FormatItemAnnouncement;
-            treeNav.FormatSearchAnnouncement = FormatSearchAnnouncement;
-            treeNav.OnActivate = HandleActivate;
-            treeNav.OnBeforeExpand = HandleBeforeExpand;
-            treeNav.OnInfo = HandleInfo;
+            Shell.InfoCardScope live = Shell.InfoCardScope.Live;
+            if (live != null)
+            {
+                live.LoadTree(currentRoot, currentIndex);
+            }
         }
 
-        /// <summary>
-        /// Opens the Info Card accessibility state for a dialog.
-        /// </summary>
-        /// <param name="dialog">The dialog to attach to</param>
-        /// <param name="announceOpening">Whether to announce immediately (false to delay for stats to load)</param>
+        /// <summary>Opens the accessible state for a dialog; <paramref name="announceOpening"/> false delays the announcement until stats load.</summary>
         public static void Open(Dialog_InfoCard dialog, bool announceOpening = true)
         {
             try
@@ -69,21 +95,20 @@ namespace RimWorldAccess
                 currentDialog = dialog;
                 IsActive = true;
 
-                // Disable Enter-to-close and Escape-to-close since we handle both for navigation
+                // Enter and Escape are ours, for navigation.
                 dialog.closeOnAccept = false;
                 dialog.closeOnCancel = false;
 
-                // Allow multiple info cards to coexist for nested navigation.
-                // RimWorld's default (onlyOneOfTypeAllowed = true) causes WindowStack.Add
-                // to remove the existing Dialog_InfoCard when opening a nested one.
+                // Multiple cards must coexist for nested navigation: RimWorld's default
+                // onlyOneOfTypeAllowed makes WindowStack.Add remove the outer card.
                 dialog.onlyOneOfTypeAllowed = false;
 
-                // Build the tree (stats may not be populated yet on first frame)
-                var rootItem = InfoCardTreeBuilder.BuildTree(dialog);
-                treeNav.Initialize(rootItem);
+                // Stats may not be populated on the first frame.
+                currentRoot = InfoCardTreeBuilder.BuildTree(dialog);
+                currentIndex = 0;
+                ApplyTreeToScope();
 
                 ownsFloatMenu = false;
-                lastAnnouncedSection = null;
 
                 if (announceOpening)
                 {
@@ -98,9 +123,7 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Rebuilds the tree and announces opening. Called after stats have loaded.
-        /// </summary>
+        /// <summary>Rebuilds the tree and announces opening, once stats have loaded.</summary>
         public static void RebuildAndAnnounce()
         {
             if (!IsActive || currentDialog == null)
@@ -108,10 +131,9 @@ namespace RimWorldAccess
 
             try
             {
-                // Rebuild tree now that stats are populated
-                var rootItem = InfoCardTreeBuilder.BuildTree(currentDialog);
-                treeNav.Initialize(rootItem);
-                lastAnnouncedSection = null;
+                currentRoot = InfoCardTreeBuilder.BuildTree(currentDialog);
+                currentIndex = 0;
+                ApplyTreeToScope();
 
                 SoundDefOf.TabOpen.PlayOneShotOnCamera();
                 AnnounceOpening();
@@ -122,146 +144,18 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Closes the Info Card accessibility state.
-        /// </summary>
+        /// <summary>Closes the accessible state.</summary>
         public static void Close()
         {
             IsActive = false;
             currentDialog = null;
+            currentRoot = null;
+            currentIndex = 0;
             cardStack.Clear();
             ownsFloatMenu = false;
-            treeNav.Reset();
         }
 
-        /// <summary>
-        /// Jumps to the next section (Page Down).
-        /// Finds the next item whose Description (section name) differs from the current item's Description.
-        /// </summary>
-        public static void JumpToNextCategory()
-        {
-            if (!IsActive || treeNav.Count == 0)
-                return;
-
-            treeNav.Typeahead.ClearSearch();
-            var visibleItems = treeNav.VisibleItems;
-            int selectedIndex = treeNav.SelectedIndex;
-            string currentSection = visibleItems[selectedIndex].Description ?? "";
-
-            // Search forward for item with different section
-            for (int i = selectedIndex + 1; i < visibleItems.Count; i++)
-            {
-                string section = visibleItems[i].Description ?? "";
-                if (section != currentSection)
-                {
-                    treeNav.SetSelectedIndex(i);
-                    SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                    treeNav.ReannounceCurrentItem();
-                    return;
-                }
-            }
-
-            // Wrap to beginning (if enabled)
-            if (RimWorldAccessMod_Settings.Settings?.WrapNavigation == true)
-            {
-                for (int i = 0; i <= selectedIndex; i++)
-                {
-                    string section = visibleItems[i].Description ?? "";
-                    if (section != currentSection)
-                    {
-                        treeNav.SetSelectedIndex(i);
-                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                        treeNav.ReannounceCurrentItem();
-                        return;
-                    }
-                }
-            }
-
-            // No different section found or wrap disabled
-            SoundDefOf.ClickReject.PlayOneShotOnCamera();
-        }
-
-        /// <summary>
-        /// Jumps to the previous section (Page Up).
-        /// Finds the first item of the previous section whose Description differs from the current item's Description.
-        /// </summary>
-        public static void JumpToPreviousCategory()
-        {
-            if (!IsActive || treeNav.Count == 0)
-                return;
-
-            treeNav.Typeahead.ClearSearch();
-            var visibleItems = treeNav.VisibleItems;
-            int selectedIndex = treeNav.SelectedIndex;
-            string currentSection = visibleItems[selectedIndex].Description ?? "";
-
-            // Search backward for first item of a different section
-            // First, find any item with a different section
-            int diffIndex = -1;
-            for (int i = selectedIndex - 1; i >= 0; i--)
-            {
-                string section = visibleItems[i].Description ?? "";
-                if (section != currentSection)
-                {
-                    diffIndex = i;
-                    break;
-                }
-            }
-
-            if (diffIndex >= 0)
-            {
-                // Now find the first item of that section
-                string targetSection = visibleItems[diffIndex].Description ?? "";
-                int firstOfSection = diffIndex;
-                for (int i = diffIndex - 1; i >= 0; i--)
-                {
-                    string section = visibleItems[i].Description ?? "";
-                    if (section == targetSection)
-                        firstOfSection = i;
-                    else
-                        break;
-                }
-                treeNav.SetSelectedIndex(firstOfSection);
-                SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                treeNav.ReannounceCurrentItem();
-                return;
-            }
-
-            // Wrap to end (if enabled)
-            if (RimWorldAccessMod_Settings.Settings?.WrapNavigation == true)
-            {
-                // Find last section that differs from current
-                for (int i = visibleItems.Count - 1; i > selectedIndex; i--)
-                {
-                    string section = visibleItems[i].Description ?? "";
-                    if (section != currentSection)
-                    {
-                        // Find first item of that section
-                        string targetSection = section;
-                        int firstOfSection = i;
-                        for (int j = i - 1; j >= 0; j--)
-                        {
-                            string s = visibleItems[j].Description ?? "";
-                            if (s == targetSection)
-                                firstOfSection = j;
-                            else
-                                break;
-                        }
-                        treeNav.SetSelectedIndex(firstOfSection);
-                        SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
-                        treeNav.ReannounceCurrentItem();
-                        return;
-                    }
-                }
-            }
-
-            // No different section found or wrap disabled
-            SoundDefOf.ClickReject.PlayOneShotOnCamera();
-        }
-
-        /// <summary>
-        /// Closes the current Info Card. If nested, restores the outer card's state.
-        /// </summary>
+        /// <summary>Closes the current card, restoring the outer card's state when nested.</summary>
         public static void CloseInfoCard()
         {
             if (!IsActive)
@@ -269,24 +163,22 @@ namespace RimWorldAccess
 
             if (cardStack.Count > 0)
             {
-                // Nested card: remove inner dialog without calling Dialog_InfoCard.Close()
-                // (which would clear RimWorld's static history). Use TryRemove instead, but let
-                // the card's own close sound (InfoCard_Close) play so closing a nested info card
-                // sounds like closing an info card, matching the sighted experience.
+                // TryRemove rather than Dialog_InfoCard.Close(), which would clear RimWorld's
+                // static history; the card's own close sound still plays.
                 closingFromAccessibility = true;
                 if (currentDialog != null)
                     Find.WindowStack.TryRemove(currentDialog, doCloseSound: true);
                 closingFromAccessibility = false;
 
-                // Restore outer card state (cursor position, expansion state preserved)
                 var saved = cardStack.Pop();
                 currentDialog = saved.dialog;
-                treeNav.Initialize(saved.rootItem, saved.selectedIndex);
-                treeNav.ReannounceCurrentItem();
+                currentRoot = saved.rootItem;
+                currentIndex = saved.selectedIndex;
+                ApplyTreeToScope();
+                Shell.InfoCardScope.Live?.AnnounceCurrentRow();
             }
             else
             {
-                // No outer card - actually close the dialog
                 closingFromAccessibility = true;
                 if (currentDialog != null)
                     currentDialog.Close();
@@ -299,65 +191,66 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Restores state from the stack for a specific dialog (used by PostClose for external closures).
-        /// </summary>
+        /// <summary>Restores state from the stack for a dialog, for PostClose's external-closure path.</summary>
         public static void RestoreFromStack(Dialog_InfoCard remainingCard)
         {
             if (cardStack.Count > 0)
             {
                 var saved = cardStack.Pop();
                 currentDialog = saved.dialog;
-                treeNav.Initialize(saved.rootItem, saved.selectedIndex);
+                currentRoot = saved.rootItem;
+                currentIndex = saved.selectedIndex;
+                ApplyTreeToScope();
             }
             else
             {
-                // Fallback: re-initialize from scratch
+                // Fallback: re-initialize from scratch.
                 Open(remainingCard, announceOpening: false);
             }
         }
 
-        /// <summary>
-        /// Clears the saved state stack.
-        /// </summary>
+        /// <summary>Clears the saved state stack.</summary>
         public static void ClearStack()
         {
             cardStack.Clear();
         }
 
         /// <summary>
-        /// Extracts all inspectable Defs from a tree item using vanilla's Hyperlink system.
-        /// Only stat entries can have hyperlinks (matching vanilla behavior).
-        /// If the item itself is not a stat entry, walks up to the parent to find one
-        /// (so children of an inspectable stat inherit its hyperlinks for Alt+I).
+        /// Every inspectable hyperlink on a tree item, kept as vanilla's own
+        /// <c>Dialog_InfoCard.Hyperlink</c> struct rather than collapsed to a bare Def, so every
+        /// shape vanilla's hover system carries survives to <see cref="ActivateHyperlink"/>. Only
+        /// stat rows can have hyperlinks: a vanilla <see cref="StatDrawEntry"/> or a pre-resolved
+        /// link list from a compat reader (<see cref="HasLinkPayload"/>). A non-stat row walks up to
+        /// its nearest such ancestor, so children inherit their stat's hyperlinks. Hyperlinks
+        /// vanilla itself no-ops when hidden are filtered out, so an undiscovered item's real name
+        /// cannot leak through a nested card's title.
         /// </summary>
-        private static List<Def> GetInspectableDefs(InspectionTreeItem item, bool walkUpToParent)
+        private static List<Dialog_InfoCard.Hyperlink> GetInspectableHyperlinks(InspectionTreeItem item, bool walkUpToParent)
         {
-            var result = new List<Def>();
+            var result = new List<Dialog_InfoCard.Hyperlink>();
             if (item == null) return result;
 
-            // Direct Def data (e.g. gene nodes under xenotype info card)
+            // Direct Def data (gene nodes under a xenotype card).
             if (item.Data is Def directDef)
             {
-                result.Add(directDef);
-                return result;
+                result.Add(new Dialog_InfoCard.Hyperlink(directDef));
+                return FilterHidden(result);
             }
 
-            // List of Defs (e.g. Genes parent node with multiple gene defs)
+            // A list of Defs (a Genes parent node).
             if (item.Data is IReadOnlyList<Def> defList && defList.Count > 0)
             {
                 foreach (var d in defList)
-                    result.Add(d);
-                return result;
+                    result.Add(new Dialog_InfoCard.Hyperlink(d));
+                return FilterHidden(result);
             }
 
-            // Check this item first
             var target = item;
-            if (!(target.Data is StatDrawEntry) && walkUpToParent)
+            if (!HasLinkPayload(target) && walkUpToParent)
             {
-                // Walk up to find the nearest ancestor with a StatDrawEntry
+                // Walk up to the nearest ancestor carrying links.
                 target = target.Parent;
-                while (target != null && !(target.Data is StatDrawEntry))
+                while (target != null && !HasLinkPayload(target))
                     target = target.Parent;
             }
 
@@ -367,35 +260,38 @@ namespace RimWorldAccess
                 {
                     var hyperlinks = statEntry.GetHyperlinks(StatRequest.ForEmpty());
                     if (hyperlinks != null)
-                    {
-                        foreach (var link in hyperlinks)
-                        {
-                            if (link.def != null)
-                                result.Add(link.def);
-                            else if (link.thing?.def != null)
-                                result.Add(link.thing.def);
-                        }
-                    }
+                        result.AddRange(hyperlinks);
                 }
                 catch { }
             }
-            return result;
+            else if (target?.Data is IReadOnlyList<Dialog_InfoCard.Hyperlink> resolvedLinks)
+            {
+                result.AddRange(resolvedLinks);
+            }
+            return FilterHidden(result);
         }
 
         /// <summary>
-        /// Checks if an item has inspectable hyperlinks directly (not walking up).
-        /// Used for the "Inspectable" announcement hint on stat entry nodes only.
+        /// Whether a row carries hyperlinks of its own: a vanilla stat entry, or already-resolved
+        /// links from a reader with no <see cref="StatDrawEntry"/> to hand over.
         /// </summary>
-        public static Def TryGetInspectableDef(InspectionTreeItem item)
+        private static bool HasLinkPayload(InspectionTreeItem item)
         {
-            var defs = GetInspectableDefs(item, walkUpToParent: false);
-            return defs.Count > 0 ? defs[0] : null;
+            return item.Data is StatDrawEntry || item.Data is IReadOnlyList<Dialog_InfoCard.Hyperlink>;
         }
 
-        /// <summary>
-        /// Opens a Dialog_InfoCard for a Def, automatically providing default stuff
-        /// for stuff-requiring ThingDefs. Matches the game's Hyperlink.ActivateHyperlink pattern.
-        /// </summary>
+        private static List<Dialog_InfoCard.Hyperlink> FilterHidden(List<Dialog_InfoCard.Hyperlink> links)
+        {
+            return links.Where(l => !l.IsHidden).ToList();
+        }
+
+        /// <summary>Whether an item has hyperlinks directly, without walking up; the "Inspectable" hint uses this.</summary>
+        public static bool HasInspectableHyperlink(InspectionTreeItem item)
+        {
+            return GetInspectableHyperlinks(item, walkUpToParent: false).Count > 0;
+        }
+
+        /// <summary>Opens a card for a Def, supplying default stuff for stuff-requiring ThingDefs as Hyperlink.ActivateHyperlink does.</summary>
         public static void OpenInfoCardForDef(Def def)
         {
             if (def is ThingDef thingDef && thingDef.MadeFromStuff)
@@ -411,12 +307,9 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Opens a Dialog_InfoCard for a Def if non-null; otherwise announces the fallback
-        /// message and plays the reject sound. Returns true on success, false on failure.
+        /// Opens a card for a Def, or announces the fallback message and plays the reject sound when
+        /// it is null; returns whether a card opened.
         /// </summary>
-        /// <param name="def">The def to open (may be null).</param>
-        /// <param name="fallbackAnnouncement">Optional override for the null-def announcement.
-        /// Defaults to "No info card available".</param>
         public static bool TryOpenInfoCardForDef(Def def, string fallbackAnnouncement = null)
         {
             if (def == null)
@@ -428,12 +321,7 @@ namespace RimWorldAccess
             return true;
         }
 
-        /// <summary>
-        /// Announces that no info card is available and plays the reject sound.
-        /// Use when a site has already determined there is no eligible target and only
-        /// needs to emit the canonical "no info card" feedback.
-        /// </summary>
-        /// <param name="fallbackAnnouncement">Optional override. Defaults to "No info card available".</param>
+        /// <summary>Announces that no info card is available and plays the reject sound.</summary>
         public static void SpeakNoInfoCardAvailable(string fallbackAnnouncement = null)
         {
             string announcement = fallbackAnnouncement
@@ -443,150 +331,76 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Saves current state to the stack and opens a nested info card for a Def.
-        /// Used by both the direct Alt+I handler and the multi-hyperlink selection menu.
+        /// Saves the live scope's cursor and tree state to the stack. The seed fields are only
+        /// authoritative between PostOpen and the Add postfix; after that the scope owns the cursor.
         /// </summary>
-        private static void PushStateAndOpenDef(Def def)
+        private static void PushCurrentState()
         {
+            Shell.InfoCardScope live = Shell.InfoCardScope.Live;
             cardStack.Push(new SavedCardState
             {
                 dialog = currentDialog,
-                rootItem = treeNav.RootItem,
-                selectedIndex = treeNav.SelectedIndex
+                rootItem = live != null ? live.TreeRoot : currentRoot,
+                selectedIndex = live != null ? live.TreeSelectedIndex : currentIndex
             });
+        }
+
+        /// <summary>Saves current state and opens a nested card for a Def.</summary>
+        private static void PushStateAndOpenDef(Def def)
+        {
+            PushCurrentState();
             OpenInfoCardForDef(def);
         }
 
-        /// <summary>
-        /// Routes a layout-aware typeahead character into the tree's search.
-        /// Called by the priority -1.5 TypeaheadDispatcher (registered in
-        /// TypeaheadConsumerRegistry). The KeyCode branch in HandleInput consumes
-        /// only the first half of Unity's key-pair and relies on this entry point
-        /// for the actual search character.
-        /// </summary>
-        public static void HandleTypeahead(char c)
+        /// <summary>Saves current state and opens a nested card for a world object.</summary>
+        private static void PushStateAndOpenWorldObject(WorldObject worldObject)
         {
-            if (!IsActive)
-                return;
+            PushCurrentState();
+            Find.WindowStack.Add(new Dialog_InfoCard(worldObject));
+        }
 
-            // While we own a float menu, route typeahead to it instead of the tree.
-            if (ownsFloatMenu && WindowlessFloatMenuState.IsActive)
-                return;
-
-            treeNav.HandleTypeahead(c);
+        /// <summary>Saves current state and opens a nested card for a royal title.</summary>
+        private static void PushStateAndOpenTitle(RoyalTitleDef titleDef, Faction faction)
+        {
+            PushCurrentState();
+            Find.WindowStack.Add(new Dialog_InfoCard(titleDef, faction));
         }
 
         /// <summary>
-        /// Handles keyboard input for the Info Card.
-        /// Returns true if input was handled.
-        /// Called from UnifiedKeyboardPatch which handles Event.current.Use().
+        /// Saves current state and opens a nested card for a faction, mirroring vanilla's own
+        /// faction-hyperlink branch: it also switches the background Factions tab and scrolls it to
+        /// this faction, a visual side effect with no accessible content to skip.
         /// </summary>
-        public static bool HandleInput(Event ev)
+        private static void PushStateAndOpenFaction(Faction faction)
         {
-            if (!IsActive || ev.type != EventType.KeyDown)
-                return false;
-
-            // Delegate to float menu when WE opened it (multi-hyperlink selection).
-            // We call HandleInput directly instead of returning false, because returning false
-            // causes the event to fall through to parent states (inventory at 4.805, research
-            // at 4.6) before reaching the float menu handler at priority 5.
-            // Only delegate when ownsFloatMenu is true — if the float menu was opened by
-            // another context (e.g., recipe selection in bills), we handle our own input.
-            if (ownsFloatMenu && WindowlessFloatMenuState.IsActive)
-            {
-                if (WindowlessFloatMenuState.HandleInput())
-                    return true;
-
-                // HandleInput returns false for Escape with no active search.
-                // Close the float menu and return to this info card.
-                if (ev.keyCode == KeyCode.Escape)
-                {
-                    SoundDefOf.FloatMenu_Cancel.PlayOneShotOnCamera();
-                    WindowlessFloatMenuState.Close();
-                    ownsFloatMenu = false;
-                    TolkHelper.Speak("RimWorldAccess.Inspection.InfoCard.MenuClosed".Loc());
-                    return true;
-                }
-
-                // Consume all other keys to prevent parent state fallthrough
-                return true;
-            }
-
-            KeyCode key = ev.keyCode;
-
-            // Page Down - jump to next category (custom behavior, not in TreeNavigationHelper)
-            if (key == KeyCode.PageDown)
-            {
-                JumpToNextCategory();
-                return true;
-            }
-
-            // Page Up - jump to previous category (custom behavior, not in TreeNavigationHelper)
-            if (key == KeyCode.PageUp)
-            {
-                JumpToPreviousCategory();
-                return true;
-            }
-
-            // Right arrow - intercept to handle lazy-load empty correction
-            if (key == KeyCode.RightArrow)
-            {
-                HandleRightArrow();
-                return true;
-            }
-
-            // Escape - clear search FIRST, then close
-            if (key == KeyCode.Escape)
-            {
-                if (treeNav.HasActiveSearch)
-                {
-                    treeNav.Typeahead.ClearSearchAndAnnounce();
-                    treeNav.ReannounceCurrentItem();
-                    return true;
-                }
-                CloseInfoCard();
-                return true;
-            }
-
-            // Delegate all other input to TreeNavigationHelper
-            return treeNav.HandleInput(ev);
+            PushCurrentState();
+            Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Factions);
+            (Find.MainTabsRoot.OpenTab?.TabWindow as MainTabWindow_Factions)?.ScrollToFaction(faction);
+            Find.WindowStack.Add(new Dialog_InfoCard(faction));
         }
 
-        /// <summary>
-        /// Rebuilds the visible items list and clamps selection index after tree structure changes.
-        /// Called from InfoCardTreeBuilder after permit allocation or refund modifies the tree.
-        /// </summary>
+        /// <summary>Rebuilds the visible items and clamps the selection after a tree structure change.</summary>
         public static void RefreshVisibleListAndAnnounce()
         {
-            treeNav.RebuildVisibleList();
-            if (treeNav.Count == 0)
-            {
-                treeNav.SetSelectedIndex(0);
-                return;
-            }
-            if (treeNav.SelectedIndex >= treeNav.Count)
-                treeNav.SetSelectedIndex(Math.Max(0, treeNav.Count - 1));
-            treeNav.ReannounceCurrentItem();
+            Shell.InfoCardScope.Live?.RefreshTreeAndAnnounce();
         }
 
-        /// <summary>
-        /// Announces the opening of the Info Card.
-        /// </summary>
+        /// <summary>Announces the card opening.</summary>
         private static void AnnounceOpening()
         {
-            if (treeNav.RootItem == null)
+            if (currentRoot == null)
                 return;
 
-            string rootLabel = treeNav.RootItem.Label.StripTags();
+            string rootLabel = currentRoot.Label.StripTags();
 
-            // Check if children are tabs (Category type) or direct content (single-tab case)
-            bool hasTabs = treeNav.RootItem.Children.Count > 0 &&
-                           treeNav.RootItem.Children[0].Type == InspectionTreeItem.ItemType.Category;
+            // Children are either tabs (Category) or, in the single-tab case, direct content.
+            bool hasTabs = currentRoot.Children.Count > 0 &&
+                           currentRoot.Children[0].Type == InspectionTreeItem.ItemType.Category;
 
             string announcement;
             if (hasTabs)
             {
-                int tabCount = treeNav.RootItem.Children.Count;
+                int tabCount = currentRoot.Children.Count;
                 string key = tabCount == 1
                     ? "RimWorldAccess.Inspection.InfoCard.OpeningWithTabsOne"
                     : "RimWorldAccess.Inspection.InfoCard.OpeningWithTabsMany";
@@ -594,7 +408,7 @@ namespace RimWorldAccess
             }
             else
             {
-                int itemCount = treeNav.RootItem.Children.Count;
+                int itemCount = currentRoot.Children.Count;
                 string key = itemCount == 1
                     ? "RimWorldAccess.Inspection.InfoCard.OpeningFlatOne"
                     : "RimWorldAccess.Inspection.InfoCard.OpeningFlatMany";
@@ -604,209 +418,26 @@ namespace RimWorldAccess
             TolkHelper.SpeakData(announcement);
         }
 
-        #region Announcement Formatters
-
         /// <summary>
-        /// Formats item announcement matching the original InfoCardState format:
-        /// "{label stripped}{space+expanded/collapsed}.{levelSuffix} {position}.{inspectable hint}"
+        /// Alt+I on a card row: one hyperlink activates directly, several present the picker float
+        /// menu, none speaks the canonical "no info card available" feedback. The nested card's own
+        /// PostOpen pushes a fresh scope and the save stack restores this one on close.
         /// </summary>
-        private static string FormatItemAnnouncement(InspectionTreeItem item)
+        internal static void OpenNestedCardFor(InspectionTreeItem item)
         {
-            try
+            var links = GetInspectableHyperlinks(item, walkUpToParent: true);
+            if (links.Count == 1)
             {
-                // Smart labels: use ExpandedLabel (short form) when expanded
-                string rawLabel;
-                if (item.IsExpandable && item.IsExpanded && !string.IsNullOrEmpty(item.ExpandedLabel))
-                    rawLabel = item.ExpandedLabel;
-                else
-                    rawLabel = item.Label;
-                string label = rawLabel.StripTags().TrimEnd('.', '!', '?');
-
-                // Build state indicator (only for expandable items)
-                string stateIndicator = TreeNavigationHelper.FormatExpansionSpaceSuffix(item);
-
-                // Get sibling position
-                var (position, total) = treeNav.GetSiblingPosition(item);
-
-                // Build level suffix if level changed
-                string levelSuffix = MenuHelper.GetLevelSuffix("InfoCard", item.IndentLevel, skipLevelOne: false);
-
-                // Add inspectable hint for items with hyperlinks (stat entries only, matching vanilla)
-                string inspectableHint = TryGetInspectableDef(item) != null ? "RimWorldAccess.InfoCard.Inspectable".Translate().ToString() : "";
-
-                // Build full announcement (respects AnnouncePosition setting)
-                string positionPart = MenuHelper.FormatPosition(position - 1, total);
-                string announcement = string.IsNullOrEmpty(positionPart)
-                    ? $"{label}{stateIndicator}.{levelSuffix}{inspectableHint}"
-                    : $"{label}{stateIndicator}.{levelSuffix} {positionPart}.{inspectableHint}";
-
-                // Prepend section name when crossing section boundaries
-                string sectionName = item.Description;
-                if (!string.IsNullOrEmpty(sectionName) && sectionName != lastAnnouncedSection)
-                {
-                    announcement = "RimWorldAccess.Inspection.InfoCard.SectionPrefix".Translate(sectionName, announcement);
-                    lastAnnouncedSection = sectionName;
-                }
-                else if (string.IsNullOrEmpty(sectionName) && lastAnnouncedSection != null)
-                {
-                    // Moving from a section to an item without a section
-                    lastAnnouncedSection = null;
-                }
-
-                return announcement;
+                ActivateHyperlinkForInspection(links[0]);
             }
-            catch (Exception ex)
+            else if (links.Count > 1)
             {
-                Log.Error($"[InfoCardState] Error formatting announcement: {ex.Message}");
-                return item.Label.StripTags();
-            }
-        }
-
-        /// <summary>
-        /// Formats search announcement matching the original InfoCardState format:
-        /// "{label stripped}{space+expanded/collapsed}, {N} of {M} matches for '{search}'"
-        /// </summary>
-        private static string FormatSearchAnnouncement(InspectionTreeItem item, TypeaheadSearchHelper typeahead)
-        {
-            string label = item.Label.StripTags();
-
-            string stateIndicator = TreeNavigationHelper.FormatExpansionSpaceSuffix(item);
-
-            return typeahead.BuildItemAnnouncement($"{label}{stateIndicator}");
-        }
-
-        #endregion
-
-        #region Custom Actions
-
-        /// <summary>
-        /// Handles Enter key activation. For expandable items that are already expanded,
-        /// shows a reject message. For collapsed expandable items, expands them (with lazy-load
-        /// empty correction). For non-expandable items with actions, executes the action.
-        /// </summary>
-        private static bool HandleActivate(InspectionTreeItem item)
-        {
-            // Handle expandable items
-            if (item.IsExpandable)
-            {
-                if (item.IsExpanded)
-                {
-                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    TolkHelper.Speak("RimWorldAccess.Inspection.InfoCard.AlreadyExpanded".Loc());
-                    return true;
-                }
-                // Collapsed: expand with lazy-load empty correction (same as Right arrow)
-                HandleRightArrow();
-                return true;
-            }
-
-            // For non-expandable items with actions, execute the action
-            if (item.OnActivate != null)
-            {
-                item.OnActivate();
-                SoundDefOf.Click.PlayOneShotOnCamera();
-                return true;
-            }
-
-            // Otherwise, nothing to do
-            SoundDefOf.ClickReject.PlayOneShotOnCamera();
-            TolkHelper.Speak("RimWorldAccess.Inspection.InfoCard.NoAction".Loc());
-            return true;
-        }
-
-        /// <summary>
-        /// Handles lazy loading before expanding a node.
-        /// Calls item.OnActivate to load children.
-        /// Note: Does NOT correct IsExpandable here — that is handled in HandleRightArrow
-        /// and HandleActivate which check Children.Count after lazy load.
-        /// </summary>
-        private static void HandleBeforeExpand(InspectionTreeItem item)
-        {
-            if (item.OnActivate != null && item.Children.Count == 0)
-            {
-                item.OnActivate();
-            }
-        }
-
-        /// <summary>
-        /// Handles Right arrow with lazy-load empty correction.
-        /// When expanding a node that was marked expandable but has no content after lazy loading,
-        /// corrects IsExpandable and announces instead of expanding to an empty node.
-        /// </summary>
-        private static void HandleRightArrow()
-        {
-            var item = treeNav.SelectedItem;
-            if (item == null)
-                return;
-
-            // Not expandable - reject
-            if (!item.IsExpandable)
-            {
-                SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                TolkHelper.Speak("RimWorldAccess.Inspection.InfoCard.CannotExpand".Loc(), SpeechPriority.High);
-                return;
-            }
-
-            // Already expanded - drill down to first child
-            if (item.IsExpanded)
-            {
-                // Pre-set section to suppress section announcement on the child we drill into
-                if (item.Children.Count > 0)
-                    lastAnnouncedSection = item.Children[0].Description;
-                treeNav.ExpandOrDrillDown();
-                return;
-            }
-
-            // Collapsed: trigger lazy load
-            if (item.OnActivate != null && item.Children.Count == 0)
-            {
-                item.OnActivate();
-            }
-
-            // Check if lazy load produced children
-            if (item.Children.Count == 0)
-            {
-                // Item was marked expandable but has no content - correct its state
-                item.IsExpandable = false;
-                SoundDefOf.Click.PlayOneShotOnCamera();
-                treeNav.ReannounceCurrentItem();
-                return;
-            }
-
-            // Has children - expand normally
-            item.IsExpanded = true;
-            treeNav.RebuildVisibleList();
-            SoundDefOf.FloatMenu_Open.PlayOneShotOnCamera();
-
-            // Suppress parent/section announcements — user just chose to expand this node
-            treeNav.MarkCurrentParentAsAnnounced();
-            var selectedItem = treeNav.SelectedItem;
-            if (selectedItem != null)
-                lastAnnouncedSection = selectedItem.Description;
-
-            treeNav.ReannounceCurrentItem();
-        }
-
-        /// <summary>
-        /// Handles Alt+I - open nested info card via vanilla's Hyperlink system.
-        /// </summary>
-        private static bool HandleInfo(InspectionTreeItem item)
-        {
-            var defs = GetInspectableDefs(item, walkUpToParent: true);
-            if (defs.Count == 1)
-            {
-                // Single hyperlink - open directly
-                PushStateAndOpenDef(defs[0]);
-            }
-            else if (defs.Count > 1)
-            {
-                // Multiple hyperlinks - present selection menu
                 var options = new List<FloatMenuOption>();
-                foreach (var def in defs)
+                foreach (var link in links)
                 {
-                    var capturedDef = def;
-                    string label = def.label?.CapitalizeFirst() ?? def.defName;
-                    options.Add(new FloatMenuOption(label, () => PushStateAndOpenDef(capturedDef)));
+                    var capturedLink = link;
+                    string label = InfoCardDataExtractor.GetHyperlinkLabel(link)?.CapitalizeFirst() ?? "???";
+                    options.Add(new FloatMenuOption(label, () => ActivateHyperlinkForInspection(capturedLink)));
                 }
                 TolkHelper.Speak("RimWorldAccess.InfoCard.ChooseItemToInspect".Loc());
                 ownsFloatMenu = true;
@@ -816,9 +447,64 @@ namespace RimWorldAccess
             {
                 SpeakNoInfoCardAvailable();
             }
-            return true;
         }
 
-        #endregion
+        /// <summary>
+        /// Activates one resolved hyperlink, riding the same shape ladder vanilla's
+        /// <c>Hyperlink.ActivateHyperlink</c> does. A shape with a real info card of its own opens a
+        /// NESTED card through this class's save/restore stack, so Escape backs out to the card the
+        /// player came from. A shape vanilla never gives a card (ideo, quest) rides vanilla's own
+        /// ActivateHyperlink instead: it closes our dialog as a side effect, which
+        /// <see cref="InfoCardPatch"/>'s PostClose external-closure branch already handles. The
+        /// gene-owner shape has no accessible surface unless the pawn is selectable on a map
+        /// (vanilla's own gate), so it speaks the resolved label rather than doing nothing.
+        /// </summary>
+        private static void ActivateHyperlinkForInspection(Dialog_InfoCard.Hyperlink link)
+        {
+            if (link.HasGeneOwnerThing)
+            {
+                if (ThingSelectionUtility.SelectableByMapClick(link.thing))
+                    link.ActivateHyperlink();
+                else
+                    TolkHelper.SpeakData(InfoCardDataExtractor.GetHyperlinkLabel(link));
+                return;
+            }
+            if (link.ideo != null || link.quest != null)
+            {
+                link.ActivateHyperlink();
+                return;
+            }
+            if (link.researchProject != null)
+            {
+                PushStateAndOpenDef(link.researchProject);
+                return;
+            }
+            if (link.worldObject != null)
+            {
+                PushStateAndOpenWorldObject(link.worldObject);
+                return;
+            }
+            if (link.titleDef != null)
+            {
+                PushStateAndOpenTitle(link.titleDef, link.faction);
+                return;
+            }
+            if (link.def != null)
+            {
+                PushStateAndOpenDef(link.def);
+                return;
+            }
+            if (link.thing?.def != null)
+            {
+                PushStateAndOpenDef(link.thing.def);
+                return;
+            }
+            if (link.faction != null)
+            {
+                PushStateAndOpenFaction(link.faction);
+                return;
+            }
+            SpeakNoInfoCardAvailable();
+        }
     }
 }

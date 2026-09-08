@@ -2,38 +2,46 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Verse;
-using Verse.Sound;
 using RimWorld;
-using UnityEngine;
 
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Manages a treeview-style architect menu with expandable categories.
-    /// Level 1: Categories (Orders, Structure, etc.) - expandable
-    /// Level 2: Designators (Wall, Door, etc.) - activates tool
-    /// Uses TreeNavigationHelper for all navigation logic.
+    /// Data/lifecycle facade for the treeview-style architect menu. Level 1: Categories
+    /// (Orders, Structure, etc.) - expandable. Level 2:
+    /// Designators (Wall, Door, etc.) - activates tool.
+    ///
+    /// Owns none of the cursor/typeahead/announcement machinery any more — that lives on
+    /// <see cref="RimWorldAccess.Shell.ArchitectTreeScope"/> (a
+    /// <see cref="RimWorldAccess.Shell.TreeRegionScope"/> subclass) via
+    /// <see cref="RimWorldAccess.Shell.TreeModel{T}"/>. This class still owns
+    /// <see cref="isActive"/> (a <c>ShellGuards.MenuOwnsInput</c> and
+    /// <c>MapNavigationPatch</c> arrow-suppression member — design-locked), tree construction,
+    /// designator-label formatting, the designator-activation callback, and the three bridge
+    /// callbacks the mirror wires once so <see cref="Open"/>/<see cref="Close"/>/
+    /// <see cref="GetSelectedDesignator"/>/<see cref="GetSelectedCategory"/> drive the scope's
+    /// tree synchronously regardless of whether the scope happens to be pushed yet.
     /// </summary>
     public static class ArchitectTreeState
     {
-        private static TreeNavigationHelper treeNav = new TreeNavigationHelper("Architect");
         private static bool isActive = false;
 
         // Callback for when a designator is activated
         private static Action<Designator> onDesignatorActivated;
 
         public static bool IsActive => isActive;
-        public static bool HasActiveSearch => treeNav.HasActiveSearch;
-        public static bool HasNoMatches => treeNav.HasNoMatches;
 
-        static ArchitectTreeState()
-        {
-            treeNav.FormatItemAnnouncement = FormatAnnouncement;
-            treeNav.FormatSearchAnnouncement = FormatSearchAnnouncement;
-            treeNav.OnActivate = HandleActivate;
-            // Typeahead searches across all categories without requiring '*' first.
-            treeNav.ShouldExpandForSearch = _ => true;
-        }
+        /// <summary>True while a designator pick would have somewhere to go.</summary>
+        internal static bool HasPendingActivation => onDesignatorActivated != null;
+
+        /// <summary>Wired once by ArchitectTreeScopeMirror's static constructor to ArchitectTreeScope.LoadTree.</summary>
+        internal static Func<InspectionTreeItem, int> LoadTreeCallback;
+
+        /// <summary>Wired once by ArchitectTreeScopeMirror's static constructor to ArchitectTreeScope.ClearTree.</summary>
+        internal static Action ClearTreeCallback;
+
+        /// <summary>Wired once by ArchitectTreeScopeMirror's static constructor to ArchitectTreeScope.SelectedTreeItem.</summary>
+        internal static Func<InspectionTreeItem> SelectedItemCallback;
 
         /// <summary>
         /// Opens the architect tree menu.
@@ -53,12 +61,11 @@ namespace RimWorldAccess
                 return;
             }
 
-            treeNav.Initialize(root);
-
             TolkHelper.Speak("RimWorldAccess.Building.ArchitectTree.MenuOpened".Loc());
-            treeNav.ReannounceCurrentItem();
 
-            Log.Message($"Opened architect tree menu with {treeNav.Count} items");
+            int visibleCount = LoadTreeCallback != null ? LoadTreeCallback(root) : 0;
+
+            ModLogger.Dev($"Opened architect tree menu with {visibleCount} items");
         }
 
         /// <summary>
@@ -68,30 +75,27 @@ namespace RimWorldAccess
         {
             isActive = false;
             onDesignatorActivated = null;
-            treeNav.Reset();
+            if (ClearTreeCallback != null)
+            {
+                ClearTreeCallback();
+            }
         }
 
         /// <summary>
-        /// Handles keyboard input for the architect tree.
-        /// Returns true if input was consumed; false for unhandled events.
+        /// Hands the picked designator to the stored placement callback. Deactivating BEFORE the
+        /// callback runs is load-bearing: it routes into still-legacy placement territory
+        /// (zone placement, the material float menu, ArchitectState.EnterPlacementMode), which
+        /// assumes this menu is already closed. See ArchitectTreeScope's own remarks.
         /// </summary>
-        public static bool HandleInput(Event ev)
+        internal static void CompleteDesignatorActivation(Designator designator)
         {
-            if (!isActive)
-                return false;
-
-            return treeNav.HandleInput(ev);
-        }
-
-        /// <summary>
-        /// Public typeahead entry point for the unified <see cref="TypeaheadDispatcher"/>.
-        /// Delegates to the per-tree helper instance — fixes typeahead on non-Latin
-        /// keyboard layouts where the legacy KeyCode gate didn't fire.
-        /// </summary>
-        public static void HandleTypeahead(char c)
-        {
-            if (!isActive) return;
-            treeNav.HandleTypeahead(c);
+            isActive = false;
+            var callback = onDesignatorActivated;
+            onDesignatorActivated = null;
+            if (callback != null)
+            {
+                callback(designator);
+            }
         }
 
         /// <summary>
@@ -99,9 +103,25 @@ namespace RimWorldAccess
         /// </summary>
         public static Designator GetSelectedDesignator()
         {
-            var item = treeNav.SelectedItem;
+            var item = SelectedItemCallback != null ? SelectedItemCallback() : null;
             if (item != null && item.Data is Designator designator)
                 return designator;
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the category the cursor is inside: the focused row's own category when a
+        /// category row is focused, otherwise the parent category of the focused designator.
+        /// </summary>
+        public static DesignationCategoryDef GetSelectedCategory()
+        {
+            var item = SelectedItemCallback != null ? SelectedItemCallback() : null;
+            while (item != null)
+            {
+                if (item.Data is DesignationCategoryDef category)
+                    return category;
+                item = item.Parent;
+            }
             return null;
         }
 
@@ -170,7 +190,8 @@ namespace RimWorldAccess
             string label = designator.LabelCap;
 
             // Check if designator has right-click options and add hint
-            bool hasRightClickOptions = designator.RightClickFloatMenuOptions.Any();
+            bool hasRightClickOptions = designator.RightClickFloatMenuOptions.Any()
+                || DesignatorContextMenuRouter.HasOptions(designator);
             string rightClickHint = hasRightClickOptions ? " " + "RimWorldAccess.Building.Architect.MoreOptionsHint".Translate().ToString() : "";
 
             // Add cost, skill, and description for build designators
@@ -223,84 +244,6 @@ namespace RimWorldAccess
             }
 
             return label;
-        }
-
-        #endregion
-
-        #region Announcement Formatters
-
-        private static string FormatAnnouncement(InspectionTreeItem item)
-        {
-            var (position, total) = treeNav.GetSiblingPosition(item);
-            string positionPart = MenuHelper.FormatPosition(position - 1, total);
-
-            string announcement;
-
-            if (item.Type == InspectionTreeItem.ItemType.Category)
-            {
-                // Categories: "Label, expanded/collapsed. position."
-                string stateSuffix = TreeNavigationHelper.FormatExpansionSuffix(item);
-                string positionSection = string.IsNullOrEmpty(positionPart) ? "." : $". {positionPart}.";
-                announcement = $"{item.Label}{stateSuffix}{positionSection}";
-            }
-            else
-            {
-                // Designator: "Label. position." or "Label position." if label ends with punctuation
-                string labelText = item.Label;
-                bool labelEndsWithPunctuation = !string.IsNullOrEmpty(labelText) &&
-                    (labelText.EndsWith(".") || labelText.EndsWith("!") || labelText.EndsWith("?"));
-
-                string positionSection;
-                if (string.IsNullOrEmpty(positionPart))
-                {
-                    positionSection = labelEndsWithPunctuation ? "" : ".";
-                }
-                else
-                {
-                    positionSection = labelEndsWithPunctuation ? $" {positionPart}." : $". {positionPart}.";
-                }
-
-                announcement = $"{item.Label}{positionSection}";
-            }
-
-            // Add level suffix at the end (only announced when level changes)
-            announcement += MenuHelper.GetLevelSuffix("Architect", item.IndentLevel);
-
-            return announcement;
-        }
-
-        private static string FormatSearchAnnouncement(InspectionTreeItem item, TypeaheadSearchHelper typeahead)
-        {
-            if (typeahead.HasActiveSearch)
-            {
-                return typeahead.BuildItemAnnouncement(item.Label);
-            }
-            return FormatAnnouncement(item);
-        }
-
-        #endregion
-
-        #region Custom Actions
-
-        private static bool HandleActivate(InspectionTreeItem item)
-        {
-            if (item.Type == InspectionTreeItem.ItemType.Category)
-            {
-                // Toggle expansion (default behavior handles this)
-                return false;
-            }
-
-            if (item.Data is Designator designator && onDesignatorActivated != null)
-            {
-                isActive = false;
-                treeNav.Reset();
-                var callback = onDesignatorActivated;
-                onDesignatorActivated = null;
-                callback(designator);
-                return true;
-            }
-
-            return false;
         }
 
         #endregion

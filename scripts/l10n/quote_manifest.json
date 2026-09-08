@@ -1,0 +1,138 @@
+{
+  "sources": {
+    "concepts": {
+      "english": "Defs/ConceptDefs/Concepts_RimWorldAccess.xml",
+      "translated": "DefInjected/ConceptDef/Concepts_RimWorldAccess.xml"
+    },
+    "overrides": {
+      "english": "Defs/ConceptDefs/Overrides_Vanilla.xml",
+      "translated": "DefInjected/RimWorldAccess.ConceptHelpOverrideDef/Overrides_Vanilla.xml"
+    }
+  },
+  "entries": [
+    {"id": "stockpiles.typeahead", "file": "overrides",
+     "field": "RWA_Ovr_Stockpiles.helpText", "en": "stock",
+     "strategy": "fragment", "key": "Stockpile",
+     "note": "Architect typeahead for the stockpile zone. Core/Keyed/Misc_Gameplay.xml."},
+
+    {"id": "growingfood.typeahead", "file": "overrides",
+     "field": "RWA_Ovr_GrowingFood.helpText", "en": "grow",
+     "strategy": "fragment", "key": "GrowingZone",
+     "note": "Core/Keyed/Misc_Gameplay.xml."},
+
+    {"id": "mining.typeahead", "file": "overrides",
+     "field": "RWA_Ovr_Mining.helpText", "en": "mine",
+     "strategy": "fragment", "key": "DesignatorMine"},
+
+    {"id": "mining.minevein", "file": "overrides",
+     "field": "RWA_Ovr_Mining.helpText", "en": "Mine vein",
+     "strategy": "label", "key": "DesignatorMineVein",
+     "overrides": {"Portuguese": {"expect": "Mine vein",
+       "note": "no EU-PT language data for this gizmo; DesignatorMineVein is absent from the shipped Portuguese/Core/Keyed/Designators.xml entirely, so players hear the English label"}}},
+
+    {"id": "storagetab.settings", "file": "overrides",
+     "field": "RWA_Ovr_StorageTab.helpText", "en": "Storage settings",
+     "strategy": "self", "key": "RimWorldAccess.Building.Shelf.StorageSettingsLabel",
+     "note": "OUR label, not vanilla's. Answers the open flag in es-castilian-glossary.md section 5."},
+
+    {"id": "homearea.typeahead", "file": "overrides",
+     "field": "RWA_Ovr_HomeArea.helpText", "en": "expand",
+     "strategy": "fragment", "key": "DesignatorAreaHomeExpand"},
+
+    {"id": "homearea.label", "file": "overrides",
+     "field": "RWA_Ovr_HomeArea.helpText", "en": "Expand home area",
+     "strategy": "label", "key": "DesignatorAreaHomeExpand"},
+
+    {"id": "allowedareas.typeahead", "file": "overrides",
+     "field": "RWA_Ovr_AllowedAreas.helpText", "en": "allowed",
+     "strategy": "fragment", "key": "DesignatorExpandAreaAllowed",
+     "note": "Castilian labels both create and delete designators ambiguously; the doc must not promise a unique hit."},
+
+    {"id": "medops.addbill", "file": "overrides",
+     "field": "RWA_Ovr_MedicalOperations.helpText", "en": "Add bill",
+     "strategy": "label", "key": "AddBill",
+     "note": "Core/Keyed/ITabs.xml."},
+
+    {"id": "messages.jumploc", "file": "overrides",
+     "field": "RWA_Ovr_ClickingMessages.helpText", "en": "Jump to location",
+     "strategy": "label", "key": "JumpToLocation",
+     "note": "Core/Keyed/Letters.xml. NOT WorldJumpTo, which is a different string."},
+
+    {"id": "formation.gohere", "file": "overrides",
+     "field": "RWA_Ovr_GroupGotoHereDragging.helpText", "en": "Go here",
+     "strategy": "label", "key": "GoHere",
+     "note": "Core/Keyed/FloatMenu.xml."},
+
+    {"id": "formation.suffix", "file": "overrides",
+     "field": "RWA_Ovr_GroupGotoHereDragging.helpText", "en": "(formation)",
+     "strategy": "self_suffix", "key": "RimWorldAccess.Input.Order.FormationOption",
+     "note": "Our own template '{0} (formation)'; the doc quotes its literal tail."},
+
+    {"id": "plantgizmo.prefix", "file": "overrides",
+     "field": "RWA_Ovr_SetGrowingZonePlant.helpText", "en": "Plant:",
+     "strategy": "prefix", "key": "CommandSelectPlantToGrow",
+     "note": "French ships bare '{0}' with no literal prefix; expect NOPREFIX there, not a failure.",
+     "overrides": {"Portuguese": {"expect": "Plant:",
+       "note": "no EU-PT language data for this key; Core/Keyed/GameplayCommands.xml is truncated to 137 of 767 lines in EU-PT and CommandSelectPlantToGrow isn't among them, so players hear the English gizmo"}}},
+
+    {"id": "plantgizmo.example", "file": "overrides",
+     "field": "RWA_Ovr_SetGrowingZonePlant.helpText", "en": "Plant: rice",
+     "strategy": "parts",
+     "parts": [{"prefix_of": "CommandSelectPlantToGrow"}, {"key": "Plant_Rice.label"}],
+     "note": "Composed example. Labels are 'planta de arroz' / 'pirinç bitkisi' / 'riz'; any-word matching accepts the short form the docs use.",
+     "overrides": {"Portuguese": {"expect": "Plant: rice",
+       "note": "no EU-PT language data for either part; same GameplayCommands.xml truncation as plantgizmo.prefix, so players hear the English composed example"}}},
+
+    {"id": "psyfocus.anything", "file": "overrides",
+     "field": "RWA_Ovr_MeditationDesiredPsyfocus.helpText", "en": "Anything",
+     "strategy": "label", "key": "Anything.label",
+     "space": "definjected",
+     "note": "TimeAssignmentDef. Wildly divergent: 'cualq. cosa' (LAT), 'tiempo libre' (CAST), 'temps libre' (FR), 'что угодно' (RU), 'herhangi' (TR)."},
+
+    {"id": "pollution.typeahead", "file": "overrides",
+     "field": "RWA_Ovr_PollutedTerrain.helpText", "en": "pollution",
+     "strategy": "fragment", "key": "DesignatorAreaPollutionClearExpand",
+     "note": "Biotech/Keyed/Designators.xml. Castilian truncates the label to 'contamin.'; the fragment strategy handles it.",
+     "overrides": {"Portuguese": {"expect": "pollution",
+       "note": "no EU-PT language data for this module; the game ships no Portuguese.tar for Biotech, so players hear the English label"}}},
+
+    {"id": "xenotype.composed", "file": "overrides",
+     "field": "RWA_Ovr_GenesAndXenotypes.helpText", "en": "Xenotype: Baseliner",
+     "strategy": "parts",
+     "parts": [{"key": "Xenotype"}, {"key": "Baseliner.label"}],
+     "note": "Biotech. Baseliner is 'basinerte' (LAT), 'básico' (CAST), 'humain' (FR), 'первозданный' (RU), 'базовий' (UK).",
+     "overrides": {"Portuguese": {"expect": "Xenotype: Baseliner",
+       "note": "no EU-PT language data for this module; the game ships no Portuguese.tar for Biotech, so players hear the English composed example"}}},
+
+    {"id": "fishing.typeahead", "file": "overrides",
+     "field": "RWA_Ovr_Fishing.helpText", "en": "fishing",
+     "strategy": "fragment", "key": "Zone_Fishing",
+     "note": "Odyssey/Keyed/Designators.xml.",
+     "overrides": {"Portuguese": {"expect": "fishing",
+       "note": "no EU-PT language data for this module; the game ships no Portuguese.tar for Odyssey, so players hear the English label"}}},
+
+    {"id": "buildingbasics.wall", "file": "concepts",
+     "field": "RWA_BuildingBasics.helpText", "en": "wall",
+     "strategy": "fragment", "key": "Wall.label", "space": "definjected",
+     "note": "Wall.label is 'muro' in both Spanish dialects; the shipped docs said 'pared' until the Castilian wave.",
+     "overrides": {"ChineseSimplified": {"expect": "墙",
+       "note": "Wall.label is the single character '墙'; quoted_spans() requires 2+ characters inside the marks, so no fragment of a 1-char label can ever satisfy the substring-of-label check. expect falls back to a plain containment test."}}},
+
+    {"id": "buildingbasics.stockpile", "file": "concepts",
+     "field": "RWA_BuildingBasics.helpText", "en": "stockpile",
+     "strategy": "fragment", "key": "Stockpile"},
+
+    {"id": "inspect.leg", "file": "concepts",
+     "field": "RWA_InspectingThings.helpText", "en": "leg",
+     "strategy": "fragment", "key": "Leg.label", "space": "definjected",
+     "overrides": {"ChineseSimplified": {"expect": "腿",
+       "note": "Leg.label is the single character '腿'; same 1-char-label gap as buildingbasics.wall."},
+       "Portuguese": {"expect": "leg",
+       "note": "no EU-PT language data for this key; no bare Leg.label tag exists in any EU-PT BodyPartDef file, so players hear the English fragment"}}},
+
+    {"id": "inspect.inf", "file": "concepts",
+     "field": "RWA_InspectingThings.helpText", "en": "inf",
+     "strategy": "fragment", "key": "WoundInfection.label", "space": "definjected",
+     "note": "Typeahead into the health tree. Core/DefInjected/HediffDef/Hediffs_Local_Infections.xml."}
+  ]
+}

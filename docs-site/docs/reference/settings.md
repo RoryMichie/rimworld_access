@@ -6,7 +6,7 @@ RimWorld Access has its own options panel, separate from RimWorld's standard mod
 
 **Default: off.**
 
-When on, menus loop from the last item back to the first, and from the first back to the last. When off, navigation stops at the boundaries.
+When on, menus loop from the last item back to the first, and from the first back to the last. When off, navigation stops at the boundaries and plays a short tone to tell you the cursor could not move, rather than reading the same row to you again.
 
 ## Announce position
 
@@ -78,6 +78,14 @@ You can switch between views at any time from within the Work menu using **Ctrl+
 When on, the mod announces when the game forces Normal speed because of a nearby threat ("Game slowed down by presence of threat") and again when the slowdown lifts. This only fires if your chosen speed is faster than Normal.
 
 To check the current game speed at any time, press **Alt+T**.
+
+## Announce selected pawn activity
+
+**Default: off.**
+
+When on, the mod narrates what the selected pawn is doing, for as long as they stay selected: each new job as it starts ("Cutting plants", "Hauling steel to stockpile"), and each named room or zone they walk into ("in kitchen", "in growing zone 1"). Outdoors, and in rooms the game gives no role to, nothing is spoken.
+
+Moving the map cursor ends the narration. Select the pawn again with comma, period, or the colonist bar to pick it back up, or press **Alt+C** to send the cursor to them, which keeps the narration going while the cursor rides along. See [Selecting pawns](../concepts/selecting-pawns.md).
 
 ---
 

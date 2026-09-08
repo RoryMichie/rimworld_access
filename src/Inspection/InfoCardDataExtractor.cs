@@ -10,13 +10,13 @@ using Verse;
 namespace RimWorldAccess
 {
     /// <summary>
-    /// Extracts data from RimWorld's Dialog_InfoCard and related utilities via reflection.
-    /// Provides structured data for InfoCardTreeBuilder to consume.
+    /// Reads RimWorld's Dialog_InfoCard and related utilities by reflection, producing the
+    /// structured data InfoCardTreeBuilder consumes.
     /// </summary>
     public static class InfoCardDataExtractor
     {
-        // Cached reflection fields
         private static FieldInfo cachedDrawEntriesField;
+        private static MethodInfo statsToDrawForThingMethod;
         private static FieldInfo dialogThingField;
         private static FieldInfo dialogTabField;
         private static FieldInfo dialogDefField;
@@ -25,14 +25,21 @@ namespace RimWorldAccess
         private static FieldInfo dialogTitleDefField;
         private static FieldInfo dialogFactionField;
         private static FieldInfo dialogStuffField;
-        private static MethodInfo getWorkTypeDisableCausesMethod;
 
         static InfoCardDataExtractor()
         {
-            // Cache reflection fields for performance
             cachedDrawEntriesField = typeof(StatsReportUtility).GetField(
                 "cachedDrawEntries",
                 BindingFlags.NonPublic | BindingFlags.Static
+            );
+
+            // The private generator behind DrawStatsReport(Rect, Thing); see GetStatEntriesFor.
+            statsToDrawForThingMethod = typeof(StatsReportUtility).GetMethod(
+                "StatsToDraw",
+                BindingFlags.NonPublic | BindingFlags.Static,
+                null,
+                new[] { typeof(Thing) },
+                null
             );
 
             dialogThingField = typeof(Dialog_InfoCard).GetField(
@@ -74,16 +81,8 @@ namespace RimWorldAccess
                 "stuff",
                 BindingFlags.NonPublic | BindingFlags.Instance
             );
-
-            getWorkTypeDisableCausesMethod = typeof(CharacterCardUtility).GetMethod(
-                "GetWorkTypeDisableCauses",
-                BindingFlags.NonPublic | BindingFlags.Static
-            );
         }
 
-        /// <summary>
-        /// Gets the stat entries from StatsReportUtility's cached list.
-        /// </summary>
         public static List<StatDrawEntry> GetStatEntries()
         {
             try
@@ -105,8 +104,53 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets the Thing being displayed in the dialog.
+        /// Stat entries for one specific thing, independent of
+        /// <see cref="StatsReportUtility"/>'s shared cache — which <see cref="GetStatEntries"/>
+        /// reads, and which is only right while the info card that filled it is the surface
+        /// being read. Reproduces vanilla's <c>DrawStatsReport(Rect, Thing)</c> population step
+        /// (public <c>SpecialDisplayStats</c> plus the private <c>StatsToDraw(Thing)</c>
+        /// generator, same predicate), then applies <c>FinalizeCachedDrawEntries</c>' ordering
+        /// locally rather than calling it, since that method would clobber an open info card's
+        /// cache. Returns an empty list when the private generator cannot be resolved.
         /// </summary>
+        public static List<StatDrawEntry> GetStatEntriesFor(Thing thing)
+        {
+            var entries = new List<StatDrawEntry>();
+
+            if (thing == null)
+                return entries;
+
+            try
+            {
+                if (statsToDrawForThingMethod == null)
+                {
+                    Log.Warning("[InfoCardDataExtractor] StatsReportUtility.StatsToDraw(Thing) not found");
+                    return entries;
+                }
+
+                entries.AddRange(thing.def.SpecialDisplayStats(StatRequest.For(thing)));
+                var generated = statsToDrawForThingMethod.Invoke(null, new object[] { thing })
+                    as IEnumerable<StatDrawEntry>;
+                if (generated != null)
+                    entries.AddRange(generated);
+
+                entries.RemoveAll(de => (de.stat != null && !de.stat.showNonAbstract) || !de.ShouldDisplay(thing));
+
+                // Mirrors StatsReportUtility.FinalizeCachedDrawEntries' ordering.
+                entries = entries
+                    .OrderBy(de => de.category.displayOrder)
+                    .ThenByDescending(de => de.DisplayPriorityWithinCategory)
+                    .ThenBy(de => de.LabelCap)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[InfoCardDataExtractor] Error building stat entries: {ex.Message}");
+            }
+
+            return entries;
+        }
+
         public static Thing GetThing(Dialog_InfoCard dialog)
         {
             try
@@ -123,17 +167,12 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the Pawn being displayed, if the thing is a pawn.
-        /// </summary>
+        /// <summary>The displayed pawn, or null when the displayed thing is not one.</summary>
         public static Pawn GetPawn(Dialog_InfoCard dialog)
         {
             return GetThing(dialog) as Pawn;
         }
 
-        /// <summary>
-        /// Gets the Def being displayed (for def-only info cards).
-        /// </summary>
         public static Def GetDef(Dialog_InfoCard dialog)
         {
             try
@@ -150,9 +189,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the WorldObject being displayed in the dialog.
-        /// </summary>
         public static WorldObject GetWorldObject(Dialog_InfoCard dialog)
         {
             try
@@ -169,9 +205,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the Hediff being displayed in the dialog.
-        /// </summary>
         public static Hediff GetHediff(Dialog_InfoCard dialog)
         {
             try
@@ -188,9 +221,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the RoyalTitleDef being displayed in the dialog.
-        /// </summary>
         public static RoyalTitleDef GetTitleDef(Dialog_InfoCard dialog)
         {
             try
@@ -207,9 +237,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the Faction being displayed in the dialog.
-        /// </summary>
         public static Faction GetFaction(Dialog_InfoCard dialog)
         {
             try
@@ -226,9 +253,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the stuff (material) ThingDef being displayed in the dialog.
-        /// </summary>
         public static ThingDef GetStuff(Dialog_InfoCard dialog)
         {
             try
@@ -246,8 +270,38 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets the current tab from the dialog.
+        /// A hyperlink's display name, mirroring vanilla's <c>Dialog_InfoCard.Hyperlink.Label</c>
+        /// getter (Verse/Dialog_InfoCard.cs ~73-124) including its hidden-item substitution, so
+        /// an undiscovered item's real name is never spoken. Null only when the hyperlink
+        /// carries none of its known shapes.
         /// </summary>
+        public static string GetHyperlinkLabel(Dialog_InfoCard.Hyperlink link)
+        {
+            if (link.IsHidden)
+                return "(" + "NotYetDiscovered".Translate() + ")";
+            if (link.worldObject != null)
+                return link.worldObject.Label;
+            if (link.def != null && link.def is ThingDef thingDef && link.stuff != null)
+                return thingDef.label;
+            if (link.def != null)
+                return link.def.label;
+            if (link.thing != null && !link.thingIsGeneOwner)
+                return link.thing.Label;
+            if (link.titleDef != null)
+                return link.titleDef.GetLabelCapForBothGenders();
+            if (link.quest != null)
+                return link.quest.name;
+            if (link.ideo != null)
+                return link.ideo.name;
+            if (link.researchProject != null)
+                return link.researchProject.label;
+            if (link.faction != null)
+                return link.faction.Name;
+            if (link.HasGeneOwnerThing)
+                return (string)"InspectGenes".Translate();
+            return null;
+        }
+
         public static Dialog_InfoCard.InfoCardTab GetCurrentTab(Dialog_InfoCard dialog)
         {
             try
@@ -264,9 +318,6 @@ namespace RimWorldAccess
             }
         }
 
-        /// <summary>
-        /// Gets the list of available tabs for a thing.
-        /// </summary>
         public static List<Dialog_InfoCard.InfoCardTab> GetAvailableTabs(Dialog_InfoCard dialog)
         {
             var tabs = new List<Dialog_InfoCard.InfoCardTab>();
@@ -306,9 +357,6 @@ namespace RimWorldAccess
             return tabs;
         }
 
-        /// <summary>
-        /// Gets backstory information for a pawn.
-        /// </summary>
         public static List<(string title, string description)> GetBackstoryInfo(Pawn pawn)
         {
             var info = new List<(string, string)>();
@@ -340,9 +388,6 @@ namespace RimWorldAccess
             return info;
         }
 
-        /// <summary>
-        /// Gets trait information for a pawn.
-        /// </summary>
         public static List<(string label, string description, bool suppressed)> GetTraitsInfo(Pawn pawn)
         {
             var traits = new List<(string, string, bool)>();
@@ -368,9 +413,6 @@ namespace RimWorldAccess
             return traits;
         }
 
-        /// <summary>
-        /// Gets skill information for a pawn.
-        /// </summary>
         public static List<(SkillDef def, int level, Passion passion, bool disabled, string levelDesc)> GetSkillsInfo(Pawn pawn)
         {
             var skills = new List<(SkillDef, int, Passion, bool, string)>();
@@ -444,9 +486,8 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets incapable work tag info for a pawn, organized by WorkTag.
-        /// Each entry includes the tag label (with inline causes), and affected work type defs.
-        /// Mirrors the vanilla CharacterCardUtility tooltip structure.
+        /// Incapable work tags, each with its label (inline causes included) and affected work
+        /// type defs, in the vanilla CharacterCardUtility tooltip's structure.
         /// </summary>
         public static List<(string tagLabel, List<WorkTypeDef> affectedWorkTypes)> GetIncapableWorkTagsInfo(Pawn pawn)
         {
@@ -495,6 +536,9 @@ namespace RimWorldAccess
 
         private static string GetCauseString(Pawn pawn, WorkTags tag)
         {
+            // Shared with PawnCharacterAdapter's CausedByRoyalTitle through VanillaAccess's
+            // cache, so the same private method is resolved once.
+            var getWorkTypeDisableCausesMethod = VanillaAccess.GetMethod(typeof(CharacterCardUtility), "GetWorkTypeDisableCauses");
             if (getWorkTypeDisableCausesMethod == null)
                 return null;
 
@@ -542,9 +586,6 @@ namespace RimWorldAccess
             return cause?.ToString() ?? "";
         }
 
-        /// <summary>
-        /// Gets royal title information for a pawn.
-        /// </summary>
         public static List<(string title, string faction, string description)> GetRoyalTitlesInfo(Pawn pawn)
         {
             var titles = new List<(string, string, string)>();
@@ -571,9 +612,14 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Gets ideology role information for a pawn.
+        /// Gets ideology role information for a pawn, including the role's full tip
+        /// (<c>Precept_Role.GetTip()</c>) as separate lines. Vanilla's own Character-tab hover
+        /// shows this tip (CharacterCardUtility.cs:916) rather than the role def's bare
+        /// description -- required apparel, granted abilities, work restrictions and mood
+        /// effects only appear there, never in <c>def.description</c>. Shared by the InfoCard
+        /// Character tab and the inspection-panel Character category so both read identically.
         /// </summary>
-        public static (string roleName, string ideoName, string description)? GetIdeologyRoleInfo(Pawn pawn)
+        public static (string roleName, string ideoName, List<string> tipLines)? GetIdeologyRoleInfo(Pawn pawn)
         {
             if (!ModsConfig.IdeologyActive || pawn?.Ideo == null)
                 return null;
@@ -585,8 +631,13 @@ namespace RimWorldAccess
                 {
                     string roleName = role.LabelForPawn(pawn);
                     string ideoName = pawn.Ideo.name;
-                    string desc = role.def.description ?? "";
-                    return (roleName, ideoName, desc);
+                    string tip = role.GetTip() ?? "";
+                    List<string> tipLines = tip.StripTags()
+                        .Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(line => line.Trim())
+                        .Where(line => !string.IsNullOrEmpty(line))
+                        .ToList();
+                    return (roleName, ideoName, tipLines);
                 }
             }
             catch (Exception ex)
@@ -597,9 +648,6 @@ namespace RimWorldAccess
             return null;
         }
 
-        /// <summary>
-        /// Gets ability information for a pawn.
-        /// </summary>
         public static List<(string label, string description)> GetAbilitiesInfo(Pawn pawn)
         {
             var abilities = new List<(string, string)>();
@@ -627,9 +675,6 @@ namespace RimWorldAccess
             return abilities;
         }
 
-        /// <summary>
-        /// Gets xenotype information for a pawn.
-        /// </summary>
         public static (string xenotypeName, string description, List<(string name, GeneDef def)> genes)? GetXenotypeInfo(Pawn pawn)
         {
             if (!ModsConfig.BiotechActive || pawn?.genes == null)
@@ -643,25 +688,7 @@ namespace RimWorldAccess
                 var genes = new List<(string, GeneDef)>();
                 foreach (var gene in pawn.genes.GenesListForReading)
                 {
-                    string geneName = gene.LabelCap;
-
-                    // Melanin skin color genes all share generic "skin color" label.
-                    // Synthesize a shade description from the color's luminance.
-                    if (gene.def.skinColorBase.HasValue && gene.def.endogeneCategory == EndogeneCategory.Melanin)
-                    {
-                        Color color = gene.def.skinColorBase.Value;
-                        float luminance = 0.299f * color.r + 0.587f * color.g + 0.114f * color.b;
-                        string shade = (luminance > 0.85f ? "RimWorldAccess.Inspection.InfoCard.SkinShade.VeryLight"
-                                     : luminance > 0.7f  ? "RimWorldAccess.Inspection.InfoCard.SkinShade.Light"
-                                     : luminance > 0.55f ? "RimWorldAccess.Inspection.InfoCard.SkinShade.Fair"
-                                     : luminance > 0.45f ? "RimWorldAccess.Inspection.InfoCard.SkinShade.Medium"
-                                     : luminance > 0.35f ? "RimWorldAccess.Inspection.InfoCard.SkinShade.Tan"
-                                     : luminance > 0.2f  ? "RimWorldAccess.Inspection.InfoCard.SkinShade.Brown"
-                                     : "RimWorldAccess.Inspection.InfoCard.SkinShade.DarkBrown").Translate();
-                        geneName = "RimWorldAccess.Inspection.InfoCard.SkinColorShade".Translate(shade);
-                    }
-
-                    genes.Add((geneName, gene.def));
+                    genes.Add((GeneTreeBuilder.GetGeneDisplayLabel(gene.def), gene.def));
                 }
 
                 return (xenotypeName, desc, genes);
@@ -674,9 +701,6 @@ namespace RimWorldAccess
             return null;
         }
 
-        /// <summary>
-        /// Gets health capacity information for a pawn.
-        /// </summary>
         public static List<(string label, float efficiency, string tip)> GetCapacitiesInfo(Pawn pawn)
         {
             var capacities = new List<(string, float, string)>();
@@ -687,7 +711,7 @@ namespace RimWorldAccess
             try
             {
                 foreach (var capacityDef in DefDatabase<PawnCapacityDef>.AllDefsListForReading
-                    .Where(c => c.showOnHumanlikes || !pawn.RaceProps.Humanlike)
+                    .Where(c => c.CanShowOnPawn(pawn))
                     .OrderBy(c => c.listOrder))
                 {
                     if (!PawnCapacityUtility.BodyCanEverDoCapacity(pawn.RaceProps.body, capacityDef))
@@ -696,8 +720,8 @@ namespace RimWorldAccess
                     float efficiency = pawn.health.capacities.GetLevel(capacityDef);
                     string label = capacityDef.LabelCap;
 
-                    // Use the game's actual tooltip (shows impactors: hediffs, body parts, genes, etc.)
-                    // instead of capacityDef.description which is always empty in vanilla
+                    // capacityDef.description is always empty in vanilla; the tooltip carries
+                    // the impactors (hediffs, body parts, genes).
                     string tip = "";
                     try
                     {
@@ -720,9 +744,6 @@ namespace RimWorldAccess
             return capacities;
         }
 
-        /// <summary>
-        /// Gets hediff (health condition) information for a pawn.
-        /// </summary>
         public static List<(string label, string partLabel, string severity, string tip)> GetHediffsInfo(Pawn pawn)
         {
             var hediffs = new List<(string, string, string, string)>();
@@ -749,9 +770,6 @@ namespace RimWorldAccess
             return hediffs;
         }
 
-        /// <summary>
-        /// Gets time record information for a pawn.
-        /// </summary>
         public static List<(string label, string value)> GetTimeRecords(Pawn pawn)
         {
             var records = new List<(string, string)>();
@@ -761,17 +779,15 @@ namespace RimWorldAccess
 
             try
             {
+                // Vanilla draws EVERY record, zero values included
+                // (RecordsCardUtility.DrawTimeRecords) — no filtering.
                 foreach (var recordDef in DefDatabase<RecordDef>.AllDefsListForReading
                     .Where(r => r.type == RecordType.Time)
                     .OrderBy(r => r.displayOrder))
                 {
-                    int ticks = pawn.records.GetAsInt(recordDef);
-                    if (ticks > 0)
-                    {
-                        string label = recordDef.LabelCap;
-                        string value = ticks.ToStringTicksToPeriod();
-                        records.Add((label, value));
-                    }
+                    string label = recordDef.LabelCap;
+                    string value = pawn.records.GetAsInt(recordDef).ToStringTicksToPeriod();
+                    records.Add((label, value));
                 }
             }
             catch (Exception ex)
@@ -782,9 +798,6 @@ namespace RimWorldAccess
             return records;
         }
 
-        /// <summary>
-        /// Gets miscellaneous record information for a pawn.
-        /// </summary>
         public static List<(string label, string value)> GetMiscRecords(Pawn pawn)
         {
             var records = new List<(string, string)>();
@@ -794,17 +807,15 @@ namespace RimWorldAccess
 
             try
             {
+                // Vanilla draws EVERY record, zero values included
+                // (RecordsCardUtility.DrawMiscRecords) — no filtering.
                 foreach (var recordDef in DefDatabase<RecordDef>.AllDefsListForReading
                     .Where(r => r.type == RecordType.Int || r.type == RecordType.Float)
                     .OrderBy(r => r.displayOrder))
                 {
-                    float value = pawn.records.GetValue(recordDef);
-                    if (value > 0.001f)
-                    {
-                        string label = recordDef.LabelCap;
-                        string valueStr = value.ToString("0.##");
-                        records.Add((label, valueStr));
-                    }
+                    string label = recordDef.LabelCap;
+                    string valueStr = pawn.records.GetValue(recordDef).ToString("0.##");
+                    records.Add((label, valueStr));
                 }
             }
             catch (Exception ex)
@@ -815,9 +826,6 @@ namespace RimWorldAccess
             return records;
         }
 
-        /// <summary>
-        /// Gets permit information for a pawn (Royalty DLC).
-        /// </summary>
         public static List<(string permitName, Faction faction, string status, string description, string requiredTitle, RoyalTitlePermitDef def)> GetPermitsInfo(Pawn pawn)
         {
             var permits = new List<(string, Faction, string, string, string, RoyalTitlePermitDef)>();
@@ -827,14 +835,17 @@ namespace RimWorldAccess
 
             try
             {
-                // Show ALL permits per faction (matching vanilla's PermitsCardUtility)
+                // Mirrors PermitsCardUtility.CanDrawPermit: only permits with a positive
+                // permitPointCost are ever drawn (zero-cost permits are hidden); a permit
+                // tied to a specific faction only shows under that faction, while a
+                // faction-less permit shows under whichever faction is selected.
                 foreach (var faction in Find.FactionManager.AllFactionsVisible)
                 {
                     if (faction.IsPlayer || faction.def.permanentEnemy || faction.temporary)
                         continue;
 
                     var factionPermits = DefDatabase<RoyalTitlePermitDef>.AllDefs
-                        .Where(d => d.faction == faction.def)
+                        .Where(d => d.permitPointCost > 0 && (d.faction == null || d.faction == faction.def))
                         .OrderBy(d => d.uiPosition.y).ThenBy(d => d.uiPosition.x);
 
                     if (!factionPermits.Any())
@@ -890,11 +901,10 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Checks if a permit is "unlocked" for display purposes.
-        /// Matches vanilla PermitsCardUtility.PermitUnlocked logic.
-        /// A permit is unlocked if directly held OR if another held permit has it as a prerequisite
-        /// (meaning the pawn upgraded past it).
+        /// Whether a permit counts as unlocked for display: directly held, or a prerequisite of
+        /// a held permit (the pawn upgraded past it).
         /// </summary>
+        // MUTATION-C: mirrors RimWorld.PermitsCardUtility.PermitUnlocked; private, no callable vehicle.
         public static bool IsPermitUnlocked(RoyalTitlePermitDef permit, Pawn pawn, Faction faction)
         {
             if (pawn.royalty.HasPermit(permit, faction))
@@ -910,10 +920,10 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Calculates total favor cost to return all permits.
-        /// Matches vanilla PermitsCardUtility.TotalReturnPermitsCost: base cost of 8
-        /// plus favor cost of any on-cooldown permits that have royalAid.
+        /// Total favor cost to return all permits: a base of 8 plus the favor cost of any
+        /// on-cooldown permit with royalAid.
         /// </summary>
+        // MUTATION-C: mirrors RimWorld.PermitsCardUtility.TotalReturnPermitsCost; private, no callable vehicle.
         public static int TotalReturnPermitsCost(Pawn pawn)
         {
             int cost = 8;

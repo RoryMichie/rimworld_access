@@ -1,6 +1,4 @@
 using HarmonyLib;
-using RimWorld;
-using RimWorld.Planet;
 using Verse;
 
 namespace RimWorldAccess
@@ -18,26 +16,22 @@ namespace RimWorldAccess
         [HarmonyPostfix]
         public static void Postfix()
         {
-            MultiSelectState.Reset();
-            DocsTeacher.ResetSession();
-
-            // Loading a save from in-game never passes through the main menu or a
-            // CurrentMap == null frame, so no other reset path fires. The old session's
-            // Things are never despawned (ClearAllMapsAndWorld just drops them) and still
-            // report Spawned == true, and the reloaded map keeps its saved uniqueID — so
-            // stale caches pass every liveness and map-identity check, and the scanner's
-            // thing-state hash (a bare spawn/despawn counter) can collide between two
-            // saves of the same colony. Reset all ambient map-session state here;
-            // FinalizeInit fires on both new games and saves loaded from anywhere.
-            MapNavigationState.Reset(); // also invalidates ScannerState + ScannerHelper caches
-            PawnSelectionState.Reset();
-            WorldScannerState.Reset();
-            PlantTargetingState.Reset();
+            // The full ordered checklist of static per-screen resets lives in
+            // StateResetRegistry.OnGameLoad — see that file for the manifest and the
+            // per-entry rationale this used to carry inline.
+            StateResetRegistry.RunOnGameLoad();
 
             LongEventHandler.ExecuteWhenFinished(() =>
             {
                 if (Find.CurrentMap != null)
                 {
+                    // A brand-new game starts at Normal speed; pause it so the player can get
+                    // their bearings before the drop pods land. Loads keep their saved speed.
+                    if (Find.TickManager.TicksGame == 0)
+                    {
+                        Find.TickManager.Pause();
+                    }
+
                     CameraJumper.TryHideWorld();
 
                     if (WorldNavigationState.IsActive)

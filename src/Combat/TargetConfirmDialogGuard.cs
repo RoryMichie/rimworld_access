@@ -31,7 +31,36 @@ namespace RimWorldAccess
 
     /// <summary>
     /// Blocks RimWorld's Enter-to-accept on the single frame a targeting-confirmation dialog opened,
-    /// so the Enter that opened the dialog can't immediately auto-confirm it.
+    /// for the common case: a real Dialog_MessageBox opened via CreateConfirmation (e.g. CompPlantable's
+    /// "plant near artificial buildings" warning).
+    ///
+    /// Patched on Dialog_MessageBox directly, NOT Window: decompiled-verified,
+    /// Dialog_MessageBox.OnAcceptKeyPressed short-circuits to `acceptAction(); Close();
+    /// Event.current.Use();` whenever acceptAction != null, WITHOUT calling
+    /// base.OnAcceptKeyPressed() -- and both CreateConfirmation overloads always supply a non-null
+    /// acceptAction. A prefix on Window's own OnAcceptKeyPressed (the previous, sole version of this
+    /// guard) can therefore never fire for the actual confirmation dialogs it exists to protect --
+    /// the same declaring-type Harmony trap documented on RitualPatch's
+    /// Dialog_BeginLordJob_OnAcceptKeyPressed_Patch. This one replaces it as the real blocker for
+    /// that case.
+    /// </summary>
+    [HarmonyPatch(typeof(Dialog_MessageBox), "OnAcceptKeyPressed")]
+    public static class Dialog_MessageBox_OnAcceptKeyPressed_TargetConfirmBlock
+    {
+        [HarmonyPrefix]
+        public static bool Prefix()
+        {
+            return !TargetConfirmDialogGuard.DialogOpenedThisFrame;
+        }
+    }
+
+    /// <summary>
+    /// Belt-and-suspenders, kept deliberately (not dead): Dialog_MessageBox.OnAcceptKeyPressed DOES
+    /// call base.OnAcceptKeyPressed() when acceptAction == null (a plain info/notification box with
+    /// no confirm action), so this Window-level patch still reaches Window's body for that sub-case,
+    /// and for any other real Window subclass a targeting callback might open that does not override
+    /// OnAcceptKeyPressed at all (TargetingPatch's window-count-diff detection is generic, not
+    /// Dialog_MessageBox-specific, even though every known caller so far uses CreateConfirmation).
     /// </summary>
     [HarmonyPatch(typeof(Window), "OnAcceptKeyPressed")]
     public static class Window_OnAcceptKeyPressed_TargetConfirmBlock

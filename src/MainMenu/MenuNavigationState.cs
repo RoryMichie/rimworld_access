@@ -1,318 +1,114 @@
-using System;
 using System.Collections.Generic;
 using Verse;
 
 namespace RimWorldAccess
 {
+    /// <summary>
+    /// Data facade for the main menu's captured vanilla option lists.
+    /// Cursor, typeahead, and per-move
+    /// announcement arithmetic now live entirely in
+    /// <see cref="RimWorldAccess.Shell.MainMenuScope"/>'s ScreenModel — this
+    /// class keeps only what that scope reads to rebuild its regions
+    /// (<see cref="Initialize"/>/<see cref="ColumnOptions"/>), the
+    /// activation wrapper (<see cref="ActivateSelected"/>/
+    /// <see cref="IsExecutingOption"/>), the frame-recency liveness flag
+    /// (<see cref="IsActive"/>/<see cref="MarkRendered"/>), and a handful of
+    /// forwarders (<see cref="CurrentColumn"/>/<see cref="SelectedIndex"/>/
+    /// <see cref="CurrentColumnOptions"/>/<see cref="GetCurrentSelection"/>/
+    /// <see cref="GetCurrentColumnLabels"/>) kept ALIVE deliberately: grep
+    /// proved external callers still depend on them —
+    /// MainMenuAccessibilityPatch's highlight draw, and the documented
+    /// "GoBack contract" in OptionsScope.OnPop/FileListScope.OnPop (both
+    /// re-announce the current main-menu selection directly on close,
+    /// because MainMenuScope's OnFocus does not itself speak).
+    /// </summary>
     public static class MenuNavigationState
     {
-        private static int currentColumn = 0;
-        private static int selectedIndexColumn0 = 0;
-        private static int selectedIndexColumn1 = 0;
-
         private static List<ListableOption> column0Options = new List<ListableOption>();
         private static List<ListableOption> column1Options = new List<ListableOption>();
 
-        private static TypeaheadSearchHelper typeahead = new TypeaheadSearchHelper();
-
-        public static int CurrentColumn => currentColumn;
-        public static int SelectedIndex => currentColumn == 0 ? selectedIndexColumn0 : selectedIndexColumn1;
-        public static TypeaheadSearchHelper Typeahead => typeahead;
+        /// <summary>
+        /// True while ActivateSelected is running the selected option's own vanilla
+        /// delegate. DialogInterceptionPatch checks this so a menu option that opens a
+        /// game FloatMenu (e.g. BuySoundtrack, decompiled RimWorld/MainMenuDrawer.cs:283)
+        /// rides the windowless path instead of an unreachable mouse-only FloatMenu.
+        /// </summary>
+        public static bool IsExecutingOption { get; private set; }
 
         /// <summary>
         /// True when the main menu is currently being rendered. Set by
         /// <see cref="MainMenuAccessibilityPatch"/>'s Postfix each frame.
-        /// Used by the layout-aware typeahead dispatcher to gate input.
+        /// <see cref="RimWorldAccess.Shell.MainMenuScope"/> overrides its own
+        /// IsLive to this flag, so every claim (including ScreenScope's own
+        /// ungated Up/Down/Home/End/Enter) goes dark the instant vanilla
+        /// stops drawing the menu — the single gate that replaces the
+        /// retired handler's per-claim MenuLive checks.
         /// </summary>
         private static int lastRenderedFrame = -1;
         public static bool IsActive => UnityEngine.Time.frameCount - lastRenderedFrame <= 1;
         public static void MarkRendered() { lastRenderedFrame = UnityEngine.Time.frameCount; }
 
         /// <summary>
-        /// Handles typeahead character input from the layout-aware dispatcher.
+        /// Rebuilds the captured lists (called unconditionally every Postfix
+        /// by MainMenuAccessibilityPatch, per its own header comment) — the
+        /// scope re-syncs its ScreenModel region counts against these the
+        /// next time a claim calls RefreshContent.
         /// </summary>
-        public static void HandleTypeahead(char c)
-        {
-            if (!IsActive) return;
-
-            // Search the whole menu (both columns) as one list — the main menu is a single
-            // logical menu that merely renders in two columns, so a search shouldn't be scoped
-            // to whichever column happens to be active.
-            var labels = GetAllLabels();
-            if (typeahead.ProcessCharacterInput(c, labels, out int newIndex))
-            {
-                if (newIndex >= 0)
-                {
-                    SetCombinedIndex(newIndex);
-                    AnnounceWithSearch();
-                }
-            }
-            else
-            {
-                typeahead.SpeakNoMatches();
-            }
-        }
-
         public static void Initialize(List<ListableOption> col0, List<ListableOption> col1)
         {
             column0Options = col0;
             column1Options = col1;
-
-            // Ensure indices are valid
-            if (selectedIndexColumn0 >= col0.Count)
-                selectedIndexColumn0 = Math.Max(0, col0.Count - 1);
-            if (selectedIndexColumn1 >= col1.Count)
-                selectedIndexColumn1 = Math.Max(0, col1.Count - 1);
         }
 
-        public static void MoveUp()
+        /// <summary>The captured option list for a region (0 = Menu, 1 = Links).</summary>
+        public static List<ListableOption> ColumnOptions(int column)
         {
-            // Typeahead spans the whole menu (both columns) as one list, so stepping a match
-            // can cross from one column to the other — go through the combined index.
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                SetCombinedIndex(typeahead.GetPreviousMatch(GetCombinedIndex()));
-                AnnounceWithSearch();
-                return;
-            }
-
-            if (currentColumn == 0)
-            {
-                selectedIndexColumn0--;
-                if (selectedIndexColumn0 < 0)
-                    selectedIndexColumn0 = Math.Max(0, column0Options.Count - 1);
-            }
-            else
-            {
-                selectedIndexColumn1--;
-                if (selectedIndexColumn1 < 0)
-                    selectedIndexColumn1 = Math.Max(0, column1Options.Count - 1);
-            }
-
-            UpdateClipboard();
+            return column == 0 ? column0Options : column1Options;
         }
 
-        public static void MoveDown()
+        /// <summary>
+        /// Forwarders reading the scope's live cursor back through its
+        /// singleton instance — see the class remarks for why these three
+        /// (plus GetCurrentSelection/GetCurrentColumnLabels below) survive
+        /// the slim-down.
+        /// </summary>
+        public static int CurrentColumn => Shell.MainMenuScope.Instance?.CurrentRegionIndex ?? 0;
+        public static int SelectedIndex => Shell.MainMenuScope.Instance?.CurrentRowIndex ?? 0;
+        public static List<ListableOption> CurrentColumnOptions => ColumnOptions(CurrentColumn);
+
+        /// <summary>Labels for the CURRENT column only — kept for OptionsScope's GoBack-contract position readout.</summary>
+        public static List<string> GetCurrentColumnLabels()
         {
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
+            var labels = new List<string>();
+            foreach (ListableOption option in CurrentColumnOptions)
             {
-                SetCombinedIndex(typeahead.GetNextMatch(GetCombinedIndex()));
-                AnnounceWithSearch();
-                return;
+                labels.Add(option.label);
             }
-
-            if (currentColumn == 0)
-            {
-                selectedIndexColumn0++;
-                if (selectedIndexColumn0 >= column0Options.Count)
-                    selectedIndexColumn0 = 0;
-            }
-            else
-            {
-                selectedIndexColumn1++;
-                if (selectedIndexColumn1 >= column1Options.Count)
-                    selectedIndexColumn1 = 0;
-            }
-
-            UpdateClipboard();
+            return labels;
         }
 
-        public static void SwitchColumn()
+        /// <summary>The option at the scope's current cursor position, or null when out of range.</summary>
+        public static ListableOption GetCurrentSelection()
         {
-            currentColumn = (currentColumn == 0) ? 1 : 0;
-            typeahead.ClearSearch();
-            UpdateClipboard();
+            List<ListableOption> options = CurrentColumnOptions;
+            int index = SelectedIndex;
+            return index >= 0 && index < options.Count ? options[index] : null;
         }
 
+        /// <summary>Runs the currently-selected option's own vanilla delegate — vehicle A, unchanged.</summary>
         public static void ActivateSelected()
         {
             ListableOption selected = GetCurrentSelection();
             if (selected?.action != null)
             {
-                selected.action();
-            }
-        }
-
-        public static ListableOption GetCurrentSelection()
-        {
-            if (currentColumn == 0 && selectedIndexColumn0 >= 0 && selectedIndexColumn0 < column0Options.Count)
-            {
-                return column0Options[selectedIndexColumn0];
-            }
-            else if (currentColumn == 1 && selectedIndexColumn1 >= 0 && selectedIndexColumn1 < column1Options.Count)
-            {
-                return column1Options[selectedIndexColumn1];
-            }
-            return null;
-        }
-
-        private static void UpdateClipboard()
-        {
-            ListableOption selected = GetCurrentSelection();
-            if (selected != null)
-            {
-                int count = currentColumn == 0 ? column0Options.Count : column1Options.Count;
-                int index = currentColumn == 0 ? selectedIndexColumn0 : selectedIndexColumn1;
-                string positionPart = MenuHelper.FormatPosition(index, count);
-                string announcement = string.IsNullOrEmpty(positionPart)
-                    ? $"{selected.label}."
-                    : $"{selected.label}. {positionPart}";
-                TolkHelper.SpeakData(announcement);
-            }
-        }
-
-        public static void Reset()
-        {
-            currentColumn = 0;
-            selectedIndexColumn0 = 0;
-            selectedIndexColumn1 = 0;
-            typeahead.ClearSearch();
-        }
-
-        /// <summary>
-        /// Jumps to the first item in the current column.
-        /// </summary>
-        public static void JumpToFirst()
-        {
-            // During an active search, Home goes to the first match (anywhere in the menu)
-            // and keeps the search.
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                SetCombinedIndex(typeahead.GetFirstMatch());
-                AnnounceWithSearch();
-                return;
-            }
-            typeahead.ClearSearch();
-            if (currentColumn == 0)
-            {
-                selectedIndexColumn0 = 0;
-            }
-            else
-            {
-                selectedIndexColumn1 = 0;
-            }
-            UpdateClipboard();
-        }
-
-        /// <summary>
-        /// Jumps to the last item in the current column.
-        /// </summary>
-        public static void JumpToLast()
-        {
-            if (typeahead.HasActiveSearch && !typeahead.HasNoMatches)
-            {
-                SetCombinedIndex(typeahead.GetLastMatch());
-                AnnounceWithSearch();
-                return;
-            }
-            typeahead.ClearSearch();
-            if (currentColumn == 0)
-            {
-                selectedIndexColumn0 = Math.Max(0, column0Options.Count - 1);
-            }
-            else
-            {
-                selectedIndexColumn1 = Math.Max(0, column1Options.Count - 1);
-            }
-            UpdateClipboard();
-        }
-
-        /// <summary>
-        /// Gets the list of labels for the current column for typeahead search.
-        /// </summary>
-        public static List<string> GetCurrentColumnLabels()
-        {
-            var labels = new List<string>();
-            var currentList = currentColumn == 0 ? column0Options : column1Options;
-            foreach (var option in currentList)
-            {
-                labels.Add(option.label);
-            }
-            return labels;
-        }
-
-        /// <summary>
-        /// Labels for the whole menu — column 0 followed by column 1 — used by typeahead so a
-        /// search spans both columns as one unified list.
-        /// </summary>
-        private static List<string> GetAllLabels()
-        {
-            var labels = new List<string>();
-            foreach (var option in column0Options)
-                labels.Add(option.label);
-            foreach (var option in column1Options)
-                labels.Add(option.label);
-            return labels;
-        }
-
-        /// <summary>
-        /// The current selection expressed as a single index across both columns
-        /// (column 0 occupies 0..col0-1, column 1 follows). Pairs with <see cref="GetAllLabels"/>.
-        /// </summary>
-        private static int GetCombinedIndex()
-        {
-            return currentColumn == 0
-                ? selectedIndexColumn0
-                : column0Options.Count + selectedIndexColumn1;
-        }
-
-        /// <summary>
-        /// Selects the item at a combined index, switching the active column as needed so a
-        /// typeahead match in either column becomes the current selection.
-        /// </summary>
-        private static void SetCombinedIndex(int combinedIndex)
-        {
-            if (combinedIndex < 0) return;
-            if (combinedIndex < column0Options.Count)
-            {
-                currentColumn = 0;
-                selectedIndexColumn0 = combinedIndex;
-            }
-            else
-            {
-                currentColumn = 1;
-                selectedIndexColumn1 = combinedIndex - column0Options.Count;
-            }
-        }
-
-        /// <summary>
-        /// Sets the selected index for the current column.
-        /// </summary>
-        public static void SetSelectedIndex(int index)
-        {
-            if (currentColumn == 0)
-            {
-                if (index >= 0 && index < column0Options.Count)
-                    selectedIndexColumn0 = index;
-            }
-            else
-            {
-                if (index >= 0 && index < column1Options.Count)
-                    selectedIndexColumn1 = index;
-            }
-        }
-
-        /// <summary>
-        /// Announces the current selection with search match info.
-        /// </summary>
-        public static void AnnounceWithSearch()
-        {
-            ListableOption selected = GetCurrentSelection();
-            if (selected != null)
-            {
-                int count = currentColumn == 0 ? column0Options.Count : column1Options.Count;
-                int index = currentColumn == 0 ? selectedIndexColumn0 : selectedIndexColumn1;
-                string positionPart = MenuHelper.FormatPosition(index, count);
-                string baseAnnouncement = string.IsNullOrEmpty(positionPart)
-                    ? $"{selected.label}."
-                    : $"{selected.label}. {positionPart}";
-                if (typeahead.HasActiveSearch)
+                IsExecutingOption = true;
+                try
                 {
-                    TolkHelper.SpeakData(baseAnnouncement + typeahead.BuildSearchContextSuffix());
+                    selected.action();
                 }
-                else
+                finally
                 {
-                    TolkHelper.SpeakData(baseAnnouncement);
+                    IsExecutingOption = false;
                 }
             }
         }

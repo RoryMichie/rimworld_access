@@ -28,29 +28,30 @@
        OpenInstructions: appended after "ChooseNextColonySite".Translate().
        MustChooseValid: spoken when the player presses Escape (cannot cancel).
        ErrorSelectingTile: spoken on exception during tile confirmation. -->
-  <RimWorldAccess.Archonexus.TilePick.OpenInstructions>Use arrow keys to navigate, PageUp and PageDown for the scanner, Enter to confirm. You cannot cancel — you must choose a valid tile.</RimWorldAccess.Archonexus.TilePick.OpenInstructions>
+  <RimWorldAccess.Archonexus.TilePick.OpenInstructions>Use arrow keys to navigate, PageUp and PageDown for the scanner, Enter to confirm. You cannot cancel: you must choose a valid tile.</RimWorldAccess.Archonexus.TilePick.OpenInstructions>
   <RimWorldAccess.Archonexus.TilePick.MustChooseValid>You must choose a valid tile to continue.</RimWorldAccess.Archonexus.TilePick.MustChooseValid>
   <RimWorldAccess.Archonexus.TilePick.ErrorSelectingTile>Error selecting tile</RimWorldAccess.Archonexus.TilePick.ErrorSelectingTile>
 
-  <!-- Screen 4 — reform ideoligion list (ArchonexusReformIdeoState).
-       OpenInstructions: appended after "ConfigureIdeoligion".Translate().
-       CannotCancel: spoken when the player presses Escape (the dialog cannot be cancelled).
-       NoIdeoDetailsHere: spoken when Tab is pressed on a non-ideoligion row.
-       AlreadyPrimary: {0} = ideoligion name.
-       SetAsPrimary: {0} = ideoligion name.
+  <!-- Screen 4 — reform ideoligion screen (ArchonexusIdeoScreenScope, in-game ideology
+       surfaces; row source in ArchonexusReformIdeoState).
+       CannotCancel: spoken on an idle Escape (the dialog cannot be cancelled).
+       AlreadyPrimary: {0} = ideoligion name; the Make-primary row's disabled reason
+         when the browsed ideoligion is already the pending primary.
+       SetAsPrimary: {0} = ideoligion name; spoken after Make/Remove-primary succeeds.
+       CurrentPrimaryFragment: appended to an ideoligion row's own text when it is
+         the current pending primary (replaces the old hardcoded ". current primary").
        NoColonistsNeedConverting: spoken when "Assign colonists" is triggered but
          all colonists already follow the chosen ideoligion.
-       ErrorConfirming: spoken on exception during the "Next" commit. -->
-  <RimWorldAccess.Archonexus.Reform.OpenInstructions>Up and Down to browse, typeahead to search, Tab for full details, Enter to make primary, Alt S to confirm.</RimWorldAccess.Archonexus.Reform.OpenInstructions>
+       ErrorConfirming: spoken on exception during the "Next" commit.
+       ListRegion/DetailsRegion: the two content region names. -->
   <RimWorldAccess.Archonexus.Reform.CannotCancel>You cannot cancel reforming the ideoligion. Press Alt S to confirm and continue.</RimWorldAccess.Archonexus.Reform.CannotCancel>
-  <RimWorldAccess.Archonexus.Reform.NoIdeoDetailsHere>No ideoligion details here. Move to an ideoligion first.</RimWorldAccess.Archonexus.Reform.NoIdeoDetailsHere>
   <RimWorldAccess.Archonexus.Reform.AlreadyPrimary>{0} is already the primary ideoligion.</RimWorldAccess.Archonexus.Reform.AlreadyPrimary>
   <RimWorldAccess.Archonexus.Reform.SetAsPrimary>{0} set as primary ideoligion.</RimWorldAccess.Archonexus.Reform.SetAsPrimary>
+  <RimWorldAccess.Archonexus.Reform.CurrentPrimaryFragment>Current primary</RimWorldAccess.Archonexus.Reform.CurrentPrimaryFragment>
   <RimWorldAccess.Archonexus.Reform.NoColonistsNeedConverting>No colonists need converting.</RimWorldAccess.Archonexus.Reform.NoColonistsNeedConverting>
   <RimWorldAccess.Archonexus.Reform.ErrorConfirming>Error confirming ideoligion</RimWorldAccess.Archonexus.Reform.ErrorConfirming>
-  <!-- PressTabToEdit: appended to an item announcement when the focused ideoligion
-       is the editable custom one and the player just returned from a sub-screen. -->
-  <RimWorldAccess.Archonexus.Reform.PressTabToEdit>Press Tab to edit this ideoligion.</RimWorldAccess.Archonexus.Reform.PressTabToEdit>
+  <RimWorldAccess.Archonexus.Reform.ListRegion>Ideoligions</RimWorldAccess.Archonexus.Reform.ListRegion>
+  <RimWorldAccess.Archonexus.Reform.DetailsRegion>Details</RimWorldAccess.Archonexus.Reform.DetailsRegion>
 
   <!-- Screen 4 sub-dialog — assign colonists (ArchonexusConvertColonistsState).
        OpenInstructions: appended after the vanilla dialog title, description,
@@ -58,9 +59,15 @@
        SpaceOrEnterToConvert: the keyboard hint in the opening announcement. -->
   <RimWorldAccess.Archonexus.Convert.OpenInstructions>Space or Enter to convert, Escape when finished.</RimWorldAccess.Archonexus.Convert.OpenInstructions>
 
-  <!-- Convert-colonists checkbox toggle announcements. {0} = ideoligion name. -->
-  <RimWorldAccess.Archonexus.Convert.Selected>Selected</RimWorldAccess.Archonexus.Convert.Selected>
-  <RimWorldAccess.Archonexus.Convert.NotSelected>Not selected</RimWorldAccess.Archonexus.Convert.NotSelected>
-  <RimWorldAccess.Archonexus.Convert.NotSelectedCurrently>Not selected. Currently {0}</RimWorldAccess.Archonexus.Convert.NotSelectedCurrently>
+  <!-- Convert-colonists checkbox: Selected/NotSelected retired (Task 8 packet F) — the
+       checked/unchecked state now rides the composer's own Checkbox state word.
+       CurrentlyFollowing is the one piece NotSelectedCurrently carried that the state
+       word alone cannot: which ideoligion an unconverted colonist keeps. {0} = ideoligion name. -->
+  <RimWorldAccess.Archonexus.Convert.CurrentlyFollowing>Currently {0}</RimWorldAccess.Archonexus.Convert.CurrentlyFollowing>
+
+  <!-- Colony-selection section header: how many things are selected out of the
+       section's maximum ({0} = selected count, {1} = maximum). Not a cursor
+       position, so it does not reuse Menu.Position. -->
+  <RimWorldAccess.Archonexus.Colony.CountOfMax>{0} of {1}</RimWorldAccess.Archonexus.Colony.CountOfMax>
 
 </LanguageData>

@@ -217,7 +217,7 @@ offers a near-match, we reuse it and cite it so users hear familiar wording.
 | scanner | сканер | Mod-specific feature; «сканер» is the literal, unambiguous rendering |
 | jump to | перейти до | Natural Ukrainian («перейти» = go/jump to). RimWorld has no direct equivalent |
 | edge / boundary | край / початок / кінець | "Already at top/bottom" → «Вже на початку» / «Вже в кінці»; generic boundary = «край» |
-| stepper (numeric +/- control) | регулятор значення | No game term. «регулятор значення» describes the control; for minimum/maximum reuse «мінімум» / «максимум» |
+| stepper (numeric +/- control) | лічильник | No game term. Matches the shipped `Shell.Role.Stepper`, the word the reader actually speaks for these rows; for minimum/maximum reuse «мінімум» / «максимум» |
 | hotkey | гаряча клавіша | RimWorld uses it: `Core/Keyed/Misc_Gameplay.xml` (`SelectNextInSquareTip` Гаряча клавіша: {0}) |
 | accessibility | доступність | Standard Ukrainian term |
 | inspect / inspection | огляд / оглянути | Reuse game «Огляд» (`HealthOverview`); for the action «оглянути» |
@@ -414,3 +414,22 @@ Useful sub-paths: `Keyed/Designators.xml` (order verbs), `Keyed/GameplayCommands
 
 The English comments in the corpus (`<!-- EN: … -->`) let you confirm a key's meaning before trusting
 its Ukrainian value. Always cite the file you took a term from when you add a row.
+
+## Mod-coined terms — watermill placement + read-only browsing (2026-08-13)
+
+Thirteen new keys (`RimWorldAccess.Building.Place.Spot*`, `.Watermill*`, `RimWorldAccess.TextInput.BrowsingField/ReadOnlyField`)
+had no reference translation to check: this local install only carries the English Core language pack,
+so RimWorld's own Ukrainian wording for the `WatermillGenerator` ThingDef could not be verified against
+the game's corpus. Decided from context per house rule (no native-review parking); `_numCase` stays
+forbidden per this glossary's standing rule, so the Watermill keys use the flat plural genitive
+("клітинок"), matching `OutlineOkAt`/`HighlightedAt`.
+
+| English | Українська | Basis |
+|---|---|---|
+| watermill (whole building) | водяний млин | Standard Ukrainian term for a water mill |
+| waterwheel (the wheel part) | водяне колесо | Standard Ukrainian term for a water wheel |
+| moving/running water | проточна вода | Standard idiom for flowing water |
+| water flow area | зона водного потоку | Coined; parallels `Необхідна область` (`OutlineOkAt`) |
+| unshared / shared with another watermill | не використовується спільно / використовується спільно з іншим водяним млином | Coined |
+| placement spot (scanner category/item) | Місця розміщення: {0} / Місце | Mirrors `Abilities.Plant.ScannerCategory`/`ScannerItemLabel` ("Місця посадки: {0}" / "Місце для посадки") |
+| facing {0} (trailing fragment) | обличчям до {0} | Mirrors `Building.ArchitectPlace.GravshipFacing` ("Гравікорабель обличчям до {0}") |
