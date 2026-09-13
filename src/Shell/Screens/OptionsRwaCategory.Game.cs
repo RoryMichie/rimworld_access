@@ -158,6 +158,30 @@ namespace RimWorldAccess.Shell
                 30f, 0.6f);
             settings.AnnounceForcedSlowdowns = forcedSlowdowns;
 
+            bool pauseOnGameStart = settings.PauseOnGameStart;
+            listing.CheckboxLabeled(
+                "RimWorldAccess.Core.Settings.PauseOnGameStart.Label".Translate(),
+                ref pauseOnGameStart,
+                "RimWorldAccess.Core.Settings.PauseOnGameStart.Desc".Translate(),
+                30f, 0.6f);
+            settings.PauseOnGameStart = pauseOnGameStart;
+
+            bool stayPausedAfterResearch = settings.StayPausedAfterResearch;
+            listing.CheckboxLabeled(
+                "RimWorldAccess.Core.Settings.StayPausedAfterResearch.Label".Translate(),
+                ref stayPausedAfterResearch,
+                "RimWorldAccess.Core.Settings.StayPausedAfterResearch.Desc".Translate(),
+                30f, 0.6f);
+            settings.StayPausedAfterResearch = stayPausedAfterResearch;
+
+            bool stayPausedAfterTrade = settings.StayPausedAfterTrade;
+            listing.CheckboxLabeled(
+                "RimWorldAccess.Core.Settings.StayPausedAfterTrade.Label".Translate(),
+                ref stayPausedAfterTrade,
+                "RimWorldAccess.Core.Settings.StayPausedAfterTrade.Desc".Translate(),
+                30f, 0.6f);
+            settings.StayPausedAfterTrade = stayPausedAfterTrade;
+
             bool showWhatsNew = settings.ShowWhatsNewOnUpdate;
             listing.CheckboxLabeled(
                 "RimWorldAccess.Core.Settings.ShowWhatsNew.Label".Translate(),

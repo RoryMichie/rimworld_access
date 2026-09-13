@@ -124,6 +124,10 @@ namespace RimWorldAccess
         {
             var dialogToClose = currentDialog;
 
+            // Hold the pause before the dialog's force-pause lifts and vanilla resumes the prior speed.
+            if (RimWorldAccessMod_Settings.Settings?.StayPausedAfterTrade ?? true)
+                TimeControlAccessibilityPatch.PauseSilently();
+
             isActive = false;
             currentDialog = null;
             cachedDeal = null;
@@ -159,6 +163,10 @@ namespace RimWorldAccess
         {
             if (!isActive)
                 return;
+
+            // Vanilla-side close; Close handles shell-driven ones, and PauseSilently no-ops if paused.
+            if (RimWorldAccessMod_Settings.Settings?.StayPausedAfterTrade ?? true)
+                TimeControlAccessibilityPatch.PauseSilently();
 
             isActive = false;
             currentDialog = null;

@@ -22,12 +22,31 @@ namespace RimWorldAccess
         private static bool isInitialized = false;
 
         /// <summary>
-        /// While true, speed changes are tracked silently (lastAnnouncedSpeed still updates) but
-        /// not spoken. Used to swallow a transient speed change the player shouldn't hear — e.g.
-        /// the scenario intro's closeAction sets Normal on its way to our game-start re-pause, and
-        /// we don't want "time speed normal" announced right before "paused".
+        /// While true, a speed change still updates lastAnnouncedSpeed but is not spoken. Swallows a
+        /// transition the player should not hear, such as the game-start pause or a <see cref="PauseSilently"/>.
         /// </summary>
         internal static bool MuteAnnouncements { get; set; }
+
+        /// <summary>
+        /// Pauses without announcing it, to leave a flow paused for orientation rather than resuming
+        /// vanilla's prior speed once its force-pausing dialog closes.
+        /// </summary>
+        internal static void PauseSilently()
+        {
+            TickManager tm = Find.TickManager;
+            if (tm == null || tm.CurTimeSpeed == TimeSpeed.Paused)
+                return;
+
+            try
+            {
+                MuteAnnouncements = true;
+                tm.Pause();
+            }
+            finally
+            {
+                MuteAnnouncements = false;
+            }
+        }
 
         // Patch the CurTimeSpeed setter to announce when time speed changes
         [HarmonyPatch("CurTimeSpeed", MethodType.Setter)]

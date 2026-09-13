@@ -426,9 +426,9 @@
 20	src/Compat/WantsAndQuirks/WqCharactersTabScope.Game.cs
 14	src/Compat/WantsAndQuirks/WqCompat.Game.cs
 6	src/Compat/WantsAndQuirks/WqModule.Game.cs
-25	src/Core/GameStartPatch.cs
+33	src/Core/GameStartPatch.cs
 30	src/Core/ModLogger.cs
-102	src/Core/RimWorldAccessSettings.cs
+105	src/Core/RimWorldAccessSettings.cs
 15	src/Core/RimWorldAccessVersion.cs
 108	src/Core/StateResetRegistry.cs
 28	src/Core/VanillaAccess.cs
@@ -715,7 +715,7 @@
 35	src/Map/ShotReportHelper.cs
 123	src/Map/TileInfoHelper.cs
 23	src/Map/TimeAnnouncementState.cs
-37	src/Map/TimeControlAccessibilityPatch.cs
+39	src/Map/TimeControlAccessibilityPatch.cs
 47	src/Mechs/MechsMenuHelper.cs
 9	src/Mechs/MechsMenuPatch.cs
 14	src/Mechs/MechsMenuState.cs
@@ -1168,7 +1168,7 @@
 17	src/Trade/SellableItemsNavigationPatch.cs
 23	src/Trade/SellableItemsState.cs
 34	src/Trade/TradeNavigationPatch.cs
-68	src/Trade/TradeNavigationState.cs
+70	src/Trade/TradeNavigationState.cs
 46	src/Trade/TradeRowActions.cs
 17	src/Trade/TradeRowGeometry.cs
 7	src/Trade/TradeViewOpener.cs

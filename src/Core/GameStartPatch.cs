@@ -25,11 +25,21 @@ namespace RimWorldAccess
             {
                 if (Find.CurrentMap != null)
                 {
-                    // A brand-new game starts at Normal speed; pause it so the player can get
-                    // their bearings before the drop pods land. Loads keep their saved speed.
-                    if (Find.TickManager.TicksGame == 0)
+                    // A brand-new game starts at Normal; pause it (silently) for orientation before
+                    // the drop pods land. Loads keep their saved speed. GameStartPauseKeeperPatch
+                    // relies on this pause to hold across the scenario intro's closeAction.
+                    if (Find.TickManager.TicksGame == 0
+                        && (RimWorldAccessMod_Settings.Settings?.PauseOnGameStart ?? true))
                     {
-                        Find.TickManager.Pause();
+                        try
+                        {
+                            TimeControlAccessibilityPatch.MuteAnnouncements = true;
+                            Find.TickManager.Pause();
+                        }
+                        finally
+                        {
+                            TimeControlAccessibilityPatch.MuteAnnouncements = false;
+                        }
                     }
 
                     CameraJumper.TryHideWorld();
@@ -59,6 +69,40 @@ namespace RimWorldAccess
                     DocsTeacher.RequestMapBasicsWhenAllColonistsPresent();
                 }
             });
+        }
+    }
+
+    /// <summary>
+    /// Keeps a new game paused across the scenario intro, whose closeAction resumes the game
+    /// (CurTimeSpeed = Normal) on dismissal. GameStartPatch has already paused, so catching that
+    /// one resume and holding Paused is a silent no-op; vanilla's line never takes effect.
+    /// </summary>
+    [HarmonyPatch(typeof(WindowStack), nameof(WindowStack.Notify_GameStartDialogClosed))]
+    public static class GameStartDialogClosedPatch
+    {
+        // Set as the intro closes, consumed by the CurTimeSpeed = Normal its closeAction makes one
+        // line later. Notify_GameStartDialogClosed has no other caller, so the latch cannot leak.
+        internal static bool PendingIntroResume;
+
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            if (RimWorldAccessMod_Settings.Settings?.PauseOnGameStart ?? true)
+                PendingIntroResume = true;
+        }
+    }
+
+    [HarmonyPatch(typeof(TickManager), nameof(TickManager.CurTimeSpeed), MethodType.Setter)]
+    public static class GameStartPauseKeeperPatch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(ref TimeSpeed value)
+        {
+            if (!GameStartDialogClosedPatch.PendingIntroResume)
+                return;
+
+            GameStartDialogClosedPatch.PendingIntroResume = false;
+            value = TimeSpeed.Paused;
         }
     }
 }
