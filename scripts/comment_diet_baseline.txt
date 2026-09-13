@@ -1054,7 +1054,7 @@
 47	src/Shell/Screens/StorytellerInGameScope.Game.cs
 132	src/Shell/Screens/StorytellerScopeBase.Game.cs
 89	src/Shell/Screens/StorytellerScreenScope.Game.cs
-120	src/Shell/Screens/StyleItemsDialogScope.Game.cs
+126	src/Shell/Screens/StyleItemsDialogScope.Game.cs
 57	src/Shell/Screens/StyleSelectionScope.Game.cs
 112	src/Shell/Screens/StylingStationScope.Game.cs
 85	src/Shell/Screens/TargetingScope.Game.cs

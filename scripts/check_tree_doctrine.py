@@ -61,7 +61,6 @@ TREE_EXEMPT = {
     "DevDebugScope": "drill-down pager over vanilla's own DebugActionNode location; no our-side state",
     "FishingZoneMenuState": "describe helper for FishingZoneScope, a TreeRegionScope",
     "GenericWindowScope": "mirrors captured foreign windows' collapsible rows; no stable model exists",
-    "StyleItemsDialogScope": "mirrors Dialog_EditIdeoStyleItems' own expandedInfos flags",
 }
 
 # True offenders, grandfathered shrink-only. EMPTY — keep it that way.
