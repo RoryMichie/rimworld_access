@@ -46,8 +46,41 @@ namespace RimWorldAccess.Shell
         /// </summary>
         public static bool AreBoundMarkers(string leftAlignedLabel, string rightAlignedLabel, float min, float max)
         {
-            return string.Equals(leftAlignedLabel, min.ToString(), StringComparison.Ordinal)
-                && string.Equals(rightAlignedLabel, max.ToString(), StringComparison.Ordinal);
+            return MarksBound(leftAlignedLabel, min) && MarksBound(rightAlignedLabel, max);
+        }
+
+        /// <summary>
+        /// Whether a side caption is that bound written out. Vanilla's FloatRange overload passes
+        /// the bare number, but a caller is free to group it and append a unit ("1,000 xp" for
+        /// 1000), so any rendering the runtime itself produces counts. It must OPEN the caption:
+        /// a name that merely mentions a number ("Tier 1 output") is a name, not a bound.
+        /// </summary>
+        private static bool MarksBound(string caption, float bound)
+        {
+            if (string.IsNullOrWhiteSpace(caption))
+            {
+                return false;
+            }
+            string text = caption.TrimStart();
+            return OpensWith(text, bound.ToString())
+                || OpensWith(text, bound.ToString("N0"))
+                || OpensWith(text, bound.ToString("F0"));
+        }
+
+        /// <summary>The caption opens with that rendering and the number does not continue past it.</summary>
+        private static bool OpensWith(string caption, string rendering)
+        {
+            if (string.IsNullOrEmpty(rendering)
+                || !caption.StartsWith(rendering, StringComparison.Ordinal))
+            {
+                return false;
+            }
+            if (caption.Length == rendering.Length)
+            {
+                return true;
+            }
+            char next = caption[rendering.Length];
+            return !char.IsDigit(next) && next != ',' && next != '.';
         }
 
         /// <summary>The slider's name, or "" when the caller drew none through the widget.</summary>

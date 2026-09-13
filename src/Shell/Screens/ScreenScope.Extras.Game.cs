@@ -234,8 +234,13 @@ namespace RimWorldAccess.Shell
                 {
                     continue;
                 }
+                string normalized = CaptureTextNormalization.NormalizeForContainment(memberText.StripTags());
+                if (normalized.Length == 0)
+                {
+                    continue;
+                }
                 judgedAny = true;
-                if (CaptureTextNormalization.IsUnmirrored(memberText, presented, s => s.StripTags()))
+                if (!MemberIsMirrored(memberText, normalized, presented))
                 {
                     return true;
                 }
@@ -245,6 +250,27 @@ namespace RimWorldAccess.Shell
                 return false;
             }
             return RemainderIsUnmirrored(row, presented);
+        }
+
+        /// <summary>Below this, a normalized label is too short for containment to mean anything.</summary>
+        private const int TrustedContainmentLength = 8;
+
+        /// <summary>
+        /// Whether this scope really does say the member elsewhere. Containment is only trustworthy
+        /// for a long fragment: a short label lands inside an unrelated sentence ("Skill" inside
+        /// "skill focus is missing"), and one under three characters yields no comparable line at
+        /// all, so the shared test can return no verdict. A short label therefore counts as mirrored
+        /// only when it matches a WHOLE presented entry. Losing a control the player needs is the
+        /// costly error, so anything inconclusive keeps it.
+        /// </summary>
+        private static bool MemberIsMirrored(string memberText, string normalized, string presented)
+        {
+            if (presented.Contains("\n" + normalized + "\n"))
+            {
+                return true;
+            }
+            return normalized.Length >= TrustedContainmentLength
+                && !CaptureTextNormalization.IsUnmirrored(memberText, presented, s => s.StripTags());
         }
 
         /// <summary>
@@ -390,7 +416,18 @@ namespace RimWorldAccess.Shell
                     AppendPresented(sb, text);
                 }
             }
-            return CaptureTextNormalization.NormalizeForContainment(sb.ToString().StripTags());
+            // Normalized per entry and newline-delimited: those boundaries are what let a short
+            // label ask whether it matches a WHOLE presented entry instead of landing inside one.
+            var normalized = new StringBuilder("\n");
+            foreach (string entry in sb.ToString().StripTags().Split('\n'))
+            {
+                string line = CaptureTextNormalization.NormalizeForContainment(entry);
+                if (line.Length > 0)
+                {
+                    normalized.Append(line).Append('\n');
+                }
+            }
+            return normalized.ToString();
         }
 
         private static void AppendPresented(StringBuilder sb, ElementDescription d)
@@ -432,7 +469,21 @@ namespace RimWorldAccess.Shell
             {
                 pureMembers.Add(ToPureMember(row.Interactives[i]));
             }
-            List<CapturedExtraRow> expanded = CapturedExtrasRows.Expand(row.Text, row.Tip, pureMembers);
+            // Whatever a banded row says beyond its controls' own fragments is the caption a
+            // two-column form draws beside them, and it is otherwise lost. It names EVERY control
+            // on the row: a pair sharing one caption ("Class hours", 8 and 15) is still that pair,
+            // and naming neither leaves two bare numbers. A row that is nothing but its controls
+            // has no residue, so HasContext keeps it out of this.
+            var fragments = new List<string>(row.Interactives.Count);
+            for (int i = 0; i < row.Interactives.Count; i++)
+            {
+                fragments.Add(row.Interactives[i].Fragment);
+            }
+            string caption = RimWorldAccess.CapturedRowResidue.HasContext(row.Text, fragments)
+                ? RimWorldAccess.CapturedRowResidue.Strip(row.Text, fragments)
+                : null;
+            List<CapturedExtraRow> expanded =
+                CapturedExtrasRows.Expand(row.Text, row.Tip, pureMembers, caption);
             for (int i = 0; i < expanded.Count && i < row.Interactives.Count; i++)
             {
                 CapturedExtraRow pr = expanded[i];

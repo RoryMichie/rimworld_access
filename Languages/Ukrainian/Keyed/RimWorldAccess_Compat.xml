@@ -1150,17 +1150,23 @@
   <RimWorldAccess.Compat.Vfet.Locked>заблоковано</RimWorldAccess.Compat.Vfet.Locked>
   <RimWorldAccess.Compat.Vfet.NoPoints>Немає доступних очок наріжних каменів.</RimWorldAccess.Compat.Vfet.NoPoints>
   <RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>{0} розблоковано. Залишилось очок: {1}.</RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>
+  <RimWorldAccess.Compat.Vfet.EthosRewritten>Новий етос: {0}</RimWorldAccess.Compat.Vfet.EthosRewritten>
   <RimWorldAccess.Compat.Pe.RoleRegion>{0}, призначено {1} з {2}</RimWorldAccess.Compat.Pe.RoleRegion>
   <RimWorldAccess.Compat.Pe.AssignedElsewhere>призначено як {0}</RimWorldAccess.Compat.Pe.AssignedElsewhere>
   <RimWorldAccess.Compat.Pe.CannotAssign>Не вдається призначити {0} як {1}.</RimWorldAccess.Compat.Pe.CannotAssign>
   <RimWorldAccess.Compat.Pe.TeacherFragment>викладає {0}</RimWorldAccess.Compat.Pe.TeacherFragment>
   <RimWorldAccess.Compat.Pe.ClassSpeedFragment>швидкість занять {0}</RimWorldAccess.Compat.Pe.ClassSpeedFragment>
+  <RimWorldAccess.Compat.Pe.ClassroomColorFragment>колір {0}</RimWorldAccess.Compat.Pe.ClassroomColorFragment>
   <RimWorldAccess.Compat.Pe.JumpToTeacher>Перейти до вчителя {0}</RimWorldAccess.Compat.Pe.JumpToTeacher>
   <RimWorldAccess.Compat.Pe.JumpToLearningBoard>Перейти до навчальної дошки</RimWorldAccess.Compat.Pe.JumpToLearningBoard>
   <RimWorldAccess.Compat.Pe.ProficiencyLine>{0}: {1}, рівень {2} з {3}.</RimWorldAccess.Compat.Pe.ProficiencyLine>
   <RimWorldAccess.Compat.Wq.PointsProgress>{0} з {1} очок персонажа</RimWorldAccess.Compat.Wq.PointsProgress>
   <RimWorldAccess.Compat.Wq.RewardsRegion>Нагороди</RimWorldAccess.Compat.Wq.RewardsRegion>
+  <RimWorldAccess.Compat.Wq.InfoRegion>Інформація</RimWorldAccess.Compat.Wq.InfoRegion>
   <RimWorldAccess.Compat.Wq.PawnRowHint>Натисніть Enter, щоб відкрити його бажання.</RimWorldAccess.Compat.Wq.PawnRowHint>
+  <RimWorldAccess.Compat.Wq.DismissWant>Відхилити бажання</RimWorldAccess.Compat.Wq.DismissWant>
+  <RimWorldAccess.Compat.Wq.RemoveQuirk>Видалити примху</RimWorldAccess.Compat.Wq.RemoveQuirk>
+  <RimWorldAccess.Compat.Wq.NoQuirks>Примх поки немає.</RimWorldAccess.Compat.Wq.NoQuirks>
   <RimWorldAccess.Compat.Wq.RarityCommon>звичайна</RimWorldAccess.Compat.Wq.RarityCommon>
   <RimWorldAccess.Compat.Wq.RarityUncommon>незвичайна</RimWorldAccess.Compat.Wq.RarityUncommon>
   <RimWorldAccess.Compat.Wq.RarityRare>рідкісна</RimWorldAccess.Compat.Wq.RarityRare>

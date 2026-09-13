@@ -283,6 +283,7 @@ namespace RimWorldAccess.Shell
         /// </summary>
         private bool TryOpenSingleObject(InspectionTreeOpening opening)
         {
+            Type landingTab = WindowlessInspectionState.ConsumeLandingTabType();
             InspectionTreeItem single = Tree.Count > 0 ? Tree.Visible[0] : null;
             if (single == null || !single.IsExpandable)
             {
@@ -298,8 +299,14 @@ namespace RimWorldAccess.Shell
 
             single.IsExpanded = true;
             Tree.Reflatten();
-            int firstChild = Tree.IndexOf(single.Children[0]);
-            Tree.SetSelectedIndex(firstChild >= 0 ? firstChild : 0);
+            // The categories exist only now, so a requested landing resolves here.
+            InspectionTreeItem landing =
+                WindowlessInspectionState.FindCategoryForTabType(single, landingTab);
+            if (landing == null || !TryRevealAndSelect(landing))
+            {
+                int firstChild = Tree.IndexOf(single.Children[0]);
+                Tree.SetSelectedIndex(firstChild >= 0 ? firstChild : 0);
+            }
             RefreshModel();
             SyncRegionFromCurrentTree();
             AnnounceCurrentRow();
@@ -775,7 +782,10 @@ namespace RimWorldAccess.Shell
     /// before <see cref="GizmoScopeMirror"/> (see that mirror for the Ctrl+Alt+Enter coexistence
     /// this ordering exists for). The scope keeps its tree across a pop/re-push here.
     ///
-    /// The only stand-downs are the info card and any foreign input-owning window. Every other
+    /// The stand-downs are the info card, any foreign input-owning window, and any main tab other
+    /// than Inspect: a main tab window is neither absorbing nor close-on-outside, so the foreign
+    /// test cannot see one, and this mirror would otherwise re-float above the scope such a tab
+    /// attached at Add time. The tree keeps its rows and resumes when that tab closes. Every other
     /// screen that spawns from inside this tree while IsActive stays true — the inspect-component
     /// scopes, the health/prisoner/entity/fishing tabs, the bills/filter/storage family — has its
     /// own mirror reconciling AFTER this one, so stack order alone gives it the keyboard. Pure
@@ -792,7 +802,8 @@ namespace RimWorldAccess.Shell
             // predicate lives in ShellGuards so every mirror with the same exposure shares it.
             if (WindowlessInspectionState.IsActive
                 && !InfoCardState.IsActive
-                && !ShellGuards.ForeignInputOwningWindowAbove())
+                && !ShellGuards.NonInspectMainTabOpen()
+                && !ShellGuards.ForeignDialogWindowAbove())
             {
                 FocusStack.Push(scope);
             }

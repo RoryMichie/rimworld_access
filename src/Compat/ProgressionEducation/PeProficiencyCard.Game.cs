@@ -10,10 +10,9 @@ namespace RimWorldAccess
 {
     /// <summary>
     /// Adds Progression: Education's Knowledge panel to the Character inspection category. The
-    /// mod transpiles the panel into <c>CharacterCardUtility.DoLeftSection</c>, which our
-    /// data-model Bio reading never draws, so this extender reads the same data the panel shows:
-    /// one line per enabled proficiency track — the pawn's current tier, its position on the
-    /// track, and the tier trait's own description (the panel's hover tooltip).
+    /// mod transpiles it into <c>CharacterCardUtility.DoLeftSection</c>, which our data-model Bio
+    /// reading never draws, so this extender reads the same data: one line per enabled
+    /// proficiency track, its tier, position, and the tier trait's description (the panel's tip).
     /// </summary>
     internal static class PeProficiencyCard
     {
@@ -84,9 +83,15 @@ namespace RimWorldAccess
                 {
                     continue;
                 }
-                Def tier = getCurrentTierMethod.Invoke(null, new object[] { pawn, track }) as Def;
                 var tiers = trackTiersField.GetValue(track) as IList;
-                if (tier == null || tiers == null)
+                if (tiers == null || tiers.Count == 0)
+                {
+                    continue;
+                }
+                // The panel's own fallback for an ungranted track, minus its grant-on-draw write.
+                Def tier = getCurrentTierMethod.Invoke(null, new object[] { pawn, track }) as Def
+                    ?? tiers[0] as Def;
+                if (tier == null)
                 {
                     continue;
                 }

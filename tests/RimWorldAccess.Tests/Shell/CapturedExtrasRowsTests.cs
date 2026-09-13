@@ -231,6 +231,62 @@ public class CapturedExtrasRowsTests
     }
 
     [Fact]
+    public void Expand_Caption_NamesABareTextField()
+    {
+        var members = new List<CapturedExtraMember>
+        {
+            new CapturedExtraMember { Kind = CapturedExtraKind.TextField, RawLabel = "", ValueBlank = true },
+        };
+        CapturedExtraRow row = CapturedExtrasRows.Expand(
+            "Class name, edit box, blank", "tip", members, "Class name, ")[0];
+        Assert.Equal("Class name", row.Label);
+        Assert.True(row.ValueBlank);
+    }
+
+    [Fact]
+    public void Expand_Caption_BecomesTheNameAndTheControlTextTheValue()
+    {
+        var members = new List<CapturedExtraMember>
+        {
+            new CapturedExtraMember { Kind = CapturedExtraKind.Button, RawLabel = "Classroom 1" },
+        };
+        CapturedExtraRow row = CapturedExtrasRows.Expand(
+            "Classroom, Classroom 1", null, members, "Classroom, ")[0];
+        Assert.Equal("Classroom", row.Label);
+        Assert.Equal("Classroom 1", row.Value);
+        Assert.Equal(ElementRole.Button, row.Role);
+    }
+
+    [Fact]
+    public void Expand_Caption_NamesEveryControlSharingIt()
+    {
+        var members = new List<CapturedExtraMember>
+        {
+            new CapturedExtraMember { Kind = CapturedExtraKind.Button, RawLabel = "8" },
+            new CapturedExtraMember { Kind = CapturedExtraKind.Button, RawLabel = "15" },
+        };
+        List<CapturedExtraRow> rows = CapturedExtrasRows.Expand(
+            "Class hours, 8, 15", null, members, "Class hours, , ");
+        Assert.Equal("Class hours", rows[0].Label);
+        Assert.Equal("8", rows[0].Value);
+        Assert.Equal("Class hours", rows[1].Label);
+        Assert.Equal("15", rows[1].Value);
+    }
+
+    [Fact]
+    public void Expand_Slider_BlankRawLabel_DoesNotFallBackToRowText()
+    {
+        // Same trap as the bare TextField: the row text IS the composed role phrase.
+        var members = new List<CapturedExtraMember>
+        {
+            new CapturedExtraMember { Kind = CapturedExtraKind.Slider, RawLabel = "", SliderValue = 9000f, SliderMin = 1000f, SliderMax = 100000f },
+        };
+        CapturedExtraRow row = CapturedExtrasRows.Expand("slider, 9000", null, members)[0];
+        Assert.Equal("", row.Label);
+        Assert.Equal("9000", row.Value);
+    }
+
+    [Fact]
     public void Expand_FillableBar_ReadOnlyWithPercentValue()
     {
         var members = new List<CapturedExtraMember>

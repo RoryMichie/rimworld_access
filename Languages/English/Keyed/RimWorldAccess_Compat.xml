@@ -1161,17 +1161,23 @@
   <RimWorldAccess.Compat.Vfet.Locked>locked</RimWorldAccess.Compat.Vfet.Locked>
   <RimWorldAccess.Compat.Vfet.NoPoints>No cornerstone points available.</RimWorldAccess.Compat.Vfet.NoPoints>
   <RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>{0} unlocked. {1} points remaining.</RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>
+  <RimWorldAccess.Compat.Vfet.EthosRewritten>New ethos: {0}</RimWorldAccess.Compat.Vfet.EthosRewritten>
   <RimWorldAccess.Compat.Pe.RoleRegion>{0}, {1} of {2} assigned</RimWorldAccess.Compat.Pe.RoleRegion>
   <RimWorldAccess.Compat.Pe.AssignedElsewhere>assigned as {0}</RimWorldAccess.Compat.Pe.AssignedElsewhere>
   <RimWorldAccess.Compat.Pe.CannotAssign>Cannot assign {0} as {1}.</RimWorldAccess.Compat.Pe.CannotAssign>
   <RimWorldAccess.Compat.Pe.TeacherFragment>taught by {0}</RimWorldAccess.Compat.Pe.TeacherFragment>
   <RimWorldAccess.Compat.Pe.ClassSpeedFragment>class speed {0}</RimWorldAccess.Compat.Pe.ClassSpeedFragment>
+  <RimWorldAccess.Compat.Pe.ClassroomColorFragment>color {0}</RimWorldAccess.Compat.Pe.ClassroomColorFragment>
   <RimWorldAccess.Compat.Pe.JumpToTeacher>Go to teacher {0}</RimWorldAccess.Compat.Pe.JumpToTeacher>
   <RimWorldAccess.Compat.Pe.JumpToLearningBoard>Go to learning board</RimWorldAccess.Compat.Pe.JumpToLearningBoard>
   <RimWorldAccess.Compat.Pe.ProficiencyLine>{0}: {1}, tier {2} of {3}.</RimWorldAccess.Compat.Pe.ProficiencyLine>
   <RimWorldAccess.Compat.Wq.PointsProgress>{0} of {1} character points</RimWorldAccess.Compat.Wq.PointsProgress>
   <RimWorldAccess.Compat.Wq.RewardsRegion>Rewards</RimWorldAccess.Compat.Wq.RewardsRegion>
+  <RimWorldAccess.Compat.Wq.InfoRegion>Information</RimWorldAccess.Compat.Wq.InfoRegion>
   <RimWorldAccess.Compat.Wq.PawnRowHint>Press Enter to view their wants.</RimWorldAccess.Compat.Wq.PawnRowHint>
+  <RimWorldAccess.Compat.Wq.DismissWant>Dismiss want</RimWorldAccess.Compat.Wq.DismissWant>
+  <RimWorldAccess.Compat.Wq.RemoveQuirk>Remove quirk</RimWorldAccess.Compat.Wq.RemoveQuirk>
+  <RimWorldAccess.Compat.Wq.NoQuirks>No quirks yet.</RimWorldAccess.Compat.Wq.NoQuirks>
   <RimWorldAccess.Compat.Wq.RarityCommon>common</RimWorldAccess.Compat.Wq.RarityCommon>
   <RimWorldAccess.Compat.Wq.RarityUncommon>uncommon</RimWorldAccess.Compat.Wq.RarityUncommon>
   <RimWorldAccess.Compat.Wq.RarityRare>rare</RimWorldAccess.Compat.Wq.RarityRare>

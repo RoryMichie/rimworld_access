@@ -150,7 +150,8 @@ namespace RimWorldAccess.Shell
         /// list against this method's output by index when
         /// <paramref name="members"/> is non-empty).
         /// </summary>
-        public static List<CapturedExtraRow> Expand(string rowText, string rowTip, IReadOnlyList<CapturedExtraMember> members)
+        public static List<CapturedExtraRow> Expand(string rowText, string rowTip,
+            IReadOnlyList<CapturedExtraMember> members, string caption = null)
         {
             var rows = new List<CapturedExtraRow>();
             if (members == null || members.Count == 0)
@@ -171,15 +172,17 @@ namespace RimWorldAccess.Shell
             // control.
             for (int i = 0; i < members.Count; i++)
             {
-                CapturedExtraRow row = ExpandMember(rowText, members[i]);
+                CapturedExtraRow row = ExpandMember(rowText, members[i], caption);
                 row.Tip = i == 0 ? rowTip : null;
                 rows.Add(row);
             }
             return rows;
         }
 
-        private static CapturedExtraRow ExpandMember(string rowText, CapturedExtraMember member)
+        private static CapturedExtraRow ExpandMember(string rowText, CapturedExtraMember member,
+            string caption)
         {
+            string context = string.IsNullOrEmpty(caption) ? "" : caption.Trim(CaptionTrim);
             var row = new CapturedExtraRow
             {
                 // RawLabel first: the fragment self-describes role/state, which
@@ -195,7 +198,8 @@ namespace RimWorldAccess.Shell
                 // fragment alone still carries the phrase, spoken exactly once.
                 Label = !string.IsNullOrEmpty(member.RawLabel)
                     ? member.RawLabel
-                    : (member.Kind == CapturedExtraKind.TextField ? "" : (rowText ?? "")),
+                    : (member.Kind == CapturedExtraKind.TextField
+                        || member.Kind == CapturedExtraKind.Slider ? "" : (rowText ?? "")),
                 Role = RoleFor(member.Kind),
                 Disabled = member.Disabled,
                 Check = member.Check,
@@ -223,8 +227,23 @@ namespace RimWorldAccess.Shell
                     row.ReadOnly = true;
                     break;
             }
+            if (context.Length > 0)
+            {
+                // A two-column form draws the name beside the control, so the control's own text is
+                // its value and the caption is its name. Without this the caption is dropped and a
+                // bare field reaches the player with no name at all.
+                if (string.IsNullOrEmpty(row.Value) && !row.ValueBlank
+                    && !string.IsNullOrEmpty(row.Label) && row.Label != context)
+                {
+                    row.Value = row.Label;
+                }
+                row.Label = context;
+            }
             return row;
         }
+
+        /// <summary>The row joiner's own punctuation, trimmed off a caption's ends.</summary>
+        private static readonly char[] CaptionTrim = { ' ', '\t', '\n', '\r', ',', '.', ':', ';' };
 
         private static string FormatPercent(float value)
         {

@@ -35,6 +35,8 @@ namespace RimWorldAccess
             {
                 return new PeClassDialogScope(w);
             });
+            PeClassDialogAcceptGuardPatch.Install(harmony, PeCompat.DialogCreateType);
+            PeClassDialogAcceptGuardPatch.Install(harmony, PeCompat.DialogEditType);
 
             if (PeProficiencyCard.Ready)
             {

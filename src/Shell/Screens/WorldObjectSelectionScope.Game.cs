@@ -175,7 +175,7 @@ namespace RimWorldAccess.Shell
             // Real-dialog stand-down: Alt+I on a row opens the info card while the state stays
             // active, and an unconditional per-frame Push would re-float this scope above it.
             if (WorldObjectSelectionState.IsActive
-                && !ShellGuards.ForeignInputOwningWindowAbove())
+                && !ShellGuards.ForeignDialogWindowAbove())
             {
                 FocusStack.Push(scope);
             }

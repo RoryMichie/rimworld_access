@@ -274,7 +274,7 @@
 17	src/Compat/Laboratory/LaboratoryCompat.Game.cs
 0	src/Compat/Laboratory/LaboratoryModule.Game.cs
 45	src/Compat/MVCF/MvcfVerbTargetHandler.Game.cs
-20	src/Compat/ProgressionEducation/PeClassDialogScope.Game.cs
+23	src/Compat/ProgressionEducation/PeClassDialogScope.Game.cs
 33	src/Compat/ProgressionEducation/PeCompat.Game.cs
 20	src/Compat/ProgressionEducation/PeEducationTabScope.Game.cs
 8	src/Compat/ProgressionEducation/PeModule.Game.cs
@@ -424,7 +424,7 @@
 43	src/Compat/VehicleFramework/VfVehicleSelectorScope.Game.cs
 74	src/Compat/VehicleFramework/VfWorldTargeterCompat.Game.cs
 20	src/Compat/WantsAndQuirks/WqCharactersTabScope.Game.cs
-10	src/Compat/WantsAndQuirks/WqCompat.Game.cs
+14	src/Compat/WantsAndQuirks/WqCompat.Game.cs
 6	src/Compat/WantsAndQuirks/WqModule.Game.cs
 25	src/Core/GameStartPatch.cs
 30	src/Core/ModLogger.cs
@@ -620,7 +620,7 @@
 66	src/Inspection/ThingFilterHelper.cs
 55	src/Inspection/ThingFilterMenuState.cs
 73	src/Inspection/ThingFilterSessionCore.cs
-47	src/Inspection/WindowlessInspectionState.cs
+53	src/Inspection/WindowlessInspectionState.cs
 71	src/Inspection/WindowlessInventoryState.cs
 21	src/Learning/ConceptHelpOverrideDef.cs
 28	src/Learning/ConceptHelpOverrides.cs
@@ -840,7 +840,7 @@
 16	src/Shell/Focus/FocusStack.cs
 122	src/Shell/Focus/FocusStackCore.cs
 13	src/Shell/Focus/ICharSink.cs
-60	src/Shell/Focus/InspectPaneLink.Game.cs
+65	src/Shell/Focus/InspectPaneLink.Game.cs
 65	src/Shell/Focus/MainTabWindowLink.Game.cs
 56	src/Shell/Focus/MapOverlayScopes.Game.cs
 43	src/Shell/Focus/MapScope.Architect.Game.cs
@@ -858,7 +858,7 @@
 42	src/Shell/Focus/PageKeyRouter.Game.cs
 208	src/Shell/Focus/ScopeForWindow.Game.cs
 117	src/Shell/Focus/ShellDispatcher.Game.cs
-72	src/Shell/Focus/ShellGuards.Game.cs
+87	src/Shell/Focus/ShellGuards.Game.cs
 17	src/Shell/Focus/ShellKeyboardOrigin.cs
 49	src/Shell/Focus/ShellTextFocus.Game.cs
 18	src/Shell/Focus/VisualSurfaceTripwire.Game.cs
@@ -910,7 +910,7 @@
 110	src/Shell/Screens/AutoSlaughterScope.Game.cs
 147	src/Shell/Screens/BillConfigScope.Game.cs
 64	src/Shell/Screens/BillsScope.Game.cs
-65	src/Shell/Screens/CapturedExtrasRows.cs
+69	src/Shell/Screens/CapturedExtrasRows.cs
 77	src/Shell/Screens/CaravanDrugPoliciesScope.Game.cs
 198	src/Shell/Screens/CaravanFormationScope.Game.cs
 101	src/Shell/Screens/CaravanInspectScope.Game.cs
@@ -988,7 +988,7 @@
 81	src/Shell/Screens/IdeosDuringLandingScope.Game.cs
 89	src/Shell/Screens/InfoCardScope.Game.cs
 70	src/Shell/Screens/InspectComponentScopes.Game.cs
-195	src/Shell/Screens/InspectionScope.Game.cs
+200	src/Shell/Screens/InspectionScope.Game.cs
 102	src/Shell/Screens/InventoryScope.Game.cs
 91	src/Shell/Screens/LearningHelperScope.Game.cs
 110	src/Shell/Screens/LordJobDialogScope.Game.cs
@@ -1037,7 +1037,7 @@
 144	src/Shell/Screens/ScreenScope.Activation.Game.cs
 83	src/Shell/Screens/ScreenScope.Announce.Game.cs
 28	src/Shell/Screens/ScreenScope.DebugSurface.Game.cs
-105	src/Shell/Screens/ScreenScope.Extras.Game.cs
+121	src/Shell/Screens/ScreenScope.Extras.Game.cs
 306	src/Shell/Screens/ScreenScope.Game.cs
 212	src/Shell/Screens/ScreenScope.Regions.Game.cs
 117	src/Shell/Screens/ScreenScope.Typeahead.Game.cs
@@ -1131,7 +1131,7 @@
 18	src/Shell/Sync/ScopeDelegateGuard.Game.cs
 21	src/Shell/Sync/ScrollDragSpeech.Game.cs
 18	src/Shell/Sync/SellableItemsDrawPatch.Game.cs
-55	src/Shell/Sync/SliderCaption.cs
+62	src/Shell/Sync/SliderCaption.cs
 25	src/Shell/Sync/SliderCaptionIndex.Game.cs
 51	src/Shell/Sync/SliderDragSpeech.Game.cs
 49	src/Shell/Sync/StylingGridDrawPatch.Game.cs
@@ -1251,7 +1251,7 @@
 36	tests/RimWorldAccess.Tests/Shell/AnnouncementComposerTests.cs
 9	tests/RimWorldAccess.Tests/Shell/BandLabelInheritanceTests.cs
 0	tests/RimWorldAccess.Tests/Shell/BindingOverrideSetTests.cs
-13	tests/RimWorldAccess.Tests/Shell/CapturedExtrasRowsTests.cs
+14	tests/RimWorldAccess.Tests/Shell/CapturedExtrasRowsTests.cs
 0	tests/RimWorldAccess.Tests/Shell/CellBoundsTests.cs
 7	tests/RimWorldAccess.Tests/Shell/CmrSubsetToggleTests.cs
 0	tests/RimWorldAccess.Tests/Shell/DefaultAcceptInertnessTests.cs
@@ -1275,7 +1275,7 @@
 0	tests/RimWorldAccess.Tests/Shell/SectionPrefixTrackerTests.cs
 0	tests/RimWorldAccess.Tests/Shell/SharedMenuGrammarTests.cs
 44	tests/RimWorldAccess.Tests/Shell/ShellActionInventoryTests.cs
-1	tests/RimWorldAccess.Tests/Shell/SliderCaptionTests.cs
+3	tests/RimWorldAccess.Tests/Shell/SliderCaptionTests.cs
 30	tests/RimWorldAccess.Tests/Shell/SliderStepTests.cs
 0	tests/RimWorldAccess.Tests/Shell/SpeechFlattenTests.cs
 0	tests/RimWorldAccess.Tests/Shell/SpinnerGlyphsTests.cs

@@ -42,7 +42,7 @@ namespace RimWorldAccess.Shell
     /// Manage-Areas drill-in: the AllowedArea/ManageAreas branch calls CloseSubmenuInternal
     /// (submenu only, NOT the whole scope) before raising the real Dialog_ManageAreas above this
     /// window; <see cref="MechsScopeMirror"/> stands down for it via
-    /// ForeignInputOwningWindowAbove, and for the shape placement its Expand/Shrink hand off to
+    /// ForeignDialogWindowAbove, and for the shape placement its Expand/Shrink hand off to
     /// via !ShapePlacementState.IsActive / !ViewingModeState.IsActive.
     /// </summary>
     public sealed class MechsScope : ScreenScope, IPawnTableFocusSource
@@ -1187,7 +1187,7 @@ namespace RimWorldAccess.Shell
                 && !InfoCardState.IsActive
                 && !ShapePlacementState.IsActive
                 && !ViewingModeState.IsActive
-                && !ShellGuards.ForeignInputOwningWindowAbove())
+                && !ShellGuards.ForeignDialogWindowAbove())
             {
                 FocusStack.Push(scope);
             }

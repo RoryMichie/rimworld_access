@@ -32,6 +32,8 @@ namespace RimWorldAccess
         /// <summary>Set when a tree was built before any scope existed to receive it.</summary>
         private static InspectionTreeOpening? pendingOpening;
 
+        private static Type pendingLandingTabType;
+
         /// <summary>
         /// Hands a freshly built tree to the scope, which presents it and speaks the opening
         /// announcement. The pending fallback covers only the case of a tree built before the
@@ -71,6 +73,7 @@ namespace RimWorldAccess
         {
             treeRoot = null;
             pendingOpening = null;
+            pendingLandingTabType = null;
             InspectionScope live = InspectionScope.Live;
             if (live != null)
             {
@@ -180,6 +183,61 @@ namespace RimWorldAccess
                 Log.Error($"[RimWorldAccess] Error opening inspection menu for object: {ex}");
                 Close();
             }
+        }
+
+        /// <summary>Opens the panel on one object with the cursor on the category presenting
+        /// <paramref name="tabType"/>. Categories exist only once the object row expands, so the
+        /// landing rides the opening pass rather than following it: one announcement, not two.</summary>
+        public static void OpenForObjectOnTab(object obj, Type tabType)
+        {
+            pendingLandingTabType = tabType;
+            OpenForObject(obj);
+        }
+
+        internal static Type ConsumeLandingTabType()
+        {
+            Type type = pendingLandingTabType;
+            pendingLandingTabType = null;
+            return type;
+        }
+
+        /// <summary>The Category row presenting the given inspect-tab type, at any depth.</summary>
+        internal static InspectionTreeItem FindCategoryForTabType(InspectionTreeItem node, Type tabType)
+        {
+            if (node == null || tabType == null)
+            {
+                return null;
+            }
+            if (node.Type == InspectionTreeItem.ItemType.Category
+                && node.SourceTab != null
+                && tabType.IsInstanceOfType(node.SourceTab))
+            {
+                return node;
+            }
+            foreach (InspectionTreeItem child in node.Children)
+            {
+                InspectionTreeItem found = FindCategoryForTabType(child, tabType);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>Moves an already-open panel's cursor onto that tab's category; false when the
+        /// tree does not carry one, leaving the caller to reopen.</summary>
+        internal static bool TryLandOnTab(Type tabType)
+        {
+            InspectionScope live = InspectionScope.Live;
+            InspectionTreeItem node = FindCategoryForTabType(treeRoot, tabType);
+            if (live == null || node == null)
+            {
+                return false;
+            }
+            live.RefreshTreeRowsLandingOn(node);
+            live.AnnounceCurrentRow();
+            return true;
         }
 
         /// <summary>

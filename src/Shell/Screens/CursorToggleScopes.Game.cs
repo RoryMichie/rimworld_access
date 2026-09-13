@@ -68,7 +68,7 @@ namespace RimWorldAccess.Shell
     /// <see cref="Dialog_MessageBox"/>. Stack order alone does not protect that dialog —
     /// <c>FocusStackCore.Push</c> re-floats an already-stacked scope, so the per-frame mirror
     /// would hoist this scope back above MessageBoxScope and eat the Enter/Escape it claims.
-    /// The mirror stands down behind <c>ShellGuards.ForeignInputOwningWindowAbove()</c> instead.
+    /// The mirror stands down behind <c>ShellGuards.ForeignDialogWindowAbove()</c> instead.
     /// </summary>
     public sealed class ShelfLinkingScope : FocusScope
     {
@@ -107,7 +107,7 @@ namespace RimWorldAccess.Shell
         public static void Reconcile()
         {
             if (ShelfLinkingState.IsActive
-                && !ShellGuards.ForeignInputOwningWindowAbove())
+                && !ShellGuards.ForeignDialogWindowAbove())
             {
                 FocusStack.Push(scope);
             }

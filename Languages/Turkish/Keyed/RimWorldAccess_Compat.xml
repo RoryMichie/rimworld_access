@@ -1155,17 +1155,23 @@
   <RimWorldAccess.Compat.Vfet.Locked>kilitli</RimWorldAccess.Compat.Vfet.Locked>
   <RimWorldAccess.Compat.Vfet.NoPoints>Kullanılabilir köşe taşı puanı yok.</RimWorldAccess.Compat.Vfet.NoPoints>
   <RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>{0} açıldı. {1} puan kaldı.</RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>
+  <RimWorldAccess.Compat.Vfet.EthosRewritten>Yeni etos: {0}</RimWorldAccess.Compat.Vfet.EthosRewritten>
   <RimWorldAccess.Compat.Pe.RoleRegion>{0}, {1} / {2} atandı</RimWorldAccess.Compat.Pe.RoleRegion>
   <RimWorldAccess.Compat.Pe.AssignedElsewhere>{0} olarak atandı</RimWorldAccess.Compat.Pe.AssignedElsewhere>
   <RimWorldAccess.Compat.Pe.CannotAssign>{0}, {1} olarak atanamıyor.</RimWorldAccess.Compat.Pe.CannotAssign>
   <RimWorldAccess.Compat.Pe.TeacherFragment>öğretmen: {0}</RimWorldAccess.Compat.Pe.TeacherFragment>
   <RimWorldAccess.Compat.Pe.ClassSpeedFragment>ders hızı {0}</RimWorldAccess.Compat.Pe.ClassSpeedFragment>
+  <RimWorldAccess.Compat.Pe.ClassroomColorFragment>renk {0}</RimWorldAccess.Compat.Pe.ClassroomColorFragment>
   <RimWorldAccess.Compat.Pe.JumpToTeacher>Öğretmene git: {0}</RimWorldAccess.Compat.Pe.JumpToTeacher>
   <RimWorldAccess.Compat.Pe.JumpToLearningBoard>Öğrenme tahtasına git</RimWorldAccess.Compat.Pe.JumpToLearningBoard>
   <RimWorldAccess.Compat.Pe.ProficiencyLine>{0}: {1}, seviye {2} / {3}.</RimWorldAccess.Compat.Pe.ProficiencyLine>
   <RimWorldAccess.Compat.Wq.PointsProgress>{0} / {1} karakter puanı</RimWorldAccess.Compat.Wq.PointsProgress>
   <RimWorldAccess.Compat.Wq.RewardsRegion>Ödüller</RimWorldAccess.Compat.Wq.RewardsRegion>
+  <RimWorldAccess.Compat.Wq.InfoRegion>Bilgi</RimWorldAccess.Compat.Wq.InfoRegion>
   <RimWorldAccess.Compat.Wq.PawnRowHint>İsteklerini görmek için Enter'a basın.</RimWorldAccess.Compat.Wq.PawnRowHint>
+  <RimWorldAccess.Compat.Wq.DismissWant>İsteği bırak</RimWorldAccess.Compat.Wq.DismissWant>
+  <RimWorldAccess.Compat.Wq.RemoveQuirk>Tuhaflığı kaldır</RimWorldAccess.Compat.Wq.RemoveQuirk>
+  <RimWorldAccess.Compat.Wq.NoQuirks>Henüz tuhaflık yok.</RimWorldAccess.Compat.Wq.NoQuirks>
   <RimWorldAccess.Compat.Wq.RarityCommon>yaygın</RimWorldAccess.Compat.Wq.RarityCommon>
   <RimWorldAccess.Compat.Wq.RarityUncommon>az bulunur</RimWorldAccess.Compat.Wq.RarityUncommon>
   <RimWorldAccess.Compat.Wq.RarityRare>nadir</RimWorldAccess.Compat.Wq.RarityRare>

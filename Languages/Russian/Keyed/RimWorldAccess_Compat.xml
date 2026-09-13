@@ -923,17 +923,23 @@
   <RimWorldAccess.Compat.Vfet.Locked>заблокировано</RimWorldAccess.Compat.Vfet.Locked>
   <RimWorldAccess.Compat.Vfet.NoPoints>Нет доступных очков краеугольных камней.</RimWorldAccess.Compat.Vfet.NoPoints>
   <RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>{0} разблокировано. Осталось очков: {1}.</RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>
+  <RimWorldAccess.Compat.Vfet.EthosRewritten>Новый этос: {0}</RimWorldAccess.Compat.Vfet.EthosRewritten>
   <RimWorldAccess.Compat.Pe.RoleRegion>{0}, назначено {1} из {2}</RimWorldAccess.Compat.Pe.RoleRegion>
   <RimWorldAccess.Compat.Pe.AssignedElsewhere>назначен как {0}</RimWorldAccess.Compat.Pe.AssignedElsewhere>
   <RimWorldAccess.Compat.Pe.CannotAssign>Не удаётся назначить {0} как {1}.</RimWorldAccess.Compat.Pe.CannotAssign>
   <RimWorldAccess.Compat.Pe.TeacherFragment>преподаёт {0}</RimWorldAccess.Compat.Pe.TeacherFragment>
   <RimWorldAccess.Compat.Pe.ClassSpeedFragment>скорость занятий {0}</RimWorldAccess.Compat.Pe.ClassSpeedFragment>
+  <RimWorldAccess.Compat.Pe.ClassroomColorFragment>цвет {0}</RimWorldAccess.Compat.Pe.ClassroomColorFragment>
   <RimWorldAccess.Compat.Pe.JumpToTeacher>Перейти к учителю {0}</RimWorldAccess.Compat.Pe.JumpToTeacher>
   <RimWorldAccess.Compat.Pe.JumpToLearningBoard>Перейти к учебной доске</RimWorldAccess.Compat.Pe.JumpToLearningBoard>
   <RimWorldAccess.Compat.Pe.ProficiencyLine>{0}: {1}, уровень {2} из {3}.</RimWorldAccess.Compat.Pe.ProficiencyLine>
   <RimWorldAccess.Compat.Wq.PointsProgress>{0} из {1} очков персонажа</RimWorldAccess.Compat.Wq.PointsProgress>
   <RimWorldAccess.Compat.Wq.RewardsRegion>Награды</RimWorldAccess.Compat.Wq.RewardsRegion>
+  <RimWorldAccess.Compat.Wq.InfoRegion>Сведения</RimWorldAccess.Compat.Wq.InfoRegion>
   <RimWorldAccess.Compat.Wq.PawnRowHint>Нажмите Enter, чтобы открыть его желания.</RimWorldAccess.Compat.Wq.PawnRowHint>
+  <RimWorldAccess.Compat.Wq.DismissWant>Отклонить желание</RimWorldAccess.Compat.Wq.DismissWant>
+  <RimWorldAccess.Compat.Wq.RemoveQuirk>Удалить причуду</RimWorldAccess.Compat.Wq.RemoveQuirk>
+  <RimWorldAccess.Compat.Wq.NoQuirks>Причуд пока нет.</RimWorldAccess.Compat.Wq.NoQuirks>
   <RimWorldAccess.Compat.Wq.RarityCommon>обычная</RimWorldAccess.Compat.Wq.RarityCommon>
   <RimWorldAccess.Compat.Wq.RarityUncommon>необычная</RimWorldAccess.Compat.Wq.RarityUncommon>
   <RimWorldAccess.Compat.Wq.RarityRare>редкая</RimWorldAccess.Compat.Wq.RarityRare>

@@ -9,6 +9,8 @@ namespace RimWorldAccess.Shell
     /// visual twin: it stays open, its selection follows the cursor's owning object, and a
     /// category row that came from a real <see cref="InspectTabBase"/> opens that tab. There
     /// is deliberately NO reverse direction — closing the pane must never close the tree.
+    /// A DIFFERENT main tab, though, outranks the twin: this link yields the pane entirely
+    /// while one is open, else the switch is reverted within the frame it happens.
     ///
     /// The row-family ruling, all falling out of one
     /// ancestor walk for the nearest node carrying a non-null
@@ -68,13 +70,22 @@ namespace RimWorldAccess.Shell
                     return;
                 }
 
+                MainButtonDef openTab = Find.MainTabsRoot.OpenTab;
+                if (ShellGuards.NonInspectMainTabOpen())
+                {
+                    // Another main tab owns the screen: re-asserting the pane here would revert
+                    // that switch within the frame (Character Development's Add quirks button
+                    // calls SetCurrentTab from inside its ITab). The tree resumes when it closes.
+                    return;
+                }
+
                 SyncSelection(row);
 
-                if (Find.MainTabsRoot.OpenTab != MainButtonDefOf.Inspect)
+                if (openTab == null)
                 {
                     // Vanilla's own vehicle (decompiled RimWorld/MainTabsRoot.cs:37-43) and the
                     // same call Selector.SelectorOnGUI makes when a selection appears with no
-                    // tab open (decompiled RimWorld/Selector.cs:159-170).
+                    // tab open (decompiled RimWorld/Selector.cs:167-170).
                     Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Inspect, playSound: false);
                 }
 

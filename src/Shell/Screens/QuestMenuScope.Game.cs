@@ -692,10 +692,10 @@ namespace RimWorldAccess.Shell
                 QuestMenuState.CleanupRewardMenu();
             }
 
-            // ForeignInputOwningWindowAbove is needed because the royal-favor accept path raises a
+            // ForeignDialogWindowAbove is needed because the royal-favor accept path raises a
             // real Dialog_MessageBox confirmation while QuestMenuState stays active.
             if (QuestMenuState.IsActive && !InfoCardState.IsActive && !WindowlessFloatMenuState.IsActive
-                && !ShellGuards.ForeignInputOwningWindowAbove())
+                && !ShellGuards.ForeignDialogWindowAbove())
             {
                 FocusStack.Push(scope);
             }

@@ -32,7 +32,7 @@ namespace RimWorldAccess.Shell
     /// Policy-editor round trip (Alt+E, or the context menu's Edit option, on Outfit/Food/Drug/
     /// Reading): <see cref="PrepareForPolicyEditorReturn"/> captures the row/column to restore and
     /// relies entirely on <see cref="AssignMenuScopeMirror"/>'s
-    /// <c>!ShellGuards.ForeignInputOwningWindowAbove()</c> gate to re-push this scope when the real
+    /// <c>!ShellGuards.ForeignDialogWindowAbove()</c> gate to re-push this scope when the real
     /// policy window closes; <see cref="OnPush"/>/<see cref="OnFocus"/> detect the pending restore
     /// and skip the fresh-open reset.
     ///
@@ -753,13 +753,13 @@ namespace RimWorldAccess.Shell
 
         public static void Reconcile()
         {
-            // ForeignInputOwningWindowAbove covers both the delete-policy confirmation (vanilla's
+            // ForeignDialogWindowAbove covers both the delete-policy confirmation (vanilla's
             // Dialog_Confirm, raised while AssignMenuState stays active) and policy editing:
             // Dialog_ManagePolicies sets absorbInputAroundWindow and carries an attached scope, so
             // it trips this predicate without a gate of its own.
             if (AssignMenuState.IsActive
                 && !InfoCardState.IsActive
-                && !ShellGuards.ForeignInputOwningWindowAbove())
+                && !ShellGuards.ForeignDialogWindowAbove())
             {
                 FocusStack.Push(scope);
             }

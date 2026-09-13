@@ -1315,7 +1315,7 @@ namespace RimWorldAccess.Shell
 
         public static void Reconcile()
         {
-            // ForeignInputOwningWindowAbove covers the foreign-faction Dialog_Confirm the
+            // ForeignDialogWindowAbove covers the foreign-faction Dialog_Confirm the
             // ReleaseToWild/Sterilize columns can raise: a plain Window subclass, not a
             // Dialog_MessageBox, read by the generic window scope while this state stays active.
             if (AnimalsMenuState.IsActive
@@ -1323,7 +1323,7 @@ namespace RimWorldAccess.Shell
                 && !ShapePlacementState.IsActive
                 && !ViewingModeState.IsActive
                 && !AutoSlaughterState.IsActive
-                && !ShellGuards.ForeignInputOwningWindowAbove())
+                && !ShellGuards.ForeignDialogWindowAbove())
             {
                 FocusStack.Push(scope);
             }

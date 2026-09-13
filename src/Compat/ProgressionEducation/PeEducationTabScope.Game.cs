@@ -13,14 +13,17 @@ namespace RimWorldAccess.Shell
     /// and routes every action through the float menu Enter opens — each option opening the
     /// same dialog or calling the same method as the sighted control it mirrors.
     ///
-    /// Two content regions: classes (one row per study group) and classrooms (one row per
-    /// classroom). Declared actions mirror the tab's two standalone buttons: create class
-    /// (behind the tab's own bell/classroom checks) and the class-scheduling shortcut.
+    /// Two content regions: classes (empty-state text, else one row per study group) and
+    /// classrooms (the tab's description, then one row each). Declared actions mirror the tab's
+    /// two buttons: create class (behind its bell/classroom checks) and the scheduling shortcut.
     /// </summary>
     internal sealed class PeEducationTabScope : ScreenScope
     {
         private const int ClassesRegion = 0;
         private const int ClassroomsRegion = 1;
+
+        private const int ClassroomsDescriptionRow = 0;
+        private const int ClassroomRowOffset = 1;
 
         private readonly Window window;
         private readonly List<object> studyGroups = new List<object>();
@@ -64,7 +67,11 @@ namespace RimWorldAccess.Shell
 
         protected override int ContentItemCount(int region)
         {
-            return region == ClassesRegion ? studyGroups.Count : classrooms.Count;
+            if (region == ClassesRegion)
+            {
+                return studyGroups.Count == 0 ? 1 : studyGroups.Count;
+            }
+            return ClassroomRowOffset + classrooms.Count;
         }
 
         protected override ElementDescription DescribeContentItem(int region, int index)
@@ -72,6 +79,12 @@ namespace RimWorldAccess.Shell
             var d = new ElementDescription();
             if (region == ClassesRegion)
             {
+                if (studyGroups.Count == 0)
+                {
+                    d.Label = CompatText.ModText("PE_NoClassesScheduled");
+                    d.ReadOnly = true;
+                    return d;
+                }
                 if (index < 0 || index >= studyGroups.Count)
                 {
                     return d;
@@ -102,20 +115,38 @@ namespace RimWorldAccess.Shell
                 return d;
             }
 
-            if (index < 0 || index >= classrooms.Count)
+            if (index == ClassroomsDescriptionRow)
+            {
+                d.Label = CompatText.Flatten(CompatText.ModText("PE_ClassroomsDescription"));
+                d.ReadOnly = true;
+                return d;
+            }
+            object classroom = ClassroomAt(index);
+            if (classroom == null)
             {
                 return d;
             }
-            object classroom = classrooms[index];
             d.Label = PeCompat.ClassroomName(classroom);
             d.Role = ElementRole.Button;
+            var values = new List<string>
+            {
+                "RimWorldAccess.Compat.Pe.ClassroomColorFragment".Translate(
+                    ColorNameHelper.NameForColor(PeCompat.ClassroomColor(classroom))),
+            };
             float speed = PeCompat.ClassroomSpeed(classroom);
             if (speed > 0f)
             {
-                d.Value = "RimWorldAccess.Compat.Pe.ClassSpeedFragment".Translate(
-                    speed.ToStringPercent());
+                values.Add("RimWorldAccess.Compat.Pe.ClassSpeedFragment".Translate(
+                    speed.ToStringPercent()));
             }
+            d.Value = CompatText.JoinSentences(values);
             return d;
+        }
+
+        private object ClassroomAt(int index)
+        {
+            int i = index - ClassroomRowOffset;
+            return i >= 0 && i < classrooms.Count ? classrooms[i] : null;
         }
 
         /// <summary>The class row's progress bar text, mirroring the tab's own three formats.</summary>
@@ -178,11 +209,11 @@ namespace RimWorldAccess.Shell
             }
             else
             {
-                if (index < 0 || index >= classrooms.Count)
+                object classroom = ClassroomAt(index);
+                if (classroom == null)
                 {
                     return;
                 }
-                object classroom = classrooms[index];
                 options.Add(new FloatMenuOption("Rename".Translate(),
                     () => PeCompat.OpenRenameClassroomDialog(classroom)));
                 options.Add(new FloatMenuOption(CompatText.ModText("PE_ClassroomSettings"),
@@ -197,7 +228,7 @@ namespace RimWorldAccess.Shell
                         () => CameraJumper.TryJumpAndSelect(board)));
                 }
             }
-            Find.WindowStack.Add(new FloatMenu(options));
+            KeyboardFloatMenu.Open(options, givesColonistOrders: false);
         }
 
         /// <summary>Mirrors the tab's plus-button handler: the same two reject messages, then

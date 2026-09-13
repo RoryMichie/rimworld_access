@@ -1155,17 +1155,23 @@
   <RimWorldAccess.Compat.Vfet.Locked>verrouillé</RimWorldAccess.Compat.Vfet.Locked>
   <RimWorldAccess.Compat.Vfet.NoPoints>Aucun point de pierre angulaire disponible.</RimWorldAccess.Compat.Vfet.NoPoints>
   <RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>{0} débloqué. {1} points restants.</RimWorldAccess.Compat.Vfet.UnlockedAnnouncement>
+  <RimWorldAccess.Compat.Vfet.EthosRewritten>Nouvel éthos : {0}</RimWorldAccess.Compat.Vfet.EthosRewritten>
   <RimWorldAccess.Compat.Pe.RoleRegion>{0}, {1} sur {2} assignés</RimWorldAccess.Compat.Pe.RoleRegion>
   <RimWorldAccess.Compat.Pe.AssignedElsewhere>assigné comme {0}</RimWorldAccess.Compat.Pe.AssignedElsewhere>
   <RimWorldAccess.Compat.Pe.CannotAssign>Impossible d'assigner {0} comme {1}.</RimWorldAccess.Compat.Pe.CannotAssign>
   <RimWorldAccess.Compat.Pe.TeacherFragment>enseigné par {0}</RimWorldAccess.Compat.Pe.TeacherFragment>
   <RimWorldAccess.Compat.Pe.ClassSpeedFragment>vitesse de classe {0}</RimWorldAccess.Compat.Pe.ClassSpeedFragment>
+  <RimWorldAccess.Compat.Pe.ClassroomColorFragment>couleur {0}</RimWorldAccess.Compat.Pe.ClassroomColorFragment>
   <RimWorldAccess.Compat.Pe.JumpToTeacher>Aller à l'enseignant {0}</RimWorldAccess.Compat.Pe.JumpToTeacher>
   <RimWorldAccess.Compat.Pe.JumpToLearningBoard>Aller au tableau d'apprentissage</RimWorldAccess.Compat.Pe.JumpToLearningBoard>
   <RimWorldAccess.Compat.Pe.ProficiencyLine>{0} : {1}, niveau {2} sur {3}.</RimWorldAccess.Compat.Pe.ProficiencyLine>
   <RimWorldAccess.Compat.Wq.PointsProgress>{0} sur {1} points de personnage</RimWorldAccess.Compat.Wq.PointsProgress>
   <RimWorldAccess.Compat.Wq.RewardsRegion>Récompenses</RimWorldAccess.Compat.Wq.RewardsRegion>
+  <RimWorldAccess.Compat.Wq.InfoRegion>Informations</RimWorldAccess.Compat.Wq.InfoRegion>
   <RimWorldAccess.Compat.Wq.PawnRowHint>Appuyez sur Entrée pour voir ses désirs.</RimWorldAccess.Compat.Wq.PawnRowHint>
+  <RimWorldAccess.Compat.Wq.DismissWant>Abandonner le désir</RimWorldAccess.Compat.Wq.DismissWant>
+  <RimWorldAccess.Compat.Wq.RemoveQuirk>Retirer la particularité</RimWorldAccess.Compat.Wq.RemoveQuirk>
+  <RimWorldAccess.Compat.Wq.NoQuirks>Aucune particularité pour l'instant.</RimWorldAccess.Compat.Wq.NoQuirks>
   <RimWorldAccess.Compat.Wq.RarityCommon>commun</RimWorldAccess.Compat.Wq.RarityCommon>
   <RimWorldAccess.Compat.Wq.RarityUncommon>peu commun</RimWorldAccess.Compat.Wq.RarityUncommon>
   <RimWorldAccess.Compat.Wq.RarityRare>rare</RimWorldAccess.Compat.Wq.RarityRare>

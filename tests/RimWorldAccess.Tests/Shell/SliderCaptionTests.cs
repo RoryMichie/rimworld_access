@@ -37,6 +37,32 @@ public class SliderCaptionTests
     }
 
     [Fact]
+    public void EffectiveLabel_RejectsGroupedAndUnitedBoundMarkers()
+    {
+        // Progression: Education captions its semester-goal slider this way.
+        string left = 1000f.ToString("N0") + " xp";
+        string right = 100000f.ToString("N0") + " xp";
+        Assert.Equal("", SliderCaption.EffectiveLabel(null, left, right, 1000f, 100000f));
+    }
+
+    [Fact]
+    public void EffectiveValueText_RejectsGroupedAndUnitedBoundMarkers()
+    {
+        string left = 1000f.ToString("N0") + " xp";
+        string right = 100000f.ToString("N0") + " xp";
+        Assert.Equal("", SliderCaption.EffectiveValueText(left, right, 1000f, 100000f));
+    }
+
+    [Fact]
+    public void EffectiveLabel_KeepsANameThatMerelyMentionsANumber()
+    {
+        // The bound has to OPEN the caption, so the "1" here stays part of a name.
+        string right = 1000f.ToString("N0") + " xp";
+        Assert.Equal("Tier 1 output",
+            SliderCaption.EffectiveLabel(null, "Tier 1 output", right, 1f, 1000f));
+    }
+
+    [Fact]
     public void EffectiveValueText_KeepsACallersOwnRendering()
     {
         Assert.Equal("+50%", SliderCaption.EffectiveValueText("Name", "+50%", 0f, 1f));

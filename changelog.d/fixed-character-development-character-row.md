@@ -1,0 +1,1 @@
+Pressing Enter on a character in Character Development's Characters tab now opens that character for inspection with the cursor already on their Wants section. It previously closed the tab and left you back on the map with nothing announced.

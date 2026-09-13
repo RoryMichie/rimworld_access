@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Reflection;
+using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.Sound;
@@ -8,19 +11,15 @@ namespace RimWorldAccess.Shell
     /// <summary>
     /// The keyboard focus scope for Progression: Education's <c>Dialog_CreateClass</c> and
     /// <c>Dialog_EditClass</c>, registered by <see cref="PeModule"/>; all reflection lives in
-    /// <see cref="PeCompat"/>. The dialogs' form controls (name field, subject/classroom/hour
-    /// dropdowns, each subject's own configuration row) are ordinary captured widgets, so the
-    /// captured-extras region presents and operates them with no bespoke work — including
-    /// controls contributed by other Progression mods, like Therapy's focus and quirk pickers.
+    /// <see cref="PeCompat"/>. The dialogs' form controls and read-only lines are ordinary
+    /// captured widgets, so the extras region presents and operates them with no bespoke work,
+    /// including controls other Progression mods contribute.
     ///
-    /// What capture cannot see is the mod's role-assignment grid: a thousand-line copy of
-    /// vanilla's <c>PawnRoleSelectionWidgetBase</c> driven by drag-and-drop and raw mouse
-    /// events. Its data model implements vanilla interfaces, so this scope presents one content
-    /// region per role (teacher, students) with a checkbox row per candidate pawn, toggling
-    /// through the manager's own gated <c>TryAssign</c>/<c>TryUnassignAnyRole</c> — the same
-    /// calls the widget's click handlers make. The dialogs' read-only lines (class speed,
-    /// requirements, a subject's own informational text) ride the extras region's read-only
-    /// rows, read straight from the render path.
+    /// What capture cannot see is the mod's role-assignment grid: a copy of vanilla's
+    /// <c>PawnRoleSelectionWidgetBase</c> driven by drag-and-drop and raw mouse events. Its data
+    /// model implements vanilla interfaces, so this scope presents one content region per role
+    /// with a checkbox row per candidate, toggling through the manager's own gated
+    /// <c>TryAssign</c>/<c>TryUnassignAnyRole</c> — the same calls its click handlers make.
     /// </summary>
     internal sealed class PeClassDialogScope : ScreenScope
     {
@@ -47,6 +46,16 @@ namespace RimWorldAccess.Shell
         protected override bool IncludeCapturedExtrasRegion => true;
 
         protected override bool ExtrasIncludeReadOnlyRows => true;
+
+        /// <summary>The role widget's own mouse instruction. Assignment here is the checkbox rows
+        /// above, so the line reads as advice the keyboard cannot follow; vanilla draws it from its
+        /// own key, which is what this compares against.</summary>
+        protected override bool ExcludeFromCapturedExtras(CapturedWidget widget)
+        {
+            return widget.Kind == WidgetKind.Label
+                && string.Equals(widget.Label,
+                    "DragPawnsToRolesInfo".Translate().ToString(), StringComparison.Ordinal);
+        }
 
         protected override void RefreshContent()
         {
@@ -168,6 +177,65 @@ namespace RimWorldAccess.Shell
             else
             {
                 TolkHelper.SpeakData(CompatText.Flatten(reason));
+            }
+        }
+    }
+
+    /// <summary>Both class dialogs submit on ANY Return KeyDown, polled raw in their own body and
+    /// so beyond every router and scope claim. Enter belongs to the focused candidate row and the
+    /// Create/Save button rides the extras region, so the poll is masked around the vanilla body
+    /// while this scope owns the window — the QA R6 mask/restore, never an <c>Use()</c>.</summary>
+    internal static class PeClassDialogAcceptGuardPatch
+    {
+        public static void Install(Harmony harmony, Type windowType)
+        {
+            if (harmony == null || windowType == null)
+            {
+                return;
+            }
+            try
+            {
+                MethodInfo target = AccessTools.DeclaredMethod(windowType, "DoWindowContents");
+                if (target == null)
+                {
+                    ModLogger.Error("Progression Education compat: could not resolve "
+                        + windowType.FullName
+                        + ".DoWindowContents; declining the class dialog's Return guard.");
+                    return;
+                }
+                harmony.Patch(target,
+                    prefix: new HarmonyMethod(typeof(PeClassDialogAcceptGuardPatch), nameof(Prefix)),
+                    postfix: new HarmonyMethod(typeof(PeClassDialogAcceptGuardPatch), nameof(Postfix)));
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LimitedError("PE class dialog Return guard", ex);
+            }
+        }
+
+        public static void Prefix(object __instance)
+        {
+            try
+            {
+                var window = __instance as Window;
+                TextFieldRawPollGuard.MaskAcceptPoll(
+                    window != null && ScopeForWindow.HasAttachedScope(window));
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LimitedError("PE class dialog Return guard", ex);
+            }
+        }
+
+        public static void Postfix()
+        {
+            try
+            {
+                TextFieldRawPollGuard.RestoreAcceptPoll();
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LimitedError("PE class dialog Return guard", ex);
             }
         }
     }

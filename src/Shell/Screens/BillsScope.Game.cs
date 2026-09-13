@@ -736,10 +736,10 @@ namespace RimWorldAccess.Shell
 
         public static void Reconcile()
         {
-            // ForeignInputOwningWindowAbove: the add-recipe path rides vanilla's
+            // ForeignDialogWindowAbove: the add-recipe path rides vanilla's
             // mechanitor/skill warning Dialog_MessageBoxes while BillsMenuState stays active.
             if (RimWorldAccess.BillsMenuState.IsActive && !InfoCardState.IsActive
-                && !ShellGuards.ForeignInputOwningWindowAbove())
+                && !ShellGuards.ForeignDialogWindowAbove())
             {
                 FocusStack.Push(scope);
             }

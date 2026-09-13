@@ -1,0 +1,1 @@
+Opening a main tab from inside the inspection tree now hands that tab the keyboard. A button like Character Development's Add quirks used to open its screen behind the tree, so the tree had to be dismissed by hand before the new screen could be used at all. The tree keeps its place and returns when that tab closes.

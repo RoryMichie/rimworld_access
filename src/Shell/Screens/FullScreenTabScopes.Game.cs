@@ -674,7 +674,7 @@ namespace RimWorldAccess.Shell
         public static void Reconcile()
         {
             ReconcileOne(factionTab, FactionTabState.IsActive
-                && !ShellGuards.ForeignInputOwningWindowAbove());
+                && !ShellGuards.ForeignDialogWindowAbove());
             ReconcileOne(mechControlGroup, MechControlGroupState.IsActive);
         }
 

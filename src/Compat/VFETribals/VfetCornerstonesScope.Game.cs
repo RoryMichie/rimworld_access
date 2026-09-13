@@ -13,11 +13,10 @@ namespace RimWorldAccess.Shell
     /// the mouse hovers that row, and the ethos editor opens from an invisible click region.
     ///
     /// Two content regions. Ethos: the ethos text (Enter opens the mod's own
-    /// <c>Dialog_EditEthos</c>, the same window the invisible click region opens) and the
-    /// ethos lock as a checkbox. Cornerstones: the available-points line, the mod's own
-    /// explanation line, then one row per cornerstone in the window's own order (owned first);
-    /// Enter on a locked row unlocks it through the mod's <c>AddCornerstone</c> behind the same
-    /// points gate the hover button uses.
+    /// <c>Dialog_EditEthos</c>, as the invisible click region does) and the ethos lock checkbox.
+    /// Cornerstones: the available-points line, the mod's explanation, then one row per
+    /// cornerstone in the window's own order (owned first); Enter on a locked row unlocks it
+    /// through <c>AddCornerstone</c> behind the same points gate the hover button uses.
     /// </summary>
     internal sealed class VfetCornerstonesScope : ScreenScope
     {
@@ -58,11 +57,14 @@ namespace RimWorldAccess.Shell
 
         protected override string ComposeOpenAnnouncement()
         {
-            return CompatText.JoinSentences(new List<string>
+            var parts = new List<string> { CompatText.ModText("VFET.CustomizeCornerstones") };
+            Faction player = Faction.OfPlayerSilentFail;
+            if (player != null)
             {
-                CompatText.ModText("VFET.CustomizeCornerstones"),
-                CompatText.ModArgs("VFET.AvailableCornerstonePoints", VfetCompat.Points()),
-            });
+                parts.Add(player.Name);
+            }
+            parts.Add(CompatText.ModArgs("VFET.AvailableCornerstonePoints", VfetCompat.Points()));
+            return CompatText.JoinSentences(parts);
         }
 
         protected override void RefreshContent()
@@ -182,10 +184,22 @@ namespace RimWorldAccess.Shell
                 TolkHelper.Speak("RimWorldAccess.Compat.Vfet.NoPoints".Loc());
                 return;
             }
+            // AddCornerstone regenerates the ethos unless it is locked.
+            bool ethosRewrites = !VfetCompat.EthosLocked();
             VfetCompat.Unlock(def);
             RefreshModel();
-            TolkHelper.Speak("RimWorldAccess.Compat.Vfet.UnlockedAnnouncement".Loc(
-                def.LabelCap, VfetCompat.Points()));
+            string announcement = "RimWorldAccess.Compat.Vfet.UnlockedAnnouncement".Translate(
+                def.LabelCap, VfetCompat.Points());
+            if (ethosRewrites)
+            {
+                announcement = CompatText.JoinSentences(new List<string>
+                {
+                    announcement,
+                    "RimWorldAccess.Compat.Vfet.EthosRewritten".Translate(
+                        CompatText.Flatten(VfetCompat.Ethos())),
+                });
+            }
+            TolkHelper.SpeakData(announcement);
         }
 
         private Def CornerstoneAt(int index)

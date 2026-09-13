@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -88,6 +89,55 @@ namespace RimWorldAccess.Shell
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// The wider twin of <see cref="ForeignInputOwningWindowAbove"/>, for the windowless SCREEN
+        /// mirrors: a real dialog carrying one of the shell's attached scopes owns the keyboard even
+        /// when it declares neither modal flag, and a per-frame mirror would otherwise hoist its own
+        /// scope back above such a window every pass and eat its keys.
+        ///
+        /// <see cref="WindowLayer.GameUI"/> is the dividing line vanilla itself draws:
+        /// <c>MainTabWindow</c> drops to that layer (RimWorld/MainTabWindow.cs:34) while ordinary
+        /// windows default to <c>Dialog</c> (Verse/Window.cs:12), so main tabs stay the business of
+        /// <see cref="NonInspectMainTabOpen"/>. The map MODES keep the narrow test deliberately: a
+        /// non-absorbing editor window stays open precisely so the map under it remains drivable.
+        /// </summary>
+        public static bool ForeignDialogWindowAbove()
+        {
+            IList<Window> windows = Find.WindowStack != null ? Find.WindowStack.Windows : null;
+            if (windows == null)
+            {
+                return false;
+            }
+            for (int i = 0; i < windows.Count; i++)
+            {
+                Window window = windows[i];
+                if (window is ImmediateWindow)
+                {
+                    continue;
+                }
+                if ((window.absorbInputAroundWindow || window.closeOnClickedOutside
+                        || window.layer != WindowLayer.GameUI)
+                    && ScopeForWindow.HasAttachedScope(window))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>True when a main tab other than Inspect owns the screen. Main tab windows are
+        /// neither absorbing nor close-on-outside, so <see cref="ForeignInputOwningWindowAbove"/>
+        /// never sees one, and a per-frame mirror buries the scope such a tab attached.</summary>
+        public static bool NonInspectMainTabOpen()
+        {
+            if (Current.ProgramState != ProgramState.Playing || Find.MainTabsRoot == null)
+            {
+                return false;
+            }
+            MainButtonDef openTab = Find.MainTabsRoot.OpenTab;
+            return openTab != null && openTab != MainButtonDefOf.Inspect;
         }
 
         /// <summary>

@@ -28,8 +28,8 @@ namespace RimWorldAccess
                 return new VfetCornerstonesScope(w);
             });
 
-            // The tab's own postfix button draws only while a game with the tribal component
-            // runs; the provider mirrors that by contributing no row otherwise.
+            // The mod's postfix draws this button unconditionally, but the window it opens
+            // dereferences the tribal component, so the row is withheld when that is absent.
             CompatScreenActions.Register("faction-tab", delegate
             {
                 if (!VfetCompat.HasLiveGame())
