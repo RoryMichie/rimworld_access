@@ -894,6 +894,13 @@ namespace RimWorldAccess.Shell
                 : null;
             bool wasCategoryExpanded = currentCategoryNode != null && currentCategoryNode.IsExpanded;
 
+            // A leaf's row within its category, so the same row lands on the target pawn: skill
+            // lists share one order across pawns, so the index maps like-for-like. -1 when the
+            // cursor rests on the pawn or category node itself.
+            int leafIndex = ptd != null && ptd.NodeType == PawnNodeType.Leaf && currentCategoryNode != null
+                ? currentCategoryNode.Children.IndexOf(current)
+                : -1;
+
             int targetIdx = currentPawnIdx + direction;
             InspectionTreeItem targetPawn = targetIdx >= 0 ? FindPawnNode(targetIdx) : null;
             if (targetPawn == null)
@@ -911,7 +918,15 @@ namespace RimWorldAccess.Shell
                 targetCategory.IsExpanded = wasCategoryExpanded;
             }
 
-            RevealAndSync(targetCategory ?? targetPawn);
+            // Land on the same leaf when the target category holds one at that index, else on the
+            // category (or pawn) node the reveal already resolves.
+            InspectionTreeItem targetNode = targetCategory ?? targetPawn;
+            if (targetCategory != null && leafIndex >= 0 && leafIndex < targetCategory.Children.Count)
+            {
+                targetNode = targetCategory.Children[leafIndex];
+            }
+
+            RevealAndSync(targetNode);
             SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
             AnnounceCurrentItem();
         }
@@ -1003,9 +1018,12 @@ namespace RimWorldAccess.Shell
                     int pawnIdx = CurrentPawnIndex;
                     Find.WindowStack.Add(new Dialog_CreateXenotype(pawnIdx, delegate
                     {
+                        // Vanilla's callback regenerates the pawn to carry the chosen xenotype; the
+                        // reroll is announced rather than left silent under a cursor on the button.
                         CharacterCardUtility.cachedCustomXenotypes = null;
                         StartingPawnUtility.RandomizePawn(pawnIdx);
-                        RefreshAndReannounceAfterExternalChange();
+                        RebuildTreePreservingState();
+                        AnnounceRegeneratedPawn(pawnIdx);
                     }));
                     break;
                 default:
@@ -1294,6 +1312,25 @@ namespace RimWorldAccess.Shell
         {
             RebuildTreePreservingState();
             AnnounceCurrentItem();
+        }
+
+        /// <summary>
+        /// Speaks a regenerated pawn's own tree-node summary — the exact text navigating to that
+        /// node announces — for a reroll landing while the cursor rests elsewhere (Save-and-apply
+        /// in the xenotype editor). Falls back to the current row when the node is not found.
+        /// </summary>
+        private void AnnounceRegeneratedPawn(int pawnIdx)
+        {
+            InspectionTreeItem pawnNode = FindPawnNode(pawnIdx);
+            if (pawnNode == null)
+            {
+                AnnounceCurrentItem();
+                return;
+            }
+            string summary = AnnouncementComposer.ComposeFocus(
+                DescribeTreeNode(pawnNode), TranslatedShellVocabulary.Instance,
+                TextDialogShared.StandardComposeOptions());
+            TolkHelper.SpeakData("RimWorldAccess.StartingPawn.XenotypeApplied".Translate(summary));
         }
 
         /// <summary>

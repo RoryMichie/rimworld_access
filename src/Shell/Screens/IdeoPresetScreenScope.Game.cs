@@ -35,6 +35,7 @@ namespace RimWorldAccess.Shell
     /// Escape reaches vanilla's Back except while a typeahead search is active
     /// (<see cref="IdeologySelectionPatch_CanDoBack"/>).
     /// </summary>
+    [StaticConstructorOnStartup]
     public sealed class IdeoPresetScreenScope : ScreenScope
     {
         private enum Region { Options = 0, StructureAndStyles = 1, Presets = 2 }

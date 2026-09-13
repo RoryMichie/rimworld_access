@@ -423,6 +423,7 @@
   <RimWorldAccess.StartingPawn.PawnRemoved>{0} removed</RimWorldAccess.StartingPawn.PawnRemoved>
   <RimWorldAccess.StartingPawn.LabelRandomize>{0}, {1}</RimWorldAccess.StartingPawn.LabelRandomize>
   <RimWorldAccess.StartingPawn.XenotypePoolSet>{0} selected. The next randomize will use this xenotype pool.</RimWorldAccess.StartingPawn.XenotypePoolSet>
+  <RimWorldAccess.StartingPawn.XenotypeApplied>Xenotype applied, character regenerated. {0}</RimWorldAccess.StartingPawn.XenotypeApplied>
   <RimWorldAccess.StartingPawn.DeleteCustomXenotype>Delete {0} (Custom)...</RimWorldAccess.StartingPawn.DeleteCustomXenotype>
 
   <!-- PawnLabelWithState/CategoryLabelWithState/CategoryWithSummary RETIRED (

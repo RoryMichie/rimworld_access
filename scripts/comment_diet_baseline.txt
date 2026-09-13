@@ -41,7 +41,7 @@
 40	src/Building/ArchitectCategoryRingPatch.cs
 28	src/Building/ArchitectHelper.cs
 65	src/Building/ArchitectMenuPatch.cs
-157	src/Building/ArchitectPlacementPatch.cs
+161	src/Building/ArchitectPlacementPatch.cs
 54	src/Building/ArchitectState.cs
 56	src/Building/ArchitectTreeState.cs
 23	src/Building/ArchitectWindowAcceptGuardPatch.cs
@@ -83,7 +83,7 @@
 32	src/Building/RectDesignationRouter.Game.cs
 75	src/Building/RefuelableComponentState.cs
 53	src/Building/SelectionPreviewPatch.cs
-87	src/Building/ShapeHelper.cs
+89	src/Building/ShapeHelper.cs
 170	src/Building/ShapePlacementState.cs
 17	src/Building/ShapePreviewHelper.cs
 38	src/Building/ShapeSelectionMenuState.cs
@@ -934,7 +934,7 @@
 46	src/Shell/Screens/DevToolTargeting.Game.cs
 75	src/Shell/Screens/DevTweakValuesScope.Game.cs
 28	src/Shell/Screens/DialogFrameShared.Game.cs
-129	src/Shell/Screens/DrugPolicyDialogScope.Game.cs
+132	src/Shell/Screens/DrugPolicyDialogScope.Game.cs
 78	src/Shell/Screens/DryadCasteScope.Game.cs
 66	src/Shell/Screens/EditDeityDialogScope.Game.cs
 83	src/Shell/Screens/EditPreceptDialogScope.Game.cs
@@ -990,7 +990,7 @@
 70	src/Shell/Screens/InspectComponentScopes.Game.cs
 200	src/Shell/Screens/InspectionScope.Game.cs
 102	src/Shell/Screens/InventoryScope.Game.cs
-91	src/Shell/Screens/LearningHelperScope.Game.cs
+96	src/Shell/Screens/LearningHelperScope.Game.cs
 110	src/Shell/Screens/LordJobDialogScope.Game.cs
 42	src/Shell/Screens/ManageAreasScope.Game.cs
 42	src/Shell/Screens/MapToolScope.Game.cs
@@ -1048,7 +1048,7 @@
 15	src/Shell/Screens/SliderDialogScope.Game.cs
 70	src/Shell/Screens/SliderDialogState.cs
 101	src/Shell/Screens/SplitCaravanScope.Game.cs
-214	src/Shell/Screens/StartingPawnScreenScope.Game.cs
+226	src/Shell/Screens/StartingPawnScreenScope.Game.cs
 141	src/Shell/Screens/StartingSiteScreenScope.Game.cs
 60	src/Shell/Screens/StorageSettingsScope.Game.cs
 47	src/Shell/Screens/StorytellerInGameScope.Game.cs
@@ -1113,7 +1113,7 @@
 16	src/Shell/Sync/InjectedClickGuard.Game.cs
 64	src/Shell/Sync/LetterStackHover.Game.cs
 205	src/Shell/Sync/ListingRowCapture.Game.cs
-41	src/Shell/Sync/ListingRowMarkerInjector.Game.cs
+44	src/Shell/Sync/ListingRowMarkerInjector.Game.cs
 30	src/Shell/Sync/LiveTooltips.Game.cs
 72	src/Shell/Sync/MainButtonBarHover.Game.cs
 76	src/Shell/Sync/MechGizmoElementPatch.Game.cs
@@ -1140,7 +1140,7 @@
 134	src/Shell/Sync/TooltipCapture.Game.cs
 93	src/Shell/Sync/TooltipGateAnalysis.cs
 10	src/Shell/Sync/TooltipGateCoverage.cs
-33	src/Shell/Sync/TooltipGateInstaller.Game.cs
+36	src/Shell/Sync/TooltipGateInstaller.Game.cs
 43	src/Shell/Sync/TooltipGateModScan.Game.cs
 8	src/Shell/Sync/TooltipGateTargets.Generated.cs
 25	src/Shell/Sync/TooltipGateTranspiler.Game.cs

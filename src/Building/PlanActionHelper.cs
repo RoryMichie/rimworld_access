@@ -14,6 +14,7 @@ namespace RimWorldAccess
     /// clipboard copy, and a Rename action (vanilla has none — it lives on the inspect pane) is
     /// appended. The hide / expand / shrink / delete gizmos keep the game's own behaviour and tooltips.
     /// </summary>
+    [StaticConstructorOnStartup]
     public static class PlanActionHelper
     {
         private static Texture2D changeColorIcon;

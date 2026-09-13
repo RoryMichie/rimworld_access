@@ -34,6 +34,7 @@ namespace RimWorldAccess
     /// applies to the whole selection itself, so group propagation is disarmed throughout
     /// (see <see cref="Command_SelectionToggle"/> for why the flag alone is not enough).
     /// </summary>
+    [StaticConstructorOnStartup]
     [HarmonyPatch(typeof(Pawn_DraftController), "GetGizmos")]
     public static class CombatAutopilotGizmoPatch
     {

@@ -13,6 +13,7 @@ namespace RimWorldAccess
     /// Audio files should be placed in the "Sounds" folder of the project
     /// and will be embedded into the DLL at compile time.
     /// </summary>
+    [StaticConstructorOnStartup]
     public static class EmbeddedAudioHelper
     {
         private static Assembly assembly = Assembly.GetExecutingAssembly();

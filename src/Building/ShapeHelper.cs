@@ -131,8 +131,19 @@ namespace RimWorldAccess
                     break;
             }
 
-            // A copy: the buffer is reused.
-            return new List<IntVec3>(cellBuffer);
+            // A copy: the buffer is reused. Deduped order-preservingly because a hollow shape drawn
+            // as a line degenerates its EdgeCells to a single row, listing each cell twice; no shape
+            // ever wants a cell placed more than once.
+            var seen = new HashSet<IntVec3>();
+            var result = new List<IntVec3>(cellBuffer.Count);
+            foreach (IntVec3 cell in cellBuffer)
+            {
+                if (seen.Add(cell))
+                {
+                    result.Add(cell);
+                }
+            }
+            return result;
         }
 
         /// <summary>

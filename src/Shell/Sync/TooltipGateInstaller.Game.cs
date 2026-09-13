@@ -49,6 +49,10 @@ namespace RimWorldAccess.Shell
                     ModLogger.Warning("Tooltip gate: type " + names[i] + " not found; skipping.");
                     continue;
                 }
+                if (RequiresInactiveDlc(names[i]))
+                {
+                    continue;
+                }
                 TypesResolved++;
                 foreach (Type walked in WithNestedTypes(type))
                 {
@@ -71,6 +75,21 @@ namespace RimWorldAccess.Shell
             ModLogger.Msg("Tooltip gate: " + SitesCertified + " sites certified across " + MethodsPatched
                 + " methods in " + TypesResolved + " types (scanned " + methodsScanned
                 + ", refused " + Coverage.RefusedTotal + "), " + watch.ElapsedMilliseconds + " ms");
+        }
+
+        // Biotech-only types with eager static texture initializers: resolving them on a
+        // Biotech-free install loads absent biostat icons and logs missing-texture errors, and
+        // their UI never draws anyway, so they are skipped when Biotech is off.
+        private static bool RequiresInactiveDlc(string typeName)
+        {
+            switch (typeName)
+            {
+                case "RimWorld.BiostatsTable":
+                case "RimWorld.GeneUIUtility":
+                    return !Verse.ModsConfig.BiotechActive;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>

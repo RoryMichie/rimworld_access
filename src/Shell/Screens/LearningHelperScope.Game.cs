@@ -337,8 +337,16 @@ namespace RimWorldAccess.Shell
             int current = Model.RegionIndex;
             if (trackedRegionIndex == ContentRegion && current != ContentRegion)
             {
+                // Knowledge commits whenever the cursor leaves the lesson body, so reading to the
+                // end still ticks it up. But the concept only drops out of the Active list on the
+                // way back to the Lessons list — the point the player leaves the lesson — never on
+                // flowing down into its own Buttons region: a finished lesson must stay listed,
+                // readable and its button pressable until the player actually steps away from it.
                 LearningHelperState.CommitReading();
-                LearningHelperState.RefreshConcepts();
+                if (current == LessonsRegion)
+                {
+                    LearningHelperState.RefreshConcepts();
+                }
                 RefreshModel();
             }
             else if (current == ContentRegion && trackedRegionIndex != ContentRegion)

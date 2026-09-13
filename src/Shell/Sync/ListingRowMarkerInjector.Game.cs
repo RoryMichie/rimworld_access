@@ -320,9 +320,12 @@ namespace RimWorldAccess.Shell
         private static void Record(InjectionReport report)
         {
             Reports.Add(report);
+            // A skip disables one row's ring and nothing else; its usual cause is another mod
+            // transpiling the same method, not a defect. Warning, not Error: a startup-time error
+            // auto-opens the debug log window (Verse/Log.cs), where a screen reader reads it aloud.
             for (int i = 0; i < report.Skips.Count; i++)
             {
-                ModLogger.Error("Listing row marker, " + report.Method + ": " + report.Skips[i]);
+                ModLogger.Warning("Listing row marker, " + report.Method + ": " + report.Skips[i]);
             }
 #if DEBUG
             ShellDev.QARecord("capture", "marker inject " + report.Method + " expected=" + report.Expected

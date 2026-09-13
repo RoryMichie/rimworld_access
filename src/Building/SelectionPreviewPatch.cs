@@ -14,6 +14,7 @@ namespace RimWorldAccess
     /// Renders a visual preview of keyboard-based selection with RimWorld's own highlighting
     /// materials, so sighted observers can see what the keyboard is selecting.
     /// </summary>
+    [StaticConstructorOnStartup]
     [HarmonyPatch(typeof(MapInterface))]
     [HarmonyPatch("MapInterfaceUpdate")]
     public static class SelectionPreviewPatch

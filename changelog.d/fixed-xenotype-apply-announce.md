@@ -1,0 +1,1 @@
+Applying a custom xenotype with Save and apply in the character creation xenotype editor now tells you the character was regenerated and reads their new details, matching the change a sighted player sees.

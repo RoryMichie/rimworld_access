@@ -72,6 +72,14 @@ namespace RimWorldAccess
 
         internal static Designator GetActiveDesignator()
         {
+            // A live shape-placement session is the authority on what is being placed. Selecting a
+            // new building from a gizmo while the placement review UI is still up leaves the prior
+            // architect session pointing at the old designator; without this, Space would place
+            // that stale one instead of the just-selected building.
+            if (ShapePlacementState.IsActive && ShapePlacementState.ActiveDesignator != null)
+            {
+                return ShapePlacementState.ActiveDesignator;
+            }
             return InArchitectMode() ? ArchitectState.SelectedDesignator : Find.DesignatorManager?.SelectedDesignator;
         }
 

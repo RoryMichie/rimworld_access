@@ -362,7 +362,10 @@ namespace RimWorldAccess.Shell
             {
                 return base.ContentColumnCount(region);
             }
-            return mode == Mode.DrugList ? 8 : 1;
+            // Settings sub-mode is a flat list of setting rows, not a table: a nonzero count here
+            // makes the chassis read cells through the list-mode ContentCellText, which knows only
+            // the drug grid and would speak the drug name in place of each setting.
+            return mode == Mode.DrugList ? 8 : 0;
         }
 
         protected override TableColumnInfo ContentColumnInfo(int region, int column)

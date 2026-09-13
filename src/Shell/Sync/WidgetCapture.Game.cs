@@ -58,6 +58,7 @@ namespace RimWorldAccess.Shell
     /// widget matched by (kind, label, ordinal) fires its own vanilla handler, at most one per
     /// pass, over fields disjoint from the scope channel's.
     /// </summary>
+    [StaticConstructorOnStartup]
     public static partial class WidgetCapture
     {
         private const float FocusRingExpand = 2f;

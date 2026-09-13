@@ -10,6 +10,7 @@ using UnityEngine;
 namespace RimWorldAccess
 {
     /// <summary>Gizmo (command button) navigation: the G-key menu's cursor over the commands available for the current selection or cursor tile.</summary>
+    [StaticConstructorOnStartup]
     public static partial class GizmoNavigationState
     {
         private static bool isActive = false;
