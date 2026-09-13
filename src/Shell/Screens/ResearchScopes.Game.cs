@@ -176,6 +176,35 @@ namespace RimWorldAccess.Shell
             TolkHelper.Speak("RimWorldAccess.Research.Menu.Title".Loc());
             AnnounceCurrentItem();
         }
+
+        /// <summary>
+        /// Silent rebuild after research state changed in the detail view, which moves a project
+        /// between the status groups. Re-homes the cursor by project identity (the reorder voids the
+        /// old index) and speaks nothing, since the detail owns focus when this fires.
+        /// </summary>
+        public void RefreshPreservingSelection()
+        {
+            ResearchProjectDef keep = FocusedProject;
+            InspectionTreeItem root = WindowlessResearchMenuState.BuildCategoryTree();
+            InspectionTreeItem target = keep != null
+                ? WindowlessResearchMenuState.FindProjectNode(root, keep)
+                : null;
+            for (InspectionTreeItem p = target?.Parent; p != null; p = p.Parent)
+            {
+                if (p.IsExpandable)
+                {
+                    p.IsExpanded = true;
+                }
+            }
+            SetTreeRoot(root);
+            RefreshModel();
+            int idx = target != null ? Tree.IndexOf(target) : -1;
+            if (idx >= 0)
+            {
+                Tree.SetSelectedIndex(idx);
+            }
+            SyncRegionFromCurrentTree();
+        }
     }
 
     /// <summary>
@@ -307,7 +336,12 @@ namespace RimWorldAccess.Shell
             RefreshModel();
             SyncRegionFromCurrentTree();
             AnnounceCurrentItem();
+            // The same change re-sorts the menu's status groups; keep that tree current too.
+            MenuRefreshHook?.Invoke();
         }
+
+        /// <summary>Wired by ResearchScopeMirror to the menu scope's silent section rebuild.</summary>
+        internal Action MenuRefreshHook;
     }
 
     /// <summary>
@@ -328,6 +362,7 @@ namespace RimWorldAccess.Shell
             WindowlessResearchMenuState.FocusProjectCallback = menu.FocusOnProject;
             WindowlessResearchDetailState.BuildAndAnnounceCallback = detail.BuildAndAnnounce;
             WindowlessResearchDetailState.RefreshTreeCallback = detail.RefreshTreePreservingCursor;
+            detail.MenuRefreshHook = menu.RefreshPreservingSelection;
         }
 
         public static void Reconcile()

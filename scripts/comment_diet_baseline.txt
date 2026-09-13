@@ -1024,7 +1024,7 @@
 32	src/Shell/Screens/RangeEditScope.Game.cs
 47	src/Shell/Screens/RechargeSettingsScope.Game.cs
 90	src/Shell/Screens/RenameScope.Game.cs
-120	src/Shell/Screens/ResearchScopes.Game.cs
+127	src/Shell/Screens/ResearchScopes.Game.cs
 58	src/Shell/Screens/RewardPrefsScope.Game.cs
 23	src/Shell/Screens/RoutePlannerScope.Game.cs
 64	src/Shell/Screens/ScenarioEditorRowPatches.Game.cs
