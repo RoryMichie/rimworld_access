@@ -3,9 +3,8 @@
   <RimWorldAccess.OverlayMigration.WhatsNew.RegionName>Объявление</RimWorldAccess.OverlayMigration.WhatsNew.RegionName>
   <RimWorldAccess.OverlayMigration.Learning.LessonsRegionName>Уроки</RimWorldAccess.OverlayMigration.Learning.LessonsRegionName>
   <RimWorldAccess.OverlayMigration.Learning.ContentRegionName>Содержание урока</RimWorldAccess.OverlayMigration.Learning.ContentRegionName>
-  <RimWorldAccess.OverlayMigration.Learning.ModeLabel>Режим списка уроков</RimWorldAccess.OverlayMigration.Learning.ModeLabel>
+  <RimWorldAccess.OverlayMigration.Learning.ModeLabel>Показать все уроки</RimWorldAccess.OverlayMigration.Learning.ModeLabel>
   <RimWorldAccess.OverlayMigration.Learning.ModeActive>Активные уроки</RimWorldAccess.OverlayMigration.Learning.ModeActive>
-  <RimWorldAccess.OverlayMigration.Learning.ModeAll>Все уроки</RimWorldAccess.OverlayMigration.Learning.ModeAll>
   <RimWorldAccess.OverlayMigration.Learning.ModeAllCount>Все уроки, всего {0_numCase ? урок : урока : уроков}</RimWorldAccess.OverlayMigration.Learning.ModeAllCount>
   <RimWorldAccess.OverlayMigration.Learning.NoActiveShort>Нет доступных активных уроков.</RimWorldAccess.OverlayMigration.Learning.NoActiveShort>
   <RimWorldAccess.OverlayMigration.Learning.NoActiveRemainingShort>Активных уроков больше не осталось.</RimWorldAccess.OverlayMigration.Learning.NoActiveRemainingShort>

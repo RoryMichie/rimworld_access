@@ -19,9 +19,8 @@
        retired Tab toggle. ModeActive/ModeAll double as the picker's own option labels, and are
        also spoken as the mode-change announcement when lessons
        remain in the new mode; ModeAllCount is the count-aware variant for All lessons ({0} = total). -->
-  <RimWorldAccess.OverlayMigration.Learning.ModeLabel>Modo da lista de lições</RimWorldAccess.OverlayMigration.Learning.ModeLabel>
+  <RimWorldAccess.OverlayMigration.Learning.ModeLabel>Mostrar todas as lições</RimWorldAccess.OverlayMigration.Learning.ModeLabel>
   <RimWorldAccess.OverlayMigration.Learning.ModeActive>Lições activas</RimWorldAccess.OverlayMigration.Learning.ModeActive>
-  <RimWorldAccess.OverlayMigration.Learning.ModeAll>Todas as lições</RimWorldAccess.OverlayMigration.Learning.ModeAll>
   <RimWorldAccess.OverlayMigration.Learning.ModeAllCount>Todas as lições, {0} no total</RimWorldAccess.OverlayMigration.Learning.ModeAllCount>
 
   <!-- Replace RimWorldAccess.Learning.NoActive / .NoActiveRemaining / .OpeningNoActive (ORPHANED

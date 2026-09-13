@@ -583,7 +583,7 @@ namespace RimWorldAccess.Shell
             return -1;
         }
 
-        /// <summary>Region jump on behalf of <see cref="TryReaderFlow"/>: mirrors <see cref="MoveRegion"/>'s change/announce/sound sequence, but pins the landing row (first button going down, last text row coming back up).</summary>
+        /// <summary>Region jump on behalf of <see cref="TryReaderFlow"/>, pinning the landing row (first button going down, last text row coming back up). A content-to-content crossing mirrors <see cref="MoveRegion"/>'s tab-sound-and-frame sequence; a crossing into or out of the Buttons region lands like a plain arrow move instead, since that toolbar is the continuation of the text rather than a section of its own.</summary>
         private bool FlowMoveToRegion(int targetRegion, bool landOnLastRow)
         {
             // An empty target region does not exist to flow into; Down past the last text row
@@ -593,6 +593,9 @@ namespace RimWorldAccess.Shell
             ListModel target = Model.Region(targetRegion);
             if (target == null || target.IsEmpty)
                 return false;
+            int fromRegion = Model.RegionIndex;
+            bool continuesIntoActions = HasActionsRegion()
+                && (targetRegion == ActionsRegionIndex() || fromRegion == ActionsRegionIndex());
             MoveResult result = Model.MoveToRegion(targetRegion);
             if (result.Kind == MoveKind.Empty)
                 return false;
@@ -600,7 +603,7 @@ namespace RimWorldAccess.Shell
             {
                 TypeaheadReset();
                 OnRegionChanged(result);
-                if (TabSwitchSound != null)
+                if (!continuesIntoActions && TabSwitchSound != null)
                 {
                     TabSwitchSound.PlayOneShotOnCamera();
                 }
@@ -617,7 +620,14 @@ namespace RimWorldAccess.Shell
                 target.MoveTo(0);
             }
             NotifyCursorSettled();
-            AnnounceRegion();
+            if (continuesIntoActions)
+            {
+                AnnounceCurrent(CellAxis.Row);
+            }
+            else
+            {
+                AnnounceRegion();
+            }
             return true;
         }
 

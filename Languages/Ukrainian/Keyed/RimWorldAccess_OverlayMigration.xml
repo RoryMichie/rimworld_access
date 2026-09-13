@@ -18,9 +18,8 @@
   <!-- The Lessons region's mode row (a ComboBox; Left/Right cycles it) — replaces the retired
        Tab toggle. ModeActive/ModeAll are also spoken as the mode-change announcement when lessons
        remain in the new mode; ModeAllCount is the count-aware variant for All lessons ({0} = total). -->
-  <RimWorldAccess.OverlayMigration.Learning.ModeLabel>Режим списку уроків</RimWorldAccess.OverlayMigration.Learning.ModeLabel>
+  <RimWorldAccess.OverlayMigration.Learning.ModeLabel>Показати всі уроки</RimWorldAccess.OverlayMigration.Learning.ModeLabel>
   <RimWorldAccess.OverlayMigration.Learning.ModeActive>Активні уроки</RimWorldAccess.OverlayMigration.Learning.ModeActive>
-  <RimWorldAccess.OverlayMigration.Learning.ModeAll>Усі уроки</RimWorldAccess.OverlayMigration.Learning.ModeAll>
   <RimWorldAccess.OverlayMigration.Learning.ModeAllCount>Усі уроки, всього {0}</RimWorldAccess.OverlayMigration.Learning.ModeAllCount>
 
   <!-- Replace RimWorldAccess.Learning.NoActive / .NoActiveRemaining / .OpeningNoActive (ORPHANED

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using RimWorld;
 using Verse;
+using Verse.Sound;
 
 namespace RimWorldAccess.Shell
 {
@@ -9,12 +10,12 @@ namespace RimWorldAccess.Shell
     /// (<see cref="LearningHelperState"/>). Windowless: the surface is the static
     /// state, so the scope rides the focus stack purely through
     /// <see cref="LearningHelperScopeMirror"/>'s Reconcile.
-    /// Two content regions — "Lessons" (a mode ComboBox row, then concept rows)
+    /// Two content regions — "Lessons" (a show-all checkbox row, then concept rows)
     /// and "Lesson content" (the selected concept's help lines) — plus the Buttons
     /// region (Mark as Learned / Already Learned). Enter on a concept row jumps to
-    /// the content region; Escape there commits pending knowledge, refreshes the
-    /// list and returns focus to it, while Escape on Lessons or Buttons closes the
-    /// menu outright.
+    /// the content region, whose buttons the reader flows down into; Escape from the
+    /// lesson (content or buttons) commits, refreshes the list and returns to it,
+    /// while Escape on the Lessons list closes the menu.
     /// Typeahead is scoped to the Lessons region alone
     /// (<see cref="ContentRegionSearchable"/>): a cross-region jump would skip
     /// <see cref="LearningHelperState.TrackLineVisit"/> for every line between the
@@ -125,17 +126,15 @@ namespace RimWorldAccess.Shell
             return region == LessonsRegion ? DescribeLessonsRow(index) : DescribeContentLine(index);
         }
 
-        /// <summary>Row 0 is the Active/All mode ComboBox; rows 1..N are concept rows.</summary>
+        /// <summary>Row 0 is the "show all lessons" checkbox — vanilla's +/- expand toggle (decompiled RimWorld/LearningReadout.cs:152-163); rows 1..N are concept rows.</summary>
         private ElementDescription DescribeLessonsRow(int index)
         {
             var d = new ElementDescription();
             if (index == 0)
             {
                 d.Label = "RimWorldAccess.OverlayMigration.Learning.ModeLabel".Translate().ToString();
-                d.Role = ElementRole.ComboBox;
-                d.Value = LearningHelperState.ShowAllMode
-                    ? "RimWorldAccess.OverlayMigration.Learning.ModeAll".Translate().ToString()
-                    : "RimWorldAccess.OverlayMigration.Learning.ModeActive".Translate().ToString();
+                d.Role = ElementRole.Checkbox;
+                d.Check = LearningHelperState.ShowAllMode ? CheckState.Checked : CheckState.Unchecked;
                 return d;
             }
             ConceptDef conc = LearningHelperState.ConceptAt(index - 1);
@@ -160,7 +159,7 @@ namespace RimWorldAccess.Shell
             return d;
         }
 
-        /// <summary>Enter on the mode row opens its Active/All picker; on a concept row it jumps to the Lesson content region; content lines are no-ops.</summary>
+        /// <summary>Enter or Space on the mode checkbox toggles it; on a concept row it jumps to the Lesson content region; content lines are no-ops.</summary>
         protected override void ActivateContentItem(int region, int index)
         {
             if (region != LessonsRegion)
@@ -169,40 +168,18 @@ namespace RimWorldAccess.Shell
             }
             if (index == 0)
             {
-                OpenModePicker();
+                ToggleMode();
                 return;
             }
             EnterLessonContent(index);
         }
 
-        /// <summary>The mode combo's picker: the same two states the row reports.</summary>
-        private void OpenModePicker()
+        /// <summary>Flip the show-all checkbox, mirroring vanilla's +/- toggle, and announce the resulting list.</summary>
+        private void ToggleMode()
         {
-            var options = new List<FloatMenuOption>
-            {
-                ModeOption(false),
-                ModeOption(true),
-            };
-            WindowlessFloatMenuState.Open(options, colonistOrders: false,
-                startIndex: LearningHelperState.ShowAllMode ? 1 : 0, announceSelection: false);
-        }
-
-        private FloatMenuOption ModeOption(bool showAll)
-        {
-            string label = showAll
-                ? "RimWorldAccess.OverlayMigration.Learning.ModeAll".Translate().ToString()
-                : "RimWorldAccess.OverlayMigration.Learning.ModeActive".Translate().ToString();
-            return new FloatMenuOption(label, delegate { ApplyMode(showAll); });
-        }
-
-        private void ApplyMode(bool showAll)
-        {
-            if (LearningHelperState.ShowAllMode == showAll)
-            {
-                AnnounceCurrentItem();
-                return;
-            }
+            bool showAll = !LearningHelperState.ShowAllMode;
             LearningHelperState.SetMode(showAll);
+            (showAll ? SoundDefOf.Checkbox_TurnedOn : SoundDefOf.Checkbox_TurnedOff).PlayOneShotOnCamera();
             RefreshModel();
             Model.CurrentRegion?.MoveFirst();
             AnnounceModeChange();
@@ -288,17 +265,17 @@ namespace RimWorldAccess.Shell
             AnnounceRegion();
         }
 
-        /// <summary>Escape from the content region commits, refreshes the list (a completion may drop the concept out of Active mode) and returns focus to it; from Lessons or Buttons it closes the menu.</summary>
+        /// <summary>Escape from the lesson — its content region or its own Buttons region — commits, refreshes the list (a completion may drop the concept out of Active mode) and returns focus to it; only from the Lessons list itself does Escape close the menu.</summary>
         private void OnCancel(KeyEventSnapshot e)
         {
             ShellFrameStamps.MarkCancelConsumed();
-            if (Model.RegionIndex == ContentRegion)
+            if (Model.RegionIndex == LessonsRegion)
             {
-                ReturnToList();
+                LearningHelperState.CloseMenu();
             }
             else
             {
-                LearningHelperState.CloseMenu();
+                ReturnToList();
             }
         }
 
@@ -335,25 +312,32 @@ namespace RimWorldAccess.Shell
         protected override void OnRegionChanged(MoveResult result)
         {
             int current = Model.RegionIndex;
-            if (trackedRegionIndex == ContentRegion && current != ContentRegion)
+            int previous = trackedRegionIndex;
+            trackedRegionIndex = current;
+
+            // Knowledge commits whenever the cursor leaves the lesson text, so reading to the end
+            // still ticks it up. The concept drops out of the Active list only when the player
+            // steps back to the Lessons list, whether from the text or from the lesson's own
+            // buttons — never on the way DOWN into those buttons: a finished lesson stays listed,
+            // readable and pressable until the player actually steps away.
+            bool leftLessonText = previous == ContentRegion && current != ContentRegion;
+            bool steppedBackToList = current == LessonsRegion && previous != LessonsRegion;
+            if (leftLessonText)
             {
-                // Knowledge commits whenever the cursor leaves the lesson body, so reading to the
-                // end still ticks it up. But the concept only drops out of the Active list on the
-                // way back to the Lessons list — the point the player leaves the lesson — never on
-                // flowing down into its own Buttons region: a finished lesson must stay listed,
-                // readable and its button pressable until the player actually steps away from it.
                 LearningHelperState.CommitReading();
-                if (current == LessonsRegion)
-                {
-                    LearningHelperState.RefreshConcepts();
-                }
+            }
+            if (steppedBackToList)
+            {
+                LearningHelperState.RefreshConcepts();
+            }
+            if (leftLessonText || steppedBackToList)
+            {
                 RefreshModel();
             }
-            else if (current == ContentRegion && trackedRegionIndex != ContentRegion)
+            else if (current == ContentRegion)
             {
                 LearningHelperState.BeginReading(SelectedConcept());
             }
-            trackedRegionIndex = current;
         }
 
         protected override void MoveItem(int delta)
