@@ -276,6 +276,8 @@ namespace RimWorldAccess.Shell
         protected override ElementDescription DescribeContentItem(int region, int index)
         {
             var d = new ElementDescription();
+            // Enter opens the quantity chooser (the balance row announces the balance), so these rows own Enter and never arm the proceed confirm.
+            d.KeepsAccept = true;
             if (OnBalanceRow(region, index))
             {
                 d.Label = BalanceLabel();

@@ -1063,7 +1063,7 @@
 63	src/Shell/Screens/TextFieldEditSession.Game.cs
 71	src/Shell/Screens/TextFieldRawPollGuard.Game.cs
 70	src/Shell/Screens/ThingFilterMenuScope.Game.cs
-82	src/Shell/Screens/TradeClassicScope.Game.cs
+83	src/Shell/Screens/TradeClassicScope.Game.cs
 82	src/Shell/Screens/TradeScope.Game.cs
 95	src/Shell/Screens/TransferableTableColumns.Game.cs
 101	src/Shell/Screens/TransportPodLoadingScope.Game.cs
