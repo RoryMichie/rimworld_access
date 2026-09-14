@@ -114,9 +114,9 @@
        *Desc keys are the tooltip read after the value. -->
   <RimWorldAccess.UI.Options.WorkMenuView.Label>Vue par défaut du menu travail (F1)</RimWorldAccess.UI.Options.WorkMenuView.Label>
   <RimWorldAccess.UI.Options.WorkMenuView.Focused>Concentré</RimWorldAccess.UI.Options.WorkMenuView.Focused>
-  <RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>Vue par personnage, groupée par priorité.</RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>
+  <RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>Un personnage à la fois, avec ses types de travail groupés par priorité.</RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>
   <RimWorldAccess.UI.Options.WorkMenuView.Table>Tableau</RimWorldAccess.UI.Options.WorkMenuView.Table>
-  <RimWorldAccess.UI.Options.WorkMenuView.TableDesc>Lignes par personnage, colonnes par type de travail ; reproduit l'interface standard, avec tri et peinture par glissement.</RimWorldAccess.UI.Options.WorkMenuView.TableDesc>
+  <RimWorldAccess.UI.Options.WorkMenuView.TableDesc>Tous les personnages et types de travail réunis dans une seule grille, à l'image de l'onglet Travail affiché à l'écran, avec tri et peinture au clic-glissé.</RimWorldAccess.UI.Options.WorkMenuView.TableDesc>
   <RimWorldAccess.UI.Options.ForcedSlowdowns.Label>Annoncer les ralentissements forcés dus à des menaces</RimWorldAccess.UI.Options.ForcedSlowdowns.Label>
   <RimWorldAccess.UI.Options.ForcedSlowdowns.Desc>Lorsque cette option est activée, annonce quand le jeu impose la vitesse normale à cause d'une menace proche, et quand le ralentissement se termine. Ne se déclenche que si la vitesse choisie est plus rapide que la normale.</RimWorldAccess.UI.Options.ForcedSlowdowns.Desc>
 
@@ -478,7 +478,7 @@
   <!-- Trade view setting (OptionsRwaCategory). -->
   <RimWorldAccess.UI.Options.TradeView.Label>Vue par défaut du commerce</RimWorldAccess.UI.Options.TradeView.Label>
   <RimWorldAccess.UI.Options.TradeView.Classic>Classique</RimWorldAccess.UI.Options.TradeView.Classic>
-  <RimWorldAccess.UI.Options.TradeView.ClassicDesc>Trois listes : les marchandises du commerçant, l'échange en cours avec son solde, et vos marchandises. Tab passe de l'une à l'autre.</RimWorldAccess.UI.Options.TradeView.ClassicDesc>
+  <RimWorldAccess.UI.Options.TradeView.ClassicDesc>Trois listes séparées : les marchandises du commerçant, l'échange en cours et son solde, et vos propres marchandises. Passez de l'une à l'autre avec les flèches gauche et droite.</RimWorldAccess.UI.Options.TradeView.ClassicDesc>
   <RimWorldAccess.UI.Options.TradeView.Table>Tableau</RimWorldAccess.UI.Options.TradeView.Table>
-  <RimWorldAccess.UI.Options.TradeView.TableDesc>Une seule liste triable avec un curseur de colonne, disposée comme dans l'interface standard.</RimWorldAccess.UI.Options.TradeView.TableDesc>
+  <RimWorldAccess.UI.Options.TradeView.TableDesc>Tout réuni dans un même tableau triable, à l'image de la fenêtre de commerce affichée à l'écran.</RimWorldAccess.UI.Options.TradeView.TableDesc>
 </LanguageData>

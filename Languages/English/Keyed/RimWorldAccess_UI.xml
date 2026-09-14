@@ -104,15 +104,15 @@
        *Desc keys are the tooltip read after the value. -->
   <RimWorldAccess.UI.Options.WorkMenuView.Label>Default Work Menu View (F1)</RimWorldAccess.UI.Options.WorkMenuView.Label>
   <RimWorldAccess.UI.Options.WorkMenuView.Focused>Focused</RimWorldAccess.UI.Options.WorkMenuView.Focused>
-  <RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>Priority-grouped per-pawn view.</RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>
+  <RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>One pawn at a time, with their work types grouped by priority.</RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>
   <RimWorldAccess.UI.Options.WorkMenuView.Table>Table</RimWorldAccess.UI.Options.WorkMenuView.Table>
-  <RimWorldAccess.UI.Options.WorkMenuView.TableDesc>Pawn rows by work-type columns; mirrors vanilla and supports sorting and painting.</RimWorldAccess.UI.Options.WorkMenuView.TableDesc>
+  <RimWorldAccess.UI.Options.WorkMenuView.TableDesc>Every pawn and work type in one grid, matching the on-screen work tab, with sorting and click-and-drag painting.</RimWorldAccess.UI.Options.WorkMenuView.TableDesc>
   <!-- TradeView is the same shape: which view the trade dialog opens in. -->
   <RimWorldAccess.UI.Options.TradeView.Label>Default Trade View</RimWorldAccess.UI.Options.TradeView.Label>
   <RimWorldAccess.UI.Options.TradeView.Classic>Classic</RimWorldAccess.UI.Options.TradeView.Classic>
-  <RimWorldAccess.UI.Options.TradeView.ClassicDesc>Three lists: the trader's goods, the pending deal with its balance, and your goods. Tab moves between them.</RimWorldAccess.UI.Options.TradeView.ClassicDesc>
+  <RimWorldAccess.UI.Options.TradeView.ClassicDesc>Three separate lists: the trader's goods, the deal in progress and its balance, and your own goods. Move between them with the left and right arrows.</RimWorldAccess.UI.Options.TradeView.ClassicDesc>
   <RimWorldAccess.UI.Options.TradeView.Table>Table</RimWorldAccess.UI.Options.TradeView.Table>
-  <RimWorldAccess.UI.Options.TradeView.TableDesc>One sortable list with a column cursor, laid out as vanilla draws it.</RimWorldAccess.UI.Options.TradeView.TableDesc>
+  <RimWorldAccess.UI.Options.TradeView.TableDesc>Everything in one sortable table, matching the on-screen trade window.</RimWorldAccess.UI.Options.TradeView.TableDesc>
   <RimWorldAccess.UI.Options.ForcedSlowdowns.Label>Announce Forced Slowdowns From Threats</RimWorldAccess.UI.Options.ForcedSlowdowns.Label>
   <RimWorldAccess.UI.Options.ForcedSlowdowns.Desc>When on, announces when the game forces Normal speed because of a nearby threat, and when the slowdown lifts. Only fires if your chosen speed is faster than Normal.</RimWorldAccess.UI.Options.ForcedSlowdowns.Desc>
 

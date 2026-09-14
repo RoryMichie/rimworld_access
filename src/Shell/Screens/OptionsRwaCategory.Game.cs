@@ -76,6 +76,12 @@ namespace RimWorldAccess.Shell
                 return;
             }
 
+            if (listing.ButtonText("RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button".Translate()))
+            {
+                Find.WindowStack.Add(new Dialog_ConfigureAnnouncements());
+            }
+            listing.Gap();
+
             bool wrapNavigation = settings.WrapNavigation;
             listing.CheckboxLabeled("RimWorldAccess.Core.Settings.WrapNavigation.Label".Translate(), ref wrapNavigation, null, 30f, 0.6f);
             settings.WrapNavigation = wrapNavigation;
@@ -124,7 +130,10 @@ namespace RimWorldAccess.Shell
                         {
                             RimWorldAccessMod_Settings.Settings.DefaultWorkMenuView = localValue;
                         }
-                    }));
+                    })
+                    {
+                        tooltip = new TipSignal(WorkMenuViewValueTooltip(localValue)),
+                    });
                 }
                 Find.WindowStack.Add(new FloatMenu(options));
             }
@@ -145,7 +154,10 @@ namespace RimWorldAccess.Shell
                         {
                             RimWorldAccessMod_Settings.Settings.DefaultTradeView = localValue;
                         }
-                    }));
+                    })
+                    {
+                        tooltip = new TipSignal(TradeViewValueTooltip(localValue)),
+                    });
                 }
                 Find.WindowStack.Add(new FloatMenu(options));
             }
@@ -275,11 +287,6 @@ namespace RimWorldAccess.Shell
                     "RimWorldAccess.Narrative.Settings.TtsAnnounceAnyway.Desc".Translate(),
                     30f, 0.6f);
                 settings.TtsAnnounceAnyway = ttsAnnounceAnyway;
-            }
-
-            if (listing.ButtonText("RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button".Translate()))
-            {
-                Find.WindowStack.Add(new Dialog_ConfigureAnnouncements());
             }
         }
 

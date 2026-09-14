@@ -114,9 +114,9 @@
        *Desc keys are the tooltip read after the value. -->
   <RimWorldAccess.UI.Options.WorkMenuView.Label>Вид меню работы по умолчанию (F1)</RimWorldAccess.UI.Options.WorkMenuView.Label>
   <RimWorldAccess.UI.Options.WorkMenuView.Focused>Сфокусированный</RimWorldAccess.UI.Options.WorkMenuView.Focused>
-  <RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>Вид по персонажу с группировкой по приоритетам.</RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>
+  <RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>По одному персонажу за раз: типы работ сгруппированы по приоритету.</RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>
   <RimWorldAccess.UI.Options.WorkMenuView.Table>Таблица</RimWorldAccess.UI.Options.WorkMenuView.Table>
-  <RimWorldAccess.UI.Options.WorkMenuView.TableDesc>Строки персонажей по столбцам типов работ; повторяет ванильный вид и поддерживает сортировку и закрашивание.</RimWorldAccess.UI.Options.WorkMenuView.TableDesc>
+  <RimWorldAccess.UI.Options.WorkMenuView.TableDesc>Все персонажи и типы работ в одной таблице, повторяющей вкладку «Работа» на экране, с сортировкой и закрашиванием перетаскиванием.</RimWorldAccess.UI.Options.WorkMenuView.TableDesc>
   <RimWorldAccess.UI.Options.ForcedSlowdowns.Label>Озвучивать принудительные замедления при угрозах</RimWorldAccess.UI.Options.ForcedSlowdowns.Label>
   <RimWorldAccess.UI.Options.ForcedSlowdowns.Desc>Когда включено, озвучивает момент, когда игра принудительно переходит на обычную скорость из-за близкой угрозы, и когда замедление снимается. Срабатывает только если выбранная вами скорость выше обычной.</RimWorldAccess.UI.Options.ForcedSlowdowns.Desc>
 
@@ -407,7 +407,7 @@
   <!-- Trade view setting (OptionsRwaCategory). -->
   <RimWorldAccess.UI.Options.TradeView.Label>Вид торговли по умолчанию</RimWorldAccess.UI.Options.TradeView.Label>
   <RimWorldAccess.UI.Options.TradeView.Classic>Классический</RimWorldAccess.UI.Options.TradeView.Classic>
-  <RimWorldAccess.UI.Options.TradeView.ClassicDesc>Три списка: товары торговца, текущая сделка с её балансом и ваши товары. Tab переключает между ними.</RimWorldAccess.UI.Options.TradeView.ClassicDesc>
+  <RimWorldAccess.UI.Options.TradeView.ClassicDesc>Три отдельных списка: товары торговца, текущая сделка с её балансом и ваши товары. Перемещайтесь между ними стрелками влево и вправо.</RimWorldAccess.UI.Options.TradeView.ClassicDesc>
   <RimWorldAccess.UI.Options.TradeView.Table>Таблица</RimWorldAccess.UI.Options.TradeView.Table>
-  <RimWorldAccess.UI.Options.TradeView.TableDesc>Один сортируемый список с курсором по столбцам, как в ванильном окне.</RimWorldAccess.UI.Options.TradeView.TableDesc>
+  <RimWorldAccess.UI.Options.TradeView.TableDesc>Всё в одной сортируемой таблице, повторяющей окно торговли на экране.</RimWorldAccess.UI.Options.TradeView.TableDesc>
 </LanguageData>

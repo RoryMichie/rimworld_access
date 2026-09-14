@@ -113,9 +113,9 @@
        *Desc keys are the tooltip read after the value. -->
   <RimWorldAccess.UI.Options.WorkMenuView.Label>Vista predeterminada del menú de trabajo (F1)</RimWorldAccess.UI.Options.WorkMenuView.Label>
   <RimWorldAccess.UI.Options.WorkMenuView.Focused>Enfocada</RimWorldAccess.UI.Options.WorkMenuView.Focused>
-  <RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>Vista por personaje agrupada por prioridad.</RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>
+  <RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>Un personaje a la vez, con sus tipos de trabajo agrupados por prioridad.</RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>
   <RimWorldAccess.UI.Options.WorkMenuView.Table>Tabla</RimWorldAccess.UI.Options.WorkMenuView.Table>
-  <RimWorldAccess.UI.Options.WorkMenuView.TableDesc>Filas de personajes por columnas de tipo de trabajo; refleja el juego original y permite ordenar y pintar.</RimWorldAccess.UI.Options.WorkMenuView.TableDesc>
+  <RimWorldAccess.UI.Options.WorkMenuView.TableDesc>Todos los personajes y tipos de trabajo en una sola cuadrícula, igual a la pestaña de Trabajo en pantalla, con columnas ordenables y pintado con clic y arrastre.</RimWorldAccess.UI.Options.WorkMenuView.TableDesc>
   <RimWorldAccess.UI.Options.ForcedSlowdowns.Label>Anunciar reducciones de velocidad forzadas por amenazas</RimWorldAccess.UI.Options.ForcedSlowdowns.Label>
   <RimWorldAccess.UI.Options.ForcedSlowdowns.Desc>Cuando está activado, anuncia cuando el juego fuerza la velocidad Normal por una amenaza cercana, y cuando la reducción termina. Solo se activa si la velocidad que elegiste es más rápida que Normal.</RimWorldAccess.UI.Options.ForcedSlowdowns.Desc>
 
@@ -398,7 +398,7 @@
   <!-- Trade view setting (OptionsRwaCategory). -->
   <RimWorldAccess.UI.Options.TradeView.Label>Vista predeterminada del comercio</RimWorldAccess.UI.Options.TradeView.Label>
   <RimWorldAccess.UI.Options.TradeView.Classic>Clásica</RimWorldAccess.UI.Options.TradeView.Classic>
-  <RimWorldAccess.UI.Options.TradeView.ClassicDesc>Tres listas: los bienes del comerciante, el trato pendiente con su saldo y tus bienes. Tab cambia entre ellas.</RimWorldAccess.UI.Options.TradeView.ClassicDesc>
+  <RimWorldAccess.UI.Options.TradeView.ClassicDesc>Tres listas separadas: los bienes del comerciante, el trato en curso con su saldo y tus propios bienes. Usa las flechas izquierda y derecha para moverte entre ellas.</RimWorldAccess.UI.Options.TradeView.ClassicDesc>
   <RimWorldAccess.UI.Options.TradeView.Table>Tabla</RimWorldAccess.UI.Options.TradeView.Table>
-  <RimWorldAccess.UI.Options.TradeView.TableDesc>Una sola lista ordenable con cursor de columna, dispuesta como la dibuja el juego original.</RimWorldAccess.UI.Options.TradeView.TableDesc>
+  <RimWorldAccess.UI.Options.TradeView.TableDesc>Todo en una sola tabla ordenable, igual al diálogo de comercio en pantalla.</RimWorldAccess.UI.Options.TradeView.TableDesc>
 </LanguageData>

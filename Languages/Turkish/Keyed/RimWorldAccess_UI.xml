@@ -114,9 +114,9 @@
        *Desc keys are the tooltip read after the value. -->
   <RimWorldAccess.UI.Options.WorkMenuView.Label>Varsayılan iş menüsü görünümü (F1)</RimWorldAccess.UI.Options.WorkMenuView.Label>
   <RimWorldAccess.UI.Options.WorkMenuView.Focused>Odaklı</RimWorldAccess.UI.Options.WorkMenuView.Focused>
-  <RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>Kişiye göre öncelik gruplu görünüm.</RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>
+  <RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>Aynı anda tek bir kişi. İş türleri önceliğe göre gruplanır.</RimWorldAccess.UI.Options.WorkMenuView.FocusedDesc>
   <RimWorldAccess.UI.Options.WorkMenuView.Table>Tablo</RimWorldAccess.UI.Options.WorkMenuView.Table>
-  <RimWorldAccess.UI.Options.WorkMenuView.TableDesc>Kişi satırları iş türü sütunlarına göre dizilir; vanilla görünümünü yansıtır, sıralamayı ve boyamayı destekler.</RimWorldAccess.UI.Options.WorkMenuView.TableDesc>
+  <RimWorldAccess.UI.Options.WorkMenuView.TableDesc>Her kişi ve iş türü tek bir tabloda, ekrandaki iş sekmesiyle aynı düzende, sıralama ve tıkla-sürükle boyama destekler.</RimWorldAccess.UI.Options.WorkMenuView.TableDesc>
   <RimWorldAccess.UI.Options.ForcedSlowdowns.Label>Tehditlerden kaynaklanan zorunlu yavaşlamaları seslendir</RimWorldAccess.UI.Options.ForcedSlowdowns.Label>
   <RimWorldAccess.UI.Options.ForcedSlowdowns.Desc>Açıkken, oyunun yakındaki bir tehdit yüzünden Normal hıza zorlandığını ve bu yavaşlamanın kalktığını seslendirir. Yalnızca seçtiğin hız Normal'den hızlıysa devreye girer.</RimWorldAccess.UI.Options.ForcedSlowdowns.Desc>
 
@@ -478,7 +478,7 @@
   <!-- Trade view setting (OptionsRwaCategory). -->
   <RimWorldAccess.UI.Options.TradeView.Label>Varsayılan ticaret görünümü</RimWorldAccess.UI.Options.TradeView.Label>
   <RimWorldAccess.UI.Options.TradeView.Classic>Klasik</RimWorldAccess.UI.Options.TradeView.Classic>
-  <RimWorldAccess.UI.Options.TradeView.ClassicDesc>Üç liste: tüccarın malları, bakiyesiyle birlikte bekleyen anlaşma ve senin malların. Tab aralarında geçiş yapar.</RimWorldAccess.UI.Options.TradeView.ClassicDesc>
+  <RimWorldAccess.UI.Options.TradeView.ClassicDesc>Üç ayrı liste: tüccarın malları, bakiyesiyle birlikte devam eden anlaşma ve senin malların. Aralarında sol ve sağ ok tuşlarıyla geçiş yap.</RimWorldAccess.UI.Options.TradeView.ClassicDesc>
   <RimWorldAccess.UI.Options.TradeView.Table>Tablo</RimWorldAccess.UI.Options.TradeView.Table>
-  <RimWorldAccess.UI.Options.TradeView.TableDesc>Sütun imleçli tek bir sıralanabilir liste, vanilla düzeniyle.</RimWorldAccess.UI.Options.TradeView.TableDesc>
+  <RimWorldAccess.UI.Options.TradeView.TableDesc>Her şey tek bir sıralanabilir tabloda, ekrandaki ticaret penceresiyle aynı düzende.</RimWorldAccess.UI.Options.TradeView.TableDesc>
 </LanguageData>
