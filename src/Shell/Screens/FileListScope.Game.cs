@@ -475,6 +475,17 @@ namespace RimWorldAccess.Shell
                 return;
             }
             doFileInteractionMethod.Invoke(dialog, new object[] { name.Trim() });
+            ReturnToGameAfterSave();
+        }
+
+        // Vanilla's PostClose re-selects the Menu tab after a save, stranding the player in the
+        // paused menu; escape it back to the game. Skipped off the map, where there is none.
+        private void ReturnToGameAfterSave()
+        {
+            if (isSaveMode && Current.ProgramState == ProgramState.Playing)
+            {
+                PauseMenuScope.CloseRealMenuIfOpen();
+            }
         }
 
         private void PerformClose()
@@ -492,6 +503,7 @@ namespace RimWorldAccess.Shell
             }
             string fileName = Path.GetFileNameWithoutExtension(visibleFiles[index].FileName);
             doFileInteractionMethod.Invoke(dialog, new object[] { fileName });
+            ReturnToGameAfterSave();
         }
 
         private void OnDelete(KeyEventSnapshot e)

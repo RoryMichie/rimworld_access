@@ -428,7 +428,7 @@
 6	src/Compat/WantsAndQuirks/WqModule.Game.cs
 33	src/Core/GameStartPatch.cs
 30	src/Core/ModLogger.cs
-105	src/Core/RimWorldAccessSettings.cs
+107	src/Core/RimWorldAccessSettings.cs
 15	src/Core/RimWorldAccessVersion.cs
 108	src/Core/StateResetRegistry.cs
 28	src/Core/VanillaAccess.cs
@@ -899,7 +899,7 @@
 19	src/Shell/Models/WarpGainMath.cs
 22	src/Shell/Screens/AdvancedGameConfigScope.Game.cs
 142	src/Shell/Screens/AnimalsScope.Game.cs
-109	src/Shell/Screens/AnnouncementConfigDialog.Game.cs
+111	src/Shell/Screens/AnnouncementConfigDialog.Game.cs
 75	src/Shell/Screens/AnomalySettingsScope.Game.cs
 73	src/Shell/Screens/ArchitectTreeScope.Game.cs
 63	src/Shell/Screens/ArchonexusColonyScope.Game.cs
@@ -942,7 +942,7 @@
 98	src/Shell/Screens/EntityTabScope.Game.cs
 75	src/Shell/Screens/FactionLandingScope.Game.cs
 19	src/Shell/Screens/FileListRowGeometry.Game.cs
-138	src/Shell/Screens/FileListScope.Game.cs
+140	src/Shell/Screens/FileListScope.Game.cs
 53	src/Shell/Screens/FilterPolicyDialogScope.Game.cs
 78	src/Shell/Screens/FilterTreeScopeBase.Game.cs
 67	src/Shell/Screens/FishingZoneScope.Game.cs
