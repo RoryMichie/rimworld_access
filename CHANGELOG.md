@@ -6,7 +6,7 @@ Older changes (before version 2.0) are in the [pre-2.0 changelog archive](https:
 
 <!-- BUILD_CHANGELOG_INSERT: release notes are compiled here from changelog.d/ fragments by scripts/build_changelog.py. Do not remove this marker. -->
 
-## [2.0.0] - 2026-09-07
+## [2.0.0] - 2026-09-14
 
 Version 2.0 is a rebuild of RimWorld Access from the ground up.
 
