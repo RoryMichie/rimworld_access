@@ -198,6 +198,10 @@ namespace RimWorldAccess.Shell
             ClaimFallback(SharedMenuGrammar.Cancel, e => CancelAttachedWindow(), when: CanCancelAttachedWindow);
             ClaimFallback(SharedMenuGrammar.ActivateDefault, e => AcceptAttachedWindow(), when: CanAcceptAttachedWindow);
 
+            // '?' opens the Learning Helper from any screen (even when this scope is the topmost
+            // modal); Escape dismisses it. See LearningHelperOpenerClaims.
+            LearningHelperOpenerClaims.RegisterForScreen(this);
+
             RegisterPopTeardown(extrasEditSession.CancelIfActive);
         }
 

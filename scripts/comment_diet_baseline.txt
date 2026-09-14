@@ -990,7 +990,7 @@
 70	src/Shell/Screens/InspectComponentScopes.Game.cs
 200	src/Shell/Screens/InspectionScope.Game.cs
 102	src/Shell/Screens/InventoryScope.Game.cs
-96	src/Shell/Screens/LearningHelperScope.Game.cs
+105	src/Shell/Screens/LearningHelperScope.Game.cs
 110	src/Shell/Screens/LordJobDialogScope.Game.cs
 42	src/Shell/Screens/ManageAreasScope.Game.cs
 42	src/Shell/Screens/MapToolScope.Game.cs
@@ -1038,7 +1038,7 @@
 83	src/Shell/Screens/ScreenScope.Announce.Game.cs
 28	src/Shell/Screens/ScreenScope.DebugSurface.Game.cs
 121	src/Shell/Screens/ScreenScope.Extras.Game.cs
-306	src/Shell/Screens/ScreenScope.Game.cs
+308	src/Shell/Screens/ScreenScope.Game.cs
 212	src/Shell/Screens/ScreenScope.Regions.Game.cs
 117	src/Shell/Screens/ScreenScope.Typeahead.Game.cs
 61	src/Shell/Screens/ScreenScopeDrawPatch.Game.cs

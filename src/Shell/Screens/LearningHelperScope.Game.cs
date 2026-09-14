@@ -455,10 +455,11 @@ namespace RimWorldAccess.Shell
     }
 
     /// <summary>
-    /// The Shift+Slash Learning Helper opener, registered as an ambient claim on
-    /// <see cref="MapScope"/>, <see cref="WorldScope"/> and
-    /// <see cref="StartingSiteScreenScope"/> (the helper is reachable from the
-    /// Entry world-gen screen as well as in game).
+    /// The Shift+Slash Learning Helper opener. Registered on <see cref="MapScope"/> and
+    /// <see cref="WorldScope"/> for the in-game map and world, and on every
+    /// <see cref="ScreenScope"/> through its base ctor (<see cref="RegisterForScreen"/>) so
+    /// '?' opens the helper on any screen — world-gen configuration or in-game menu — even
+    /// while that screen is the topmost modal. Escape then dismisses it.
     /// On some non-US layouts a direct '?' arrives as <c>keyCode=None</c> with shift
     /// NOT held; <see cref="KeyboardHelper.RemapCharacterToKeyCode"/> recovers
     /// <c>KeyCode.Slash</c> but does not synthesize <c>shift</c>, so a Shift+Slash
@@ -474,8 +475,8 @@ namespace RimWorldAccess.Shell
         }
 
         /// <summary>
-        /// The bare-Slash twin for remapped layouts. Registered only on WorldScope
-        /// and StartingSiteScreenScope, never MapScope, where bare Slash belongs to
+        /// The bare-Slash twin for remapped layouts. Registered on WorldScope and every
+        /// screen, never MapScope, where bare Slash belongs to
         /// map.colonistBar.focusByCursor. WasCharacterRemapped is written at Harmony
         /// priority 900, ahead of the dispatcher's 850, so it is valid here.
         /// </summary>
@@ -486,18 +487,35 @@ namespace RimWorldAccess.Shell
                 when: delegate { return KeyboardHelper.WasCharacterRemapped && LearningHelperOpenerLive(); });
         }
 
+        /// <summary>
+        /// Both opener variants on a screen scope. Called from the <see cref="ScreenScope"/>
+        /// base ctor, so every screen — world-gen configuration and in-game menu alike —
+        /// answers '?' while it is the topmost modal.
+        /// </summary>
+        internal static void RegisterForScreen(FocusScope scope)
+        {
+            scope.RegisterExternalClaim("map.menu.learningHelper",
+                delegate (KeyEventSnapshot e) { LearningHelperState.Open(); },
+                when: LearningHelperOpenerLive);
+            scope.RegisterExternalClaim("map.menu.learningHelperRemapped",
+                delegate (KeyEventSnapshot e) { LearningHelperState.Open(); },
+                when: delegate { return KeyboardHelper.WasCharacterRemapped && LearningHelperOpenerLive(); });
+        }
+
         /// <summary>Whether a new helper session may be opened here.</summary>
         private static bool LearningHelperOpenerLive()
         {
             bool inGame = Current.ProgramState == ProgramState.Playing && Find.CurrentMap != null;
-            bool inWorldSetup = Current.ProgramState == ProgramState.Entry && Find.World != null && Find.Tutor != null;
-            // AnyLiveModal gates the opener, not a claim inside the scope the
-            // opener creates, so there is no self-reference to invert.
-            return !FocusStack.AnyLiveModal
+            // Find.Tutor exists from scenario-select on, before the world is generated, so the
+            // helper is reachable across the whole world-gen flow, not just once a planet exists.
+            bool inWorldSetup = Current.ProgramState == ProgramState.Entry && Find.Tutor != null;
+            // No AnyLiveModal/WindowsPreventCameraMotion term: top-down dispatch already masks this
+            // opener behind any modal above it, config screens host it while modal and camera-locking
+            // themselves (this keyboard overlay needs no camera), and IsActive stops '?' re-entry.
+            return !LearningHelperState.IsActive
                 && (inGame || inWorldSetup)
                 && !TutorSystem.TutorialMode
-                && TutorSystem.AdaptiveTrainingEnabled
-                && (Find.WindowStack == null || !Find.WindowStack.WindowsPreventCameraMotion);
+                && TutorSystem.AdaptiveTrainingEnabled;
         }
     }
 }

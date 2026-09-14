@@ -107,10 +107,8 @@ namespace RimWorldAccess.Shell
 
             Claim(SharedMenuGrammar.Cancel, OnCancel, when: CancelLive);
 
-            // The opener needs no gate of its own: AnyLiveModal stands it down
-            // under any real dialog stacked here.
-            LearningHelperOpenerClaims.Register(this);
-            LearningHelperOpenerClaims.RegisterRemapped(this);
+            // The Learning Helper opener rides the ScreenScope base ctor
+            // (LearningHelperOpenerClaims.RegisterForScreen); none needed here.
         }
 
         public override string Name
