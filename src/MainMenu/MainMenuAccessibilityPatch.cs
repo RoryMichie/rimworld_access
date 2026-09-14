@@ -17,8 +17,8 @@ namespace RimWorldAccess
     ///
     /// Deliberate transforms applied to the captured lists:
     /// - The Tutorial option (identified by its vanilla InitLearnToPlay delegate, never
-    ///   by label) gets an accessibility notice instead — the tutorial is a documented
-    ///   keyboard-hostile deviation.
+    ///   by label) is dropped from the keyboard menu — a documented keyboard-hostile
+    ///   deviation; vanilla's own read-only draw is untouched, so the button still shows.
     /// - ListableOption_WebLink entries constructed with a url and no action get the
     ///   OpenURL fallback their own DrawOption applies on click (decompiled
     ///   Verse/ListableOption_WebLink.cs, null-action branch), so Enter works on them.
@@ -142,14 +142,9 @@ namespace RimWorldAccess
             {
                 if (option?.action != null && option.action.Method == InitLearnToPlayMethod)
                 {
-                    // Documented keyboard-hostile-vanilla deviation: the tutorial's
-                    // forced-mouse lessons cannot be completed by keyboard, so explain
-                    // instead of trapping the player in it.
-                    result.Add(new ListableOption(option.label, delegate
-                    {
-                        Find.WindowStack.Add(new Dialog_MessageBox(
-                            "RimWorldAccess.MainMenu.TutorialNotAccessible".Translate()));
-                    }));
+                    // Documented keyboard-hostile deviation: the tutorial's forced-mouse,
+                    // exact-placement lessons can't be done by keyboard, so it is dropped
+                    // from the keyboard menu rather than offered as a dead end.
                     continue;
                 }
                 result.Add(option);

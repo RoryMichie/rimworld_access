@@ -50,13 +50,6 @@
   -->
 
   <!-- =================================================================
-       Main menu shell (MainMenuAccessibilityPatch).
-       Tutorial-not-implemented dialog. The "GameOverMainMenu" title
-       announcement comes from the vanilla key.
-       ================================================================= -->
-  <RimWorldAccess.MainMenu.TutorialNotAccessible>Le tutoriel n'est actuellement pas accessible. Cette fonctionnalité sera ajoutée prochainement.</RimWorldAccess.MainMenu.TutorialNotAccessible>
-
-  <!-- =================================================================
        Loading screen (LoadingScreenAccessibilityPatch).
        Live announcements as the game loads. "Tip: {0}" wraps the
        vanilla tip-of-the-day text; the loading message itself and
