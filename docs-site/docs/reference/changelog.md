@@ -4,14 +4,6 @@ Everything new in RimWorld Access, newest first.
 
 Older changes (before version 2.0) are in the [pre-2.0 changelog archive](changelog-archive.md).
 
-!!! warning "Version 2.0 is not out yet"
-    These notes are published ahead of the release so testers can follow along. Version 2.0 is
-    not on the Steam Workshop yet, and the documentation on this site is still being brought up
-    to date for it. If you want to try it now, download the
-    [development build](https://github.com/aaronr7734/rimworld_access/releases/download/dev/RimWorldAccess-dev.zip)
-    and install it by hand, following [Installation](../getting-started/installation.md). Expect
-    rough edges, and please [report anything you find](reporting-bugs.md).
-
 <!-- BUILD_CHANGELOG_INSERT: do not remove this marker. -->
 
 ## [2.0.0] - 2026-09-07
