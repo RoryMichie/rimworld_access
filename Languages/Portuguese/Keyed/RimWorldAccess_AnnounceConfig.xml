@@ -19,7 +19,8 @@
        RimWorldAccess.AnnounceConfig.NameAlwaysOn below. -->
   <RimWorldAccess.AnnounceConfig.Part.Label>Nome</RimWorldAccess.AnnounceConfig.Part.Label>
   <RimWorldAccess.AnnounceConfig.Part.Hotkey>Atalho de teclado</RimWorldAccess.AnnounceConfig.Part.Hotkey>
-  <RimWorldAccess.AnnounceConfig.Part.RoleAndState>Tipo de controlo e estado</RimWorldAccess.AnnounceConfig.Part.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Part.Role>Tipo de controlo</RimWorldAccess.AnnounceConfig.Part.Role>
+  <RimWorldAccess.AnnounceConfig.Part.State>Estado do controlo</RimWorldAccess.AnnounceConfig.Part.State>
   <RimWorldAccess.AnnounceConfig.Part.Level>Nível da árvore</RimWorldAccess.AnnounceConfig.Part.Level>
   <RimWorldAccess.AnnounceConfig.Part.Position>Posição na lista</RimWorldAccess.AnnounceConfig.Part.Position>
   <RimWorldAccess.AnnounceConfig.Part.Extras>Descrição e detalhes</RimWorldAccess.AnnounceConfig.Part.Extras>
@@ -27,7 +28,8 @@
 
   <RimWorldAccess.AnnounceConfig.Example.Label>por exemplo: Permitir cadáveres frescos</RimWorldAccess.AnnounceConfig.Example.Label>
   <RimWorldAccess.AnnounceConfig.Example.Hotkey>por exemplo: Alt+C</RimWorldAccess.AnnounceConfig.Example.Hotkey>
-  <RimWorldAccess.AnnounceConfig.Example.RoleAndState>por exemplo: caixa de selecção, marcado</RimWorldAccess.AnnounceConfig.Example.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Example.Role>por exemplo: caixa de seleção</RimWorldAccess.AnnounceConfig.Example.Role>
+  <RimWorldAccess.AnnounceConfig.Example.State>por exemplo: marcado</RimWorldAccess.AnnounceConfig.Example.State>
   <RimWorldAccess.AnnounceConfig.Example.Level>por exemplo: nível 2</RimWorldAccess.AnnounceConfig.Example.Level>
   <RimWorldAccess.AnnounceConfig.Example.Position>por exemplo: 4 de 13</RimWorldAccess.AnnounceConfig.Example.Position>
   <RimWorldAccess.AnnounceConfig.Example.Extras>por exemplo: Inclui os podres</RimWorldAccess.AnnounceConfig.Example.Extras>

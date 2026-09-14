@@ -68,7 +68,7 @@ public class AnnouncementComposerTests
         AnnouncementComposer.ComposeFocus(d, Vocab, ComposeOptions.AllOn);
 
     [Fact]
-    public void DefaultOrder_LevelLabelHotkeyRoleStateExtrasHintPosition()
+    public void DefaultOrder_LevelLabelHotkeyRoleThenStateExtrasHintPosition()
     {
         var d = new ElementDescription
         {
@@ -82,12 +82,12 @@ public class AnnouncementComposerTests
         };
 
         Assert.Equal(
-            "Allow fresh corpses. Alt+C. checkbox, checked. Includes rotten ones. 3 of 7",
+            "Allow fresh corpses. Alt+C. checkbox. checked. Includes rotten ones. 3 of 7",
             Focus(d));
     }
 
     [Fact]
-    public void RoleAndState_JoinWithComma_ButtonHasNoState()
+    public void Role_ButtonHasNoStateWord()
     {
         Assert.Equal("Accept. button",
             Focus(new ElementDescription { Label = "Accept", Role = ElementRole.Button }));
@@ -112,7 +112,7 @@ public class AnnouncementComposerTests
     [Fact]
     public void ComboBox_SpeaksCurrentValueAsState()
     {
-        Assert.Equal("Diet. combo box, Lavish meals",
+        Assert.Equal("Diet. combo box. Lavish meals",
             Focus(new ElementDescription
             {
                 Label = "Diet",
@@ -124,7 +124,7 @@ public class AnnouncementComposerTests
     [Fact]
     public void TextField_BlankSpeaksBlankInsteadOfValue()
     {
-        Assert.Equal("Name. edit box, blank",
+        Assert.Equal("Name. edit box. blank",
             Focus(new ElementDescription
             {
                 Label = "Name",
@@ -136,7 +136,7 @@ public class AnnouncementComposerTests
     [Fact]
     public void Stepper_SpeaksValueAndBound()
     {
-        Assert.Equal("Target fuel. spin box, 30, at maximum",
+        Assert.Equal("Target fuel. spin box. 30, at maximum",
             Focus(new ElementDescription
             {
                 Label = "Target fuel",
@@ -147,9 +147,9 @@ public class AnnouncementComposerTests
     }
 
     [Fact]
-    public void Disabled_AppendsAfterRoleAndState()
+    public void Disabled_AppendsToStatePart()
     {
-        Assert.Equal("Launch. button, disabled",
+        Assert.Equal("Launch. button. disabled",
             Focus(new ElementDescription { Label = "Launch", Role = ElementRole.Button, Disabled = true }));
 
         // Disabled speaks even on silent roles.
@@ -171,7 +171,7 @@ public class AnnouncementComposerTests
     public void ReadOnly_SpokenForNonAdjustableControl()
     {
         // A real control that happens to be fixed keeps the cue.
-        Assert.Equal("Launch. button, read only",
+        Assert.Equal("Launch. button. read only",
             Focus(new ElementDescription { Label = "Launch", Role = ElementRole.Button, ReadOnly = true }));
     }
 
@@ -196,7 +196,7 @@ public class AnnouncementComposerTests
     [Fact]
     public void Tab_SelectedWithPosition()
     {
-        Assert.Equal("Hair. tab, selected. tab 1 of 4",
+        Assert.Equal("Hair. tab. selected. tab 1 of 4",
             Focus(new ElementDescription
             {
                 Label = "Hair",
@@ -220,16 +220,16 @@ public class AnnouncementComposerTests
             Hint = "Press Enter to select",
         };
 
-        Assert.Equal("Colonist. radio button, not selected. Press Enter to select. 2 of 5",
+        Assert.Equal("Colonist. radio button. not selected. Press Enter to select. 2 of 5",
             Focus(d));
 
-        // Position/hints gate independently of label/role+state — start from AllOn
-        // (not a bare default, now that label/hotkey/role+state/extras have their own
+        // Position/hints gate independently of label/role/state — start from AllOn
+        // (not a bare default, now that label/hotkey/role/state/extras have their own
         // suppress gates) and flip only the two under test.
         ComposeOptions terse = ComposeOptions.AllOn;
         terse.IncludePosition = false;
         terse.IncludeHints = false;
-        Assert.Equal("Colonist. radio button, not selected",
+        Assert.Equal("Colonist. radio button. not selected",
             AnnouncementComposer.ComposeFocus(d, Vocab, terse));
     }
 
@@ -273,7 +273,7 @@ public class AnnouncementComposerTests
     [Fact]
     public void ToggleGizmoShape_HotkeyCheckStatePositionAndTail()
     {
-        Assert.Equal("Hold open. Shift+H. checkbox, checked. Keeps the door open. 2 of 6",
+        Assert.Equal("Hold open. Shift+H. checkbox. checked. Keeps the door open. 2 of 6",
             Focus(new ElementDescription
             {
                 Label = "Hold open",
@@ -285,7 +285,7 @@ public class AnnouncementComposerTests
                 Extras = "Keeps the door open.",
             }));
 
-        Assert.Equal("Hold open. Shift+H. checkbox, not checked, disabled. Needs power. Keeps the door open. 2 of 6",
+        Assert.Equal("Hold open. Shift+H. checkbox. not checked, disabled. Needs power. Keeps the door open. 2 of 6",
             Focus(new ElementDescription
             {
                 Label = "Hold open",
@@ -327,7 +327,7 @@ public class AnnouncementComposerTests
         options.PartOrder = null;
 
         Assert.Equal(
-            "Allow fresh corpses. Alt+C. checkbox, checked. Includes rotten ones. 3 of 7",
+            "Allow fresh corpses. Alt+C. checkbox. checked. Includes rotten ones. 3 of 7",
             AnnouncementComposer.ComposeFocus(d, Vocab, options));
     }
 
@@ -365,7 +365,7 @@ public class AnnouncementComposerTests
         options.SuppressHotkey = true;
         options.SuppressExtras = true;
 
-        Assert.Equal("Allow fresh corpses. checkbox, checked",
+        Assert.Equal("Allow fresh corpses. checkbox. checked",
             AnnouncementComposer.ComposeFocus(d, Vocab, options));
     }
 
@@ -386,7 +386,8 @@ public class AnnouncementComposerTests
         var options = ComposeOptions.AllOn;
         options.SuppressLabel = true;
         options.SuppressHotkey = true;
-        options.SuppressRoleAndState = true;
+        options.SuppressRole = true;
+        options.SuppressState = true;
         options.SuppressExtras = true;
         options.IncludeLevels = false;
         options.IncludePosition = false;
@@ -407,7 +408,7 @@ public class AnnouncementComposerTests
     {
         // The dozen-plus call sites across the codebase that build a bare
         // default(ComposeOptions) and only set IncludePosition/IncludeHints/etc. must keep
-        // speaking labels, hotkeys, role+state, and extras exactly as before — the new
+        // speaking labels, hotkeys, role, state, and extras exactly as before — the new
         // Suppress* gates default false (opt-OUT), never opt-in, precisely so this holds.
         ComposeOptions options = default;
         options.IncludePosition = true;
@@ -425,7 +426,7 @@ public class AnnouncementComposerTests
             Extras = "Includes rotten ones",
         };
         Assert.Equal(
-            "Allow fresh corpses. Alt+C. checkbox, checked. Includes rotten ones. 3 of 7",
+            "Allow fresh corpses. Alt+C. checkbox. checked. Includes rotten ones. 3 of 7",
             AnnouncementComposer.ComposeFocus(d, Vocab, options));
     }
 

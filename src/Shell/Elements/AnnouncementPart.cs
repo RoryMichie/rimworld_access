@@ -9,7 +9,8 @@ namespace RimWorldAccess.Shell
     {
         Label,
         Hotkey,
-        RoleAndState,
+        Role,
+        State,
         Level,
         Position,
         Extras,
@@ -20,7 +21,7 @@ namespace RimWorldAccess.Shell
     public static class AnnouncementFormat
     {
         /// <summary>
-        /// Level → Label → Hotkey → Role+State → Extras → Hint → Position: the shipped
+        /// Level → Label → Hotkey → Role → State → Extras → Hint → Position: the shipped
         /// default <see cref="AnnouncementComposer.ComposeFocus"/> falls back to when the
         /// player has saved no order of their own, the order the Configure Spoken
         /// Announcements screen seeds its list from, and where a newly-added part lands
@@ -31,7 +32,8 @@ namespace RimWorldAccess.Shell
             AnnouncementPart.Level,
             AnnouncementPart.Label,
             AnnouncementPart.Hotkey,
-            AnnouncementPart.RoleAndState,
+            AnnouncementPart.Role,
+            AnnouncementPart.State,
             AnnouncementPart.Extras,
             AnnouncementPart.Hint,
             AnnouncementPart.Position,

@@ -19,7 +19,8 @@
        RimWorldAccess.AnnounceConfig.NameAlwaysOn below. -->
   <RimWorldAccess.AnnounceConfig.Part.Label>名称</RimWorldAccess.AnnounceConfig.Part.Label>
   <RimWorldAccess.AnnounceConfig.Part.Hotkey>快捷键</RimWorldAccess.AnnounceConfig.Part.Hotkey>
-  <RimWorldAccess.AnnounceConfig.Part.RoleAndState>控件类型和状态</RimWorldAccess.AnnounceConfig.Part.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Part.Role>控件类型</RimWorldAccess.AnnounceConfig.Part.Role>
+  <RimWorldAccess.AnnounceConfig.Part.State>控件状态</RimWorldAccess.AnnounceConfig.Part.State>
   <RimWorldAccess.AnnounceConfig.Part.Level>树形层级</RimWorldAccess.AnnounceConfig.Part.Level>
   <RimWorldAccess.AnnounceConfig.Part.Position>列表中的位置</RimWorldAccess.AnnounceConfig.Part.Position>
   <RimWorldAccess.AnnounceConfig.Part.Extras>描述和详情</RimWorldAccess.AnnounceConfig.Part.Extras>
@@ -27,7 +28,8 @@
 
   <RimWorldAccess.AnnounceConfig.Example.Label>例如: 允许新鲜尸体</RimWorldAccess.AnnounceConfig.Example.Label>
   <RimWorldAccess.AnnounceConfig.Example.Hotkey>例如: Alt+C</RimWorldAccess.AnnounceConfig.Example.Hotkey>
-  <RimWorldAccess.AnnounceConfig.Example.RoleAndState>例如: 复选框，已勾选</RimWorldAccess.AnnounceConfig.Example.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Example.Role>例如: 复选框</RimWorldAccess.AnnounceConfig.Example.Role>
+  <RimWorldAccess.AnnounceConfig.Example.State>例如: 已勾选</RimWorldAccess.AnnounceConfig.Example.State>
   <RimWorldAccess.AnnounceConfig.Example.Level>例如: 层级 2</RimWorldAccess.AnnounceConfig.Example.Level>
   <RimWorldAccess.AnnounceConfig.Example.Position>例如: 第 4 项，共 13 项</RimWorldAccess.AnnounceConfig.Example.Position>
   <RimWorldAccess.AnnounceConfig.Example.Extras>例如: 包含腐烂的尸体</RimWorldAccess.AnnounceConfig.Example.Extras>

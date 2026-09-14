@@ -6,9 +6,9 @@
     RimWorld Access settings surfaces (see RimWorldAccess_Core.xml's
     RimWorldAccess.Core.Settings.ConfigureAnnouncements.Button).
 
-    The seven part names/examples cover the seven parts the screen lists; the example
-    fragments show a translator exactly what that part sounds like in an announcement so they
-    can adapt the sample text to their own language's phrasing.
+    The part names/examples cover the parts the screen lists; the example fragments show a
+    translator exactly what that part sounds like in an announcement so they can adapt the
+    sample text to their own language's phrasing.
   -->
 
   <RimWorldAccess.AnnounceConfig.Title>Configure spoken announcements</RimWorldAccess.AnnounceConfig.Title>
@@ -19,7 +19,8 @@
        RimWorldAccess.AnnounceConfig.NameAlwaysOn below. -->
   <RimWorldAccess.AnnounceConfig.Part.Label>Name</RimWorldAccess.AnnounceConfig.Part.Label>
   <RimWorldAccess.AnnounceConfig.Part.Hotkey>Keyboard shortcut</RimWorldAccess.AnnounceConfig.Part.Hotkey>
-  <RimWorldAccess.AnnounceConfig.Part.RoleAndState>Control type and state</RimWorldAccess.AnnounceConfig.Part.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Part.Role>Control type</RimWorldAccess.AnnounceConfig.Part.Role>
+  <RimWorldAccess.AnnounceConfig.Part.State>Control state</RimWorldAccess.AnnounceConfig.Part.State>
   <RimWorldAccess.AnnounceConfig.Part.Level>Tree level</RimWorldAccess.AnnounceConfig.Part.Level>
   <RimWorldAccess.AnnounceConfig.Part.Position>Position in list</RimWorldAccess.AnnounceConfig.Part.Position>
   <RimWorldAccess.AnnounceConfig.Part.Extras>Description and details</RimWorldAccess.AnnounceConfig.Part.Extras>
@@ -27,7 +28,8 @@
 
   <RimWorldAccess.AnnounceConfig.Example.Label>for example: Allow fresh corpses</RimWorldAccess.AnnounceConfig.Example.Label>
   <RimWorldAccess.AnnounceConfig.Example.Hotkey>for example: Alt+C</RimWorldAccess.AnnounceConfig.Example.Hotkey>
-  <RimWorldAccess.AnnounceConfig.Example.RoleAndState>for example: checkbox, checked</RimWorldAccess.AnnounceConfig.Example.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Example.Role>for example: checkbox</RimWorldAccess.AnnounceConfig.Example.Role>
+  <RimWorldAccess.AnnounceConfig.Example.State>for example: checked</RimWorldAccess.AnnounceConfig.Example.State>
   <RimWorldAccess.AnnounceConfig.Example.Level>for example: level 2</RimWorldAccess.AnnounceConfig.Example.Level>
   <RimWorldAccess.AnnounceConfig.Example.Position>for example: 4 of 13</RimWorldAccess.AnnounceConfig.Example.Position>
   <RimWorldAccess.AnnounceConfig.Example.Extras>for example: Includes rotten ones</RimWorldAccess.AnnounceConfig.Example.Extras>

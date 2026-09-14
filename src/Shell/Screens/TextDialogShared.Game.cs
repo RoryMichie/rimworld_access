@@ -68,7 +68,8 @@ namespace RimWorldAccess.Shell
                 options.IncludeHints = AnnouncementFormatSession.IncludeHints;
                 // Label is never suppressed -- see SetPartEnabled's Label case.
                 options.SuppressHotkey = !AnnouncementFormatSession.IncludeHotkey;
-                options.SuppressRoleAndState = !AnnouncementFormatSession.IncludeRoleAndState;
+                options.SuppressRole = !AnnouncementFormatSession.IncludeRole;
+                options.SuppressState = !AnnouncementFormatSession.IncludeState;
                 options.SuppressExtras = !AnnouncementFormatSession.IncludeExtras;
                 options.PartOrder = AnnouncementFormatSession.PartOrder;
                 return options;
@@ -76,7 +77,8 @@ namespace RimWorldAccess.Shell
 
             options.IncludeHints = settings == null || settings.AnnounceInteractionHints;
             options.SuppressHotkey = settings != null && !settings.AnnounceHotkeyPart;
-            options.SuppressRoleAndState = settings != null && !settings.AnnounceRoleStatePart;
+            options.SuppressRole = settings != null && !settings.AnnounceRolePart;
+            options.SuppressState = settings != null && !settings.AnnounceStatePart;
             options.SuppressExtras = settings != null && !settings.AnnounceExtrasPart;
             options.PartOrder = AnnouncementPartOrderCache.Get(settings);
             return options;

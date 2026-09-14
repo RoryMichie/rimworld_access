@@ -98,7 +98,8 @@ namespace RimWorldAccess
         /// AnnounceLabelPart: the Name part can never be silenced, so it is composed unconditionally.
         /// </summary>
         public bool AnnounceHotkeyPart = true;
-        public bool AnnounceRoleStatePart = true;
+        public bool AnnounceRolePart = true;
+        public bool AnnounceStatePart = true;
         public bool AnnounceExtrasPart = true;
 
         /// <summary>Include beginner interaction hints ("Press Enter to select") in announcements.</summary>
@@ -193,7 +194,17 @@ namespace RimWorldAccess
             if (Scribe.mode == LoadSaveMode.LoadingVars && ShellBindingOverrideLines == null)
                 ShellBindingOverrideLines = new List<string>();
             Scribe_Values.Look(ref AnnounceHotkeyPart, "AnnounceHotkeyPart", true);
-            Scribe_Values.Look(ref AnnounceRoleStatePart, "AnnounceRoleStatePart", true);
+            // The combined type+state toggle was split into separate parts; seed both from the
+            // legacy value so a save that had silenced them stays silenced.
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                bool legacyRoleState = true;
+                Scribe_Values.Look(ref legacyRoleState, "AnnounceRoleStatePart", true);
+                AnnounceRolePart = legacyRoleState;
+                AnnounceStatePart = legacyRoleState;
+            }
+            Scribe_Values.Look(ref AnnounceRolePart, "AnnounceRolePart", AnnounceRolePart);
+            Scribe_Values.Look(ref AnnounceStatePart, "AnnounceStatePart", AnnounceStatePart);
             Scribe_Values.Look(ref AnnounceExtrasPart, "AnnounceExtrasPart", true);
             Scribe_Values.Look(ref AnnounceInteractionHints, "AnnounceInteractionHints", true);
             Scribe_Values.Look(ref HoverSpeech, "HoverSpeech", false);

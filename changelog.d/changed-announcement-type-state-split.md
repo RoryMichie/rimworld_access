@@ -1,0 +1,1 @@
+Split the "control type and state" announcement setting into two separate parts, so you can now turn the control type (like "checkbox") and its state (like "checked") on or off, and reorder them, independently in Configure Spoken Announcements.

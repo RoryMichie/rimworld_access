@@ -42,6 +42,16 @@ namespace RimWorldAccess.Shell
             var result = new List<AnnouncementPart>(AnnouncementFormat.DefaultOrder.Length);
             for (int i = 0; i < raw.Count; i++)
             {
+                // Legacy combined part: expand in place so a saved order keeps type and state
+                // where RoleAndState sat rather than dropping both to the end.
+                if (raw[i] == "RoleAndState")
+                {
+                    if (!result.Contains(AnnouncementPart.Role))
+                        result.Add(AnnouncementPart.Role);
+                    if (!result.Contains(AnnouncementPart.State))
+                        result.Add(AnnouncementPart.State);
+                    continue;
+                }
                 AnnouncementPart part;
                 if (Enum.TryParse(raw[i], out part) && !result.Contains(part))
                 {
@@ -74,7 +84,8 @@ namespace RimWorldAccess.Shell
 
         public static bool IncludeLabel;
         public static bool IncludeHotkey;
-        public static bool IncludeRoleAndState;
+        public static bool IncludeRole;
+        public static bool IncludeState;
         public static bool IncludeExtras;
         public static bool IncludePosition;
         public static bool IncludeLevels;
@@ -110,7 +121,8 @@ namespace RimWorldAccess.Shell
             // what is focused. Forcing it here also heals a save that has it unchecked.
             IncludeLabel = true;
             IncludeHotkey = settings == null || settings.AnnounceHotkeyPart;
-            IncludeRoleAndState = settings == null || settings.AnnounceRoleStatePart;
+            IncludeRole = settings == null || settings.AnnounceRolePart;
+            IncludeState = settings == null || settings.AnnounceStatePart;
             IncludeExtras = settings == null || settings.AnnounceExtrasPart;
             IncludePosition = settings == null || settings.AnnouncePosition;
             IncludeLevels = settings == null || settings.AnnounceLevels;
@@ -140,7 +152,8 @@ namespace RimWorldAccess.Shell
                 return;
             }
             settings.AnnounceHotkeyPart = IncludeHotkey;
-            settings.AnnounceRoleStatePart = IncludeRoleAndState;
+            settings.AnnounceRolePart = IncludeRole;
+            settings.AnnounceStatePart = IncludeState;
             settings.AnnounceExtrasPart = IncludeExtras;
             settings.AnnouncePosition = IncludePosition;
             settings.AnnounceLevels = IncludeLevels;
@@ -170,7 +183,8 @@ namespace RimWorldAccess.Shell
             {
                 case AnnouncementPart.Label: return IncludeLabel;
                 case AnnouncementPart.Hotkey: return IncludeHotkey;
-                case AnnouncementPart.RoleAndState: return IncludeRoleAndState;
+                case AnnouncementPart.Role: return IncludeRole;
+                case AnnouncementPart.State: return IncludeState;
                 case AnnouncementPart.Level: return IncludeLevels;
                 case AnnouncementPart.Position: return IncludePosition;
                 case AnnouncementPart.Extras: return IncludeExtras;
@@ -186,7 +200,8 @@ namespace RimWorldAccess.Shell
                 // Locked on; the UI never offers disabling it.
                 case AnnouncementPart.Label: break;
                 case AnnouncementPart.Hotkey: IncludeHotkey = enabled; break;
-                case AnnouncementPart.RoleAndState: IncludeRoleAndState = enabled; break;
+                case AnnouncementPart.Role: IncludeRole = enabled; break;
+                case AnnouncementPart.State: IncludeState = enabled; break;
                 case AnnouncementPart.Level: IncludeLevels = enabled; break;
                 case AnnouncementPart.Position: IncludePosition = enabled; break;
                 case AnnouncementPart.Extras: IncludeExtras = enabled; break;
@@ -285,7 +300,8 @@ namespace RimWorldAccess.Shell
             {
                 case AnnouncementPart.Label: return (string)"RimWorldAccess.AnnounceConfig.Part.Label".Translate();
                 case AnnouncementPart.Hotkey: return (string)"RimWorldAccess.AnnounceConfig.Part.Hotkey".Translate();
-                case AnnouncementPart.RoleAndState: return (string)"RimWorldAccess.AnnounceConfig.Part.RoleAndState".Translate();
+                case AnnouncementPart.Role: return (string)"RimWorldAccess.AnnounceConfig.Part.Role".Translate();
+                case AnnouncementPart.State: return (string)"RimWorldAccess.AnnounceConfig.Part.State".Translate();
                 case AnnouncementPart.Level: return (string)"RimWorldAccess.AnnounceConfig.Part.Level".Translate();
                 case AnnouncementPart.Position: return (string)"RimWorldAccess.AnnounceConfig.Part.Position".Translate();
                 case AnnouncementPart.Extras: return (string)"RimWorldAccess.AnnounceConfig.Part.Extras".Translate();
@@ -300,7 +316,8 @@ namespace RimWorldAccess.Shell
             {
                 case AnnouncementPart.Label: return (string)"RimWorldAccess.AnnounceConfig.Example.Label".Translate();
                 case AnnouncementPart.Hotkey: return (string)"RimWorldAccess.AnnounceConfig.Example.Hotkey".Translate();
-                case AnnouncementPart.RoleAndState: return (string)"RimWorldAccess.AnnounceConfig.Example.RoleAndState".Translate();
+                case AnnouncementPart.Role: return (string)"RimWorldAccess.AnnounceConfig.Example.Role".Translate();
+                case AnnouncementPart.State: return (string)"RimWorldAccess.AnnounceConfig.Example.State".Translate();
                 case AnnouncementPart.Level: return (string)"RimWorldAccess.AnnounceConfig.Example.Level".Translate();
                 case AnnouncementPart.Position: return (string)"RimWorldAccess.AnnounceConfig.Example.Position".Translate();
                 case AnnouncementPart.Extras: return (string)"RimWorldAccess.AnnounceConfig.Example.Extras".Translate();

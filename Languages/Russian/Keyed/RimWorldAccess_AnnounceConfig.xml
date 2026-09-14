@@ -19,7 +19,8 @@
        RimWorldAccess.AnnounceConfig.NameAlwaysOn below. -->
   <RimWorldAccess.AnnounceConfig.Part.Label>Имя</RimWorldAccess.AnnounceConfig.Part.Label>
   <RimWorldAccess.AnnounceConfig.Part.Hotkey>Горячая клавиша</RimWorldAccess.AnnounceConfig.Part.Hotkey>
-  <RimWorldAccess.AnnounceConfig.Part.RoleAndState>Тип элемента и состояние</RimWorldAccess.AnnounceConfig.Part.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Part.Role>Тип элемента</RimWorldAccess.AnnounceConfig.Part.Role>
+  <RimWorldAccess.AnnounceConfig.Part.State>Состояние элемента</RimWorldAccess.AnnounceConfig.Part.State>
   <RimWorldAccess.AnnounceConfig.Part.Level>Уровень вложенности</RimWorldAccess.AnnounceConfig.Part.Level>
   <RimWorldAccess.AnnounceConfig.Part.Position>Позиция в списке</RimWorldAccess.AnnounceConfig.Part.Position>
   <RimWorldAccess.AnnounceConfig.Part.Extras>Описание и подробности</RimWorldAccess.AnnounceConfig.Part.Extras>
@@ -27,7 +28,8 @@
 
   <RimWorldAccess.AnnounceConfig.Example.Label>например: Разрешить свежие трупы</RimWorldAccess.AnnounceConfig.Example.Label>
   <RimWorldAccess.AnnounceConfig.Example.Hotkey>например: Alt+C</RimWorldAccess.AnnounceConfig.Example.Hotkey>
-  <RimWorldAccess.AnnounceConfig.Example.RoleAndState>например: флажок, отмечен</RimWorldAccess.AnnounceConfig.Example.RoleAndState>
+  <RimWorldAccess.AnnounceConfig.Example.Role>например: флажок</RimWorldAccess.AnnounceConfig.Example.Role>
+  <RimWorldAccess.AnnounceConfig.Example.State>например: отмечено</RimWorldAccess.AnnounceConfig.Example.State>
   <RimWorldAccess.AnnounceConfig.Example.Level>например: уровень 2</RimWorldAccess.AnnounceConfig.Example.Level>
   <RimWorldAccess.AnnounceConfig.Example.Position>например: 4 из 13</RimWorldAccess.AnnounceConfig.Example.Position>
   <RimWorldAccess.AnnounceConfig.Example.Extras>например: Включая гнилые</RimWorldAccess.AnnounceConfig.Example.Extras>

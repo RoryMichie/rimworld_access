@@ -19,13 +19,14 @@ namespace RimWorldAccess.Shell
         public bool IncludeLevels;
 
         /// <summary>
-        /// Suppresses the Label/Hotkey/Role+State/Extras fragments respectively. Opt-OUT by
+        /// Suppresses the Label/Hotkey/Role/State/Extras fragments respectively. Opt-OUT by
         /// design: many call sites build a bare <c>default(ComposeOptions)</c>, and an opt-IN
         /// flag would mute their labels, hotkeys, and role/state.
         /// </summary>
         public bool SuppressLabel;
         public bool SuppressHotkey;
-        public bool SuppressRoleAndState;
+        public bool SuppressRole;
+        public bool SuppressState;
         public bool SuppressExtras;
 
         /// <summary>
@@ -44,7 +45,8 @@ namespace RimWorldAccess.Shell
                 o.IncludeLevels = true;
                 o.SuppressLabel = false;
                 o.SuppressHotkey = false;
-                o.SuppressRoleAndState = false;
+                o.SuppressRole = false;
+                o.SuppressState = false;
                 o.SuppressExtras = false;
                 o.PartOrder = null;
                 return o;
@@ -54,10 +56,10 @@ namespace RimWorldAccess.Shell
 
     /// <summary>
     /// Renders an ElementDescription into speech. The one place announcement grammar lives:
-    /// default order Level → Label → Hotkey → Role+State → Extras → Hint → Position, hotkey
+    /// default order Level → Label → Hotkey → Role → State → Extras → Hint → Position, hotkey
     /// right after the label so users can act immediately, verbose material last so they can
-    /// stop listening. Fragments join with periods, role and state with a comma; never
-    /// newlines (screen readers pause too long on them).
+    /// stop listening. Fragments join with periods, the words within a state fragment with a
+    /// comma; never newlines (screen readers pause too long on them).
     /// PURE: words come from IShellVocabulary; no game APIs.
     /// </summary>
     public static class AnnouncementComposer
@@ -84,12 +86,20 @@ namespace RimWorldAccess.Shell
                         if (!options.SuppressHotkey && !string.IsNullOrEmpty(d.Hotkey))
                             fragments.Add(d.Hotkey);
                         break;
-                    case AnnouncementPart.RoleAndState:
-                        if (!options.SuppressRoleAndState)
+                    case AnnouncementPart.Role:
+                        if (!options.SuppressRole)
                         {
-                            string roleAndState = ComposeRoleAndState(d, v);
-                            if (roleAndState.Length > 0)
-                                fragments.Add(roleAndState);
+                            string role = v.RoleWord(d.Role);
+                            if (!string.IsNullOrEmpty(role))
+                                fragments.Add(role);
+                        }
+                        break;
+                    case AnnouncementPart.State:
+                        if (!options.SuppressState)
+                        {
+                            string state = ComposeState(d, v);
+                            if (state.Length > 0)
+                                fragments.Add(state);
                         }
                         break;
                     case AnnouncementPart.Level:
@@ -232,14 +242,10 @@ namespace RimWorldAccess.Shell
                 fragments.Add(d.Hint);
         }
 
-        /// <summary>"role, state" ("checkbox, checked"); either half may be absent.</summary>
-        private static string ComposeRoleAndState(ElementDescription d, IShellVocabulary v)
+        /// <summary>The state words ("checked", "40 percent", "disabled", "read only"), comma-joined; may be empty.</summary>
+        private static string ComposeState(ElementDescription d, IShellVocabulary v)
         {
             var words = new List<string>();
-
-            string roleWord = v.RoleWord(d.Role);
-            if (!string.IsNullOrEmpty(roleWord))
-                words.Add(roleWord);
 
             AppendStateWords(d, v, words);
 
