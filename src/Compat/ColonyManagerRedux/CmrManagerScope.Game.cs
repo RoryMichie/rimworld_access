@@ -38,6 +38,10 @@ namespace RimWorldAccess.Shell
         private object currentTab;
         private object jobTracker;
 
+        // Voices the Manage! commit: the button flips this job's IsManaged but says nothing itself.
+        private object manageWatchJob;
+        private bool manageWatchWasManaged;
+
         private readonly CmrRowEditor editor = new CmrRowEditor();
 
         /// <summary>
@@ -178,7 +182,9 @@ namespace RimWorldAccess.Shell
 
             // The detail pane belongs to the job the tab has selected. The selected job may be null:
             // providers with job-independent regions still answer, the rest return nothing.
-            detailRegions.AddRange(CmrJobDetails.Build(currentTab, CmrCompat.TabSelectedJob(currentTab)));
+            object selectedJob = CmrCompat.TabSelectedJob(currentTab);
+            detailRegions.AddRange(CmrJobDetails.Build(currentTab, selectedJob));
+            WatchManageCommit(selectedJob);
 
             capturedTwins.Clear();
             for (int r = 0; r < detailRegions.Count; r++)
@@ -192,6 +198,25 @@ namespace RimWorldAccess.Shell
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Watches IsManaged turn on for the same job across a refresh rather than reading the
+        /// button's translated label. Identity-keyed: Delete re-selects a fresh unmanaged job whose
+        /// off state must not read as a flip, and landing on an already-managed job stays silent.
+        /// </summary>
+        private void WatchManageCommit(object selectedJob)
+        {
+            bool managed = selectedJob != null && CmrCompat.JobIsManaged(selectedJob);
+            if (selectedJob != null
+                && ReferenceEquals(selectedJob, manageWatchJob)
+                && !manageWatchWasManaged
+                && managed)
+            {
+                TolkHelper.SpeakData("RimWorldAccess.Cmr.NowManaged".Translate().ToString());
+            }
+            manageWatchJob = selectedJob;
+            manageWatchWasManaged = managed;
         }
 
         /// <summary>

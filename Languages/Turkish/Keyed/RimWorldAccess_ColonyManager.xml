@@ -28,6 +28,10 @@
   <RimWorldAccess.Cmr.NotManaged>Yönetilmiyor</RimWorldAccess.Cmr.NotManaged>
   <RimWorldAccess.Cmr.Active>Etkin</RimWorldAccess.Cmr.Active>
 
+  <!-- Spoken when the Manage! toolbar button commits a job to the manager, the
+       moment its state turns from "Not managed" to managed. -->
+  <RimWorldAccess.Cmr.NowManaged>Artık yönetiliyor</RimWorldAccess.Cmr.NowManaged>
+
   <!-- The clock zone of a job row: how long since the manager last worked the
        job, and how often it is due to. {0} = a period ("2 days") for the
        first, the mod's own interval label ("daily") for the second. -->
