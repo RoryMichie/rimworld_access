@@ -11,9 +11,13 @@ namespace RimWorldAccess
     {
         public string Version { get; }
 
-        public Announcement(string version)
+        /// <summary>Read-tracking token; defaults to Version. A distinct value re-issues an announcement whose Version installs already recorded.</summary>
+        public string ReadKey { get; }
+
+        public Announcement(string version, string readKey = null)
         {
             Version = version;
+            ReadKey = readKey ?? version;
         }
 
         /// <summary>The Keyed message key for this announcement's body text.</summary>
@@ -42,7 +46,9 @@ namespace RimWorldAccess
         public static readonly IReadOnlyList<Announcement> Announcements = new List<Announcement>
         {
             // OLDEST FIRST — newest is always last. Append a new entry when cutting a release.
-            new Announcement("2.0.0"),
+            // Distinct read key: the beta recorded a placeholder under "2.0.0", so this first real
+            // announcement uses an unrecorded token to still surface on those installs.
+            new Announcement("2.0.0", readKey: "2.0.0-launch"),
         };
     }
 }

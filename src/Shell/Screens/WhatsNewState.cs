@@ -126,7 +126,7 @@ namespace RimWorldAccess
             currentIndex = Mathf.Clamp(index, 0, Catalog.Count - 1);
             Announcement announcement = Catalog[currentIndex];
             lines = BuildLines(announcement);
-            MarkRead(announcement.Version);
+            MarkRead(announcement.ReadKey);
         }
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace RimWorldAccess
         {
             for (int i = 0; i < Catalog.Count; i++)
             {
-                if (IsUnread(Catalog[i].Version))
+                if (IsUnread(Catalog[i].ReadKey))
                     return i;
             }
             return -1;
@@ -154,7 +154,7 @@ namespace RimWorldAccess
 
         public static int UnreadCount()
         {
-            return Catalog.Count(a => IsUnread(a.Version));
+            return Catalog.Count(a => IsUnread(a.ReadKey));
         }
 
         public static void OpenChangelog()
@@ -189,9 +189,9 @@ namespace RimWorldAccess
                 bool changed = false;
                 foreach (Announcement a in Catalog)
                 {
-                    if (!settings.ReadAnnouncementVersions.Contains(a.Version))
+                    if (!settings.ReadAnnouncementVersions.Contains(a.ReadKey))
                     {
-                        settings.ReadAnnouncementVersions.Add(a.Version);
+                        settings.ReadAnnouncementVersions.Add(a.ReadKey);
                         changed = true;
                     }
                 }
@@ -205,23 +205,23 @@ namespace RimWorldAccess
             TolkHelper.Speak("RimWorldAccess.WhatsNew.AllMarkedRead".Loc());
         }
 
-        private static bool IsUnread(string version)
+        private static bool IsUnread(string readKey)
         {
             var settings = RimWorldAccessMod_Settings.Settings;
-            return settings != null && !settings.ReadAnnouncementVersions.Contains(version);
+            return settings != null && !settings.ReadAnnouncementVersions.Contains(readKey);
         }
 
-        private static bool AnyUnread() => Catalog.Any(a => IsUnread(a.Version));
+        private static bool AnyUnread() => Catalog.Any(a => IsUnread(a.ReadKey));
 
-        private static void MarkRead(string version)
+        private static void MarkRead(string readKey)
         {
             var settings = RimWorldAccessMod_Settings.Settings;
             if (settings == null)
                 return;
 
-            if (!settings.ReadAnnouncementVersions.Contains(version))
+            if (!settings.ReadAnnouncementVersions.Contains(readKey))
             {
-                settings.ReadAnnouncementVersions.Add(version);
+                settings.ReadAnnouncementVersions.Add(readKey);
                 settings.Write();
             }
         }

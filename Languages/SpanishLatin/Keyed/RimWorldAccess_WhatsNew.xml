@@ -22,14 +22,19 @@
   <RimWorldAccess.WhatsNew.Header>RimWorld Access {0}. Anuncio {1} de {2}.</RimWorldAccess.WhatsNew.Header>
   <RimWorldAccess.WhatsNew.HeaderSingle>RimWorld Access {0}.</RimWorldAccess.WhatsNew.HeaderSingle>
 
-  <!-- Per-version messages. Paragraphs separated by "\n".
-       DRAFT: this 2.0.0 welcome is a working draft; rewrite it in your own words before release,
-       then it (and any future announcements) get translated into the other languages. -->
-  <RimWorldAccess.WhatsNew.Message.2_0_0>¡Bienvenido a Novedades! Este mensaje aparece cada vez que RimWorld Access se actualiza, para contarte qué cambió.\n
-RimWorld Access ahora es la versión 2.0.0, el primer lanzamiento bajo una nueva administración. Gracias por jugar, y por ayudar a hacer que RimWorld sea jugable para personas ciegas y con baja visión.\n
-Para ver el registro de cambios completo y detallado, elige Abrir registro de cambios para leerlo en el sitio web.\n
+  <!-- Per-version messages. Paragraphs separated by "\n". -->
+  <RimWorldAccess.WhatsNew.Message.2_0_0>Bienvenido a la versión 2.0, y gracias por estar aquí. Esta es la actualización más grande que ha tenido RimWorld Access. Si te suscribiste a través de Steam Workshop y no estás en Discord, es probable que esto te parezca que salió de la nada; la gente de Discord vio cómo se fue armando a través de todos los parches más pequeños que llevó llegar hasta aquí. Para todos los demás, aquí va la versión corta de qué cambió.\n
+La versión 2.0 es una reconstrucción de RimWorld Access desde cero.\n
+Las pantallas ahora son mucho más consistentes que antes. Las mismas teclas y la misma gramática de anuncios se mantienen en el menú principal, la creación del mundo, cada pestaña, cada cuadro de diálogo y la mayoría de las pantallas de mods de terceros.\n
+También siempre puedes llegar a los botones de una pantalla. La barra de herramientas del juego se muestra en todas las pantallas, y Tab tarde o temprano te llevará hasta ella, así que ya no deberías quedarte sin saber qué tecla te hace avanzar.\n
+Los menús y cuadros de diálogo ahora son las ventanas reales del juego en lugar de copias invisibles, así que aparecen en pantalla exactamente como el juego las dibuja. Alguien que esté mirando puede ver dónde está tu cursor, y puede usar el mouse junto contigo.\n
+Algunos mods populares ahora tienen soporte dedicado, y los mods que no lo tienen quedan cubiertos por un lector que maneja la mayoría de las ventanas por su cuenta.\n
+También es nuevo: el texto que el juego solo muestra bajo el puntero del mouse ahora se lee en voz alta, el modo desarrollador es totalmente accesible aunque un poco tosco, hay cinco idiomas nuevos, y un modo de mouse opcional lee lo que sea que toque el puntero.\n
+Detrás de escena, reconstruir cómo funciona una pantalla pasó de tomar unos tres días a unos veinte minutos, así que de aquí en adelante las pantallas deberían mejorar mucho más rápido.\n
+Eso es solo el resumen. Para ver el registro de cambios completo y detallado, elige Abrir registro de cambios para leer todo en el sitio web.\n
+Una nota sobre este registro de cambios: por ahora solo está disponible en inglés. Si el inglés no es tu idioma, es posible que necesites usar una herramienta de traducción con IA para leer la versión completa. Traducir un registro de cambios tan grande a todos los idiomas es más de lo que puedo manejar por ahora. Pero cada actualización después de esta será mucho más pequeña, así que su contenido completo siempre estará aquí mismo, en estos anuncios, en tu propio idioma.\n
 Puedes volver a abrir esto en cualquier momento desde Novedades en el menú principal o el menú de pausa. Si prefieres que estos mensajes no aparezcan por sí solos, elige No mostrar esto de nuevo; de todas formas escucharás un aviso breve cuando el mod se actualice.\n
-Presiona Escape, o elige Cerrar, cuando hayas terminado. ¡Gracias de nuevo, y disfruta!</RimWorldAccess.WhatsNew.Message.2_0_0>
+Presiona Escape, o elige Cerrar, cuando hayas terminado. Gracias por jugar, y por ayudar a hacer que RimWorld sea jugable para personas ciegas y con baja visión. ¡Disfruta!</RimWorldAccess.WhatsNew.Message.2_0_0>
 
   <!-- Fallback message when a version has no message of its own. -->
   <RimWorldAccess.WhatsNew.Message.Default>RimWorld Access se ha actualizado. Elige Abrir registro de cambios para leer qué cambió en el sitio web.</RimWorldAccess.WhatsNew.Message.Default>
@@ -56,5 +61,6 @@ Presiona Escape, o elige Cerrar, cuando hayas terminado. ¡Gracias de nuevo, y d
   <!-- Menu items (main menu and in-game pause menu). -->
   <RimWorldAccess.WhatsNew.MenuItem.WhatsNew>Novedades</RimWorldAccess.WhatsNew.MenuItem.WhatsNew>
   <RimWorldAccess.WhatsNew.MenuItem.Website>Sitio web de RimWorld Access</RimWorldAccess.WhatsNew.MenuItem.Website>
+  <RimWorldAccess.WhatsNew.MenuItem.Discord>Discord de RimWorld Access</RimWorldAccess.WhatsNew.MenuItem.Discord>
 
 </LanguageData>

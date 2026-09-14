@@ -22,14 +22,19 @@
   <RimWorldAccess.WhatsNew.Header>RimWorld Access {0}. Seslendirme {1} / {2}.</RimWorldAccess.WhatsNew.Header>
   <RimWorldAccess.WhatsNew.HeaderSingle>RimWorld Access {0}.</RimWorldAccess.WhatsNew.HeaderSingle>
 
-  <!-- Per-version messages. Paragraphs separated by "\n".
-       DRAFT: this 2.0.0 welcome is a working draft; rewrite it in your own words before release,
-       then it (and any future announcements) get translated into the other languages. -->
-  <RimWorldAccess.WhatsNew.Message.2_0_0>Yenilikler'e hoş geldin! Bu mesaj, RimWorld Access her güncellendiğinde neyin değiştiğini sana anlatmak için görünür.\n
-RimWorld Access şu anda 2.0.0 sürümünde, yeni sahipliği altındaki ilk sürüm. Oynadığın için ve RimWorld'ü görme engelli ve az gören oyuncular için oynanabilir kılmaya yardım ettiğin için teşekkürler.\n
-Tam ve ayrıntılı değişiklik günlüğü için, web sitesinde okumak üzere 'Değişiklik günlüğünü aç' seçeneğini seç.\n
+  <!-- Per-version messages. Paragraphs separated by "\n". -->
+  <RimWorldAccess.WhatsNew.Message.2_0_0>2.0 sürümüne hoş geldin, burada olduğun için teşekkürler. Bu, RimWorld Access'in şimdiye kadarki en büyük güncellemesi. Moda Steam Workshop üzerinden abone olduysan ve Discord'da değilsen, bu güncelleme muhtemelen birdenbire ortaya çıkmış gibi hissettiriyordur; Discord'dakiler buraya gelene kadar atılan tüm küçük yamalar boyunca bunun nasıl şekillendiğini izledi. Geri kalan herkes için, değişenlerin kısa özeti burada.\n
+2.0 sürümü, RimWorld Access'in temelden yeniden inşasıdır.\n
+Ekranlar artık çok daha tutarlı. Aynı tuşlar ve aynı seslendirme mantığı; ana menüde, dünya oluşturmada, her sekmede, her iletişim kutusunda ve çoğu üçüncü taraf mod ekranında geçerli.\n
+Ayrıca bir ekranın düğmelerine her zaman ulaşabilirsin. Oyunun araç çubuğu her ekranda gösteriliyor ve Tab tuşu er ya da geç seni oraya götürüyor, böylece artık hangi tuşun seni ileri taşıyacağını merak edip takılıp kalmazsın.\n
+Menüler ve iletişim kutuları artık görünmez kopyalar yerine oyunun gerçek pencereleri, bu yüzden ekranda tam olarak oyunun çizdiği gibi görünüyorlar. Seni izleyen biri imlecinin nerede olduğunu görebilir ve fareyi seninle birlikte kullanabilir.\n
+Bazı popüler modlar artık özel destek alıyor; desteği olmayan modlar ise çoğu pencereyi kendi başına ele alabilen bir okuyucu tarafından kapsanıyor.\n
+Ayrıca yeni: oyunun yalnızca fare imlecinin altında gösterdiği metinler artık seslendiriliyor, geliştirici modu biraz hantal olsa da tamamen erişilebilir, beş yeni dil eklendi ve isteğe bağlı bir fare modu imlecin dokunduğu her şeyi okuyor.\n
+Perde arkasında, bir ekranın nasıl çalıştığını yeniden inşa etmek yaklaşık üç günden yaklaşık yirmi dakikaya indi, yani ekranlar bundan sonra çok daha hızlı iyileşecek.\n
+Bu yalnızca özeti. Tam ve ayrıntılı değişiklik günlüğü için, tamamını web sitesinde okumak üzere 'Değişiklik günlüğünü tarayıcıda aç' seçeneğini seç.\n
+Bu değişiklik günlüğüyle ilgili bir not: şimdilik yalnızca İngilizce olarak mevcut. İngilizce senin dilin değilse, tamamını okumak için bir yapay zeka çeviri aracı kullanman gerekebilir. Bu kadar büyük bir değişiklik günlüğünü her dile çevirmek şu anda gücümün yettiği bir iş değil. Ama bundan sonraki her güncelleme çok daha küçük olacak, bu yüzden tam içeriği her zaman kendi dilinde, tam burada bu seslendirmelerde yer alacak.\n
 Bunu istediğin zaman ana menüdeki veya duraklatma menüsündeki Yenilikler'den yeniden açabilirsin. Bunların kendiliğinden görünmesini istemiyorsan, 'Bunları bir daha gösterme' seçeneğini seç; mod güncellendiğinde yine de kısa bir bildirim duyacaksın.\n
-İşin bittiğinde Escape'e bas veya Kapat'ı seç. Tekrar teşekkürler, iyi oyunlar!</RimWorldAccess.WhatsNew.Message.2_0_0>
+İşin bittiğinde Escape'e bas veya Kapat'ı seç. Oynadığın için ve RimWorld'ü görme engelli ve az gören oyuncular için oynanabilir kılmaya yardım ettiğin için teşekkürler. İyi oyunlar!</RimWorldAccess.WhatsNew.Message.2_0_0>
 
   <!-- Fallback message when a version has no message of its own. -->
   <RimWorldAccess.WhatsNew.Message.Default>RimWorld Access güncellendi. Web sitesinde neyin değiştiğini okumak için 'Değişiklik günlüğünü aç' seçeneğini seç.</RimWorldAccess.WhatsNew.Message.Default>
@@ -56,5 +61,6 @@ Bunu istediğin zaman ana menüdeki veya duraklatma menüsündeki Yenilikler'den
   <!-- Menu items (main menu and in-game pause menu). -->
   <RimWorldAccess.WhatsNew.MenuItem.WhatsNew>Yenilikler</RimWorldAccess.WhatsNew.MenuItem.WhatsNew>
   <RimWorldAccess.WhatsNew.MenuItem.Website>RimWorld Access web sitesi</RimWorldAccess.WhatsNew.MenuItem.Website>
+  <RimWorldAccess.WhatsNew.MenuItem.Discord>RimWorld Access Discord</RimWorldAccess.WhatsNew.MenuItem.Discord>
 
 </LanguageData>

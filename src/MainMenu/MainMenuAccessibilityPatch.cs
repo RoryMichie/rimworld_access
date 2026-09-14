@@ -22,7 +22,7 @@ namespace RimWorldAccess
     /// - ListableOption_WebLink entries constructed with a url and no action get the
     ///   OpenURL fallback their own DrawOption applies on click (decompiled
     ///   Verse/ListableOption_WebLink.cs, null-action branch), so Enter works on them.
-    /// - The mod's What's New and Website items are prepended to the links column.
+    /// - The mod's What's New, Website and Discord items are prepended to the links column.
     ///
     /// The Playing pause-menu tab is PauseMenuScope's; this patch owns Entry only.
     /// </summary>
@@ -154,12 +154,14 @@ namespace RimWorldAccess
 
         private static List<ListableOption> TransformLinksColumn(List<ListableOption> source)
         {
-            var result = new List<ListableOption>(source.Count + 2)
+            var result = new List<ListableOption>(source.Count + 3)
             {
                 new ListableOption("RimWorldAccess.WhatsNew.MenuItem.WhatsNew".Translate(),
                     delegate { WhatsNewState.Open(); }),
                 new ListableOption("RimWorldAccess.WhatsNew.MenuItem.Website".Translate(),
-                    delegate { Application.OpenURL("https://rimworldaccess.com"); })
+                    delegate { Application.OpenURL("https://rimworldaccess.com"); }),
+                new ListableOption("RimWorldAccess.WhatsNew.MenuItem.Discord".Translate(),
+                    delegate { Application.OpenURL("https://discord.rimworldaccess.com"); })
             };
 
             foreach (ListableOption option in source)

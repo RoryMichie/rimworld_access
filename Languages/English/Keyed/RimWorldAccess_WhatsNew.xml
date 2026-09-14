@@ -22,14 +22,18 @@
   <RimWorldAccess.WhatsNew.Header>RimWorld Access {0}. Announcement {1} of {2}.</RimWorldAccess.WhatsNew.Header>
   <RimWorldAccess.WhatsNew.HeaderSingle>RimWorld Access {0}.</RimWorldAccess.WhatsNew.HeaderSingle>
 
-  <!-- Per-version messages. Paragraphs separated by "\n".
-       DRAFT: this 2.0.0 welcome is a working draft; rewrite it in your own words before release,
-       then it (and any future announcements) get translated into the other languages. -->
-  <RimWorldAccess.WhatsNew.Message.2_0_0>Welcome to What's New! This message appears whenever RimWorld Access updates, to tell you what changed.\n
-RimWorld Access is now version 2.0.0, the first release under new ownership. Thank you for playing, and for helping make RimWorld playable for blind and visually impaired gamers.\n
-For the full, detailed changelog, choose Open Changelog to read it on the website.\n
-You can reopen this any time from What's New in the main menu or the pause menu. If you would rather not see these appear on their own, choose Don't show these again; you will still hear a brief notice when the mod updates.\n
-Press Escape, or choose Close, when you are done. Thanks again, and enjoy!</RimWorldAccess.WhatsNew.Message.2_0_0>
+  <!-- Per-version messages. Paragraphs separated by "\n". -->
+  <RimWorldAccess.WhatsNew.Message.2_0_0>Welcome to version 2.0, and thank you for being here. This is the largest update RimWorld Access has ever had. If you subscribed through the Steam Workshop and you are not on the Discord, this probably feels like it appeared out of nowhere; the folks on the Discord watched it come together through all the smaller patches it took to get here. For everyone else, here is the short version of what changed.\n
+Version 2.0 is a rebuild of RimWorld Access from the ground up.\n
+Screens are far more consistent than they were. The same keys and the same announcement grammar carry across the main menu, world creation, every tab, every dialog, and most third-party mod screens.\n
+You can also always reach a screen's buttons. The game's toolbar is shown on every screen and Tab will eventually carry you to it, so you should no longer get stuck wondering which key moves you forward.\n
+Menus and dialogs are now the game's real windows instead of invisible copies, so they appear on screen exactly as the game draws them. Someone watching can see where your cursor is, and can use the mouse alongside you.\n
+Some popular mods now have dedicated support, and mods without it are covered by a reader that handles most windows on its own.\n
+Also new: text the game only shows under the mouse pointer is now spoken, developer mode is fully accessible if a little clunky, there are five new languages, and an optional mouse mode reads whatever the pointer touches.\n
+Behind the scenes, rebuilding how one screen works went from about three days to about twenty minutes, so screens should improve a lot faster from here.\n
+That is only the summary. For the full, detailed changelog, choose Open Changelog to read the whole thing on the website.\n
+You can reopen this any time from What's New in the main menu or the pause menu. If you would rather not see these pop up on their own, choose Don't show these again; you will still hear a brief notice whenever the mod updates.\n
+Press Escape, or choose Close, when you are done. Thank you for playing, and for helping make RimWorld playable for blind and visually impaired gamers. Enjoy!</RimWorldAccess.WhatsNew.Message.2_0_0>
 
   <!-- Fallback message when a version has no message of its own. -->
   <RimWorldAccess.WhatsNew.Message.Default>RimWorld Access has been updated. Choose Open Changelog to read what changed on the website.</RimWorldAccess.WhatsNew.Message.Default>
@@ -56,5 +60,6 @@ Press Escape, or choose Close, when you are done. Thanks again, and enjoy!</RimW
   <!-- Menu items (main menu and in-game pause menu). -->
   <RimWorldAccess.WhatsNew.MenuItem.WhatsNew>What's New</RimWorldAccess.WhatsNew.MenuItem.WhatsNew>
   <RimWorldAccess.WhatsNew.MenuItem.Website>RimWorld Access website</RimWorldAccess.WhatsNew.MenuItem.Website>
+  <RimWorldAccess.WhatsNew.MenuItem.Discord>RimWorld Access Discord</RimWorldAccess.WhatsNew.MenuItem.Discord>
 
 </LanguageData>

@@ -22,14 +22,19 @@
   <RimWorldAccess.WhatsNew.Header>RimWorld Access {0}. Anúncio {1} de {2}.</RimWorldAccess.WhatsNew.Header>
   <RimWorldAccess.WhatsNew.HeaderSingle>RimWorld Access {0}.</RimWorldAccess.WhatsNew.HeaderSingle>
 
-  <!-- Per-version messages. Paragraphs separated by "\n".
-       DRAFT: this 2.0.0 welcome is a working draft; rewrite it in your own words before release,
-       then it (and any future announcements) get translated into the other languages. -->
-  <RimWorldAccess.WhatsNew.Message.2_0_0>Boas-vindas a Novidades! Esta mensagem aparece sempre que o RimWorld Access é actualizado, para contar o que mudou.\n
-O RimWorld Access está agora na versão 2.0.0, o primeiro lançamento sob nova administração. Obrigado por jogar, e por ajudar a tornar o RimWorld jogável para jogadores cegos e com baixa visão.\n
-Para o changelog completo e detalhado, escolhe Abrir changelog para o leres no site.\n
-Podes reabrir isto a qualquer momento em Novidades, no menu principal ou no menu de pausa. Se preferires não ver essas mensagens a aparecerem por conta própria, escolhe Não mostrar novamente; ainda ouvirás um breve aviso quando o mod for actualizado.\n
-Pressiona Esc, ou escolhe Fechar, quando terminares. Obrigado novamente, e diverte-te!</RimWorldAccess.WhatsNew.Message.2_0_0>
+  <!-- Per-version messages. Paragraphs separated by "\n". -->
+  <RimWorldAccess.WhatsNew.Message.2_0_0>Boas-vindas à versão 2.0, e obrigado por estares aqui. Esta é a maior actualização que o RimWorld Access alguma vez teve. Se subscreveste através da Steam Workshop e não estás no Discord, isto provavelmente parece ter surgido do nada; o pessoal do Discord viu tudo a ganhar forma ao longo de todas as actualizações mais pequenas que foram precisas até chegar aqui. Para todos os outros, aqui fica a versão resumida do que mudou.\n
+A versão 2.0 é uma reconstrução do RimWorld Access desde a base.\n
+Os ecrãs estão muito mais consistentes do que estavam. As mesmas teclas e a mesma gramática de anúncios aplicam-se ao menu principal, à criação do mundo, a cada aba, a cada diálogo, e à maioria dos ecrãs de mods de terceiros.\n
+Consegues também chegar sempre aos botões de um ecrã. A barra de ferramentas do jogo é mostrada em todos os ecrãs e o Tab acaba sempre por te levar até lá, por isso já não deverás ficar preso sem saberes que tecla te faz avançar.\n
+Os menus e os diálogos são agora janelas reais do jogo, em vez de cópias invisíveis, por isso aparecem no ecrã exactamente como o jogo os desenha. Quem estiver a ver consegue saber onde está o teu cursor, e pode usar o rato ao mesmo tempo que tu.\n
+Alguns mods populares têm agora suporte dedicado, e os mods sem esse suporte são cobertos por um leitor que trata da maioria das janelas por conta própria.\n
+Também novo: o texto que o jogo só mostra sob o ponteiro do rato passa agora a ser falado, o modo de programador está totalmente acessível ainda que um pouco desajeitado, há cinco novos idiomas, e um modo de rato opcional lê o que quer que o ponteiro toque.\n
+Nos bastidores, reconstruir o funcionamento de um ecrã passou de cerca de três dias para cerca de vinte minutos, por isso os ecrãs deverão melhorar muito mais depressa a partir daqui.\n
+Isto é só o resumo. Para o changelog completo e detalhado, escolhe Abrir changelog para leres tudo no site.\n
+Uma nota sobre este changelog: por agora, só está disponível em inglês. Se o inglês não for o teu idioma, poderás precisar de uma ferramenta de tradução por IA para leres a versão completa. Traduzir um changelog deste tamanho para todos os idiomas é mais do que consigo gerir neste momento. Mas todas as actualizações a seguir a esta serão muito mais pequenas, por isso o conteúdo completo estará sempre aqui, nestes anúncios, no teu próprio idioma.\n
+Podes reabrir isto a qualquer momento em Novidades, no menu principal ou no menu de pausa. Se preferires não ver isto a aparecer por conta própria, escolhe Não mostrar novamente; ainda assim ouvirás um breve aviso sempre que o mod for actualizado.\n
+Pressiona Esc, ou escolhe Fechar, quando terminares. Obrigado por jogares, e por ajudares a tornar o RimWorld jogável para jogadores cegos e com baixa visão. Diverte-te!</RimWorldAccess.WhatsNew.Message.2_0_0>
 
   <!-- Fallback message when a version has no message of its own. -->
   <RimWorldAccess.WhatsNew.Message.Default>O RimWorld Access foi actualizado. Escolhe Abrir changelog para leres o que mudou no site.</RimWorldAccess.WhatsNew.Message.Default>
@@ -56,5 +61,6 @@ Pressiona Esc, ou escolhe Fechar, quando terminares. Obrigado novamente, e diver
   <!-- Menu items (main menu and in-game pause menu). -->
   <RimWorldAccess.WhatsNew.MenuItem.WhatsNew>Novidades</RimWorldAccess.WhatsNew.MenuItem.WhatsNew>
   <RimWorldAccess.WhatsNew.MenuItem.Website>Site do RimWorld Access</RimWorldAccess.WhatsNew.MenuItem.Website>
+  <RimWorldAccess.WhatsNew.MenuItem.Discord>Discord do RimWorld Access</RimWorldAccess.WhatsNew.MenuItem.Discord>
 
 </LanguageData>
