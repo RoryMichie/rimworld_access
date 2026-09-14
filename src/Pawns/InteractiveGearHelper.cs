@@ -53,27 +53,7 @@ namespace RimWorldAccess
 
             private string GetItemLabel(Thing thing)
             {
-                var sb = new StringBuilder();
-                sb.Append(thing.LabelCap.StripTags());
-
-                var qualityComp = thing.TryGetComp<CompQuality>();
-                if (qualityComp != null)
-                {
-                    sb.Append($" ({qualityComp.Quality})");
-                }
-
-                if (thing.def.useHitPoints && thing.HitPoints < thing.MaxHitPoints)
-                {
-                    float healthPercent = (float)thing.HitPoints / thing.MaxHitPoints;
-                    sb.Append($" ({healthPercent:P0} HP)");
-                }
-
-                if (thing.stackCount > 1)
-                {
-                    sb.Append($" x{thing.stackCount}");
-                }
-
-                return sb.ToString();
+                return ItemLabelHelper.LabelWithCondition(thing).StripTags();
             }
         }
 

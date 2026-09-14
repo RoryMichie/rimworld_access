@@ -63,7 +63,7 @@ namespace RimWorldAccess
 
         private static string DescribeThing(Thing thing)
         {
-            string label = thing.LabelCap;
+            string label = ItemLabelHelper.LabelWithCondition(thing);
             if (string.IsNullOrEmpty(label))
                 return null;
             if (thing.Spawned && thing.Map != null)
