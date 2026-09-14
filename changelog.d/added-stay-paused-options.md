@@ -1,1 +1,0 @@
-Added options to keep the game paused when it matters most: new games now start paused and quiet, opening the research screen from a finished-research popup stays paused, and the game stays paused after you close a trade. Each one can be turned off in the RimWorld Access settings.

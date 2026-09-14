@@ -1,1 +1,0 @@
-A lesson in the learning helper no longer marks itself finished and drops off the list the moment you reach its last line. You can read back through it, or move to its Mark as Learned button first; it only leaves the active list once you step back to the lesson list.

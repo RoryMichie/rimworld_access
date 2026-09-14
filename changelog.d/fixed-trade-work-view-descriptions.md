@@ -1,1 +1,0 @@
-Rewrote the Default Trade View and Default Work Menu View setting descriptions to be clearer, and fixed the Classic trade view description that wrongly said Tab moves between the lists (it is the left and right arrows). Each view's description is now also read aloud when you open the picker to choose one.

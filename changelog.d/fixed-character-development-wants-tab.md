@@ -1,1 +1,0 @@
-Character Development's Wants inspect tab is now read properly. Its character points bar used to be announced as three bare numbers, and the wants and quirks arrived as a loose run of text. Every want and every quirk is now its own entry, carrying its description and its reward, with actions to reroll a want, dismiss it, add quirks, or remove one.

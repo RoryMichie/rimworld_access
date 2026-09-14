@@ -1,1 +1,0 @@
-A slider whose ends are labelled with its own minimum and maximum now reads as a slider with a value, instead of reading those two end labels as its name and its setting. Progression: Education's semester goal slider announced "1,000 xp, slider, 100,000 xp" no matter where it was set, which made the experience target look like something that could not be changed at all.

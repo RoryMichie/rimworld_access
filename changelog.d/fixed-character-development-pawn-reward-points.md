@@ -1,1 +1,0 @@
-Character Development's Characters tab now follows the mod's per-pawn reward points setting, so rewards no longer announce themselves as unavailable, each character's own points are spoken, and characters holding points with no wants are listed.

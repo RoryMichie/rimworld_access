@@ -1,1 +1,0 @@
-Arrowing down onto the buttons at the bottom of a reader screen, such as a letter, a quest, or the learning helper, no longer plays the tab-switch sound or announces a new section. The buttons now read as a continuation of the text above them, so the whole thing feels like one strip. Tab still treats them as their own section where a screen offers that.

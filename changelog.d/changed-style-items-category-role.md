@@ -1,1 +1,0 @@
-The ideoligion appearance editor now behaves like every other tree in the mod. Category rows (like Minimal or Punk) announce as expandable tree items and individual styles as combo boxes, Left on a style collapses its category, and the tree respects your submenu navigation setting.
