@@ -2,7 +2,7 @@ RimWorld Access makes RimWorld playable for blind and visually impaired gamers. 
 
 For installation instructions and more information, visit the mod's website: [url=https://rimworldaccess.com]rimworldaccess.com[/url]
 
-The source code is on GitHub: [url=https://github.com/aaronr7734/rimworld_access]github.com/aaronr7734/rimworld_access[/url]
+The source code can be found on GitHub: [url=https://github.com/aaronr7734/rimworld_access]github.com/aaronr7734/rimworld_access[/url]
 
 [b]Credits[/b]
 
