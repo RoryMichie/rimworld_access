@@ -46,8 +46,6 @@ namespace RimWorldAccess
             {
                 TolkHelper.Speak("RimWorldAccess.Building.Preview.FirstPoint".Loc(cell.x, cell.z));
             }
-            if (!string.IsNullOrEmpty(context))
-                ModLogger.Dev($"{context}: First point set at {cell}");
         }
 
         public void SetSecondCorner(IntVec3 cell, string context = "", bool silent = false, string extraInfo = null)
@@ -76,8 +74,6 @@ namespace RimWorldAccess
 
                 TolkHelper.SpeakData(announcement);
             }
-            if (!string.IsNullOrEmpty(context))
-                ModLogger.Dev($"{context}: Second point at {cell}. {previewCells.Count} cells");
         }
 
         /// <summary>
@@ -116,8 +112,6 @@ namespace RimWorldAccess
             string sizeText = ShapeHelper.FormatShapeSize(confirmedCells);
 
             TolkHelper.Speak("RimWorldAccess.Building.Preview.SizeConfirmed".Loc(sizeText));
-            if (!string.IsNullOrEmpty(context))
-                ModLogger.Dev($"{context}: Confirmed {confirmedCells.Count} cells");
 
             // Reset for next selection
             Reset();

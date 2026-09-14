@@ -62,7 +62,6 @@ namespace RimWorldAccess
                 SoundDefOf.Checkbox_TurnedOn.PlayOneShotOnCamera();
             }
 
-            ModLogger.Dev($"Unforbid all: {unforbiddenCount} items unforbidden");
 
             // Freeing the starting items is the natural lead-in to building: the player now has
             // materials to work with and will want somewhere to store them. Teach the building

@@ -29,7 +29,6 @@ namespace RimWorldAccess
             }
 
             harmony.Patch(target, prefix: new HarmonyMethod(typeof(KauScannerKeyGuard), nameof(Prefix)));
-            ModLogger.Msg("Keyz' Allow Utilities compat: scanner key guard installed");
         }
 
         public static bool Prefix()

@@ -50,7 +50,6 @@ namespace RimWorldAccess
                 MainTabWindowLink.EnsureTabOpen(MainTabWindowLink.Architect);
             }
 
-            ModLogger.Dev("Opened architect tree menu");
         }
 
         /// <summary>
@@ -60,9 +59,6 @@ namespace RimWorldAccess
         {
             Designator designator = ArchitectTreeState.GetSelectedDesignator();
             DesignatorOptionsOpener.Open(designator);
-
-            if (designator != null)
-                ModLogger.Dev($"Opened right-click options for designator: {designator.LabelCap}");
         }
 
         /// <summary>
@@ -128,7 +124,6 @@ namespace RimWorldAccess
                 ArchitectState.EnterMaterialSelection(buildable, originalDesignator);
                 WindowlessFloatMenuState.Open(options, false, playOpenSound: false,
                     onClose: _ => vanillaOnClose?.Invoke());
-                ModLogger.Dev($"Opened harvested material menu for: {buildable.defName}");
                 return;
             }
 
@@ -154,7 +149,6 @@ namespace RimWorldAccess
 
             ArchitectState.EnterMaterialSelection(buildable, originalDesignator);
             WindowlessFloatMenuState.Open(legacy, false);
-            ModLogger.Dev($"Opened fallback material menu for: {buildable.defName}");
         }
 
         /// <summary>
@@ -188,7 +182,6 @@ namespace RimWorldAccess
         {
             ArchitectState.EnterPlacementMode(designator);
             string zoneName = designator.Label ?? "zone";
-            ModLogger.Dev($"Entered zone placement for {zoneName}");
         }
     }
 }

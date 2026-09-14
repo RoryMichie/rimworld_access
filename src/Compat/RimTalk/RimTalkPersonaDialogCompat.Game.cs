@@ -154,7 +154,6 @@ namespace RimWorldAccess.Shell
             // genuine opener, not a parity no-op.
             InspectNodeRegistry.RegisterCategoryExtender("Health", AddHealthOpenerRow);
 
-            Log.Message("[RimWorld Access] RimTalk compat: registered PersonaEditorWindow scope + bio/health openers");
         }
 
         private static void AddBioOpenerRow(InspectionTreeItem categoryItem, object obj)

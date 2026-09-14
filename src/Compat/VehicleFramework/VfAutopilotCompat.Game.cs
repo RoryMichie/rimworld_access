@@ -60,7 +60,6 @@ namespace RimWorldAccess
 
                 PatchJobReport(harmony, "Vehicles.JobGiver_GotoNearestHostile", nameof(AdvanceReportPostfix));
                 PatchJobReport(harmony, "Vehicles.JobGiver_RangedSupport", nameof(SupportReportPostfix));
-                ModLogger.Msg("Vehicle Framework compat: autopilot movement and gizmos registered");
             }
             catch (Exception ex)
             {

@@ -204,7 +204,6 @@ namespace RimWorldAccess
             // Announce menu opening with current crop
             TolkHelper.Speak("RimWorldAccess.Building.PlantSelect.OpenPrompt".Loc(currentPlantName));
 
-            ModLogger.Dev($"Opened plant selection menu with {availablePlants.Count} plants. Current: {currentPlantName}");
         }
 
         /// <summary>
@@ -248,7 +247,6 @@ namespace RimWorldAccess
             CheckAndWarnAboutPlant(plantDef);
 
             TolkHelper.Speak("RimWorldAccess.Building.PlantSelect.Selected".Loc(selected.displayText));
-            ModLogger.Dev($"Set plant to: {plantDef.label}");
 
             Close();
         }

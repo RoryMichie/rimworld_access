@@ -498,7 +498,6 @@ namespace RimWorldAccess.Shell
                 ScopeForWindow.Register(batchDirectorType, w => new PersonaDirectorBatchScope(w));
             }
 
-            Log.Message("[RimWorld Access] PersonaDirector compat registered.");
         }
 
 

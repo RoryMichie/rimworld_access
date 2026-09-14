@@ -239,8 +239,6 @@ namespace RimWorldAccess.Shell
                     });
                 }
                 InspectNodeRegistry.RegisterCategoryExtender("Character", AddMemoriesNode);
-                Log.Message("[RimWorld Access] RimTalk memory compat: registered Mind Stream"
-                    + (commonKnowledgeReady ? " + Common Knowledge" : "") + " + pawn Memories reader");
             }
         }
 

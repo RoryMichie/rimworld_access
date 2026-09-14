@@ -1,0 +1,1 @@
+The mod no longer floods the debug log. Startup now writes one summary line (screen reader backend, patch count, active compat modules) instead of a line per patch and per mod, and the architect, zone, and placement tools no longer trace every step into the log. Real problems still appear as warnings and errors.

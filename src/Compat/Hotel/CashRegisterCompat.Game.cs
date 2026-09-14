@@ -30,7 +30,6 @@ namespace RimWorldAccess
                 }
 
                 GizmoHandlerRegistry.Register(radiusGizmoType, new ModifyNumberGizmoHandler());
-                ModLogger.Msg("CashRegister compat: registered 1 gizmo handler");
             }
             catch (Exception ex)
             {

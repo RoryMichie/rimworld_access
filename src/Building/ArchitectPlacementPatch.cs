@@ -142,7 +142,6 @@ namespace RimWorldAccess
             {
                 if (Find.DesignatorManager?.SelectedDesignator == null)
                 {
-                    ModLogger.Dev("[ArchitectPlacementInputPatch] Detected stale placement state, cleaning up");
                     ShapePlacementState.Reset();
                     ArchitectState.Reset();
                 }
@@ -1202,7 +1201,6 @@ namespace RimWorldAccess
                     ? "RimWorldAccess.Building.ArchitectPlace.ZoneExpandedWithCells".Translate(zoneName, cellCount)
                     : "RimWorldAccess.Building.ArchitectPlace.ZoneCreatedWithCells".Translate(zoneName, cellCount);
                 TolkHelper.SpeakData(announcement);
-                ModLogger.Dev($"Zone placement executed: {zoneName} {(selectionResult.IsExpansion ? "expanded" : "created")} with {cellCount} cells");
             }
             catch (System.Exception ex)
             {
@@ -1238,7 +1236,6 @@ namespace RimWorldAccess
                 KeyBindingDefOf.TogglePause.KeyDownEvent)
             {
                 Event.current.Use();
-                ModLogger.Dev("Space key intercepted during architect placement mode");
                 return false;
             }
 

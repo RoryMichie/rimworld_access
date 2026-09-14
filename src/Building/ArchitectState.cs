@@ -89,7 +89,6 @@ namespace RimWorldAccess
                 ? "RimWorldAccess.Building.Paint.ModeBox".Translate()
                 : "RimWorldAccess.Building.Paint.ModeSingle".Translate();
             TolkHelper.SpeakData(modeName);
-            ModLogger.Dev($"Architect placement: Switched to {modeName}");
         }
 
         /// <summary>Enters category selection mode.</summary>
@@ -102,7 +101,6 @@ namespace RimWorldAccess
             selectedMaterial = null;
             selectedCells.Clear();
 
-            ModLogger.Dev("Entered architect category selection");
         }
 
         /// <summary>Enters tool selection mode for one category.</summary>
@@ -116,7 +114,6 @@ namespace RimWorldAccess
             selectedCells.Clear();
 
             TolkHelper.Speak("RimWorldAccess.Building.Architect.CategorySelected".Loc(category.LabelCap));
-            ModLogger.Dev($"Entered tool selection for category: {category.defName}");
         }
 
         /// <summary>Enters material selection mode for a buildable that requires stuff.</summary>
@@ -129,7 +126,6 @@ namespace RimWorldAccess
             selectedCells.Clear();
 
             TolkHelper.Speak("RimWorldAccess.Building.Architect.SelectMaterialFor".Loc(buildable.label));
-            ModLogger.Dev($"Entered material selection for: {buildable.defName}");
         }
 
         /// <summary>
@@ -157,7 +153,6 @@ namespace RimWorldAccess
             }
 
             string toolName = designator.Label;
-            ModLogger.Dev($"Entered placement mode with designator: {toolName}");
 
             // Taught once on first reaching placement mode; the session and knowledge guards keep
             // it quiet after.
@@ -208,7 +203,6 @@ namespace RimWorldAccess
 
             string announcement = GetRotationAnnouncementForDef(placeDesignator.PlacingDef, currentRotation);
             TolkHelper.SpeakData(announcement);
-            ModLogger.Dev($"Rotated building to: {currentRotation}");
         }
 
         /// <summary>The rotation announcement for any BuildableDef, shared by architect and gizmo placement.</summary>
@@ -468,7 +462,6 @@ namespace RimWorldAccess
 
                 string toolName = selectedDesignator.Label;
                 TolkHelper.Speak("RimWorldAccess.Building.Architect.PlacedOnCells".Loc(toolName, selectedCells.Count));
-                ModLogger.Dev($"Executed placement: {toolName} on {selectedCells.Count} cells");
             }
             catch (System.Exception ex)
             {
@@ -524,7 +517,6 @@ namespace RimWorldAccess
                 Find.Selector.ClearSelection();
             }
 
-            ModLogger.Dev("Architect state reset");
         }
     }
 }

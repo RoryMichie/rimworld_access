@@ -19,7 +19,6 @@ namespace RimWorldAccess
         private readonly string errorKey;
         private readonly Func<T, string> getLabel;
         private readonly Action<T, string> setLabel;
-        private readonly bool logSuccess;
 
         private T currentTarget;
         private string originalName;
@@ -29,21 +28,18 @@ namespace RimWorldAccess
         /// <param name="errorKey">Translation key for the commit-failure announcement.</param>
         /// <param name="getLabel">Reads the target's current display label.</param>
         /// <param name="setLabel">Writes the confirmed name back onto the target.</param>
-        /// <param name="logSuccess">Whether a successful rename also writes a Log.Message.</param>
         public SimpleRenameSession(
             string targetNoun,
             string labelKey,
             string errorKey,
             Func<T, string> getLabel,
-            Action<T, string> setLabel,
-            bool logSuccess = true)
+            Action<T, string> setLabel)
         {
             this.targetNoun = targetNoun;
             this.labelKey = labelKey;
             this.errorKey = errorKey;
             this.getLabel = getLabel;
             this.setLabel = setLabel;
-            this.logSuccess = logSuccess;
         }
 
         public bool IsActive => TextInputManager.Active == controller;
@@ -67,8 +63,6 @@ namespace RimWorldAccess
             {
                 setLabel(currentTarget, newName);
                 TolkHelper.Speak("RimWorldAccess.UI.Name.Renamed".Loc(newName), SpeechPriority.High);
-                if (logSuccess)
-                    ModLogger.Dev($"Renamed {targetNoun} from '{originalName}' to '{newName}'");
             }
             catch (Exception ex)
             {

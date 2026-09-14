@@ -249,7 +249,6 @@ namespace RimWorldAccess
             else
                 TolkHelper.SpeakData(announcement);
 
-            ModLogger.Dev($"[ShapePlacementState] Entered with shape {shape} for designator {designatorLabel}, viewingModeOnStack={fromViewingMode}");
         }
 
         /// <summary>
@@ -680,7 +679,6 @@ namespace RimWorldAccess
                         validCells = FilterCellsForExpansion(validCells, targetZone, map);
                         if (validCells.Count == 0)
                         {
-                            ModLogger.Dev("[ShapePlacementState] No cells adjacent to zone for expansion");
                             return null;
                         }
                     }
@@ -694,7 +692,6 @@ namespace RimWorldAccess
                             result.PendingValidCells.AddRange(validCells);
                             result.ObstacleCells.Clear(); // Clear obstacles since we're not placing yet
                             result.ObstacleCount = 0;
-                            ModLogger.Dev($"[ShapePlacementState] Shrink would delete entire zone {targetZone.label}, needs confirmation");
                             return result;
                         }
                     }
@@ -773,7 +770,6 @@ namespace RimWorldAccess
 
             if (result.Count < candidateCells.Count)
             {
-                ModLogger.Dev($"[ShapePlacementState] Filtered expansion from {candidateCells.Count} to {result.Count} cells (must be adjacent to zone)");
             }
 
             return result;
@@ -965,7 +961,6 @@ namespace RimWorldAccess
                     TolkHelper.SpeakData(announcement);
             }
 
-            ModLogger.Dev($"[ShapePlacementState] Placed {result.PlacedCount} designations, {result.ObstacleCount} obstacles");
         }
 
         /// <summary>
@@ -1017,7 +1012,6 @@ namespace RimWorldAccess
                     TolkHelper.Speak("RimWorldAccess.Building.Place.ZoneDeleted".Loc(zoneName), SpeechPriority.Normal);
                 }
 
-                ModLogger.Dev($"[ShapePlacementState] Confirmed deletion of zone {zoneName}");
             }
             catch (System.Exception ex)
             {
@@ -1047,7 +1041,6 @@ namespace RimWorldAccess
                     break;
             }
 
-            ModLogger.Dev($"[ShapePlacementState] Cancelled from phase {previousPhase}");
         }
 
         /// <summary>
@@ -1082,7 +1075,6 @@ namespace RimWorldAccess
             currentPhase = PlacementPhase.SettingFirstCorner;
             ClearCtrlAHistory();
 
-            ModLogger.Dev($"[ShapePlacementState] Cleared selection from phase {previousPhase}, staying in {savedShape} mode");
             return true;
         }
 
@@ -1097,7 +1089,6 @@ namespace RimWorldAccess
                 currentPhase = PlacementPhase.SettingSecondCorner;
                 ClearCtrlAHistory();
                 TolkHelper.Speak("RimWorldAccess.Building.Place.SecondPointRemoved".Loc());
-                ModLogger.Dev("[ShapePlacementState] Removed second point, back to SettingSecondCorner phase");
                 return true;
             }
 
@@ -1107,7 +1098,6 @@ namespace RimWorldAccess
                 currentPhase = PlacementPhase.SettingFirstCorner;
                 ClearCtrlAHistory();
                 TolkHelper.Speak("RimWorldAccess.Building.Place.FirstPointRemoved".Loc());
-                ModLogger.Dev("[ShapePlacementState] Removed first point, back to SettingFirstCorner phase");
                 return true;
             }
 
@@ -1136,7 +1126,6 @@ namespace RimWorldAccess
             ClearCtrlAHistory();
             PlacementHelpSpeech.Reset();
 
-            ModLogger.Dev("[ShapePlacementState] State reset");
         }
 
         #endregion

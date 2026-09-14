@@ -98,7 +98,6 @@ namespace RimWorldAccess.Shell
                 PawnColumnHandlerRegistry.Register(cullType, new CullColumnHandler(
                     jobGetterField, jobGetterInvoke, cullingStrategyActionProp,
                     isAlreadyCullingMethod, isAlreadyCulledMethod, translationKeyProp));
-                Log.Message("[RimWorld Access] CMR compat: Livestock Cull column handler registered.");
             }
             catch (Exception ex)
             {

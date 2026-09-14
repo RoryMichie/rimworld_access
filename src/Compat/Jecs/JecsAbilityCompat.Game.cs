@@ -117,8 +117,6 @@ namespace RimWorldAccess
 
                 RegisterHotkeyShiftGate(harmony);
 
-                ModLogger.Msg("JecsTools compat: registered ability cast gate, targeting " +
-                    "announcement, and hotkey shift gate");
             }
             catch (Exception ex)
             {

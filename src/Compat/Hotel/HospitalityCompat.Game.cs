@@ -100,7 +100,6 @@ namespace RimWorldAccess
                     registered++;
                 }
 
-                ModLogger.Msg($"Hospitality compat: registered {registered} gizmo handler(s)");
             }
             catch (Exception ex)
             {

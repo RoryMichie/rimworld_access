@@ -129,7 +129,6 @@ namespace RimWorldAccess
                 harmony.Patch(startMethod, postfix: new HarmonyMethod(typeof(VfWorldTargeterCompat), nameof(StartPostfix)));
                 harmony.Patch(stopMethod, postfix: new HarmonyMethod(typeof(VfWorldTargeterCompat), nameof(StopPostfix)));
 
-                Log.Message("[RimWorld Access] VF compat: registered world targeter keyboard support");
             }
             catch (Exception ex)
             {

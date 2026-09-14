@@ -62,7 +62,6 @@ namespace RimWorldAccess
                 return culture != null && !culture.IsFinished;
             });
 
-            Log.Message("[RimWorld Access] VFE Tribals compat: cornerstones scope registered");
         }
     }
 }

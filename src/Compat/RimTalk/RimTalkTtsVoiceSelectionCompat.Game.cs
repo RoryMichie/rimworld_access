@@ -116,7 +116,6 @@ namespace RimWorldAccess.Shell
                 return new RimTalkTtsVoiceSelectionScope(w);
             });
             PatchDrawPass();
-            Log.Message("[RimWorld Access] RimTalk TTS compat: registered VoiceSelectionWindow scope");
         }
 
         private static void PatchDrawPass()

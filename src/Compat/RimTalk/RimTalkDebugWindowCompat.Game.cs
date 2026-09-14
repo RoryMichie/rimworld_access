@@ -210,7 +210,6 @@ namespace RimWorldAccess.Shell
                 "RimWorldAccess.Narrative.DialogueLog.OpenDebugWindow",
                 ActivateOpenDebugWindow);
 
-            Log.Message("[RimWorld Access] RimTalk compat: registered DebugWindow scope");
         }
 
         /// <summary>

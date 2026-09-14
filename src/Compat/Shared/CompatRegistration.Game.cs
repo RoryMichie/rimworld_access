@@ -41,7 +41,6 @@ namespace RimWorldAccess
                     }
                 }
                 InspectNodeRegistry.RegisterCategory(adapter);
-                ModLogger.Msg($"{logName}: registered");
                 return adapter;
             }
             catch (Exception ex)

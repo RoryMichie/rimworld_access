@@ -42,7 +42,6 @@ namespace RimWorldAccess
                     return new CharacterEditorScope(w);
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the editor screen");
             }
 
             if (CharEditorBrowserCompat.ModPresent && CharEditorBrowserCompat.Ready)
@@ -78,7 +77,6 @@ namespace RimWorldAccess
                     return new CharEditorBrowserScope(w, new FindPawnAdapter(w));
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the Add Trait / Change Backstory / Add Ability / Change Race / Change Faction / Find Pawn browser screens");
             }
 
             // The Birthday dialog gets its own small dedicated scope rather than the shared
@@ -96,7 +94,6 @@ namespace RimWorldAccess
                     return new CharEditorBirthdayScope(w, CharEditorCompat.CurrentPawn);
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the Birthday dialog");
             }
 
             // ONE registration serves all nine modes DialogColorPicker opens in; the scope reads
@@ -108,7 +105,6 @@ namespace RimWorldAccess
                     return new CharEditorColorScope(w);
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the color picker dialog");
             }
 
             // DialogObjects joins the shared browser scope, one ObjectsAdapter reading the live
@@ -120,7 +116,6 @@ namespace RimWorldAccess
                     return new CharEditorBrowserScope(w, new ObjectsAdapter(w));
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the Objects browser dialog");
             }
 
             // DialogChangeHeadAddons gets its own small dedicated scope. Alien-race-only in
@@ -132,7 +127,6 @@ namespace RimWorldAccess
                     return new CharEditorHeadAddonsScope(w);
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the Head addons dialog");
             }
 
             // DialogAddHediff, DialogFullheal, DialogChoosePart and DialogChoosePawn all join the
@@ -156,7 +150,6 @@ namespace RimWorldAccess
                     return new CharEditorBrowserScope(w, new ChoosePawnAdapter(w));
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the Add Hediff / Full Heal / Choose Part / Choose Pawn browser screens");
             }
 
             // One registration covers both entry points: Needs' unfiltered "Add thought..." row and
@@ -168,7 +161,6 @@ namespace RimWorldAccess
                     return new CharEditorBrowserScope(w, new AddThoughtAdapter(w));
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the Add Thought browser screen");
             }
 
             // DialogViewXenoGenes gets its own compact TreeRegionScope (the gene grid is reused
@@ -184,7 +176,6 @@ namespace RimWorldAccess
                     return new CharEditorXenoGenesScope(w);
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the View Xenogenes dialog");
             }
 
             if (CharEditorGeneryCompat.ModPresent && CharEditorGeneryCompat.Ready)
@@ -194,7 +185,6 @@ namespace RimWorldAccess
                     return new CharEditorBrowserScope(w, new GeneryAdapter(w));
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the Add Gene browser screen");
             }
 
             if (CharEditorXenoTypeCompat.ModPresent && CharEditorXenoTypeCompat.Ready)
@@ -204,7 +194,6 @@ namespace RimWorldAccess
                     return new CharEditorXenoTypeScope(w);
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the custom Xenotype creator dialog");
             }
 
             // DialogCapsuleUI gets its own compact TreeRegionScope, capsule view only -- see
@@ -216,7 +205,6 @@ namespace RimWorldAccess
                     return new CharEditorCapsuleScope(w);
                 });
 
-                ModLogger.Msg("Character Editor compat: registered the Capsule dialog");
             }
 
             // DialogConfigurate (the mod options dialog) gets its own bespoke scope.
@@ -228,7 +216,6 @@ namespace RimWorldAccess
                 });
                 CharEditorConfigRowRingPatch.Register();
 
-                ModLogger.Msg("Character Editor compat: registered the options dialog");
             }
         }
     }

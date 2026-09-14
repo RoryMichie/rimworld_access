@@ -116,7 +116,6 @@ namespace RimWorldAccess
                 // HugsLibNewsScope tells them apart at construction via FilteredType.
                 ScopeForWindow.RegisterHierarchy(DialogType, delegate (Window w) { return new HugsLibNewsScope(w); });
 
-                ModLogger.Msg("HugsLib compat: registered update-news scope");
             }
             catch (Exception ex)
             {

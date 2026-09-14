@@ -108,7 +108,6 @@ namespace RimWorldAccess
 
             isActive = true;
 
-            ModLogger.Dev($"[GizmoZoneEditState] Initialized for {zone.label}, {originalZoneCells.Count} original cells, isDelete={isDeleteDesignator}");
         }
 
         /// <summary>
@@ -179,13 +178,11 @@ namespace RimWorldAccess
                 IntVec3 cursorPos = MapNavigationState.CurrentCursorPosition;
                 if (result.ZoneDeleted)
                 {
-                    ModLogger.Dev($"[GizmoZoneEditState] Zone cell operation at {cursorPos}: zone was deleted");
                     // Zone was deleted - reset state
                     Reset();
                 }
                 else
                 {
-                    ModLogger.Dev($"[GizmoZoneEditState] Zone cell operation at {cursorPos}: {result.Message}");
                 }
             }
         }

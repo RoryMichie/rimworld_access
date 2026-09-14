@@ -322,7 +322,6 @@ namespace RimWorldAccess
                 if (windowType == null)
                     return;
                 ScopeForWindow.RegisterHierarchy(windowType, factory);
-                ModLogger.Msg("Isekai compat: registered " + logName);
             }
             catch (Exception ex)
             {

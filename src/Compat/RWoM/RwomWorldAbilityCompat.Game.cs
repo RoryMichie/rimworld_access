@@ -88,7 +88,6 @@ namespace RimWorldAccess
                     harmony.Patch(start, postfix: postfix);
                 }
 
-                ModLogger.Msg("RimWorld of Magic compat: registered world-targeting ability announcements");
             }
             catch (Exception ex)
             {

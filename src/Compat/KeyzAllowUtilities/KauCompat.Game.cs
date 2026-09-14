@@ -109,7 +109,6 @@ namespace RimWorldAccess
                 RectDesignationRouter.Register(new KauSelectSimilarRectHandler());
                 if (DesignatorGate.Ensure())
                     RectDesignationRouter.Register(new DesignatorHandoffRectHandler(FloorPickerType));
-                ModLogger.Msg("Keyz' Allow Utilities compat: registered rect designation handlers");
             }
             catch (Exception ex)
             {
@@ -122,7 +121,6 @@ namespace RimWorldAccess
             try
             {
                 DesignatorContextMenuRouter.Register(new KauStripMineOptionsProvider());
-                ModLogger.Msg("Keyz' Allow Utilities compat: registered strip mine options");
             }
             catch (Exception ex)
             {
@@ -137,7 +135,6 @@ namespace RimWorldAccess
                 int count = CompatRegistration.GizmoHandler("KeyzAllowUtilities.Command_Toggle_WithContext",
                     type => new KauForbidToggleHandler(type));
                 GizmoHandlerRegistry.Register(typeof(Command_Action), new KauThingGizmoHandler());
-                ModLogger.Msg("Keyz' Allow Utilities compat: registered " + (count + 1) + " gizmo handlers");
             }
             catch (Exception ex)
             {

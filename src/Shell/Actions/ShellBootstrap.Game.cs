@@ -536,7 +536,6 @@ namespace RimWorldAccess.Shell
             // one is armed.
             ExternalMapTargeting.Register(() => LudeonTK.DebugTools.curTool != null);
 
-            Log.Message("[RimWorld Access] Shell action catalog: " + ActionRegistry.Catalog.Count + " actions registered (dormant).");
         }
 
         // Chord words are SPOKEN mid-sentence ("Alt plus Page Down"), so they carry Keyed

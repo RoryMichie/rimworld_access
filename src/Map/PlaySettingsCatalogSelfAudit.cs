@@ -114,9 +114,6 @@ namespace RimWorldAccess
                     "[PlaySettingsCatalogSelfAudit] PlaySettings bool fields with no catalog entry "
                     + "(add a PlaySettingsEntry to PlaySettingsCatalog.Offered, or a "
                     + "PlaySettingsExclusion with a reason): " + string.Join(", ", failures));
-            else
-                ModLogger.Msg("[PlaySettingsCatalogSelfAudit] catalog census clean: every public "
-                    + "PlaySettings bool field is offered by the menu or excluded with a reason.");
 
             return failures;
         }

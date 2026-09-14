@@ -151,10 +151,6 @@ namespace RimWorldAccess
                 }
             }
 
-            ModLogger.Dev($"[ZoneUndoTracker] CaptureBeforeState: zone={targetZone?.label ?? "null"}, " +
-                       $"originalCells={currentRecord.OriginalCells.Count}, " +
-                       $"existingZones={currentRecord.ZonesBeforeOperation.Count}, " +
-                       $"isShrink={isShrink}");
         }
 
         /// <summary>Captures the zone state immediately after DesignateMultiCell, detecting zones created by CheckContiguous splits.</summary>
@@ -178,7 +174,6 @@ namespace RimWorldAccess
                 }
             }
 
-            ModLogger.Dev($"[ZoneUndoTracker] CaptureAfterState: splitCreatedZones={currentRecord.SplitCreatedZones.Count}");
         }
 
         /// <summary>Stores the current record as a completed segment and starts fresh; called when entering ViewingModeState.</summary>
@@ -186,12 +181,10 @@ namespace RimWorldAccess
         {
             if (currentRecord == null)
             {
-                ModLogger.Dev("[ZoneUndoTracker] AddSegment called but no pending record");
                 return;
             }
 
             segments.Add(currentRecord);
-            ModLogger.Dev($"[ZoneUndoTracker] AddSegment: now have {segments.Count} segments");
             currentRecord = null;
         }
 
@@ -200,7 +193,6 @@ namespace RimWorldAccess
         {
             if (segments.Count == 0)
             {
-                ModLogger.Dev("[ZoneUndoTracker] UndoLastSegment: no segments to undo");
                 return false;
             }
 
@@ -222,7 +214,6 @@ namespace RimWorldAccess
             }
 
             segments.Clear();
-            ModLogger.Dev($"[ZoneUndoTracker] UndoAll: undid {count} segments");
             return count;
         }
 
@@ -233,7 +224,6 @@ namespace RimWorldAccess
             segments.Clear();
             preShrinkOriginalCells = null;
             preExpandOriginalCells = null;
-            ModLogger.Dev("[ZoneUndoTracker] Cleared all undo data");
         }
 
         /// <summary>Whether a shrink would delete every cell of the zone — checked before applying, to warn the user.</summary>
@@ -262,16 +252,12 @@ namespace RimWorldAccess
             if (record == null || map == null)
                 return;
 
-            ModLogger.Dev($"[ZoneUndoTracker] RestoreFromRecord: zone={record.TargetZone?.label ?? "null"}, " +
-                       $"originalCells={record.OriginalCells.Count}, " +
-                       $"splitZones={record.SplitCreatedZones.Count}");
 
             // Step 1: Delete all zones created by splits
             foreach (Zone splitZone in record.SplitCreatedZones)
             {
                 if (splitZone != null && map.zoneManager.AllZones.Contains(splitZone))
                 {
-                    ModLogger.Dev($"[ZoneUndoTracker] Deleting split zone: {splitZone.label}");
                     splitZone.Delete();
                 }
             }
@@ -301,7 +287,6 @@ namespace RimWorldAccess
                 }
 
                 // Do NOT call CheckContiguous - we want exact restoration without splits
-                ModLogger.Dev($"[ZoneUndoTracker] Restored zone {zone.label} to {zone.Cells.Count()} cells");
             }
             else if (record.TargetZone != null && !map.zoneManager.AllZones.Contains(record.TargetZone))
             {

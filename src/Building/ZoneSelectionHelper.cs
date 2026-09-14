@@ -96,7 +96,6 @@ namespace RimWorldAccess
                 // Already have a matching zone selected (from gizmo) - use it
                 result.IsExpansion = true;
                 result.TargetZone = alreadySelectedZone;
-                ModLogger.Dev($"[ZoneSelectionHelper] Using already-selected zone {alreadySelectedZone.label} for expansion");
                 return result;
             }
 
@@ -111,7 +110,6 @@ namespace RimWorldAccess
                 result.IsExpansion = true;
                 result.TargetZone = zoneAtCell;
 
-                ModLogger.Dev($"[ZoneSelectionHelper] Cursor inside {zoneAtCell.label} - will expand");
             }
             else
             {
@@ -120,11 +118,9 @@ namespace RimWorldAccess
 
                 if (zoneAtCell != null)
                 {
-                    ModLogger.Dev($"[ZoneSelectionHelper] Cursor in different zone type ({zoneAtCell.GetType().Name} vs {zoneTypeToPlace.Name}) - will create new");
                 }
                 else
                 {
-                    ModLogger.Dev($"[ZoneSelectionHelper] Cursor on empty ground - will create new");
                 }
             }
 

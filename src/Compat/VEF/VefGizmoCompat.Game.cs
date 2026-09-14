@@ -15,21 +15,19 @@ namespace RimWorldAccess
         {
             try
             {
-                int count = 0;
-
-                count += CompatRegistration.GizmoHandler("VEF.Abilities.Command_Ability",
+                CompatRegistration.GizmoHandler("VEF.Abilities.Command_Ability",
                     t => new VefAbilityCommandHandler(t));
-                count += CompatRegistration.GizmoHandler("MVCF.Commands.Command_VerbTargetExtended",
+                CompatRegistration.GizmoHandler("MVCF.Commands.Command_VerbTargetExtended",
                     t => new MvcfVerbTargetHandler(t));
-                count += CompatRegistration.GizmoHandler("VEF.Apparels.Gizmo_EnergyShieldGeneratorStatus",
+                CompatRegistration.GizmoHandler("VEF.Apparels.Gizmo_EnergyShieldGeneratorStatus",
                     t => new VefShieldFieldGizmoHandler(t));
-                count += CompatRegistration.GizmoHandler("VEF.Apparels.Gizmo_EnergyCompShieldStatus",
+                CompatRegistration.GizmoHandler("VEF.Apparels.Gizmo_EnergyCompShieldStatus",
                     t => new VefShieldBubbleGizmoHandler(t));
-                count += CompatRegistration.GizmoHandler("VEF.Apparels.Command_ActionWithCooldown",
+                CompatRegistration.GizmoHandler("VEF.Apparels.Command_ActionWithCooldown",
                     t => new VefActionCooldownHandler(t));
-                count += CompatRegistration.GizmoHandler("VEF.AI.Command_ToggleWithRClick",
+                CompatRegistration.GizmoHandler("VEF.AI.Command_ToggleWithRClick",
                     t => new VefToggleRClickHandler(t));
-                count += CompatRegistration.GizmoHandler("VEF.Buildings.Gizmo_SetSecondaryFuelLevel",
+                CompatRegistration.GizmoHandler("VEF.Buildings.Gizmo_SetSecondaryFuelLevel",
                     t => new VefSecondaryFuelHandler(t));
 
                 // By NAME, not by Type, even though the target is vanilla's own
@@ -42,11 +40,7 @@ namespace RimWorldAccess
                 if (insectoidAutocastHandler.Ready)
                 {
                     GizmoHandlerRegistry.RegisterByTypeName("Command_Ability", insectoidAutocastHandler);
-                    count++;
                 }
-
-                if (count > 0)
-                    Log.Message($"[RimWorld Access] VEF compat: registered {count} gizmo handlers");
             }
             catch (Exception ex)
             {

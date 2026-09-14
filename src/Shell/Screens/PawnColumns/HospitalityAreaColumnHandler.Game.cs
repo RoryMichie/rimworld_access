@@ -91,7 +91,6 @@ namespace RimWorldAccess.Shell
 
                 PawnColumnHandlerRegistry.Register(areaBaseType,
                     new HospitalityAreaColumnHandler(getArea, setArea, isGuest, getAreas, shoppingAreaType));
-                Log.Message("[RimWorld Access] Hospitality compat: area column handler registered.");
             }
             catch (Exception ex)
             {

@@ -42,7 +42,6 @@ namespace RimWorldAccess
             }
             if (gizmos > 0)
             {
-                ModLogger.Msg($"Rjw compat: registered {gizmos} gizmo handler(s)");
             }
         }
     }

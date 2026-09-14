@@ -47,7 +47,6 @@ namespace RimWorldAccess
             availableShapes = ShapeHelper.GetAvailableShapes(designator);
             IsActive = true;
 
-            ModLogger.Dev($"Opened shape selection menu with {availableShapes.Count} shapes for {designator.Label}");
         }
 
         /// <summary>
@@ -101,7 +100,6 @@ namespace RimWorldAccess
             string shapeName = ShapeHelper.GetShapeName(selected);
 
             TolkHelper.Speak("RimWorldAccess.Building.ShapeSelect.ShapeSelected".Loc(shapeName));
-            ModLogger.Dev($"Shape selected: {shapeName}");
 
             Close();
             return selected;

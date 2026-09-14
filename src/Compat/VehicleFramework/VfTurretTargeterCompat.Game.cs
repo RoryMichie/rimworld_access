@@ -98,7 +98,6 @@ namespace RimWorldAccess
                 harmony.Patch(stopTargetingBoolMethod,
                     postfix: new HarmonyMethod(typeof(VfTurretTargeterCompat), nameof(StopTargetingPostfix)));
 
-                Log.Message("[RimWorld Access] VF compat: registered turret targeter keyboard support");
             }
             catch (Exception ex)
             {

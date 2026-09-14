@@ -29,19 +29,16 @@ namespace RimWorldAccess
 
             if (ShapePlacementState.CurrentPhase != PlacementPhase.Inactive)
             {
-                ModLogger.Dev("[DesignatorDeselectedPatch] Cleaning up ShapePlacementState on true deselect");
                 ShapePlacementState.Reset();
             }
 
             if (ArchitectState.CurrentMode != ArchitectMode.Inactive)
             {
-                ModLogger.Dev("[DesignatorDeselectedPatch] Cleaning up ArchitectState on true deselect");
                 ArchitectState.Reset();
             }
 
             if (GizmoZoneEditState.IsActive)
             {
-                ModLogger.Dev("[DesignatorDeselectedPatch] Cleaning up GizmoZoneEditState on true deselect");
                 GizmoZoneEditState.Reset();
             }
 

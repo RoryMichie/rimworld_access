@@ -80,7 +80,6 @@ namespace RimWorldAccess
                     prefix: new HarmonyMethod(typeof(VfHaulTargeterCompat), nameof(StopTargetingPrefix)),
                     postfix: new HarmonyMethod(typeof(VfHaulTargeterCompat), nameof(StopTargetingPostfix)));
 
-                Log.Message("[RimWorld Access] VF compat: registered haul targeter keyboard support");
             }
             catch (Exception ex)
             {

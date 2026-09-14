@@ -131,7 +131,6 @@ namespace RimWorldAccess
             InspectNodeRegistry.RegisterCategory(new VfRecolorActionAdapter());
             InspectionInfoHelper.RegisterCategoryProvider(BuildCategories);
 
-            Log.Message("[RimWorld Access] VF compat: registered vehicle rename/recolor actions");
         }
 
         private static List<TabCategoryInfo> BuildCategories(object obj)

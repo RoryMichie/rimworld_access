@@ -83,7 +83,6 @@ namespace RimWorldAccess
                 designationsBeforeOperation.Add(des);
             }
 
-            ModLogger.Dev($"[OrderUndoTracker] CaptureBeforeState: {designationsBeforeOperation.Count} existing designations");
         }
 
         /// <summary>
@@ -107,7 +106,6 @@ namespace RimWorldAccess
                 }
             }
 
-            ModLogger.Dev($"[OrderUndoTracker] CaptureAfterState: {currentRecord.CreatedDesignations.Count} new designations captured");
         }
 
         /// <summary>
@@ -118,12 +116,10 @@ namespace RimWorldAccess
         {
             if (currentRecord == null)
             {
-                ModLogger.Dev("[OrderUndoTracker] AddSegment called but no pending record");
                 return;
             }
 
             segments.Add(currentRecord);
-            ModLogger.Dev($"[OrderUndoTracker] AddSegment: now have {segments.Count} segments");
             currentRecord = null;
             designationsBeforeOperation.Clear();
         }
@@ -140,7 +136,6 @@ namespace RimWorldAccess
 
             if (segments.Count == 0)
             {
-                ModLogger.Dev("[OrderUndoTracker] UndoLastSegment: no segments to undo");
                 return 0;
             }
 
@@ -154,7 +149,6 @@ namespace RimWorldAccess
             segments.RemoveAt(segments.Count - 1);
 
             lastRemovedCount = RemoveDesignationsFromRecord(record, map);
-            ModLogger.Dev($"[OrderUndoTracker] UndoLastSegment: removed {lastRemovedCount} designations, {segments.Count} segments remaining");
 
             return lastRemovedCount;
         }
@@ -182,7 +176,6 @@ namespace RimWorldAccess
 
             segments.Clear();
             lastRemovedCount = totalRemoved;
-            ModLogger.Dev($"[OrderUndoTracker] UndoAll: removed {totalRemoved} designations total");
 
             return totalRemoved;
         }
@@ -223,7 +216,6 @@ namespace RimWorldAccess
             segments.Clear();
             designationsBeforeOperation.Clear();
             lastRemovedCount = 0;
-            ModLogger.Dev("[OrderUndoTracker] Cleared all undo data");
         }
     }
 }

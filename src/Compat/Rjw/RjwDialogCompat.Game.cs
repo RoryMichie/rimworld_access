@@ -59,7 +59,6 @@ namespace RimWorldAccess
 
             if (readers > 0 || masked > 0)
             {
-                ModLogger.Msg($"Rjw compat: registered {readers} dialog reader(s), masked Enter on {masked} dialog(s)");
             }
         }
 

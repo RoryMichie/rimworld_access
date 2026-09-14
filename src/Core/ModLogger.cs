@@ -24,25 +24,6 @@ namespace RimWorldAccess
         }
 
         /// <summary>
-        /// Log a debug message (shown as regular message in RimWorld).
-        /// </summary>
-        public static void Debug(string message)
-        {
-            Log.Message(Prefix + "[DEBUG] " + message);
-        }
-
-        /// <summary>
-        /// Log a per-action trace, gated behind dev mode so ordinary play never floods the log.
-        /// </summary>
-        public static void Dev(string message)
-        {
-            if (Prefs.DevMode)
-            {
-                Log.Message(Prefix + message);
-            }
-        }
-
-        /// <summary>
         /// Log a warning to RimWorld's log.
         /// </summary>
         public static void Warning(string message)

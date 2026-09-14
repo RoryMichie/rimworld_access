@@ -43,7 +43,6 @@ namespace RimWorldAccess
                 PeProficiencyCard.Register();
             }
 
-            Log.Message("[RimWorld Access] Progression Education compat: education tab, class dialogs, knowledge panel");
         }
     }
 }

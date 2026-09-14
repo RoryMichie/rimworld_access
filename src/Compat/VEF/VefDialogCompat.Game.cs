@@ -17,15 +17,12 @@ namespace RimWorldAccess
     {
         public static void RegisterDialogScopes()
         {
-            int registered = 0;
-
             if (VefHireCompat.Ready)
             {
                 ScopeForWindow.RegisterHierarchy(VefHireCompat.DialogHireType, delegate (Window w)
                 {
                     return new VefHireScope(w);
                 });
-                registered++;
             }
 
             if (VefContractsCompat.Ready)
@@ -34,7 +31,6 @@ namespace RimWorldAccess
                 {
                     return new VefContractsScope(w);
                 });
-                registered++;
             }
 
             if (VefGraphicCustomizationCompat.Ready)
@@ -43,7 +39,6 @@ namespace RimWorldAccess
                 {
                     return new VefGraphicCustomizationScope(w);
                 });
-                registered++;
             }
 
             if (VefPreceptOptionsCompat.Ready)
@@ -52,11 +47,7 @@ namespace RimWorldAccess
                 {
                     return new VefPreceptOptionsScope(w);
                 });
-                registered++;
             }
-
-            if (registered > 0)
-                Log.Message($"[RimWorld Access] VEF compat: registered {registered} dialog scope(s)");
         }
     }
 }

@@ -91,9 +91,6 @@ namespace RimWorldAccess
                     "[DifficultyCatalogSelfAudit] Difficulty fields with no catalog entry "
                     + "(add a DifficultySliderSetting/DifficultyCheckboxSetting or whitelist "
                     + "with a reason): " + string.Join(", ", failures));
-            else
-                ModLogger.Msg("[DifficultyCatalogSelfAudit] catalog census clean: every public "
-                    + "Difficulty field resolves to a catalog entry or a whitelisted DLC gate.");
 
             return failures;
         }

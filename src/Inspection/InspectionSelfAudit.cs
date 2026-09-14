@@ -111,9 +111,6 @@ namespace RimWorldAccess
             if (failures.Count > 0)
                 ModLogger.Warning("[InspectionSelfAudit] category-key dispatch incomplete: "
                     + string.Join("; ", failures));
-            else
-                ModLogger.Msg("[InspectionSelfAudit] category census clean: every rich tab adapter "
-                    + "owns its category key and every action category executes.");
 
             return failures;
         }
@@ -147,9 +144,6 @@ namespace RimWorldAccess
                     "[InspectionSelfAudit] inspect tabs resolving only to the GetInspectString "
                     + "fallback (register an adapter or whitelist with a reason): "
                     + string.Join(", ", failures));
-            else
-                ModLogger.Msg("[InspectionSelfAudit] tab census clean: every loaded non-world "
-                    + "inspect tab resolves to a registered adapter.");
 
             return failures;
         }
@@ -176,9 +170,6 @@ namespace RimWorldAccess
                     "[InspectionSelfAudit] gizmo types resolving only to the generic fallback "
                     + "(they announce by cleaned-up type name — register a handler or whitelist "
                     + "with a reason): " + string.Join(", ", failures));
-            else
-                ModLogger.Msg("[InspectionSelfAudit] gizmo census clean: every loaded gizmo "
-                    + "type resolves to a registered handler.");
 
             return failures;
         }

@@ -164,12 +164,10 @@ namespace RimWorldAccess
             Window dialog = GetBillDialogMethod?.Invoke(productionBill, null) as Window;
             if (dialog == null)
             {
-                ModLogger.Dev("Bill dialog factory yielded no window; bill config runs without its visual surface");
             }
 
             StartSession(productionBill, position, dialog);
 
-            ModLogger.Dev($"Opened bill config for {bill.LabelCap}");
         }
 
         /// <summary>

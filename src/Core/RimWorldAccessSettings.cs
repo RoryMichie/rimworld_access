@@ -257,7 +257,6 @@ namespace RimWorldAccess
         public RimWorldAccessMod_Settings(ModContentPack content) : base(content)
         {
             Settings = GetSettings<RimWorldAccessSettings>();
-            Log.Message("[RimWorld Access] Settings loaded.");
         }
 
         public override string SettingsCategory()

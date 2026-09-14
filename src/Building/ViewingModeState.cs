@@ -338,7 +338,6 @@ namespace RimWorldAccess
             int totalPlaced = PlacedCount;
             int segCount = SegmentCount;
             string itemType = isBuildDesignator ? "blueprints" : "designations";
-            ModLogger.Dev($"[ViewingModeState] Entered with {result.PlacedCount} new {itemType} (total: {totalPlaced}), {obstacleCells.Count} obstacles, {orderTargets.Count} order targets");
         }
 
         /// <summary>
@@ -544,7 +543,6 @@ namespace RimWorldAccess
                 ArchitectState.Reset();
             }
 
-            ModLogger.Dev("[ViewingModeState] Confirmed and exited placement mode");
         }
 
         /// <summary>
@@ -640,7 +638,6 @@ namespace RimWorldAccess
                 TolkHelper.Speak("RimWorldAccess.Building.View.SegmentRemovedNoneRemain".Loc(action, sizeString, removedShapeName), SpeechPriority.Normal);
             }
 
-            ModLogger.Dev($"[ViewingModeState] Removed last segment ({removedCount} items), {remainingSegments} segments remaining");
         }
 
         /// <summary>
@@ -663,7 +660,6 @@ namespace RimWorldAccess
 
             TolkHelper.Speak("RimWorldAccess.Building.View.ReturnedToPreview".Loc(), SpeechPriority.Normal);
 
-            ModLogger.Dev($"[ViewingModeState] Reactivated with {segCount} segments");
         }
 
         /// <summary>
@@ -692,7 +688,6 @@ namespace RimWorldAccess
                 ShapePlacementState.Enter(savedDesignator, savedShape, fromViewingMode: true);
             }
 
-            ModLogger.Dev("[ViewingModeState] Exited to add another shape");
         }
 
         /// <summary>
@@ -756,7 +751,6 @@ namespace RimWorldAccess
                 ShapePlacementState.Enter(savedDesignator, savedShape, fromViewingMode: hasRemainingSegments);
             }
 
-            ModLogger.Dev($"[ViewingModeState] Undid last segment and returned to placement, {SegmentCount} segments remaining");
         }
 
         /// <summary>
@@ -792,7 +786,6 @@ namespace RimWorldAccess
                 ShapePlacementState.Enter(savedDesignator, savedShape);
             }
 
-            ModLogger.Dev($"[ViewingModeState] Undid all {removedCount} items and returned to {savedShape} placement");
         }
 
         /// <summary>
@@ -834,7 +827,6 @@ namespace RimWorldAccess
                     ArchitectState.Reset();
                 }
 
-                ModLogger.Dev("[ViewingModeState] Exited via Escape with no segments remaining");
                 return;
             }
 
@@ -895,7 +887,6 @@ namespace RimWorldAccess
                         ArchitectState.Reset();
                     }
 
-                    ModLogger.Dev($"[ViewingModeState] Exited via confirmation, removed {removedCount} items");
                 },
                 "RimWorldAccess.Building.View.DialogStay".Translate(),
                 null,
@@ -1012,7 +1003,6 @@ namespace RimWorldAccess
                 // Announce like manual placement: "{label} placed at x, z"
                 string label = activeDesignator.Label ?? (string)"RimWorldAccess.Building.View.BlueprintFallback".Translate();
                 TolkHelper.Speak("RimWorldAccess.Building.View.PlacedAt".Loc(label, cursorPos.x, cursorPos.z), SpeechPriority.Normal);
-                ModLogger.Dev($"[ViewingModeState] Added blueprint at {cursorPos}");
             }
             catch (System.Exception ex)
             {
@@ -1069,7 +1059,6 @@ namespace RimWorldAccess
             // Play cancel sound and announce like manual placement
             SoundDefOf.Designate_Cancel.PlayOneShotOnCamera();
             TolkHelper.Speak("RimWorldAccess.Building.View.CancelledBlueprint".Loc(thingLabel), SpeechPriority.Normal);
-            ModLogger.Dev($"[ViewingModeState] Removed blueprint at {cursorPos}");
         }
 
         /// <summary>
@@ -1095,11 +1084,9 @@ namespace RimWorldAccess
                 IntVec3 cursorPos = MapNavigationState.CurrentCursorPosition;
                 if (result.ZoneDeleted)
                 {
-                    ModLogger.Dev($"[ViewingModeState] Zone cell operation at {cursorPos}: zone was deleted");
                 }
                 else
                 {
-                    ModLogger.Dev($"[ViewingModeState] Zone cell operation at {cursorPos}: {result.Message}");
                 }
             }
         }

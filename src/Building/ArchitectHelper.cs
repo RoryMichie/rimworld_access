@@ -37,7 +37,6 @@ namespace RimWorldAccess
 
             try
             {
-                ModLogger.Dev($"Getting designators for category: {category.defName}");
 
                 foreach (Designator designator in category.ResolvedAllowedDesignators)
                 {
@@ -63,7 +62,6 @@ namespace RimWorldAccess
                     }
                 }
 
-                ModLogger.Dev($"After filtering: {designators.Count} designators available");
 
 
             }

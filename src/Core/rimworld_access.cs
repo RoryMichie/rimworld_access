@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
@@ -25,8 +26,6 @@ namespace RimWorldAccess
 
         static RimWorldAccessMod()
         {
-            Log.Message("[RimWorld Access] Initializing accessibility features...");
-
             try
             {
                 TolkHelper.Initialize();
@@ -44,7 +43,6 @@ namespace RimWorldAccess
             // (called twice here, verbatim duplicate) — the registry it populated is deleted;
             // see ImeFunnel.RouteImeCommittedChar and FocusStack.OfferChar for the successor.
 
-            Log.Message("[RimWorld Access] Applying Harmony patches...");
             HarmonyInstance.PatchAll(Assembly.GetExecutingAssembly());
             ApplyDropdownRoleBracket(HarmonyInstance);
 
@@ -52,25 +50,16 @@ namespace RimWorldAccess
             // patch declaratively. The shared prefix returns false while LordJobDialogState is
             // active, blocking accidental Start invocations behind the user's back.
             ApplyLordJobStartPatches(HarmonyInstance);
-            CompatBootstrap.ActivateAll(HarmonyInstance);
+            List<string> compat = CompatBootstrap.ActivateAll(HarmonyInstance);
+            int patchCount = HarmonyInstance.GetPatchedMethods().Count();
 
-            var patchedMethods = HarmonyInstance.GetPatchedMethods();
-            int patchCount = 0;
-            foreach (var method in patchedMethods)
-            {
-                patchCount++;
-                Log.Message($"[RimWorld Access] Patched: {method.DeclaringType?.Name}.{method.Name}");
-            }
-            Log.Message($"[RimWorld Access] Total patches applied: {patchCount}");
-
-            // Last, and counted separately: this sweep reads IL from ~100 vanilla
-            // types and patches only the methods that hold a certified site, so
-            // listing each one above would bury the rest of the patch log.
+            // Counted separately: this sweep patches only the methods that hold a certified site.
             TooltipGateInstaller.Install(HarmonyInstance);
             TooltipGateModScan.Install(HarmonyInstance);
 
-            Log.Message("[RimWorld Access] Main menu keyboard navigation enabled!");
-            Log.Message("[RimWorld Access] Use Arrow keys to navigate, Enter to select.");
+            Log.Message("[RimWorld Access] Loaded. Screen reader: " + TolkHelper.DescribeBackend()
+                + ". Harmony patches: " + patchCount
+                + ". Compat modules: " + (compat.Count == 0 ? "none" : string.Join(", ", compat)) + ".");
 
             // Settings are loaded by the Mod constructor (runs before this), so we can now compare
             // the persisted last-seen version against the current one and flag whether to surface the
@@ -106,11 +95,10 @@ namespace RimWorldAccess
                 harmony.Patch(dropdownCoreClosed,
                     prefix: new HarmonyMethod(typeof(WidgetCaptureDropdownBracket), nameof(WidgetCaptureDropdownBracket.Prefix)),
                     postfix: new HarmonyMethod(typeof(WidgetCaptureDropdownBracket), nameof(WidgetCaptureDropdownBracket.Postfix)));
-                Log.Message("[RimWorld Access] Widgets.Dropdown role bracket applied.");
             }
             catch (Exception ex)
             {
-                Log.Message("[RimWorld Access] Widgets.Dropdown role bracket unavailable (" + ex.GetType().Name + "); dropdown openers will announce as plain buttons.");
+                Log.Warning("[RimWorld Access] Widgets.Dropdown role bracket unavailable (" + ex.GetType().Name + "); dropdown openers will announce as plain buttons.");
             }
         }
 
@@ -134,13 +122,11 @@ namespace RimWorldAccess
                 var startMethod = AccessTools.Method(t, "Start");
                 if (startMethod == null) continue;
                 harmony.Patch(startMethod, prefix: new HarmonyMethod(prefix));
-                Log.Message($"[RimWorld Access] Applied {typeName}.Start() prefix");
             }
         }
 
         private static void OnApplicationQuit()
         {
-            Log.Message("[RimWorld Access] Shutting down...");
             TolkHelper.Shutdown();
         }
     }

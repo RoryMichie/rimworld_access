@@ -199,7 +199,6 @@ namespace RimWorldAccess
             if (!ready)
                 return;
             CaravanVehicleTab.Provider = new VfCaravanCompat();
-            Log.Message("[RimWorld Access] VF compat: registered caravan vehicles-tab provider");
         }
 
         // ------------------------------------------------------------------

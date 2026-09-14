@@ -15,13 +15,8 @@ namespace RimWorldAccess
         {
             try
             {
-                int count = 0;
-
-                count += TryRegister("VanillaPsycastsExpanded.UI.PsychicStatusGizmo",
+                TryRegister("VanillaPsycastsExpanded.UI.PsychicStatusGizmo",
                     t => new VpePsychicStatusHandler(t));
-
-                if (count > 0)
-                    Log.Message($"[RimWorld Access] VPE compat: registered {count} gizmo handlers");
             }
             catch (Exception ex)
             {
@@ -29,14 +24,13 @@ namespace RimWorldAccess
             }
         }
 
-        private static int TryRegister(string typeName, Func<Type, IGizmoHandler> makeHandler)
+        private static void TryRegister(string typeName, Func<Type, IGizmoHandler> makeHandler)
         {
             Type t = AccessTools.TypeByName(typeName);
             if (t == null)
-                return 0;
+                return;
 
             GizmoHandlerRegistry.Register(t, makeHandler(t));
-            return 1;
         }
     }
 }

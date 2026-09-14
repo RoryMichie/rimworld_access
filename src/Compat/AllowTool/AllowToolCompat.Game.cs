@@ -91,7 +91,6 @@ namespace RimWorldAccess
             try
             {
                 RectDesignationRouter.Register(new AllowToolRectDesignationHandler());
-                ModLogger.Msg("Allow Tool compat: registered rect designation handler");
             }
             catch (Exception ex)
             {
@@ -104,7 +103,6 @@ namespace RimWorldAccess
             try
             {
                 DesignatorContextMenuRouter.Register(new AllowToolContextMenuProvider());
-                ModLogger.Msg("Allow Tool compat: registered context menu provider");
             }
             catch (Exception ex)
             {

@@ -14,8 +14,6 @@ namespace RimWorldAccess
         {
             try
             {
-                int count = 0;
-
                 Type refuelGizmoType = AccessTools.TypeByName("Vehicles.Rendering.Gizmo_RefuelableFuelTravel");
                 if (refuelGizmoType != null)
                 {
@@ -23,7 +21,6 @@ namespace RimWorldAccess
                     if (refuelHandler.Ready)
                     {
                         GizmoHandlerRegistry.Register(refuelGizmoType, refuelHandler);
-                        count++;
                     }
                 }
 
@@ -36,12 +33,8 @@ namespace RimWorldAccess
                     if (turretHandler.Ready)
                     {
                         GizmoHandlerRegistry.Register(turretGizmoType, turretHandler);
-                        count++;
                     }
                 }
-
-                if (count > 0)
-                    Log.Message($"[RimWorld Access] VF compat: registered {count} gizmo handlers");
             }
             catch (Exception ex)
             {

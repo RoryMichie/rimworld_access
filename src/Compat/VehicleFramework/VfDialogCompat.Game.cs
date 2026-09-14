@@ -15,15 +15,12 @@ namespace RimWorldAccess
         /// <summary>Each dialog's scope registers independently, so one dialog's absence or broken reflection surface never blocks the others.</summary>
         public static void RegisterDialogScopes()
         {
-            int registered = 0;
-
             if (VfCargoDialogAdapter.DialogType != null && VfCargoDialogAdapter.ReflectionReady)
             {
                 ScopeForWindow.Register(VfCargoDialogAdapter.DialogType, delegate (Window w)
                 {
                     return new TransportPodLoadingScope(w, new VfCargoDialogAdapter(w));
                 });
-                registered++;
             }
 
             // RegisterHierarchy, not Register: modded VF subclasses of these dialogs must inherit
@@ -34,7 +31,6 @@ namespace RimWorldAccess
                 {
                     return new TransportPodLoadingScope(w, new VfStashDialogAdapter(w));
                 });
-                registered++;
             }
 
             if (VfAssignSeatsCompat.Ready)
@@ -43,7 +39,6 @@ namespace RimWorldAccess
                 {
                     return new VfAssignSeatsScope(w);
                 });
-                registered++;
             }
 
             if (VfRenameDialogCompat.Ready)
@@ -53,7 +48,6 @@ namespace RimWorldAccess
                     return new VfRenameDialogScope(w);
                 });
                 VfRenameDialogCompat.PatchDrawPass();
-                registered++;
             }
 
             if (VfPainterCompat.Ready)
@@ -62,7 +56,6 @@ namespace RimWorldAccess
                 {
                     return new VfPainterScope(w);
                 });
-                registered++;
             }
 
             if (VfVehicleSelectorCompat.Ready)
@@ -72,11 +65,7 @@ namespace RimWorldAccess
                     return new VfVehicleSelectorScope(w);
                 });
                 VfSelectorRowDrawPatch.Register();
-                registered++;
             }
-
-            if (registered > 0)
-                Log.Message($"[RimWorld Access] VF compat: registered {registered} dialog scope(s)");
         }
 
         /// <summary>Applied by <see cref="VehicleFrameworkModule"/> rather than declaratively, so an absent VF costs no Window.PostClose postfixes.</summary>

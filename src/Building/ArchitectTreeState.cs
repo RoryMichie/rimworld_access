@@ -65,7 +65,6 @@ namespace RimWorldAccess
 
             int visibleCount = LoadTreeCallback != null ? LoadTreeCallback(root) : 0;
 
-            ModLogger.Dev($"Opened architect tree menu with {visibleCount} items");
         }
 
         /// <summary>

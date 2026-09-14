@@ -186,7 +186,6 @@ namespace RimWorldAccess
             // Present and announce synchronously, before the mirror's next reconcile pass can push.
             FishingZoneScope.Live?.OpenTree(BuildTree());
 
-            Log.Message($"[RimWorld Access] Opened fishing zone menu for {zone.label}");
         }
 
         /// <summary>Closes the fishing zone configuration menu.</summary>

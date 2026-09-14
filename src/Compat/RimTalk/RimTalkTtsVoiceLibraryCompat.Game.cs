@@ -110,7 +110,6 @@ namespace RimWorldAccess.Shell
             {
                 return new RimTalkTtsVoiceLibraryScope(w);
             });
-            Log.Message("[RimWorld Access] RimTalk TTS compat: registered VoiceLibraryWindow scope");
         }
     }
 }

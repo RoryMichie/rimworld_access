@@ -40,7 +40,6 @@ namespace RimWorldAccess
                 harmony.Patch(disableableButtonText,
                     prefix: new HarmonyMethod(typeof(LaboratoryCompat), nameof(Prefix)),
                     postfix: new HarmonyMethod(typeof(LaboratoryCompat), nameof(Postfix)));
-                ModLogger.Msg("Laboratory compat: DisableableButtonText disabled-branch bracket applied.");
             }
             catch (Exception ex)
             {

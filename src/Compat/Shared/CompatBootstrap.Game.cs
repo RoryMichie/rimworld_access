@@ -12,9 +12,10 @@ namespace RimWorldAccess
     /// </summary>
     public static class CompatBootstrap
     {
-        public static void ActivateAll(Harmony harmony)
+        public static List<string> ActivateAll(Harmony harmony)
         {
             var modules = new List<CompatModule>();
+            var activated = new List<string>();
             foreach (Type type in typeof(CompatBootstrap).Assembly.GetTypes())
             {
                 if (type.IsAbstract || !typeof(CompatModule).IsAssignableFrom(type))
@@ -42,12 +43,14 @@ namespace RimWorldAccess
                         continue;
                     }
                     module.Activate(harmony);
+                    activated.Add(module.TargetPackageId);
                 }
                 catch (Exception ex)
                 {
                     ModLogger.Error("Compat module " + module.GetType().Name + " activation failed: " + ex);
                 }
             }
+            return activated;
         }
     }
 }

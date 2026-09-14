@@ -29,7 +29,6 @@ namespace RimWorldAccess
             CompatRegistration.TabAdapter("WantsAndQuirks.ITab_Pawn_WantsAndQuirks",
                 t => new WqWantsTabAdapter(), "Character Development wants tab compat");
 
-            Log.Message("[RimWorld Access] Character Development compat: characters tab scope registered");
         }
     }
 }

@@ -83,7 +83,6 @@ namespace RimWorldAccess
                 : coarseReady
                     ? "coarse mod-wide generation signal only (per-quest field not found)"
                     : "generation-in-progress detection unavailable";
-            Log.Message("[RimWorld Access] Quests compat registered (" + detail + ").");
         }
 
         /// <summary>

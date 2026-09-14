@@ -36,7 +36,6 @@ namespace RimWorldAccess
                 RwomGolemMasterColumnHandler.TryRegister();
                 RwomEnergyStatusGizmoHandler.TryRegister();
 
-                ModLogger.Msg("RimWorld of Magic compat: registered golem table + energy gizmo");
             }
             catch (Exception ex)
             {

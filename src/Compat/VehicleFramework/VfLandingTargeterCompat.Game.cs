@@ -93,7 +93,6 @@ namespace RimWorldAccess
                 harmony.Patch(stopTargetingMethod,
                     postfix: new HarmonyMethod(typeof(VfLandingTargeterCompat), nameof(StopTargetingPostfix)));
 
-                Log.Message("[RimWorld Access] VF compat: registered landing targeter keyboard support");
             }
             catch (Exception ex)
             {

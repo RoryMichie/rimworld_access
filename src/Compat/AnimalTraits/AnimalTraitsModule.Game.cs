@@ -152,7 +152,6 @@ namespace RimWorldAccess
 
                 PawnColumnHandlerRegistry.Register(workerType, new AnimalTraitsSpareColumnHandler(
                     shouldSpare, shouldCull, getTraitDefNames, getCurrentComponent, getSpareTraits, getCullTraits, dialogType));
-                Log.Message("[RimWorld Access] Animal Traits System compat: spare traits column handler registered.");
             }
             catch (Exception ex)
             {

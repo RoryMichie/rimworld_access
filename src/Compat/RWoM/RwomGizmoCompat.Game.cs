@@ -59,7 +59,6 @@ namespace RimWorldAccess
                     return; // Constructor already logged if this was a member-level failure.
 
                 JecsAbilityCommandHandler.RegisterExtension(compat);
-                ModLogger.Msg("RimWorld of Magic compat: registered gizmo autocast extension");
             }
             catch (Exception ex)
             {

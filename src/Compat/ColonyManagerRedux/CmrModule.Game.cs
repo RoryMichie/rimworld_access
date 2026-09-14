@@ -17,7 +17,6 @@ namespace RimWorldAccess
             if (CmrCompat.Ready)
             {
                 ScopeForWindow.Register(CmrCompat.ManagerWindowType, w => new CmrManagerScope(w));
-                ModLogger.Msg("Colony Manager Redux compat: registered the manager window");
             }
 
             // The threshold details window rides its own surface: a rename there must not cost the
@@ -27,19 +26,16 @@ namespace RimWorldAccess
             {
                 ScopeForWindow.Register(CmrCompat.Threshold.WindowType, CmrThresholdWindowScope.TryCreate);
                 CmrThresholdWindowAcceptGuardPatch.Install(harmony, CmrCompat.Threshold.WindowType);
-                ModLogger.Msg("Colony Manager Redux compat: registered the threshold details window");
             }
 
             if (CmrCompat.Livestock.Ready)
             {
                 Shell.CmrLivestockColumnHandlers.InstallAll();
-                ModLogger.Msg("Colony Manager Redux compat: registered the livestock animal-table columns");
             }
 
             if (CmrCompat.Overview.Ready)
             {
                 Shell.CmrOverviewColumnHandlers.InstallAll();
-                ModLogger.Msg("Colony Manager Redux compat: registered the overview worker-table columns");
             }
 
             // The import window rides the Import/Export surface: it only ever opens from that tab,
@@ -48,7 +44,6 @@ namespace RimWorldAccess
             {
                 ScopeForWindow.Register(CmrCompat.ImportExport.ImportDialogType,
                     w => new CmrImportJobsScope(w));
-                ModLogger.Msg("Colony Manager Redux compat: registered the import-jobs window");
             }
         }
     }

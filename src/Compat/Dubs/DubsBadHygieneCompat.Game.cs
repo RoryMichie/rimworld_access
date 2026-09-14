@@ -28,7 +28,6 @@ namespace RimWorldAccess
                 }
 
                 GizmoHandlerRegistry.Register(boilerStatusType, new DubsBoilerStatusGizmoHandler());
-                ModLogger.Msg("Dubs Bad Hygiene compat: registered 1 gizmo handler");
             }
             catch (Exception ex)
             {

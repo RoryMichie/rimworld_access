@@ -72,9 +72,11 @@ namespace RimWorldAccess.Shell
             }
 
             watch.Stop();
+#if DEBUG
             ModLogger.Msg("Tooltip gate: " + SitesCertified + " sites certified across " + MethodsPatched
                 + " methods in " + TypesResolved + " types (scanned " + methodsScanned
                 + ", refused " + Coverage.RefusedTotal + "), " + watch.ElapsedMilliseconds + " ms");
+#endif
         }
 
         // Biotech-only types with eager static texture initializers: resolving them on a

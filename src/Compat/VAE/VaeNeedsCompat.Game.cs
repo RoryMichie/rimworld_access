@@ -19,7 +19,6 @@ namespace RimWorldAccess
                 return;
 
             PawnNeedsAdapter.RegisterDetailExtender(BuildAspirationChildren);
-            Log.Message("[RimWorld Access] VAE compat: registered fulfillment-need extender");
         }
 
         /// <summary>

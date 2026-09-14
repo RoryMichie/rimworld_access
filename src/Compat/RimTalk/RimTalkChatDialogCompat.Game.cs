@@ -76,7 +76,6 @@ namespace RimWorldAccess.Shell
                 return new RimTalkChatScope(w);
             });
             PatchGuards();
-            Log.Message("[RimWorld Access] RimTalk compat: registered CustomDialogueWindow chat scope");
         }
 
         /// <summary>

@@ -81,10 +81,12 @@ namespace RimWorldAccess.Shell
             }
 
             watch.Stop();
+#if DEBUG
             ModLogger.Msg("Tooltip gate (mods): " + Coverage.SitesCertified + " sites certified across "
                 + Coverage.MethodsPatched + " methods in " + AssembliesScanned + " assemblies (analyzed "
                 + MethodsAnalyzed + ", refused " + Coverage.RefusedTotal + ", unreadable " + AssembliesFailed
                 + (BudgetExhausted ? ", BUDGET EXHAUSTED" : string.Empty) + "), " + watch.ElapsedMilliseconds + " ms");
+#endif
         }
 
         private static void ScanAssembly(Harmony harmony, HarmonyMethod transpiler, Assembly assembly)

@@ -51,7 +51,6 @@ namespace RimWorldAccess
                 string cleanText = msg.text.StripTags();
                 string announcement = "RimWorldAccess.Notification.LiveMessage".Translate(cleanText).ToString();
                 TolkHelper.SpeakData(announcement);
-                Log.Message($"[Notification] {announcement}");
                 MessageEmissionCount++;
             }
         }
@@ -90,7 +89,6 @@ namespace RimWorldAccess
                 string cleanLabel = let.Label.Resolve().StripTags();
                 string announcement = "RimWorldAccess.Notification.LiveLetter".Translate(cleanLabel).ToString();
                 TolkHelper.SpeakData(announcement);
-                Log.Message($"[Notification] {announcement}");
             }
         }
 
@@ -126,7 +124,6 @@ namespace RimWorldAccess
                         {
                             string announcement = "RimWorldAccess.Notification.LiveAlert".Translate(label).ToString();
                             TolkHelper.SpeakData(announcement);
-                            Log.Message($"[Notification] {announcement}");
                         }
                     }
                 }

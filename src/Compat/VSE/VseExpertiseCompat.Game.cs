@@ -306,7 +306,6 @@ namespace RimWorldAccess
                     postfix: new HarmonyMethod(typeof(VseExpertiseCompat), nameof(OpenExpertiseButtonPostfix)));
             }
 
-            Log.Message("[RimWorld Access] VSE compat: registered expertise read/choose surfaces");
         }
 
         private static bool ShowExpertise

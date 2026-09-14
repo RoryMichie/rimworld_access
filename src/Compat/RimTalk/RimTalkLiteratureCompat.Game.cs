@@ -117,8 +117,6 @@ namespace RimWorldAccess
             {
                 return;
             }
-            Log.Message("[RimWorld Access] Literature compat registered"
-                + (ready ? " (book/art generation-in-progress detection active)." : " (generation-in-progress detection unavailable)."));
         }
 
         /// <summary>
