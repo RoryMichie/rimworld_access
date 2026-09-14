@@ -387,6 +387,7 @@
   <RimWorldAccess.StartingPawn.PawnRemoved>{0} eliminado</RimWorldAccess.StartingPawn.PawnRemoved>
   <RimWorldAccess.StartingPawn.LabelRandomize>{0}, {1}</RimWorldAccess.StartingPawn.LabelRandomize>
   <RimWorldAccess.StartingPawn.XenotypePoolSet>{0} seleccionado. La siguiente aleatorización usará este grupo de xenotipos.</RimWorldAccess.StartingPawn.XenotypePoolSet>
+  <RimWorldAccess.StartingPawn.XenotypeApplied>Xenotipo aplicado, personaje regenerado. {0}</RimWorldAccess.StartingPawn.XenotypeApplied>
   <RimWorldAccess.StartingPawn.DeleteCustomXenotype>Eliminar {0} (Personalizado)...</RimWorldAccess.StartingPawn.DeleteCustomXenotype>
 
   <!-- PawnLabelWithState/CategoryLabelWithState/CategoryWithSummary RETIRED (

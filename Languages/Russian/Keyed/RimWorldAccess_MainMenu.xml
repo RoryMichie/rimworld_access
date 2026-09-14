@@ -387,6 +387,7 @@
   <RimWorldAccess.StartingPawn.PawnRemoved>{0}: убрано</RimWorldAccess.StartingPawn.PawnRemoved>
   <RimWorldAccess.StartingPawn.LabelRandomize>{0}, {1}</RimWorldAccess.StartingPawn.LabelRandomize>
   <RimWorldAccess.StartingPawn.XenotypePoolSet>{0} выбран. Следующая рандомизация будет использовать этот пул ксенотипов.</RimWorldAccess.StartingPawn.XenotypePoolSet>
+  <RimWorldAccess.StartingPawn.XenotypeApplied>Ксенотип применён, персонаж воссоздан. {0}</RimWorldAccess.StartingPawn.XenotypeApplied>
   <RimWorldAccess.StartingPawn.DeleteCustomXenotype>Удалить {0} (пользовательский)…</RimWorldAccess.StartingPawn.DeleteCustomXenotype>
 
   <!-- PawnLabelWithState/CategoryLabelWithState/CategoryWithSummary RETIRED (

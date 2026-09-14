@@ -50,6 +50,12 @@
   <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>Her hareketten sonra fare imlecini klavye imlecinin bulunduğu kareye taşır. Oyun içinde ayarlamak için {0}.</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>
   <RimWorldAccess.Core.Settings.ScannerAutoJump.Label>Tarayıcı otomatik atlama</RimWorldAccess.Core.Settings.ScannerAutoJump.Label>
   <RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>Gezinirken imleci her tarayıcı öğesine taşır. Oyun içinde ayarlamak için {0}.</RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>
+  <RimWorldAccess.Core.Settings.PauseOnGameStart.Label>Yeni oyunları duraklatılmış başlat</RimWorldAccess.Core.Settings.PauseOnGameStart.Label>
+  <RimWorldAccess.Core.Settings.PauseOnGameStart.Desc>Yeni bir oyun duraklatılmış başlar, böylece zaman akmadan önce durumu kavrayabilirsin.</RimWorldAccess.Core.Settings.PauseOnGameStart.Desc>
+  <RimWorldAccess.Core.Settings.StayPausedAfterResearch.Label>Araştırma ekranında duraklatılmış kal</RimWorldAccess.Core.Settings.StayPausedAfterResearch.Label>
+  <RimWorldAccess.Core.Settings.StayPausedAfterResearch.Desc>Tamamlanan araştırma iletişim kutusundan araştırma ekranını açmak oyunu duraklatılmış tutar.</RimWorldAccess.Core.Settings.StayPausedAfterResearch.Desc>
+  <RimWorldAccess.Core.Settings.StayPausedAfterTrade.Label>Ticaretten sonra duraklatılmış kal</RimWorldAccess.Core.Settings.StayPausedAfterTrade.Label>
+  <RimWorldAccess.Core.Settings.StayPausedAfterTrade.Desc>Ticaret ekranını kapatmak, sen devam ettirene kadar oyunu duraklatılmış tutar.</RimWorldAccess.Core.Settings.StayPausedAfterTrade.Desc>
 
   <!-- Opens the Configure Spoken Announcements screen (a real window, not this panel);
        see RimWorldAccess_AnnounceConfig.xml for that screen's own strings. -->

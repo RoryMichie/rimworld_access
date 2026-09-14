@@ -416,6 +416,7 @@
   <RimWorldAccess.StartingPawn.PawnRemoved>Retiré : {0}</RimWorldAccess.StartingPawn.PawnRemoved>
   <RimWorldAccess.StartingPawn.LabelRandomize>{0}, {1}</RimWorldAccess.StartingPawn.LabelRandomize>
   <RimWorldAccess.StartingPawn.XenotypePoolSet>Sélection : {0}. Le prochain tirage aléatoire utilisera ce pool de xénotypes.</RimWorldAccess.StartingPawn.XenotypePoolSet>
+  <RimWorldAccess.StartingPawn.XenotypeApplied>Xénotype appliqué, personnage régénéré. {0}</RimWorldAccess.StartingPawn.XenotypeApplied>
   <RimWorldAccess.StartingPawn.DeleteCustomXenotype>Supprimer {0} (Personnalisé)...</RimWorldAccess.StartingPawn.DeleteCustomXenotype>
 
   <!-- PawnLabelWithState/CategoryLabelWithState/CategoryWithSummary RETIRED (

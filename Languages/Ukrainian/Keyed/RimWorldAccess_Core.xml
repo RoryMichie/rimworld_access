@@ -50,6 +50,12 @@
   <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>Розміщує вказівник миші на клітинці клавіатурного курсора після кожного переміщення. {0} — змінити у грі.</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>
   <RimWorldAccess.Core.Settings.ScannerAutoJump.Label>Автоперехід сканера</RimWorldAccess.Core.Settings.ScannerAutoJump.Label>
   <RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>Переміщує курсор до кожного елемента сканера під час навігації. {0} — змінити у грі.</RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>
+  <RimWorldAccess.Core.Settings.PauseOnGameStart.Label>Починати нові ігри на паузі</RimWorldAccess.Core.Settings.PauseOnGameStart.Label>
+  <RimWorldAccess.Core.Settings.PauseOnGameStart.Desc>Нова гра починається на паузі, щоб ви могли зорієнтуватися перед тим, як почнеться відлік часу.</RimWorldAccess.Core.Settings.PauseOnGameStart.Desc>
+  <RimWorldAccess.Core.Settings.StayPausedAfterResearch.Label>Залишатися на паузі на екрані досліджень</RimWorldAccess.Core.Settings.StayPausedAfterResearch.Label>
+  <RimWorldAccess.Core.Settings.StayPausedAfterResearch.Desc>Відкриття екрана досліджень з діалогу про завершене дослідження залишає гру на паузі.</RimWorldAccess.Core.Settings.StayPausedAfterResearch.Desc>
+  <RimWorldAccess.Core.Settings.StayPausedAfterTrade.Label>Залишатися на паузі після торгівлі</RimWorldAccess.Core.Settings.StayPausedAfterTrade.Label>
+  <RimWorldAccess.Core.Settings.StayPausedAfterTrade.Desc>Закриття екрана торгівлі залишає гру на паузі, доки ви не відновите її.</RimWorldAccess.Core.Settings.StayPausedAfterTrade.Desc>
 
   <!-- Opens the Configure Spoken Announcements screen (a real window, not this panel);
        see RimWorldAccess_AnnounceConfig.xml for that screen's own strings. -->

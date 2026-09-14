@@ -50,6 +50,12 @@
   <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>Coloca o ponteiro do mouse na célula do cursor do teclado após cada movimento. {0} para ajustar no jogo.</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>
   <RimWorldAccess.Core.Settings.ScannerAutoJump.Label>Salto automático do scanner</RimWorldAccess.Core.Settings.ScannerAutoJump.Label>
   <RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>Move o cursor para cada item do scanner enquanto você navega. {0} para ajustar no jogo.</RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>
+  <RimWorldAccess.Core.Settings.PauseOnGameStart.Label>Iniciar novos jogos pausados</RimWorldAccess.Core.Settings.PauseOnGameStart.Label>
+  <RimWorldAccess.Core.Settings.PauseOnGameStart.Desc>Um novo jogo começa pausado para você se orientar antes que o tempo comece a passar.</RimWorldAccess.Core.Settings.PauseOnGameStart.Desc>
+  <RimWorldAccess.Core.Settings.StayPausedAfterResearch.Label>Continuar pausado na tela de pesquisa</RimWorldAccess.Core.Settings.StayPausedAfterResearch.Label>
+  <RimWorldAccess.Core.Settings.StayPausedAfterResearch.Desc>Abrir a tela de pesquisa a partir de uma caixa de diálogo de pesquisa concluída mantém o jogo pausado.</RimWorldAccess.Core.Settings.StayPausedAfterResearch.Desc>
+  <RimWorldAccess.Core.Settings.StayPausedAfterTrade.Label>Continuar pausado após negociar</RimWorldAccess.Core.Settings.StayPausedAfterTrade.Label>
+  <RimWorldAccess.Core.Settings.StayPausedAfterTrade.Desc>Fechar a tela de negociação mantém o jogo pausado até você retomar.</RimWorldAccess.Core.Settings.StayPausedAfterTrade.Desc>
 
   <!-- Opens the Configure Spoken Announcements screen (a real window, not this panel);
        see RimWorldAccess_AnnounceConfig.xml for that screen's own strings. -->

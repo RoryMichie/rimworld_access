@@ -50,6 +50,12 @@
   <RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>每次移动后将鼠标指针置于键盘光标所在的格子上。游戏中按 {0} 调整。</RimWorldAccess.Core.Settings.PointerFollowsKeyboard.Desc>
   <RimWorldAccess.Core.Settings.ScannerAutoJump.Label>扫描器自动跳转</RimWorldAccess.Core.Settings.ScannerAutoJump.Label>
   <RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>浏览时光标自动移动到每个扫描器项目。游戏中按 {0} 调整。</RimWorldAccess.Core.Settings.ScannerAutoJump.Desc>
+  <RimWorldAccess.Core.Settings.PauseOnGameStart.Label>开始新游戏时暂停</RimWorldAccess.Core.Settings.PauseOnGameStart.Label>
+  <RimWorldAccess.Core.Settings.PauseOnGameStart.Desc>新游戏开始时会先暂停，让你在时间流逝前熟悉情况。</RimWorldAccess.Core.Settings.PauseOnGameStart.Desc>
+  <RimWorldAccess.Core.Settings.StayPausedAfterResearch.Label>停留在研究界面时保持暂停</RimWorldAccess.Core.Settings.StayPausedAfterResearch.Label>
+  <RimWorldAccess.Core.Settings.StayPausedAfterResearch.Desc>从研究完成对话框打开研究界面时，游戏保持暂停。</RimWorldAccess.Core.Settings.StayPausedAfterResearch.Desc>
+  <RimWorldAccess.Core.Settings.StayPausedAfterTrade.Label>交易后保持暂停</RimWorldAccess.Core.Settings.StayPausedAfterTrade.Label>
+  <RimWorldAccess.Core.Settings.StayPausedAfterTrade.Desc>关闭交易界面后，游戏保持暂停，直到你自行恢复。</RimWorldAccess.Core.Settings.StayPausedAfterTrade.Desc>
 
   <!-- Opens the Configure Spoken Announcements screen (a real window, not this panel);
        see RimWorldAccess_AnnounceConfig.xml for that screen's own strings. -->
