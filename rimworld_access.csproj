@@ -402,10 +402,19 @@
     plugin load in TolkHelper needs prism_registry_builder_add_library.
     Must match PRISM_VERSION in .github/workflows/build-dev.yml.
   -->
+  <PropertyGroup>
+    <PrismDownloadDir>$(ProjectDir)..\shared\native</PrismDownloadDir>
+    <PrismVersion>v0.18.2</PrismVersion>
+    <!-- Written by UpdatePrism, read by BootstrapPrism: the version the shared natives
+         actually are, so a pin bump re-downloads instead of silently building against a
+         stale prism.dll. A stale one loads fine, then rejects our PrismConfig and returns
+         null from prism_init, and the mod is mute with "prism_init returned null context". -->
+    <PrismVersionStamp>$(PrismDownloadDir)\prism.version</PrismVersionStamp>
+    <PrismInstalledVersion Condition="Exists('$(PrismVersionStamp)')">$([System.IO.File]::ReadAllText('$(PrismVersionStamp)').Trim())</PrismInstalledVersion>
+  </PropertyGroup>
+
   <Target Name="UpdatePrism">
     <PropertyGroup>
-      <PrismDownloadDir>$(ProjectDir)..\shared\native</PrismDownloadDir>
-      <PrismVersion>v0.18.2</PrismVersion>
       <PrismBaseUrl>https://github.com/ethindp/prism/releases/download/$(PrismVersion)</PrismBaseUrl>
     </PropertyGroup>
     <Message Text="Downloading Prism $(PrismVersion) native libraries to $(PrismDownloadDir)..." Importance="high" />
@@ -432,13 +441,16 @@
     <RemoveDir Directories="$(PrismDownloadDir)/prism-linux-tmp" />
     <Delete Files="$(PrismDownloadDir)/prism-linux.zip" />
 
+    <WriteLinesToFile File="$(PrismVersionStamp)" Lines="$(PrismVersion)" Overwrite="true" />
     <Message Text="Prism $(PrismVersion) native libraries updated successfully." Importance="high" />
   </Target>
 
-  <!-- Auto-download Prism on first build when native libraries are missing (skipped in CI) -->
+  <!-- Auto-download Prism when the native libraries are missing OR are not the pinned
+       version (skipped in CI, which downloads its own). The version check is what makes a
+       PrismVersion bump take effect on every machine at its next build. -->
   <Target Name="BootstrapPrism" BeforeTargets="Build"
-          Condition="'$(CI)' != 'true' And !Exists('$(ProjectDir)..\shared\native\prism.dll')">
-    <Message Text="Native Prism libraries not found. Running first-time download..." Importance="high" />
+          Condition="'$(CI)' != 'true' And (!Exists('$(PrismDownloadDir)\prism.dll') Or '$(PrismInstalledVersion)' != '$(PrismVersion)')">
+    <Message Text="Native Prism libraries missing or at '$(PrismInstalledVersion)', pin is $(PrismVersion). Downloading..." Importance="high" />
     <CallTarget Targets="UpdatePrism" />
   </Target>
 
