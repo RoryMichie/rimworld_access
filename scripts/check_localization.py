@@ -97,7 +97,9 @@ def scan():
             if not name.endswith(".cs"):
                 continue
             path = os.path.join(root, name)
-            rel = os.path.relpath(path, REPO_ROOT)
+            # Forward slashes always: the baseline is written with them, and on
+            # Windows relpath yields backslashes, which matched nothing there.
+            rel = os.path.relpath(path, REPO_ROOT).replace(os.sep, "/")
             with open(path, encoding="utf-8") as fh:
                 for lineno, raw in enumerate(fh, 1):
                     stripped = raw.lstrip()
